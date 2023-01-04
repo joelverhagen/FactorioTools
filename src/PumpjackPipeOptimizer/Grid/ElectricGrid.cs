@@ -53,17 +53,6 @@ internal class ElectricGrid : SquareGrid
                         yield return candidate;
                     }
                 }
-                /*
-                else if (IsEntityType<ElectricPoleSide>(candidate))
-                {
-                    var side = (ElectricPoleSide)LocationToEntity[candidate];
-                    var center = EntityToLocation[side.Center];
-                    if (neighbors.Add(center))
-                    {
-                        yield return center;
-                    }
-                }
-                */
             }
         }
     }
