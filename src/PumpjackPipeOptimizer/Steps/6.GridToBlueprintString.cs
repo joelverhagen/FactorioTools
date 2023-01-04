@@ -14,9 +14,9 @@ internal static class GridToBlueprintString
         var entities = new List<Entity>();
         var nextEntityNumber = 1;
 
-        var electricPoleToEntityNumber = new Dictionary<ElectricPole, int>();
+        var electricPoleToEntityNumber = new Dictionary<ElectricPoleCenter, int>();
 
-        int GetEntityNumber(ElectricPole pole)
+        int GetEntityNumber(ElectricPoleCenter pole)
         {
             if (!electricPoleToEntityNumber!.TryGetValue(pole, out var entityNumber))
             {
@@ -27,7 +27,7 @@ internal static class GridToBlueprintString
             return entityNumber;
         }
 
-        foreach ((var location, var gridEntity) in context.Grid.Entities)
+        foreach ((var location, var gridEntity) in context.Grid.LocationToEntity)
         {
             var position = new Position
             {
@@ -70,7 +70,17 @@ internal static class GridToBlueprintString
                         Position = position,
                     });
                     break;
-                case ElectricPole electricPole:
+                case ElectricPoleCenter electricPole:                    
+                    if (context.Options.ElectricPoleWidth % 2 == 0)
+                    {
+                        position.X += 0.5f;
+                    }
+
+                    if (context.Options.ElectricPoleHeight % 2 == 0)
+                    {
+                        position.Y += 0.5f;
+                    }
+
                     entities.Add(new Entity
                     {
                         EntityNumber = GetEntityNumber(electricPole),
@@ -78,6 +88,9 @@ internal static class GridToBlueprintString
                         Position = position,
                         Neighbours = electricPole.Neighbors.Select(GetEntityNumber).ToArray(),
                     });
+                    break;
+                case ElectricPoleSide:
+                    // Ignore
                     break;
                 default:
                     throw new NotImplementedException("Unknown entity type: " + gridEntity.GetType().FullName);

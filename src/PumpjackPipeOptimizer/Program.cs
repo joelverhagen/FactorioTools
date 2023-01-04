@@ -7,12 +7,45 @@ internal partial class Program
 {
     private static void Main(string[] args)
     {
+        /*
         var options = new Options
         {
             ElectricPoleEntityName = EntityNames.Vanilla.Substation,
             ElectricPoleSupplyWidth = 18,
             ElectricPoleSupplyHeight = 18,
             ElectricPoleWireReach = 18,
+            ElectricPoleWidth = 2,
+            ElectricPoleHeight = 2,
+        };
+        */
+        /*
+        var options = new Options
+        {
+            ElectricPoleEntityName = EntityNames.SpaceExploration.SmallIronElectricPole,
+            ElectricPoleSupplyWidth = 5,
+            ElectricPoleSupplyHeight = 5,
+            ElectricPoleWireReach = 7.5,
+            ElectricPoleWidth = 1,
+            ElectricPoleHeight = 1,
+        };
+        */
+        /*
+        var options = new Options
+        {
+            ElectricPoleEntityName = EntityNames.Vanilla.MediumElectricPole,
+            ElectricPoleSupplyWidth = 7,
+            ElectricPoleSupplyHeight = 7,
+            ElectricPoleWireReach = 9,
+            ElectricPoleWidth = 1,
+            ElectricPoleHeight = 1,
+        };
+        */
+        var options = new Options
+        {
+            ElectricPoleEntityName = EntityNames.Vanilla.BigElectricPole,
+            ElectricPoleSupplyWidth = 4,
+            ElectricPoleSupplyHeight = 4,
+            ElectricPoleWireReach = 30,
             ElectricPoleWidth = 2,
             ElectricPoleHeight = 2,
         };
@@ -32,9 +65,6 @@ internal partial class Program
         {
             throw new InvalidOperationException("The must be at least two pumpjacks in the blueprint.");
         }
-
-        Console.WriteLine();
-        context.Grid.WriteTo(Console.Out);
 
         // Use Dijksta's algorithm to add good connecting pipes to the grid.
         var pipes = AddPipes.Execute(context);

@@ -8,14 +8,14 @@ internal static class AddElectricPoles
     public static void Execute(Context context)
     {
         // Convert the grid to an electric grid, which has a different neighbor discovery algorithm.
-        context.Grid = new ElectricGrid(context.Grid, context.Options.ElectricPoleWireReach);
+        context.Grid = new ElectricGrid(context.Grid, context.Options);
 
         var electricPoles = AddElectricPolesAroundPumpjacks(context);
 
-        ConnectElectricPoles(context.Grid, electricPoles, context.Options.ElectricPoleWireReach);
+        ConnectElectricPoles(context, electricPoles);
     }
 
-    private static Dictionary<Location, ElectricPole> AddElectricPolesAroundPumpjacks(Context context)
+    private static Dictionary<Location, ElectricPoleCenter> AddElectricPolesAroundPumpjacks(Context context)
     {
         var pumpjackArea = (X: 3, Y: 3);
         var offsetX = pumpjackArea.X / 2 + context.Options.ElectricPoleSupplyWidth / 2;
@@ -32,15 +32,7 @@ internal static class AddElectricPoles
                 for (var y = center.Y - offsetY; y <= center.Y + offsetY; y++)
                 {
                     var candidate = new Location(x, y);
-
-                    var fits = true;
-                    for (var w = 0; w < context.Options.ElectricPoleWidth && fits; w++)
-                    {
-                        for (var h = 0; h < context.Options.ElectricPoleHeight && fits; h++)
-                        {
-                            fits = context.Grid.IsEmpty(candidate.Translate((w, h))) && context.Grid.IsInBounds(candidate.Translate((w, h)));
-                        }
-                    }
+                    (var fits, _) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: false);
 
                     if (!fits)
                     {
@@ -59,52 +51,110 @@ internal static class AddElectricPoles
             }
         }
 
-        var candidateToPumpjackDistance = candidateToCovered.ToDictionary(
-            x => x.Key,
-            x => x.Value.Sum(y => y.GetEuclideanDistance(x.Key)));
         var candidateToMiddleDistance = candidateToCovered.ToDictionary(
             x => x.Key,
             x => x.Key.GetEuclideanDistance(context.Grid.Middle));
 
-        // Prefer spots that cover the most pumpjacks. Break ties with spots closer to their pumpjack centers.
-        // Break further ties with spots closer to the center of the grid.
-        var sortedCandidates = candidateToCovered
-            .Keys
-            .OrderByDescending(x => candidateToCovered[x].Count)
-            .ThenBy(x => candidateToPumpjackDistance[x])
-            .ThenBy(x => candidateToMiddleDistance[x]);
         var coveredPumpjacks = new HashSet<Location>();
-        var electricPoles = new Dictionary<Location, ElectricPole>();
-        foreach (var candidate in sortedCandidates)
+        var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
+
+        while (coveredPumpjacks.Count < context.Centers.Count)
         {
-            var covered = candidateToCovered[candidate];
-            if (covered.IsSubsetOf(coveredPumpjacks))
+            var candidateToPumpjackDistance = candidateToCovered.ToDictionary(
+                x => x.Key,
+                x => x.Value.Sum(y => y.GetEuclideanDistance(x.Key)));
+
+            // Prefer spots that cover the most pumpjacks. Break ties with spots closer to their pumpjack centers.
+            // Break further ties with spots closer to the center of the grid.
+            var sortedCandidates = candidateToCovered
+                .Keys
+                .OrderByDescending(x => candidateToCovered[x].Count)
+                .ThenBy(x => candidateToPumpjackDistance[x])
+                .ThenBy(x => candidateToMiddleDistance[x]);
+
+            foreach (var candidate in sortedCandidates)
             {
-                continue;
+                var covered = candidateToCovered[candidate];
+                if (covered.IsSubsetOf(coveredPumpjacks))
+                {
+                    throw new InvalidOperationException($"Candidate {candidate} should have been eliminated.");
+                }
+
+                (var fits, var sides) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: true);
+
+                if (fits)
+                {
+                    AddElectricPole(context, electricPoles, candidate, sides!);
+
+                    coveredPumpjacks.UnionWith(candidateToCovered[candidate]);
+
+                    // Remove the covered pumpjacks from the canidate data, so that the next candidates are discounted
+                    // by the pumpjacks that no longer need power.
+                    foreach ((var otherCandidate, var otherCovered) in candidateToCovered.ToList())
+                    {
+                        otherCovered.ExceptWith(coveredPumpjacks);
+                        if (otherCovered.Count == 0)
+                        {
+                            candidateToCovered.Remove(otherCandidate);
+                        }
+                    }
+
+                    break;
+                }
             }
-
-            electricPoles.Add(candidate, new ElectricPole());
-            coveredPumpjacks.UnionWith(candidateToCovered[candidate]);
-        }
-
-        foreach ((var location, var entity) in electricPoles)
-        {
-            context.Grid.AddEntity(location, entity);
         }
 
         return electricPoles;
     }
 
-    public static bool AreElectricPolesConnected(Location a, Location b, double wireReach)
+    private static void AddElectricPole(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location candidate, List<Location> sides)
     {
-        return a.GetEuclideanDistance(b) <= wireReach;
+        var center = new ElectricPoleCenter();
+        context.Grid.AddEntity(candidate, center);
+        electricPoles.Add(candidate, center);
+
+        foreach (var location in sides)
+        {
+            context.Grid.AddEntity(location, new ElectricPoleSide(center));
+        }
     }
 
-    private static void ConnectElectricPoles(SquareGrid grid, Dictionary<Location, ElectricPole> electricPoles, double wireReach)
+    public static (bool Fits, List<Location>? Sides) GetElectricPoleLocations(SquareGrid grid, Options options, Location center, bool populateSides)
+    {
+
+        var fits = true;
+        var sides = populateSides ? new List<Location>() : null;
+
+        var offsetX = ((options.ElectricPoleWidth - 1) / 2) * -1;
+        var offsetY = ((options.ElectricPoleHeight - 1) / 2) * -1;
+
+        for (var w = 0; w < options.ElectricPoleWidth && fits; w++)
+        {
+            for (var h = 0; h < options.ElectricPoleHeight && fits; h++)
+            {
+                var location = center.Translate((offsetX + w, offsetY + h));
+                fits = grid.IsEmpty(location) && grid.IsInBounds(location);
+
+                if (fits && location != center && populateSides)
+                {
+                    sides!.Add(location);
+                }
+            }
+        }
+
+        return (fits, sides);
+    }
+
+    public static bool AreElectricPolesConnected(Location a, Location b, Options options)
+    {
+        return a.GetEuclideanDistance(b) <= options.ElectricPoleWireReach;
+    }
+
+    private static void ConnectElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
         // Find the two electric poles closest to the middle of the grid and connect them.
         var polesByMiddleDistance = electricPoles
-            .OrderBy(x => x.Key.GetEuclideanDistance(grid.Middle))
+            .OrderBy(x => x.Key.GetEuclideanDistance(context.Grid.Middle))
             .Select(x => x.Key)
             .ToList();
 
@@ -112,24 +162,28 @@ internal static class AddElectricPoles
 
         for (var i = 1; i < polesByMiddleDistance.Count; i++)
         {
-            AddToGrid(grid, electricPoles, connectedPoles, polesByMiddleDistance[i]);
+            AddToGrid(context, electricPoles, connectedPoles, polesByMiddleDistance[i]);
         }
     }
 
-    private static void AddToGrid(SquareGrid grid, Dictionary<Location, ElectricPole> electricPoles, HashSet<Location> connectedPoles, Location start)
+    private static void AddToGrid(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, HashSet<Location> connectedPoles, Location start)
     {
-        var result = Dijkstras.GetShortestPaths(grid, start, connectedPoles, stopOnFirstGoal: true);
+        var result = Dijkstras.GetShortestPaths(context.Grid, start, connectedPoles, stopOnFirstGoal: true);
 
         var goal = result.ReachedGoals.Single();
         var path = result.GetStraightPaths(goal).First();
 
         foreach (var pole in path)
         {
-            if (connectedPoles.Add(pole) && grid.IsEmpty(pole))
+            if (connectedPoles.Add(pole) && context.Grid.IsEmpty(pole))
             {
-                var entity = new ElectricPole();
-                electricPoles.Add(pole, entity);
-                grid.AddEntity(pole, entity);
+                (var fits, var sides) = GetElectricPoleLocations(context.Grid, context.Options, pole, populateSides: true);
+                if (!fits)
+                {
+                    throw new InvalidOperationException($"Could not add electric pole to the grid at {pole}. It does not fit.");
+                }
+
+                AddElectricPole(context, electricPoles, pole, sides!);
             }
         }
 

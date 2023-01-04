@@ -4,16 +4,16 @@ namespace PumpjackPipeOptimizer.Grid;
 
 internal class ElectricGrid : SquareGrid
 {
-    private readonly double _wireReach;
+    private readonly Options _options;
 
     public ElectricGrid(ElectricGrid grid) : base(grid)
     {
-        _wireReach = grid._wireReach;
+        _options = grid._options;
     }
 
-    public ElectricGrid(SquareGrid grid, double wireReach) : base(grid)
+    public ElectricGrid(SquareGrid grid, Options options) : base(grid)
     {
-        _wireReach = wireReach;
+        _options = options;
     }
 
     public override double GetNeighborCost(Location a, Location b)
@@ -23,28 +23,47 @@ internal class ElectricGrid : SquareGrid
 
     public override IEnumerable<Location> GetNeighbors(Location id)
     {
-        var queue = new Queue<Location>();
-        var discovered = new HashSet<Location>();
-        queue.Enqueue(id);
+        var reachCeiling = (int)Math.Ceiling(_options.ElectricPoleWireReach);
 
-        while (queue.Count > 0)
+        var neighbors = new HashSet<Location>();
+
+        for (var x = -1 * reachCeiling; x <= reachCeiling; x++)
         {
-            var location = queue.Dequeue();
-
-            foreach (var neighbor in GetAdjacent(location))
+            for (var y = -1 * reachCeiling; y <= reachCeiling; y++)
             {
-                if (discovered.Add(neighbor))
-                {
-                    if (AddElectricPoles.AreElectricPolesConnected(id, neighbor, _wireReach))
-                    {
-                        queue.Enqueue(neighbor);
+                var candidate = id.Translate((x, y));
 
-                        if (IsEmpty(neighbor) || IsEntityType<ElectricPole>(neighbor))
-                        {
-                            yield return neighbor;
-                        }
+                if (!AddElectricPoles.AreElectricPolesConnected(id, candidate, _options))
+                {
+                    continue;
+                }
+
+                if (IsEmpty(candidate))
+                {
+                    (var fits, _) = AddElectricPoles.GetElectricPoleLocations(this, _options, candidate, populateSides: false);
+                    if (fits && neighbors.Add(candidate))
+                    {
+                        yield return candidate;
                     }
                 }
+                else if (IsEntityType<ElectricPoleCenter>(candidate))
+                {
+                    if (neighbors.Add(candidate))
+                    {
+                        yield return candidate;
+                    }
+                }
+                /*
+                else if (IsEntityType<ElectricPoleSide>(candidate))
+                {
+                    var side = (ElectricPoleSide)LocationToEntity[candidate];
+                    var center = EntityToLocation[side.Center];
+                    if (neighbors.Add(center))
+                    {
+                        yield return center;
+                    }
+                }
+                */
             }
         }
     }
