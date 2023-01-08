@@ -5,6 +5,8 @@ namespace PumpjackPipeOptimizer;
 
 internal partial class Program
 {
+    private const string DataPath = "blueprints.txt";
+
     private static void Main(string[] args)
     {
         /*
@@ -53,46 +55,51 @@ internal partial class Program
         };
         */
 
-        var blueprintString = "0eJyM1MFqhDAQBuB3mXMOTkzcNa9SyuK6oaRdo2gsFfHdGxMPhS34n8QYPx0m/6x0f852GJ0PZFZybe8nMm8rTe7DN899zTedJUPD3A2fTftFgsIy7Csu2I42Qc4/7A8Z3t4FWR9ccDYb6Wa5+bm72zFuEP9YQz/FF3q/fyki5UXQEi+RfbjRtvlRsYkXTQKa5qSpc60ENKWSps81hVSasPoc0wimUK0CNM5N4OKcuyA/l7vAfM5dAU5WmQO6WiPF5kYw0FYukGo17iGJuGauAjgkEqrGPSQUUmYPOHqMxEJnTwKHhTVerwQmCiPZkDlpEqkXCYc8Bp4EPCQdR73lSzricE4D2/yZ+IK+7TgdG7ZfAAAA//8DABy5/JQ=";
-        var inputBlueprint = ParseBlueprint.Execute(blueprintString);
-
-        var context = InitializeContext.Execute(options, inputBlueprint);
-
-        if (context.CenterToTerminals.Count < 2)
+        foreach (var blueprintString in File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")))
         {
-            throw new InvalidOperationException("The must be at least two pumpjacks in the blueprint.");
+            // var blueprintString = "0eJyM1MFqhDAQBuB3mXMOTkzcNa9SyuK6oaRdo2gsFfHdGxMPhS34n8QYPx0m/6x0f852GJ0PZFZybe8nMm8rTe7DN899zTedJUPD3A2fTftFgsIy7Csu2I42Qc4/7A8Z3t4FWR9ccDYb6Wa5+bm72zFuEP9YQz/FF3q/fyki5UXQEi+RfbjRtvlRsYkXTQKa5qSpc60ENKWSps81hVSasPoc0wimUK0CNM5N4OKcuyA/l7vAfM5dAU5WmQO6WiPF5kYw0FYukGo17iGJuGauAjgkEqrGPSQUUmYPOHqMxEJnTwKHhTVerwQmCiPZkDlpEqkXCYc8Bp4EPCQdR73lSzricE4D2/yZ+IK+7TgdG7ZfAAAA//8DABy5/JQ=";
+            var inputBlueprint = ParseBlueprint.Execute(blueprintString);
+
+            var context = InitializeContext.Execute(options, inputBlueprint);
+
+            if (context.CenterToTerminals.Count < 2)
+            {
+                throw new InvalidOperationException("The must be at least two pumpjacks in the blueprint.");
+            }
+
+            // context.Grid.WriteTo(Console.Out);
+
+            // Use Dijksta's algorithm to add good connecting pipes to the grid.
+            var pipes = AddPipes.Execute(context);
+            Console.WriteLine(pipes.Count);
+
+            // Find pipe "squares" (four pipes forming a square) and try to remove one from the square.
+            PruneSquares.Execute(context, pipes);
+
+            /*
+            if (context.Options.UseUndergroundPipes)
+            {
+                // Substitute long stretches of pipes for underground pipes
+                UseUndergroundPipes.Execute(context, pipes);
+            }
+
+            // Add electric poles to the grid.
+            AddElectricPoles.Execute(context);
+
+            Console.WriteLine();
+            context.Grid.WriteTo(Console.Out);
+
+            var newBlueprint = GridToBlueprintString.Execute(context);
+            Console.WriteLine();
+            Console.WriteLine(newBlueprint);
+            */
         }
-
-        context.Grid.WriteTo(Console.Out);
-
-        // Use Dijksta's algorithm to add good connecting pipes to the grid.
-        var pipes = AddPipes.Execute(context);
-
-        // Find pipe "squares" (four pipes forming a square) and try to remove one from the square.
-        PruneSquares.Execute(context, pipes);
-
-        if (context.Options.UseUndergroundPipes)
-        {
-            // Substitute long stretches of pipes for underground pipes
-            UseUndergroundPipes.Execute(context, pipes);
-        }
-
-        // Add electric poles to the grid.
-        AddElectricPoles.Execute(context);
-
-        Console.WriteLine();
-        context.Grid.WriteTo(Console.Out);
-
-        var newBlueprint = GridToBlueprintString.Execute(context);
-        Console.WriteLine();
-        Console.WriteLine(newBlueprint);
     }
 
     private static void NormalizeBlueprints()
     {
-        var dataPath = "blueprints.txt";
         var lines = new List<string>();
-        foreach (var blueprintString in File.ReadAllLines(dataPath))
+        foreach (var blueprintString in File.ReadAllLines(DataPath))
         {
             var trimmed = blueprintString.Trim();
             var output = blueprintString;
@@ -106,6 +113,6 @@ internal partial class Program
             lines.Add(output);
         }
 
-        File.WriteAllLines(dataPath, lines.ToArray());
+        File.WriteAllLines(DataPath, lines.ToArray());
     }
 }

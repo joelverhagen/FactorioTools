@@ -86,7 +86,7 @@ internal static class AddPipes
         (var terminals, var pipes, _) = options.First();
         */
 
-        var middle = context.Grid.Middle.Translate((-2, -2));
+        var middle = context.Grid.Middle; //.Translate((-2, -2));
 
         (var terminals, var pipes) = DelaunayTriangulation(context, middle);
 
@@ -111,7 +111,7 @@ internal static class AddPipes
         }
 
         // Console.WriteLine();
-        Console.WriteLine($"Pipes: " + pipes.Count);
+        // Console.WriteLine($"Pipes: " + pipes.Count);
         // context.Grid.WriteTo(Console.Out);
 
         return pipes;
@@ -155,17 +155,75 @@ internal static class AddPipes
             .Where(x => x.Connections.Count > 0)
             .ToList();
 
-        /*
         var columnHits = new int[context.Grid.Width];
         var rowHits = new int[context.Grid.Height];
         foreach (var line in lines)
         {
             foreach (var connection in line.Connections)
             {
-
+                columnHits[connection.TerminalA.Terminal.X]++;
+                columnHits[connection.TerminalB.Terminal.X]++;
+                rowHits[connection.TerminalA.Terminal.Y]++;
+                rowHits[connection.TerminalB.Terminal.Y]++;
             }
         }
-        */
+
+        var columnWeight = new double[context.Grid.Width];
+        var rowWeight = new double[context.Grid.Height];
+        foreach (var line in lines)
+        {
+            foreach (var connection in line.Connections)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    var weight = Math.Pow(2, -1 * i);
+
+                    if (connection.TerminalA.Terminal.X + i < columnWeight.Length)
+                    {
+                        columnWeight[connection.TerminalA.Terminal.X + i] += weight;
+                    }
+                    
+                    if (connection.TerminalB.Terminal.X + i < columnWeight.Length)
+                    {
+                        columnWeight[connection.TerminalB.Terminal.X + i] += weight;
+                    }
+                    
+                    if (connection.TerminalA.Terminal.Y + i < rowWeight.Length)
+                    {
+                        rowWeight[connection.TerminalA.Terminal.Y + i] += weight;
+                    }
+
+                    if (connection.TerminalB.Terminal.Y + i < rowWeight.Length)
+                    {
+                        rowWeight[connection.TerminalB.Terminal.Y + i] += weight;
+                    }
+
+                    if (i != 0)
+                    {
+                        if (connection.TerminalA.Terminal.X - i >= 0)
+                        {
+                            columnWeight[connection.TerminalA.Terminal.X - i] += weight;
+                        }
+
+                        if (connection.TerminalB.Terminal.X - i >= 0)
+                        {
+                            columnWeight[connection.TerminalB.Terminal.X - i] += weight;
+                        }
+
+                        if (connection.TerminalA.Terminal.Y - i >= 0)
+                        {
+                            rowWeight[connection.TerminalA.Terminal.Y - i] += weight;
+                        }
+
+                        if (connection.TerminalB.Terminal.Y - i >= 0)
+                        {
+                            rowWeight[connection.TerminalB.Terminal.Y - i] += weight;
+                        }
+
+                    }
+                }
+            }
+        }
 
         /*
         for (var i = 0; i < middleMatters.Count; i++)
@@ -203,7 +261,8 @@ internal static class AddPipes
             var addedB = addedPumpjacks.FirstOrDefault(x => x.Center == line.Endpoints.B);
 
             var sortedConnections = line.Connections
-                .OrderBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
+                .OrderByDescending(x => x.IsHorizontal ? columnWeight[x.TerminalA.Terminal.X] : rowWeight[x.TerminalA.Terminal.Y])
+                .ThenBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
                 .ThenBy(x => x.Line.Count)
                 .ToList();
 
@@ -575,5 +634,7 @@ internal static class AddPipes
         {
             return $"{TerminalA.Terminal} -> {TerminalB.Terminal} (length {Line.Count})";
         }
+
+        public bool IsHorizontal => TerminalA.Terminal.X == TerminalB.Terminal.X;
     }
 }
