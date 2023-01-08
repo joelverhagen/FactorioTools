@@ -55,6 +55,8 @@ internal partial class Program
         };
         */
 
+        var sum = 0;
+        var count = 0;
         foreach (var blueprintString in File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")))
         {
             // var blueprintString = "0eJyM1MFqhDAQBuB3mXMOTkzcNa9SyuK6oaRdo2gsFfHdGxMPhS34n8QYPx0m/6x0f852GJ0PZFZybe8nMm8rTe7DN899zTedJUPD3A2fTftFgsIy7Csu2I42Qc4/7A8Z3t4FWR9ccDYb6Wa5+bm72zFuEP9YQz/FF3q/fyki5UXQEi+RfbjRtvlRsYkXTQKa5qSpc60ENKWSps81hVSasPoc0wimUK0CNM5N4OKcuyA/l7vAfM5dAU5WmQO6WiPF5kYw0FYukGo17iGJuGauAjgkEqrGPSQUUmYPOHqMxEJnTwKHhTVerwQmCiPZkDlpEqkXCYc8Bp4EPCQdR73lSzricE4D2/yZ+IK+7TgdG7ZfAAAA//8DABy5/JQ=";
@@ -71,6 +73,8 @@ internal partial class Program
 
             // Use Dijksta's algorithm to add good connecting pipes to the grid.
             var pipes = AddPipes.Execute(context);
+            sum += pipes.Count;
+            count++;
             Console.WriteLine(pipes.Count);
 
             // Find pipe "squares" (four pipes forming a square) and try to remove one from the square.
@@ -94,6 +98,8 @@ internal partial class Program
             Console.WriteLine(newBlueprint);
             */
         }
+
+        Console.WriteLine("Avg: " + (sum * 1.0 / count));
     }
 
     private static void NormalizeBlueprints()

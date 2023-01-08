@@ -249,8 +249,10 @@ internal static class AddPipes
         {
             lines = lines
                 .OrderByDescending(ent => LineContainsAnAddedPumpjack(addedPumpjacks, ent))
-                .ThenByDescending(ent => ent.Endpoints.A.GetManhattanDistance(true ? middle : context.Grid.Middle) + ent.Endpoints.B.GetManhattanDistance(true ? middle : context.Grid.Middle))
                 .ThenBy(ent => ent.Connections.Count)
+                .ThenBy(x => Math.Min(x.Endpoints.A.X, x.Endpoints.B.X))
+                .ThenBy(x => Math.Min(x.Endpoints.A.Y, x.Endpoints.B.Y))
+                //.ThenByDescending(ent => ent.Endpoints.A.GetManhattanDistance(true ? middle : context.Grid.Middle) + ent.Endpoints.B.GetManhattanDistance(true ? middle : context.Grid.Middle))
                 .ThenBy(ent => ent.AverageDistance)
                 .ToList();
 
@@ -261,8 +263,10 @@ internal static class AddPipes
             var addedB = addedPumpjacks.FirstOrDefault(x => x.Center == line.Endpoints.B);
 
             var sortedConnections = line.Connections
-                .OrderByDescending(x => x.IsHorizontal ? columnWeight[x.TerminalA.Terminal.X] : rowWeight[x.TerminalA.Terminal.Y])
-                .ThenBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
+                // .OrderByDescending(x => x.IsHorizontal ? columnWeight[x.TerminalA.Terminal.X] : rowWeight[x.TerminalA.Terminal.Y])
+                // .OrderBy(x => Math.Min(x.TerminalA.Terminal.X, x.TerminalB.Terminal.X))
+                // .ThenBy(x => Math.Min(x.TerminalA.Terminal.Y, x.TerminalB.Terminal.Y))
+                .OrderBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle) + x.TerminalB.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
                 .ThenBy(x => x.Line.Count)
                 .ToList();
 
