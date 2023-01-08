@@ -94,11 +94,10 @@ internal partial class Program
 
             Console.WriteLine();
             context.Grid.WriteTo(Console.Out);
-
-            var newBlueprint = GridToBlueprintString.Execute(context);
-            Console.WriteLine();
-            Console.WriteLine(newBlueprint);
             */
+            var newBlueprint = GridToBlueprintString.Execute(context);
+            // Console.WriteLine();
+            //Console.WriteLine(newBlueprint);
         }
 
         Console.WriteLine("Avg: " + (sum * 1.0 / count));

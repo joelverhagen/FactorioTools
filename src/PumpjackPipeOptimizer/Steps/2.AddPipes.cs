@@ -267,7 +267,8 @@ internal static class AddPipes
                 // .OrderByDescending(x => x.IsHorizontal ? columnWeight[x.TerminalA.Terminal.X] : rowWeight[x.TerminalA.Terminal.Y])
                 // .OrderBy(x => Math.Min(x.TerminalA.Terminal.X, x.TerminalB.Terminal.X))
                 // .ThenBy(x => Math.Min(x.TerminalA.Terminal.Y, x.TerminalB.Terminal.Y))
-                .OrderBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle) + x.TerminalB.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
+                .OrderBy(x => groups.Count == 0 ? 0 : groups.Min(g => Math.Min(g.Location.GetManhattanDistance(x.TerminalA.Terminal), g.Location.GetManhattanDistance(x.TerminalB.Terminal))))
+                .ThenBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle) + x.TerminalB.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
                 .ThenBy(x => x.Line.Count)
                 .ToList();
 
