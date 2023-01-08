@@ -248,8 +248,8 @@ internal static class AddPipes
         while (lines.Count > 0)
         {
             lines = lines
-                .OrderByDescending(ent => LineContainsAnAddedPumpjack(addedPumpjacks, ent))
-                .ThenByDescending(x => groups.Count == 0 ? 0 : groups.Min(g => Math.Min(g.Location.GetManhattanDistance(x.Endpoints.A), g.Location.GetManhattanDistance(x.Endpoints.B))))
+                // .OrderByDescending(ent => LineContainsAnAddedPumpjack(addedPumpjacks, ent))
+                .OrderByDescending(x => groups.Count == 0 ? 0 : groups.Min(g => Math.Min(g.Location.GetManhattanDistance(x.Endpoints.A), g.Location.GetManhattanDistance(x.Endpoints.B))))
                 .ThenBy(x => Math.Min(x.Endpoints.A.X, x.Endpoints.B.X))
                 .ThenBy(x => Math.Min(x.Endpoints.A.Y, x.Endpoints.B.Y))
                 // .ThenByDescending(ent => ent.Endpoints.A.GetManhattanDistance(true ? middle : context.Grid.Middle) + ent.Endpoints.B.GetManhattanDistance(true ? middle : context.Grid.Middle))
