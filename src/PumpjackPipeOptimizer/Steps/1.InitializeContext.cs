@@ -5,24 +5,34 @@ namespace PumpjackPipeOptimizer.Steps;
 
 internal static class InitializeContext
 {
-    public static Context Execute(Options options, BlueprintRoot inputBlueprint)
+    public static Context Execute(Options options, BlueprintRoot root)
     {
-        var centers = GetPumpjackCenters(options, inputBlueprint);
-        var grid = InitializeGrid(centers);
-        var centerToTerminals = GetCenterToTerminals(centers, grid);
+        // Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
+        //   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
+        //   - A spot for a pipe, if needed.
+        //   - A spot for an electric pole, if needed.
+        var marginX = 1 + 1 + options.ElectricPoleWidth;
+        var marginY = 1 + 1 + options.ElectricPoleHeight;
 
-        var context = new Context
-        {
-            Options = options,
-            InputBlueprint = inputBlueprint,
-            Grid = grid,
-            Centers = centers,
-            CenterToTerminals = centerToTerminals,
-        };
-        return context;
+        return Execute(options, root, marginX, marginY);
     }
 
-    private static HashSet<Location> GetPumpjackCenters(Options options, BlueprintRoot root)
+    public static Context Execute(Options options, BlueprintRoot root, int marginX, int marginY)
+    {
+        var centers = GetPumpjackCenters(root, marginX, marginY);
+        var grid = InitializeGrid(centers, marginX, marginY);
+        var centerToTerminals = GetCenterToTerminals(centers, grid);
+
+        return new Context
+        {
+            Options = options,
+            InputBlueprint = root,
+            Grid = grid,
+            CenterToTerminals = centerToTerminals,
+        };
+    }
+
+    private static HashSet<Location> GetPumpjackCenters(BlueprintRoot root, int marginX, int marginY)
     {
         var pumpjacks = root
             .Blueprint
@@ -30,12 +40,8 @@ internal static class InitializeContext
             .Where(e => e.Name == EntityNames.Vanilla.Pumpjack)
             .ToList();
 
-        // Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
-        //   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
-        //   - A spot for a pipe, if needed.
-        //   - A spot for an electric pole, if needed.
-        var deltaX = 0 - pumpjacks.Min(x => x.Position.X) + 1 + 1 + options.ElectricPoleWidth;
-        var deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + 1 + 1 + options.ElectricPoleHeight;
+        var deltaX = 0 - pumpjacks.Min(x => x.Position.X) + marginX;
+        var deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + marginY;
         var centers = new HashSet<Location>();
         foreach (var entity in pumpjacks)
         {
@@ -68,12 +74,12 @@ internal static class InitializeContext
         return Math.Abs(value % 1) > float.Epsilon * 100;
     }
 
-    private static SquareGrid InitializeGrid(IReadOnlySet<Location> pumpjackCenters)
+    private static SquareGrid InitializeGrid(IReadOnlySet<Location> pumpjackCenters, int marginX, int marginY)
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.
-        var width = pumpjackCenters.Max(p => p.X) + 4;
-        var height = pumpjackCenters.Max(p => p.Y) + 4;
+        var width = pumpjackCenters.Max(p => p.X) + 1 + marginX;
+        var height = pumpjackCenters.Max(p => p.Y) + 1 + marginY;
 
         SquareGrid grid = new PipeGrid(width, height);
 
@@ -93,25 +99,32 @@ internal static class InitializeContext
         return grid;
     }
 
-    private static Dictionary<Location, HashSet<Location>> GetCenterToTerminals(IReadOnlySet<Location> centers, SquareGrid grid)
+    /// <summary>
+    /// . . . + .
+    /// . j j j +
+    /// . j J j .
+    /// + j j j .
+    /// . + . . .
+    /// </summary>
+    private static readonly IReadOnlyList<(Direction Direction, int X, int Y)> TerminalOffsets = new List<(Direction Direction, int X, int Y)>
     {
-        var centerToTerminals = new Dictionary<Location, HashSet<Location>>();
+        (Direction.Up, 1, -2),
+        (Direction.Right, 2, -1),
+        (Direction.Down, -1, 2),
+        (Direction.Left, -2, 1),
+    };
+
+    private static Dictionary<Location, List<TerminalLocation>> GetCenterToTerminals(IReadOnlySet<Location> centers, SquareGrid grid)
+    {
+        var centerToTerminals = new Dictionary<Location, List<TerminalLocation>>();
         foreach (var center in centers)
         {
-            // . . . x .
-            // . j j j x
-            // . j j j .
-            // x j j j .
-            // . x . . .
-            var top = new Location(center.X + 1, center.Y - 2);
-            var right = new Location(center.X + 2, center.Y - 1);
-            var bottom = new Location(center.X - 1, center.Y + 2);
-            var left = new Location(center.X - 2, center.Y + 1);
-            var candidateTerminals = new HashSet<Location>();
-
-            foreach (var terminal in new[] { top, right, bottom, left })
+            var candidateTerminals = new List<TerminalLocation>();
+            foreach ((var direction, var x, var y) in TerminalOffsets)
             {
-                if (grid.IsInBounds(terminal) && grid.IsEmpty(terminal))
+                var location = new Location(center.X + x, center.Y + y);
+                var terminal = new TerminalLocation(center, location, direction);
+                if (grid.IsEmpty(location))
                 {
                     candidateTerminals.Add(terminal);
                 }

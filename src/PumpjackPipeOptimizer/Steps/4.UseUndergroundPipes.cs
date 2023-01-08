@@ -20,7 +20,7 @@ internal static class UseUndergroundPipes
     public static void Execute(Context context, HashSet<Location> pipes)
     {
         var terminalToCenters = context.CenterToTerminals
-            .GroupBy(x => x.Value.Single(), x => x.Key)
+            .GroupBy(x => x.Value.Single().Terminal, x => x.Key)
             .ToDictionary(g => g.Key, g => g.ToHashSet());
 
         ConvertInOneDirection(context.Grid, terminalToCenters, pipes, (X: 0, Y: 1));

@@ -38,13 +38,10 @@ internal static class GridToBlueprintString
             switch (gridEntity)
             {
                 case PumpjackCenter:
-                    var pumpjackDirection = UseUndergroundPipes.GetTerminalDirection(
-                        location,
-                        context.CenterToTerminals[location].Single());
                     entities.Add(new Entity
                     {
                         EntityNumber = nextEntityNumber++,
-                        Direction = pumpjackDirection,
+                        Direction = context.CenterToTerminals[location].Single().Direction,
                         Name = EntityNames.Vanilla.Pumpjack,
                         Position = position,
                         Items = context.Options.PumpjackModules,
@@ -111,7 +108,7 @@ internal static class GridToBlueprintString
         return SerializeBlueprint(root);
     }
 
-    private static string SerializeBlueprint(BlueprintRoot root)
+    public static string SerializeBlueprint(BlueprintRoot root)
     {
         var json = JsonSerializer.Serialize(root, new JsonSerializerOptions
         {

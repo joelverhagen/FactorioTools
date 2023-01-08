@@ -25,7 +25,7 @@ internal static class AddElectricPoles
         var candidateToCovered = new Dictionary<Location, HashSet<Location>>();
 
         // Generate electric pole locations
-        foreach (var center in context.Centers)
+        foreach (var center in context.CenterToTerminals.Keys)
         {
             for (var x = center.X - offsetX; x <= center.X + offsetX; x++)
             {
@@ -58,7 +58,7 @@ internal static class AddElectricPoles
         var coveredPumpjacks = new HashSet<Location>();
         var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
 
-        while (coveredPumpjacks.Count < context.Centers.Count)
+        while (coveredPumpjacks.Count < context.CenterToTerminals.Count)
         {
             var candidateToPumpjackDistance = candidateToCovered.ToDictionary(
                 x => x.Key,
