@@ -249,10 +249,11 @@ internal static class AddPipes
         {
             lines = lines
                 .OrderByDescending(ent => LineContainsAnAddedPumpjack(addedPumpjacks, ent))
-                .ThenBy(ent => ent.Connections.Count)
+                .ThenByDescending(x => groups.Count == 0 ? 0 : groups.Min(g => Math.Min(g.Location.GetManhattanDistance(x.Endpoints.A), g.Location.GetManhattanDistance(x.Endpoints.B))))
                 .ThenBy(x => Math.Min(x.Endpoints.A.X, x.Endpoints.B.X))
                 .ThenBy(x => Math.Min(x.Endpoints.A.Y, x.Endpoints.B.Y))
-                //.ThenByDescending(ent => ent.Endpoints.A.GetManhattanDistance(true ? middle : context.Grid.Middle) + ent.Endpoints.B.GetManhattanDistance(true ? middle : context.Grid.Middle))
+                // .ThenByDescending(ent => ent.Endpoints.A.GetManhattanDistance(true ? middle : context.Grid.Middle) + ent.Endpoints.B.GetManhattanDistance(true ? middle : context.Grid.Middle))
+                .ThenBy(ent => ent.Connections.Count)
                 .ThenBy(ent => ent.AverageDistance)
                 .ToList();
 
@@ -361,13 +362,6 @@ internal static class AddPipes
 
         while (groups.Count > 0)
         {
-            foreach (var g in groups)
-            {
-                g.Location = new Location(
-                    (int)Math.Round(g.Entities.Average(e => e.Center.X), 0),
-                    (int)Math.Round(g.Entities.Average(e => e.Center.Y), 0));
-            }
-
             groups = groups
                 .OrderBy(x => x.Paths.Sum(p => p.Count))
                 .ToList();
@@ -623,7 +617,9 @@ internal static class AddPipes
 
     private record Group(List<TerminalLocation> Entities, List<List<Location>> Paths)
     {
-        public Location Location { get; set; }
+        public Location Location => new Location(
+            (int)Math.Round(Entities.Average(e => e.Center.X), 0),
+            (int)Math.Round(Entities.Average(e => e.Center.Y), 0));
     }
 
     private record PumpjackConnection(Endpoints Endpoints, List<TerminalPair> Connections)
