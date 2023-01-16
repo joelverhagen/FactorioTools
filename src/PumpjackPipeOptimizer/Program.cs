@@ -99,7 +99,7 @@ internal partial class Program
             // Console.WriteLine(newBlueprint);
         }
 
-        Console.WriteLine("Avg: " + (sum * 1.0 / count));
+        Console.WriteLine(sum * 1.0 / count);
     }
 
     private static void NormalizeBlueprints()
