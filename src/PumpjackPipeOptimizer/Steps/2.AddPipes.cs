@@ -1,7 +1,4 @@
 ﻿using System.Data;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Serialization.Formatters;
 using DelaunatorSharp;
 using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
