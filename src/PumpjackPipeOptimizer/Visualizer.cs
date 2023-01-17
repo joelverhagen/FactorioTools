@@ -13,32 +13,34 @@ internal static class Visualizer
 {
     private const int CellSize = 64;
 
-    public static void Show(Context context, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
+    public static void Show(SquareGrid grid, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
     {
         var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PumpjackPipeOptimizer.bmp");
-        Save(context, path, points, edges);
+        Save(grid, path, points, edges);
 
         var p = new Process();
         p.StartInfo = new ProcessStartInfo(path) { UseShellExecute = true };
         p.Start();
     }
 
-    private static void Save(Context context, string path, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
+    private static void Save(SquareGrid grid, string path, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
     {
-        var image = new Image<Rgba32>(context.Grid.Width * CellSize, context.Grid.Height * CellSize);
+        var image = new Image<Rgba32>(grid.Width * CellSize, grid.Height * CellSize);
 
-        for (var y = 0; y < context.Grid.Height; y++)
+        for (var y = 0; y < grid.Height; y++)
         {
-            for (var x = 0; x < context.Grid.Width; x++)
+            for (var x = 0; x < grid.Width; x++)
             {
                 var location = new Location(x, y);
                 Color color;
-                if (context.Grid.LocationToEntity.TryGetValue(location, out var entity))
+                if (grid.LocationToEntity.TryGetValue(location, out var entity))
                 {
                     color = entity switch
                     {
                         PumpjackSide _ => Color.Green,
                         PumpjackCenter _ => Color.DarkGreen,
+                        Terminal _ => Color.DarkGray,
+                        Pipe _ => Color.Gray,
                         _ => throw new NotImplementedException(),
                     };
                 }
@@ -57,8 +59,8 @@ internal static class Visualizer
 
         foreach (var p in points)
         {
-            var point = new EllipsePolygon(ConvertPoint(p), CellSize / 2.0f);
-            image.Mutate(c => c.Fill(Color.Red.WithAlpha(0.2f), point));
+            var point = new EllipsePolygon(ConvertPoint(p), CellSize / 4.0f);
+            image.Mutate(c => c.Fill(Color.Red.WithAlpha(1f), point));
         }
 
         foreach (var e in edges)
