@@ -50,65 +50,7 @@ internal static class AddPipes
 
     public static HashSet<Location> Execute(Context context)
     {
-        var locationToTerminals = context
-            .CenterToTerminals
-            .Values
-            .SelectMany(ts => ts)
-            .GroupBy(ts => ts.Terminal)
-            .ToDictionary(g => g.Key, g => g.ToHashSet());
-
-        var fluteTree = GetFluteTree(context);
-
-        VisualizeFLUTE(context, context.CenterToTerminals.SelectMany(p => p.Value).Select(l => new System.Drawing.Point(l.Terminal.X, l.Terminal.Y)).ToList(), fluteTree);
-
-        // Map the FLUTE tree into a more useful object graph.
-        var locationToPoint = new Dictionary<Location, FlutePoint>();
-
-        FlutePoint GetOrAddPoint(Dictionary<Location, FlutePoint> locationToPoint, Branch branch)
-        {
-            var location = new Location(branch.X, branch.Y);
-            if (!locationToPoint.TryGetValue(location, out var point))
-            {
-                point = new FlutePoint(location);
-                locationToPoint.Add(location, point);
-            }
-
-            return point;
-        }
-
-        // Explore the branches.
-        foreach (var branch in fluteTree.Branch)
-        {
-            var current = branch;
-            while (true)
-            {
-                var next = fluteTree.Branch[current.N];
-
-                var currentPoint = GetOrAddPoint(locationToPoint, current);
-                var nextPoint = GetOrAddPoint(locationToPoint, next);
-                
-                currentPoint.Neighbors.Add(nextPoint);
-                nextPoint.Neighbors.Add(currentPoint);
-
-                if (current.N == next.N)
-                {
-                    break;
-                }
-
-                current = next;
-            }
-        }
-
-        // Add in pumpjack information
-        foreach ((var center, var terminals) in context.CenterToTerminals)
-        {
-            foreach (var terminal in terminals)
-            {
-                var point = locationToPoint[terminal.Terminal];
-                point.Terminals.Add(terminal);
-                point.Centers.Add(center);
-            }
-        }
+        var locationToPoint = GetLocationToFlutePoint(context);
 
         // Start at Steiner point closest to the middle that is in an empty spot.
         var emptyPoints = locationToPoint
@@ -221,7 +163,7 @@ internal static class AddPipes
                 AddPipe(pipe, pipeGroup);
                 steinerPointGoals.Add(pipe);
             }
-            
+
             Visualize(context, locationToPoint, pipes);
         };
 
@@ -252,7 +194,7 @@ internal static class AddPipes
 
                     // IDEA: try the other path options
                     var path = result.GetStraightPaths(reachedGoal).First();
-                    
+
                     return new { Terminal = t, ReachedGoal = reachedGoal, Path = path };
                 })
                 .OrderBy(t => t.Path.Count)
@@ -368,6 +310,64 @@ internal static class AddPipes
         throw new NotImplementedException();
 
         return pipes;
+    }
+
+    private static Dictionary<Location, FlutePoint> GetLocationToFlutePoint(Context context)
+    {
+        var fluteTree = GetFluteTree(context);
+
+        // VisualizeFLUTE(context, context.CenterToTerminals.SelectMany(p => p.Value).Select(l => new System.Drawing.Point(l.Terminal.X, l.Terminal.Y)).ToList(), fluteTree);
+
+        // Map the FLUTE tree into a more useful object graph.
+        var locationToPoint = new Dictionary<Location, FlutePoint>();
+
+        FlutePoint GetOrAddPoint(Dictionary<Location, FlutePoint> locationToPoint, Branch branch)
+        {
+            var location = new Location(branch.X, branch.Y);
+            if (!locationToPoint.TryGetValue(location, out var point))
+            {
+                point = new FlutePoint(location);
+                locationToPoint.Add(location, point);
+            }
+
+            return point;
+        }
+
+        // Explore the branches.
+        foreach (var branch in fluteTree.Branch)
+        {
+            var current = branch;
+            while (true)
+            {
+                var next = fluteTree.Branch[current.N];
+
+                var currentPoint = GetOrAddPoint(locationToPoint, current);
+                var nextPoint = GetOrAddPoint(locationToPoint, next);
+
+                currentPoint.Neighbors.Add(nextPoint);
+                nextPoint.Neighbors.Add(currentPoint);
+
+                if (current.N == next.N)
+                {
+                    break;
+                }
+
+                current = next;
+            }
+        }
+
+        // Add in pumpjack information
+        foreach ((var center, var terminals) in context.CenterToTerminals)
+        {
+            foreach (var terminal in terminals)
+            {
+                var point = locationToPoint[terminal.Terminal];
+                point.Terminals.Add(terminal);
+                point.Centers.Add(center);
+            }
+        }
+
+        return locationToPoint;
     }
 
     private static void Visualize(Context context, Dictionary<Location, FlutePoint> locationToPoint, HashSet<Location> pipes)
