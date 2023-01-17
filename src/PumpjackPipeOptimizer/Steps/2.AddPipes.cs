@@ -35,6 +35,7 @@ internal static class AddPipes
             Location = location;
         }
 
+        public bool IsEliminated { get; set; }
         public Location Location { get; }
         public HashSet<Location> Centers { get; } = new HashSet<Location>();
         public HashSet<TerminalLocation> Terminals { get; } = new HashSet<TerminalLocation>();
@@ -52,264 +53,220 @@ internal static class AddPipes
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 
-        // Start at Steiner point closest to the middle that is in an empty spot.
-        var emptyPoints = locationToPoint
+        var start = locationToPoint
             .Values
-            .Where(p => context.Grid.IsEmpty(p.Location))
-            .ToList();
-        var steinerPoints = emptyPoints
-            .Where(p => p.Terminals.Count == 0)
-            .OrderBy(p => p.Location.GetManhattanDistance(context.Grid.Middle))
-            .ThenBy(p => p.Location.X) // PERF-IDEA: remove this sort. It's just for determinism.
-            .ThenBy(p => p.Location.Y) // PERF-IDEA: remove this sort. It's just for determinism.
-            .ToList();
-        var pipes = new HashSet<Location>();
-        var pipeToPipeGroup = new Dictionary<Location, HashSet<Location>>();
-        var pipeGroups = new HashSet<HashSet<Location>>();
-
-        void MergePipeGroup(HashSet<Location> pipeGroup, HashSet<Location> otherPipeGroup)
-        {
-            if (!ReferenceEquals(pipeGroup, otherPipeGroup))
-            {
-                // This is an existing pipe and a different group. Merge the two groups.
-                foreach (var otherPipe in otherPipeGroup)
-                {
-                    pipeToPipeGroup![otherPipe] = pipeGroup;
-                }
-
-                pipeGroup.UnionWith(otherPipeGroup);
-                pipeGroups!.Remove(otherPipeGroup);
-            }
-        }
-
-        void AddPipe(Location pipe, HashSet<Location> pipeGroup)
-        {
-            pipes!.Add(pipe);
-
-            if (!pipeToPipeGroup!.TryGetValue(pipe, out var otherPipeGroup))
-            {
-                // This is a new pipe. Add it to the current group.
-                pipeGroup.Add(pipe);
-                pipeToPipeGroup.Add(pipe, pipeGroup);
-            }
-            else
-            {
-                MergePipeGroup(pipeGroup, otherPipeGroup);
-            }
-
-            // Join adjacent groups.
-            foreach (var translation in NeighborTranslations)
-            {
-                var neighbor = pipe.Translate(translation);
-                if (pipeToPipeGroup.TryGetValue(neighbor, out otherPipeGroup))
-                {
-                    MergePipeGroup(pipeGroup, otherPipeGroup);
-                }
-            }
-        }
-
-        // Connect all Steiner points to their closest point.
-        var steinerPointGoals = emptyPoints.Select(p => p.Location).ToHashSet();
-        foreach (var point in steinerPoints)
-        {
-            if (pipes.Contains(point.Location))
-            {
-                continue;
-            }
-
-            pipes.Add(point.Location);
-
-            if (!pipeToPipeGroup.TryGetValue(point.Location, out var pipeGroup))
-            {
-                pipeGroup = new HashSet<Location> { point.Location };
-                pipeToPipeGroup.Add(point.Location, pipeGroup);
-                pipeGroups.Add(pipeGroup);
-            }
-
-            steinerPointGoals.Remove(point.Location);
-
-            var result = Dijkstras.GetShortestPaths(context.Grid, point.Location, steinerPointGoals, stopOnFirstGoal: true);
-            var reachedGoal = result.ReachedGoals.Single();
-
-            var isTerminal = context.CenterToTerminals.Any(p => p.Value.Any(t => t.Terminal == reachedGoal));
-
-            if (locationToPoint.TryGetValue(reachedGoal, out var reachedPoint) && reachedPoint.Terminals.Count > 0)
-            {
-                // The reached point is a terminal for one or more pumpjacks. This means we must eliminate the other
-                // terminals on the related pumpjacks.
-                foreach (var matchedTerminal in reachedPoint.Terminals)
-                {
-                    var otherTerminals = context.CenterToTerminals[matchedTerminal.Center];
-                    foreach (var otherTerminal in otherTerminals)
-                    {
-                        if (otherTerminal == matchedTerminal)
-                        {
-                            continue;
-                        }
-
-                        steinerPointGoals.Remove(otherTerminal.Terminal);
-                    }
-
-                    otherTerminals.Clear();
-                    otherTerminals.Add(matchedTerminal);
-                }
-            }
-
-            // IDEA: try the other path options
-            var path = result.GetStraightPaths(reachedGoal).First();
-
-            foreach (var pipe in path)
-            {
-                AddPipe(pipe, pipeGroup);
-                steinerPointGoals.Add(pipe);
-            }
-
-            Visualize(context, locationToPoint, pipes);
-        };
-
-        Visualize(context, locationToPoint, pipes);
-
-        throw new NotImplementedException();
-
-        // Connect unconnected pumpjacks to the closest pipe
-        var unconnectedCenters = context
-            .CenterToTerminals
-            .Where(p => p.Value.Count > 1)
-            .Select(p => p.Key)
-            .OrderBy(c => c.GetManhattanDistance(context.Grid.Middle))
-            .ThenBy(c => c.X) // PERF-IDEA: remove this sort. It's just for determinism.
-            .ThenBy(c => c.Y) // PERF-IDEA: remove this sort. It's just for determinism.
-            .ToList();
-
-        // IDEA: re-order the unconnected centers as we going based the overall shortest path to the existing pipes.
-        foreach (var center in unconnectedCenters)
-        {
-            var terminals = context.CenterToTerminals[center];
-
-            var closestTerminal = terminals
-                .Select(t =>
-                {
-                    var result = Dijkstras.GetShortestPaths(context.Grid, t.Terminal, pipes, stopOnFirstGoal: true);
-                    var reachedGoal = result.ReachedGoals.Single();
-
-                    // IDEA: try the other path options
-                    var path = result.GetStraightPaths(reachedGoal).First();
-
-                    return new { Terminal = t, ReachedGoal = reachedGoal, Path = path };
-                })
-                .OrderBy(t => t.Path.Count)
-                .First();
-
-            terminals.Clear();
-            terminals.Add(closestTerminal.Terminal);
-
-            var pipeGroup = pipeToPipeGroup[closestTerminal.ReachedGoal];
-            foreach (var pipe in closestTerminal.Path)
-            {
-                AddPipe(pipe, pipeGroup);
-                pipes.Add(pipe);
-            }
-        }
-
-        // Connect pipe groups using the FLUTE tree neighbors.
-        var finalPipeGroup = pipeGroups
-            .OrderByDescending(g => g.Count)
-            .ThenBy(g => g.Min(l => l.X)) // PERF-IDEA: remove this sort. It's just for determinism.
-            .ThenBy(g => g.Min(l => l.Y)) // PERF-IDEA: remove this sort. It's just for determinism.
+            .Where(p => p.Terminals.Count > 0)
+            .OrderBy(p => p.Location.X)
+            .ThenBy(p => p.Location.Y)
             .First();
-        pipeGroups.Remove(finalPipeGroup);
+        var centerInGroup = new HashSet<Location> { start.Centers.First() };
+        var pointsInGroup = new HashSet<FlutePoint> { start };
+        var pipes = new HashSet<Location>();
 
-        while (pipeGroups.Count > 0)
+        // Calculate how many FLUTE points are on each row and column. This allows us to prefer points that can be on a
+        // long line of pipes.
+        var emptyPoints = locationToPoint.Values.Where(p => context.Grid.IsEmpty(p.Location));
+        var groupedByX = emptyPoints.ToLookup(p => p.Location.X);
+        var groupedByY = emptyPoints.ToLookup(p => p.Location.Y);
+
+        while (centerInGroup.Count < context.CenterToTerminals.Count)
         {
-            // Find a point the has a neighbor outside of the current group. Perform a breadth-first search starting from
-            // an arbitrary location.
-            var start = finalPipeGroup
-                .Select(l => locationToPoint.TryGetValue(l, out var p) ? p : null!)
-                .Where(p => p is not null)
-                .OrderBy(p => p.Location.X) // PERF-IDEA: remove this sort. It's just for determinism.
-                .ThenBy(p => p.Location.Y) // PERF-IDEA: remove this sort. It's just for determinism.
-                .First();
+            // Perform a breadth-first search to find the next FLUTE tree point that is not yet connected.
             var queue = new Queue<FlutePoint>();
             queue.Enqueue(start);
 
-            var pointToInGroup = new Dictionary<FlutePoint, FlutePoint> { { start, start } };
-            (FlutePoint Start, FlutePoint Goal)? edge = null;
+            var pointToParent = new Dictionary<FlutePoint, FlutePoint> { { start, start } };
+            FlutePoint? goal = null;
 
-            while (edge is null && queue.Count > 0)
+            while (goal is null && queue.Count > 0)
             {
                 var point = queue.Dequeue();
 
-                foreach (var neighbor in point.Neighbors)
+                // Prefer available, distance Steiner points, then terminals with multiple pumpjacks, then terminals on "crowded" rows or columns.
+                var neighborToDistance = point.Neighbors.ToDictionary(p => p, p => p.Location.GetManhattanDistance(point.Location));
+                var neighbors = point
+                    .Neighbors
+                    .OrderByDescending(p => p.Location.X == point.Location.X || p.Location.Y == point.Location.Y ? p.Location.GetManhattanDistance(point.Location) : 0)
+                    .ThenByDescending(p => p.Centers.Count == 0 && context.Grid.IsEmpty(p.Location) ? p.Location.GetManhattanDistance(point.Location) : 0)
+                    .ThenByDescending(p => p.Centers.Count)
+                    .ThenByDescending(p => groupedByX[p.Location.X].Count(c => !c.IsEliminated) + groupedByY[p.Location.Y].Count(c => !c.IsEliminated))
+                    .ThenBy(p => p.Location.X)
+                    .ThenBy(p => p.Location.Y);
+
+                foreach (var neighbor in neighbors)
                 {
-                    // Only enqueue the neighbor if we haven't explored it already.
-                    if (pointToInGroup.ContainsKey(neighbor))
+                    if (pointToParent.ContainsKey(neighbor))
                     {
                         continue;
                     }
 
-                    if (!pipes.Contains(neighbor.Location))
+                    pointToParent.Add(neighbor, point);
+
+                    if (pointsInGroup.Contains(neighbor))
                     {
-                        // This neighbor is either an eliminated terminal or a Steiner point that is at a non-empty spot
-                        // on the grid (e.g. inside of a pumpjack). Use the last in-group point as the parent.
-                        pointToInGroup[neighbor] = pointToInGroup[point];
+                        // This neighbor is alreay in the group. Continue exploring.
                     }
-                    else if (finalPipeGroup.Contains(neighbor.Location))
+                    else if (neighbor.Centers.Count == 0)
                     {
-                        pointToInGroup[neighbor] = neighbor;
+                        // This neighbor is a Steiner point.
+                        if (context.Grid.IsEmpty(neighbor.Location))
+                        {
+                            // This neighbor is an EMPTY Steiner point. Use it as the goal for path finding.
+                            goal = neighbor;
+                            break;
+                        }
+                        else
+                        {
+                            // This is an NON-EMPTY Steiner point (e.g. it lies within a pumpjack and can't be a spot for
+                            // pipes). Continue exploring.
+                        }
                     }
                     else
                     {
-                        edge = (pointToInGroup[point], neighbor);
-                        break;
+                        // This neighbor is a pumpjack terminal.
+                        if (neighbor.IsEliminated)
+                        {
+                            // This is a terminal that has been eliminated (another terminal for the same pumpjack was
+                            // selected instead). Continue exploring.
+                        }
+                        else
+                        {
+                            var newCenters = new HashSet<Location>(neighbor.Centers);
+                            newCenters.ExceptWith(centerInGroup);
+
+                            if (newCenters.Count > 0)
+                            {
+                                // This is a terminal for a pumpjack we have NOT REACHED YET. Use it as the goal for path finding.
+                                goal = neighbor;
+                                break;
+                            }
+                            else
+                            {
+                                // This is a terminal for a pumpjack we have ALREADY REACHED. Continue exploring.
+                            }
+                        }
                     }
-;
+
                     queue.Enqueue(neighbor);
                 }
             }
 
-            if (!edge.HasValue)
+            if (goal is null)
             {
-                throw new InvalidOperationException("No edge could be found between the remaining groups.");
+                throw new InvalidOperationException("No connection could be found between the current terminals and the remaining terminals.");
             }
 
-            var goals = new HashSet<Location>();
-            foreach (var group in pipeGroups)
+            FlutePoint parent = goal;
+            List<Location> path;
+            while (true)
             {
-                goals.UnionWith(group);
+                parent = pointToParent[parent];
+                if (!context.Grid.IsEmpty(parent.Location))
+                {
+                    continue;
+                }
+
+                if (parent.Centers.Count > 0)
+                {
+                    // This parent is a terminal. Use all terminal candidates as the start options.
+                    var startCenter = parent
+                        .Centers
+                        .Intersect(centerInGroup)
+                        .First();
+                    var shortestPath = context
+                        .CenterToTerminals[startCenter]
+                        .Select(t =>
+                        {
+                            var result = Dijkstras.GetShortestPaths(context.Grid, t.Terminal, new HashSet<Location> { goal.Location }, stopOnFirstGoal: true);
+                            var path = result.GetStraightPaths(goal.Location).First();
+                            return new { Terminal = t, Path = path };
+                        })
+                        .OrderBy(t => t.Path.Count)
+                        .First();
+
+                    // We've selected a path from a terminal to the goal. Eliminate other terminal options for this pumpjack.
+                    centerInGroup.Add(shortestPath.Terminal.Center);
+                    EliminateOtherTerminals(context, locationToPoint, shortestPath.Terminal);
+
+                    path = shortestPath.Path;
+                }
+                else
+                {
+                    // The parent is a Steiner point.
+                    var result = Dijkstras.GetShortestPaths(context.Grid, parent.Location, new HashSet<Location> { goal.Location }, stopOnFirstGoal: true);
+                    path = result.GetStraightPaths(goal.Location).First();
+                }
+
+                // If the goal is a terminal, eliminate the other terminal options from the pumpjack.
+                foreach (var goalTerminal in goal.Terminals)
+                {
+                    centerInGroup.Add(goalTerminal.Center);
+                    EliminateOtherTerminals(context, locationToPoint, goalTerminal);
+                }
+
+                foreach (var pipe in path)
+                {
+                    pipes.Add(pipe);
+                }
+
+                // Visualize(context, locationToPoint, pipes);
+
+
+                // Start the next iteration at the goal we found
+                pointsInGroup.Add(goal);
+                start = goal;
+                break;
             }
 
-            var result = Dijkstras.GetShortestPaths(context.Grid, edge.Value.Start.Location, goals, stopOnFirstGoal: true);
-            var reachedGoal = result.ReachedGoals.Single();
 
-            var otherPipeGroup = pipeToPipeGroup[reachedGoal];
-            MergePipeGroup(finalPipeGroup, otherPipeGroup);
-
-            // IDEA: try the other path options
-            var path = result.GetStraightPaths(reachedGoal).First();
-
-            foreach (var pipe in path)
-            {
-                AddPipe(pipe, finalPipeGroup);
-            }
+            /*
+            var startCenter = edge
+                .Value
+                .Start
+                .Centers
+                .Intersect(centerInGroup)
+                .First();
+            var goal = edge.Value.Goal.Location;
+            var shortestPath = context
+                .CenterToTerminals[startCenter]
+                .Select(t =>
+                {
+                    var result = Dijkstras.GetShortestPaths(context.Grid, t.Terminal, new HashSet<Location> { goal }, stopOnFirstGoal: true);
+                    var path = result.GetStraightPaths(goal).First();
+                    return new { Terminal = t, Path = path };
+                })
+                .OrderBy(t => t.Path.Count)
+                .First();
+            */
+            // 
         }
-
-        foreach (var pipe in pipes)
-        {
-            if (locationToPoint.TryGetValue(pipe, out var point) && point.Terminals.Count > 0)
-            {
-                context.Grid.AddEntity(pipe, new Terminal());
-            }
-            else
-            {
-                context.Grid.AddEntity(pipe, new Pipe());
-            }
-        }
-
-        Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
-
-        throw new NotImplementedException();
 
         return pipes;
+
+        throw new NotImplementedException();
+    }
+
+    private static void EliminateOtherTerminals(Context context, Dictionary<Location, FlutePoint> locationToPoint, TerminalLocation selectedTerminal)
+    {
+        var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];
+
+        if (terminalOptions.Count == 1)
+        {
+            return;
+        }
+
+        foreach (var terminal in terminalOptions)
+        {
+            if (terminal == selectedTerminal)
+            {
+                continue;
+            }
+
+            locationToPoint[terminal.Terminal].IsEliminated = true;
+        }
+
+        terminalOptions.Clear();
+        terminalOptions.Add(selectedTerminal);
     }
 
     private static Dictionary<Location, FlutePoint> GetLocationToFlutePoint(Context context)
