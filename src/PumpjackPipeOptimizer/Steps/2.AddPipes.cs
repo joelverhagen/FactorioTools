@@ -7,10 +7,6 @@ using PumpjackPipeOptimizer.Grid;
 
 namespace PumpjackPipeOptimizer.Steps;
 
-/// <summary>
-/// This is a clone of Teoxoy's implementation for Factorio Blueprint Editor.
-/// https://github.com/teoxoy/factorio-blueprint-editor/blob/master/packages/editor/src/core/generators/pipe.ts
-/// </summary>
 internal static class AddPipes
 {
     private static readonly Lazy<FLUTE> LazyFlute = new Lazy<FLUTE>(() =>
