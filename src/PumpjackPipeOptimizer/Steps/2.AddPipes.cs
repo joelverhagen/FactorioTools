@@ -373,6 +373,8 @@ internal static class AddPipes
             }
         }
 
+        // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+
         AddGridEntities(context, groups.Single().Pipes);
 
         return groups.Single().Pipes;

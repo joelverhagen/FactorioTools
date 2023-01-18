@@ -74,12 +74,13 @@ internal partial class Program
 
             // Use Dijksta's algorithm to add good connecting pipes to the grid.
             var pipes = AddPipes.Execute(context);
-            sum += pipes.Count;
-            count++;
-            Console.WriteLine(pipes.Count);
 
             // Find pipe "squares" (four pipes forming a square) and try to remove one from the square.
             PruneSquares.Execute(context, pipes);
+
+            sum += pipes.Count;
+            count++;
+            Console.WriteLine(pipes.Count);
 
             /*
             if (context.Options.UseUndergroundPipes)

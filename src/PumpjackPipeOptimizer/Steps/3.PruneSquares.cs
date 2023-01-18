@@ -1,21 +1,29 @@
-﻿using PumpjackPipeOptimizer.Grid;
+﻿using System.Runtime.InteropServices;
+using PumpjackPipeOptimizer.Grid;
 
 namespace PumpjackPipeOptimizer.Steps;
 
 internal static class PruneSquares
 {
-    public static void Execute(Context context, IEnumerable<Location> pipes)
+    public static void Execute(Context context, HashSet<Location> pipes)
     {
         bool pruned;
+        var allPruned = new HashSet<Location>();
         do
         {
             pruned = false;
             foreach (var goal in pipes)
             {
-                pruned |= PruneSquare(context.Grid, goal);
+                if (PruneSquare(context.Grid, goal))
+                {
+                    allPruned.Add(goal);
+                    pruned = true;
+                }
             }
         }
         while (pruned);
+
+        pipes.ExceptWith(allPruned);
     }
 
     private static bool PruneSquare(SquareGrid grid, Location l)
