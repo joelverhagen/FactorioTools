@@ -1,7 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Data;
-using System.Linq;
-using System.Net.WebSockets;
+﻿using System.Data;
 using System.Reflection;
 using DelaunatorSharp;
 using Knapcode.FluteSharp;
@@ -23,7 +20,7 @@ internal static class AddPipes
         using var powvStream = File.OpenRead(Path.Combine(assemblyDir, $"POWV{d}.dat"));
         using var postStream = File.OpenRead(Path.Combine(assemblyDir, $"POST{d}.dat"));
         var lookUpTable = new LookUpTable(d, powvStream, postStream);
-        return new FLUTE(lookUpTable);
+        return new FLUTE(lookUpTable, maxD: 200);
     });
 
     private static FLUTE FLUTE => LazyFlute.Value;
@@ -36,6 +33,7 @@ internal static class AddPipes
         }
 
         public bool IsEliminated { get; set; }
+        public bool IsSteinerPoint => Centers.Count == 0;
         public Location Location { get; }
         public HashSet<Location> Centers { get; } = new HashSet<Location>();
         public HashSet<TerminalLocation> Terminals { get; } = new HashSet<TerminalLocation>();
@@ -47,203 +45,496 @@ internal static class AddPipes
         }
     }
 
-    private static IReadOnlyList<(int DeltaX, int DeltaY)> NeighborTranslations = new[] { (0, 1), (1, 0), (0, -1), (-1, 0) };
+    private static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Translations = new[] { (1, 0), (0, 1) };
+
+    private class Trunk
+    {
+        public Trunk(FlutePoint startingPoint, Location center)
+        {
+            Points.Add(startingPoint);
+            Centers.Add(center);
+        }
+
+        public List<FlutePoint> Points { get; } = new List<FlutePoint>();
+        public HashSet<Location> Centers { get; } = new HashSet<Location>();
+        public int Length => Start.GetManhattanDistance(End);
+        public Location Start => Points[0].Location;
+        public Location End => Points.Last().Location;
+    }
+
+    private class PumpjackGroup
+    {
+        private readonly Context _context;
+        private readonly Dictionary<Location, HashSet<Location>> _centerToConnectedCenters;
+        private readonly HashSet<Location> _allIncludedCenters;
+
+        public PumpjackGroup(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters, Trunk trunk)
+            : this(context, centerToConnectedCenters, allIncludedCenters, trunk.Centers, MakeStraightLine(trunk.Start, trunk.End))
+        {
+        }
+
+        public PumpjackGroup(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters, IEnumerable<Location> includedCenters, IEnumerable<Location> pipes)
+        {
+            _context = context;
+            _centerToConnectedCenters = centerToConnectedCenters;
+            _allIncludedCenters = allIncludedCenters;
+
+            IncludedCenters = new HashSet<Location>(includedCenters);
+
+            FrontierCenters = new HashSet<Location>();
+            IncludedCenterToChildCenters = new Dictionary<Location, HashSet<Location>>();
+
+            Pipes = new HashSet<Location>(pipes);
+
+            UpdateFrontierCenters();
+            UpdateIncludedCenterToChildCenters();
+        }
+
+        public HashSet<Location> IncludedCenters { get; }
+        public HashSet<Location> FrontierCenters { get; }
+        public Dictionary<Location, HashSet<Location>> IncludedCenterToChildCenters { get; }
+        public HashSet<Location> Pipes { get; }
+
+        public double GetCentroidDistance(Location location)
+        {
+            var centroidX = Pipes.Average(l => l.X);
+            var centroidY = Pipes.Average(l => l.Y);
+            return GetEuclideanDistance(location, centroidX, centroidY);
+        }
+
+        public double GetChildCentroidDistance(Location includedCenter, Location terminalCandidate)
+        {
+            var centers = IncludedCenterToChildCenters[includedCenter];
+            var terminals = centers.SelectMany(c => _context.CenterToTerminals[c]);
+            var centroidX = terminals.Average(t => t.Terminal.X);
+            var centroidY = terminals.Average(t => t.Terminal.Y);
+
+            return GetEuclideanDistance(terminalCandidate, centroidX, centroidY);
+        }
+
+        private static double GetEuclideanDistance(Location a, double bX, double bY)
+        {
+            return Math.Sqrt(Math.Pow(a.X - bX, 2) + Math.Pow(a.Y - bY, 2));
+        }
+
+        public void ConnectPumpjack(Location center, IEnumerable<Location> path)
+        {
+            IncludedCenters.Add(center);
+            Pipes.UnionWith(path);
+            UpdateFrontierCenters();
+            UpdateIncludedCenterToChildCenters();
+        }
+
+        public void MergeGroup(PumpjackGroup other, IEnumerable<Location> path)
+        {
+            IncludedCenters.UnionWith(other.IncludedCenters);
+            Pipes.UnionWith(path);
+            Pipes.UnionWith(other.Pipes);
+            UpdateFrontierCenters();
+            UpdateIncludedCenterToChildCenters();
+        }
+
+        private void UpdateFrontierCenters()
+        {
+            FrontierCenters.Clear();
+
+            foreach (var center in IncludedCenters)
+            {
+                FrontierCenters.UnionWith(_centerToConnectedCenters[center]);
+            }
+
+            FrontierCenters.ExceptWith(IncludedCenters);
+        }
+
+        private void UpdateIncludedCenterToChildCenters()
+        {
+            IncludedCenterToChildCenters.Clear();
+
+            foreach (var center in IncludedCenters)
+            {
+                var queue = new Queue<(Location Location, bool ShouldRecurse)>();
+                var visited = new HashSet<Location>();
+                queue.Enqueue((center, ShouldRecurse: true));
+
+                while (queue.Count > 0)
+                {
+                    (var current, var shouldRecurse) = queue.Dequeue();
+                    if (!visited.Add(current) || !shouldRecurse)
+                    {
+                        continue;
+                    }
+
+                    foreach (var other in _centerToConnectedCenters[current])
+                    {
+                        if (IncludedCenters.Contains(other))
+                        {
+                            continue;
+                        }
+
+                        // If the other center is in another group, don't recursively explore.
+                        queue.Enqueue((other, ShouldRecurse: !_allIncludedCenters.Contains(other)));
+                    }
+                }
+
+                visited.Remove(center);
+                IncludedCenterToChildCenters.Add(center, visited);
+            }
+        }
+    }
+
+    private record ClosestTerminal(TerminalLocation Terminal, List<Location> Path, double ChildCentroidDistance);
 
     public static HashSet<Location> Execute(Context context)
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 
-        var start = locationToPoint
-            .Values
-            .Where(p => p.Terminals.Count > 0)
-            .OrderBy(p => p.Location.X)
-            .ThenBy(p => p.Location.Y)
-            .First();
-        var centerInGroup = new HashSet<Location> { start.Centers.First() };
-        var pointsInGroup = new HashSet<FlutePoint> { start };
-        var pipes = new HashSet<Location>();
+        var centerToPoints = context
+            .CenterToTerminals
+            .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
 
-        // Calculate how many FLUTE points are on each row and column. This allows us to prefer points that can be on a
-        // long line of pipes.
-        var emptyPoints = locationToPoint.Values.Where(p => context.Grid.IsEmpty(p.Location));
-        var groupedByX = emptyPoints.ToLookup(p => p.Location.X);
-        var groupedByY = emptyPoints.ToLookup(p => p.Location.Y);
+        var centerToConnectedCenters = GetConnectedPumpjacks(context, centerToPoints);
 
-        while (centerInGroup.Count < context.CenterToTerminals.Count)
+        var trunkCandidates = GetTrunkCandidates(context, locationToPoint, centerToConnectedCenters);
+
+        trunkCandidates = trunkCandidates
+            .OrderByDescending(t => t.Centers.Count)
+            .ThenByDescending(t => t.Length)
+            .ThenBy(t => t.Start.X)
+            .ThenBy(t => t.Start.Y)
+            .ToList();
+
+        // Eliminate lower priority trunks that have pumpjacks shared with higher priority trunks.
+        var includedCenters = new HashSet<Location>();
+        var selectedTrunks = new List<Trunk>();
+        foreach (var trunk in trunkCandidates)
         {
-            // Perform a breadth-first search to find the next FLUTE tree point that is not yet connected.
-            var queue = new Queue<FlutePoint>();
-            queue.Enqueue(start);
-
-            var pointToParent = new Dictionary<FlutePoint, FlutePoint> { { start, start } };
-            FlutePoint? goal = null;
-
-            while (goal is null && queue.Count > 0)
+            if (!includedCenters.Intersect(trunk.Centers).Any())
             {
-                var point = queue.Dequeue();
+                selectedTrunks.Add(trunk);
+                includedCenters.UnionWith(trunk.Centers);
+            }
+        }
 
-                // Prefer available, distance Steiner points, then terminals with multiple pumpjacks, then terminals on "crowded" rows or columns.
-                var neighborToDistance = point.Neighbors.ToDictionary(p => p, p => p.Location.GetManhattanDistance(point.Location));
-                var neighbors = point
-                    .Neighbors
-                    .OrderByDescending(p => p.Location.X == point.Location.X || p.Location.Y == point.Location.Y ? p.Location.GetManhattanDistance(point.Location) : 0)
-                    .ThenByDescending(p => p.Centers.Count == 0 && context.Grid.IsEmpty(p.Location) ? p.Location.GetManhattanDistance(point.Location) : 0)
-                    .ThenByDescending(p => p.Centers.Count)
-                    .ThenByDescending(p => groupedByX[p.Location.X].Count(c => !c.IsEliminated) + groupedByY[p.Location.Y].Count(c => !c.IsEliminated))
-                    .ThenBy(p => p.Location.X)
-                    .ThenBy(p => p.Location.Y);
+        /*
+        for (var i = 1; i <= selectedTrunks.Count; i++)
+        {
+            Visualizer.Show(context.Grid, selectedTrunks.Take(i).SelectMany(t => t.Centers).Distinct().Select(l => (IPoint)new Point(l.X, l.Y)), selectedTrunks
+                .Take(i)
+                .Select(t => (IEdge)new Edge(0, new Point(t.Start.X, t.Start.Y), new Point(t.End.X, t.End.Y)))
+                .ToList());
+        }
+        */
 
-                foreach (var neighbor in neighbors)
+        // Eliminate unused terminals for pumpjacks included in all of the trunks. A pumpjack connected to a trunk has
+        // its terminal selected.
+        foreach (var trunk in selectedTrunks)
+        {
+            foreach (var point in trunk.Points)
+            {
+                foreach (var terminal in point.Terminals)
                 {
-                    if (pointToParent.ContainsKey(neighbor))
-                    {
-                        continue;
-                    }
+                    EliminateOtherTerminals(context, locationToPoint, terminal);
+                }
+            }
+        }
 
-                    pointToParent.Add(neighbor, point);
+        // Visualize(context, locationToPoint, selectedTrunks.SelectMany(t => MakeStraightLine(t.Start, t.End)).ToHashSet());
 
-                    if (pointsInGroup.Contains(neighbor))
-                    {
-                        // This neighbor is alreay in the group. Continue exploring.
-                    }
-                    else if (neighbor.Centers.Count == 0)
-                    {
-                        // This neighbor is a Steiner point.
-                        if (context.Grid.IsEmpty(neighbor.Location))
-                        {
-                            // This neighbor is an EMPTY Steiner point. Use it as the goal for path finding.
-                            goal = neighbor;
-                            break;
-                        }
-                        else
-                        {
-                            // This is an NON-EMPTY Steiner point (e.g. it lies within a pumpjack and can't be a spot for
-                            // pipes). Continue exploring.
-                        }
-                    }
-                    else
-                    {
-                        // This neighbor is a pumpjack terminal.
-                        if (neighbor.IsEliminated)
-                        {
-                            // This is a terminal that has been eliminated (another terminal for the same pumpjack was
-                            // selected instead). Continue exploring.
-                        }
-                        else
-                        {
-                            var newCenters = new HashSet<Location>(neighbor.Centers);
-                            newCenters.ExceptWith(centerInGroup);
+        // Find the "child" unconnected pumpjacks of each connected pumpjack. These are pumpjacks are connected via the
+        // given connected pumpjack.
 
-                            if (newCenters.Count > 0)
+        var allIncludedCenters = selectedTrunks.SelectMany(t => t.Centers).ToHashSet();
+
+        var groups = selectedTrunks
+            .Select(trunk =>
+            {
+                return new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, trunk);
+            })
+            .ToList();
+
+        if (groups.Count == 0)
+        {
+            // If there are no groups at all, create an arbitrary one with the two pumpjacks that have the shortest
+            // connection.
+            var bestConnection = centerToConnectedCenters
+                .Keys
+                .Select(center =>
+                {
+                    return context
+                        .CenterToTerminals[center]
+                        .Select(terminal =>
+                        {
+                            var bestTerminal = centerToConnectedCenters[center]
+                                .Select(otherCenter =>
+                                {
+                                    var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToHashSet();
+                                    var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, goals, stopOnFirstGoal: true);
+                                    var reachedGoal = result.ReachedGoals.Single();
+                                    var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
+                                    var path = result.GetStraightPaths(reachedGoal).First();
+
+                                    return new { Terminal = closestTerminal, Path = path };
+                                })
+                                .OrderBy(t => t.Path.Count)
+                                .First();
+
+                            return new { Terminal = terminal, BestTerminal = bestTerminal };
+                        })
+                        .OrderBy(t => t.BestTerminal.Path.Count)
+                        .First();
+                })
+                .OrderBy(t => t.BestTerminal.Path.Count)
+                .ThenByDescending(t => centerToConnectedCenters[t.Terminal.Center].Count)
+                .ThenByDescending(t => centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count)
+                .ThenBy(t => t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
+                .ThenBy(t => t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
+                .First();
+
+            EliminateOtherTerminals(context, locationToPoint, bestConnection.Terminal);
+            EliminateOtherTerminals(context, locationToPoint, bestConnection.BestTerminal.Terminal);
+
+            var group = new PumpjackGroup(
+                context,
+                centerToConnectedCenters,
+                allIncludedCenters,
+                new[] { bestConnection.Terminal.Center, bestConnection.BestTerminal.Terminal.Center },
+                bestConnection.BestTerminal.Path);
+
+            groups.Add(group);
+        }
+
+        while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
+        {
+            var bestGroup = groups
+                .Select(group =>
+                {
+                    var bestCenter = group
+                        .FrontierCenters
+                        .Select(center =>
+                        {
+                            var includedCenter = group
+                                .IncludedCenterToChildCenters
+                                .First(p => p.Value.Contains(center))
+                                .Key;
+
+                            // Prefer the terminal that has the shortest path, then prefer the terminal closer to the centroid
+                            // of the child (unconnected) pumpjacks.
+                            var bestTerminal = context
+                                .CenterToTerminals[center]
+                                .Select(terminal =>
+                                {
+                                    var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, group.Pipes, stopOnFirstGoal: true);
+                                    var paths = result.GetStraightPaths(result.ReachedGoals.Single());
+
+                                    // Prefer the path that is cumulatively closer to the group centroid.
+                                    var path = paths
+                                        .OrderBy(p => p.Sum(l => group.GetCentroidDistance(l)))
+                                        .First();
+
+                                    return new
+                                    {
+                                        Terminal = terminal,
+                                        Path = path,
+                                        ChildCentroidDistance = group.GetChildCentroidDistance(includedCenter, terminal.Terminal),
+                                    };
+                                })
+                                .OrderBy(t => t.Path.Count)
+                                .ThenBy(t => t.ChildCentroidDistance)
+                                .First();
+
+                            return new { BestTerminal = bestTerminal, Center = center };
+                        })
+                        .OrderBy(t => t.BestTerminal.Path.Count)
+                        .ThenBy(t => t.BestTerminal.ChildCentroidDistance)
+                        .First();
+
+                    return new { BestCenter = bestCenter, Group = group };
+                })
+                .OrderBy(t => t.BestCenter.BestTerminal.Path.Count)
+                .ThenBy(t => t.BestCenter.BestTerminal.ChildCentroidDistance)
+                .First();
+
+            var group = bestGroup.Group;
+            var center = bestGroup.BestCenter.Center;
+            var terminal = bestGroup.BestCenter.BestTerminal.Terminal;
+            var path = bestGroup.BestCenter.BestTerminal.Path;
+
+            if (allIncludedCenters.Contains(terminal.Center))
+            {
+                var otherGroup = groups.Single(g => g.IncludedCenters.Contains(terminal.Center));
+                group.MergeGroup(otherGroup, path);
+                groups.Remove(otherGroup);
+
+                // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+            }
+            else
+            {
+                // Add the newly connected pumpjack to the current group.
+                group.ConnectPumpjack(center, path);
+                EliminateOtherTerminals(context, locationToPoint, terminal);
+
+                // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+            }
+        }
+
+        AddGridEntities(context, groups.Single().Pipes);
+
+        return groups.Single().Pipes;
+    }
+
+    private static void AddGridEntities(Context context, HashSet<Location> pipes)
+    {
+        var addedTerminals = new HashSet<Location>();
+        foreach (var terminals in context.CenterToTerminals.Values)
+        {
+            var location = terminals.Single().Terminal;
+            if (addedTerminals.Add(location))
+            {
+                context.Grid.AddEntity(location, new Terminal());
+            }
+        }
+
+        foreach (var pipe in pipes.Except(addedTerminals))
+        {
+            context.Grid.AddEntity(pipe, new Pipe());
+        }
+    }
+
+    private static List<Location> MakeStraightLine(Location a, Location b)
+    {
+        if (a.X == b.X)
+        {
+            return Enumerable
+                .Range(Math.Min(a.Y, b.Y), Math.Abs(a.Y - b.Y) + 1)
+                .Select(y => new Location(a.X, y))
+                .ToList();
+        }
+
+        if (a.Y == b.Y)
+        {
+            return Enumerable
+                .Range(Math.Min(a.X, b.X), Math.Abs(a.X - b.X) + 1)
+                .Select(x => new Location(x, a.Y))
+                .ToList();
+        }
+
+        throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
+    }
+
+    private static List<Trunk> GetTrunkCandidates(Context context, Dictionary<Location, FlutePoint> locationToPoint, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
+    {
+        var centerToMaxX = context
+            .CenterToTerminals
+            .Keys
+            .ToDictionary(c => c, c => centerToConnectedCenters[c].Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
+        var centerToMaxY = context
+            .CenterToTerminals
+            .Keys
+            .ToDictionary(c => c, c => centerToConnectedCenters[c].Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
+
+        // Find paths that connect the most terminals of neighboring pumpjacks.
+        var trunkCandidates = new List<Trunk>();
+        foreach (var translation in Translations)
+        {
+            foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.X).ThenBy(c => c.Y))
+            {
+                foreach (var terminal in context.CenterToTerminals[startingCenter])
+                {
+                    var currentCenter = startingCenter;
+                    var nextCenters = centerToConnectedCenters[currentCenter];
+                    var maxX = centerToMaxX[currentCenter];
+                    var maxY = centerToMaxY[currentCenter];
+
+                    var location = terminal.Terminal.Translate(translation);
+
+                    var trunk = new Trunk(locationToPoint[terminal.Terminal], currentCenter);
+
+                    while (location.X <= maxX && location.Y <= maxY && context.Grid.IsEmpty(location))
+                    {
+                        if (locationToPoint.TryGetValue(location, out var point))
+                        {
+                            if (point.IsSteinerPoint)
                             {
-                                // This is a terminal for a pumpjack we have NOT REACHED YET. Use it as the goal for path finding.
-                                goal = neighbor;
-                                break;
+                                trunk.Points.Add(point);
                             }
                             else
                             {
-                                // This is a terminal for a pumpjack we have ALREADY REACHED. Continue exploring.
+                                var matchedCenters = point.Centers.Intersect(nextCenters).ToHashSet();
+                                if (matchedCenters.Count == 0)
+                                {
+                                    // The pumpjack terminal we ran into does not belong to the a pumpjack that the current
+                                    // pumpjack should be connected to.
+                                    break;
+                                }
+
+                                trunk.Points.Add(point);
+
+                                currentCenter = matchedCenters.First();
+
+                                trunk.Centers.Add(currentCenter);
+
+                                nextCenters = centerToConnectedCenters[currentCenter];
+                                maxX = centerToMaxX[currentCenter];
+                                maxY = centerToMaxY[currentCenter];
                             }
                         }
+
+                        location = location.Translate(translation);
                     }
 
-                    queue.Enqueue(neighbor);
+                    if (trunk.Centers.Count > 1)
+                    {
+                        trunkCandidates.Add(trunk);
+                    }
                 }
             }
+        }
 
-            if (goal is null)
+        return trunkCandidates;
+    }
+
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, Dictionary<Location, HashSet<FlutePoint>> centerToPoints)
+    {
+        // Determine which terminals should be connected to each other either directly or via only Steiner points.
+        var centerToCenters = new Dictionary<Location, HashSet<Location>>();
+        foreach (var center in context.CenterToTerminals.Keys)
+        {
+            var otherCenters = new HashSet<Location>();
+            var visitedPoints = new HashSet<FlutePoint>();
+            var queue = new Queue<FlutePoint>();
+            foreach (var point in centerToPoints[center])
             {
-                throw new InvalidOperationException("No connection could be found between the current terminals and the remaining terminals.");
+                queue.Enqueue(point);
             }
 
-            FlutePoint parent = goal;
-            List<Location> path;
-            while (true)
+            while (queue.Count > 0)
             {
-                parent = pointToParent[parent];
-                if (!context.Grid.IsEmpty(parent.Location))
+                var point = queue.Dequeue();
+
+                if (!visitedPoints.Add(point))
                 {
                     continue;
                 }
 
-                if (parent.Centers.Count > 0)
+                if ((point.Centers.Contains(center) && point.Centers.Count > 1)
+                    || (!point.Centers.Contains(center) && point.Centers.Count > 0))
                 {
-                    // This parent is a terminal. Use all terminal candidates as the start options.
-                    var startCenter = parent
-                        .Centers
-                        .Intersect(centerInGroup)
-                        .First();
-                    var shortestPath = context
-                        .CenterToTerminals[startCenter]
-                        .Select(t =>
-                        {
-                            var result = Dijkstras.GetShortestPaths(context.Grid, t.Terminal, new HashSet<Location> { goal.Location }, stopOnFirstGoal: true);
-                            var path = result.GetStraightPaths(goal.Location).First();
-                            return new { Terminal = t, Path = path };
-                        })
-                        .OrderBy(t => t.Path.Count)
-                        .First();
-
-                    // We've selected a path from a terminal to the goal. Eliminate other terminal options for this pumpjack.
-                    centerInGroup.Add(shortestPath.Terminal.Center);
-                    EliminateOtherTerminals(context, locationToPoint, shortestPath.Terminal);
-
-                    path = shortestPath.Path;
+                    otherCenters.UnionWith(point.Centers);
                 }
                 else
                 {
-                    // The parent is a Steiner point.
-                    var result = Dijkstras.GetShortestPaths(context.Grid, parent.Location, new HashSet<Location> { goal.Location }, stopOnFirstGoal: true);
-                    path = result.GetStraightPaths(goal.Location).First();
+                    foreach (var neighbor in point.Neighbors)
+                    {
+                        queue.Enqueue(neighbor);
+                    }
                 }
-
-                // If the goal is a terminal, eliminate the other terminal options from the pumpjack.
-                foreach (var goalTerminal in goal.Terminals)
-                {
-                    centerInGroup.Add(goalTerminal.Center);
-                    EliminateOtherTerminals(context, locationToPoint, goalTerminal);
-                }
-
-                foreach (var pipe in path)
-                {
-                    pipes.Add(pipe);
-                }
-
-                // Visualize(context, locationToPoint, pipes);
-
-
-                // Start the next iteration at the goal we found
-                pointsInGroup.Add(goal);
-                start = goal;
-                break;
             }
 
-
-            /*
-            var startCenter = edge
-                .Value
-                .Start
-                .Centers
-                .Intersect(centerInGroup)
-                .First();
-            var goal = edge.Value.Goal.Location;
-            var shortestPath = context
-                .CenterToTerminals[startCenter]
-                .Select(t =>
-                {
-                    var result = Dijkstras.GetShortestPaths(context.Grid, t.Terminal, new HashSet<Location> { goal }, stopOnFirstGoal: true);
-                    var path = result.GetStraightPaths(goal).First();
-                    return new { Terminal = t, Path = path };
-                })
-                .OrderBy(t => t.Path.Count)
-                .First();
-            */
-            // 
+            otherCenters.Remove(center);
+            centerToCenters.Add(center, otherCenters);
         }
 
-        return pipes;
-
-        throw new NotImplementedException();
+        return centerToCenters;
     }
 
     private static void EliminateOtherTerminals(Context context, Dictionary<Location, FlutePoint> locationToPoint, TerminalLocation selectedTerminal)
@@ -333,7 +624,7 @@ internal static class AddPipes
 
         foreach (var pipe in pipes)
         {
-            if (locationToPoint.TryGetValue(pipe, out var point) && point.Terminals.Count > 0)
+            if (locationToPoint.TryGetValue(pipe, out var point) && !point.IsSteinerPoint)
             {
                 if (grid.IsEmpty(pipe))
                 {
@@ -349,7 +640,13 @@ internal static class AddPipes
             }
         }
 
-        Visualizer.Show(grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+        Visualizer.Show(
+            grid,
+            locationToPoint
+                .Values
+                .Where(p => !p.IsEliminated)
+                .Select(p => (IPoint)new Point(p.Location.X, p.Location.Y)),
+            Array.Empty<IEdge>());
     }
 
     private static Tree GetFluteTree(Context context)
@@ -364,6 +661,14 @@ internal static class AddPipes
             .CenterToTerminals
             .Values
             .SelectMany(ts => ts.Select(t => new System.Drawing.Point(t.Terminal.X, t.Terminal.Y)))
+            .ToList();
+
+        var pumpjackPoints = context
+            .Grid
+            .LocationToEntity
+            .Where(p => p.Value is PumpjackSide || p.Value is PumpjackCenter)
+            .Select(p => p.Key)
+            .Select(l => new System.Drawing.Point(l.X, l.Y))
             .ToList();
 
         return FLUTE.Execute(terminalPoints);
