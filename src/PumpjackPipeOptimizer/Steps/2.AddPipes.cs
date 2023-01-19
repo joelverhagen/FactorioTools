@@ -108,11 +108,6 @@ internal static class AddPipes
             return GetEuclideanDistance(terminalCandidate, centroidX, centroidY);
         }
 
-        private static double GetEuclideanDistance(Location a, double bX, double bY)
-        {
-            return Math.Sqrt(Math.Pow(a.X - bX, 2) + Math.Pow(a.Y - bY, 2));
-        }
-
         public void ConnectPumpjack(Location center, IEnumerable<Location> path)
         {
             _allIncludedCenters.Add(center);
@@ -181,6 +176,11 @@ internal static class AddPipes
 
     private record ClosestTerminal(TerminalLocation Terminal, List<Location> Path, double ChildCentroidDistance);
 
+    private static double GetEuclideanDistance(Location a, double bX, double bY)
+    {
+        return Math.Sqrt(Math.Pow(a.X - bX, 2) + Math.Pow(a.Y - bY, 2));
+    }
+
     public static HashSet<Location> Execute(Context context)
     {
         var locationToPoint = GetLocationToFlutePoint(context);
@@ -196,8 +196,13 @@ internal static class AddPipes
         trunkCandidates = trunkCandidates
             .OrderByDescending(t => t.Centers.Count)
             .ThenBy(t => t.Length)
-            .ThenBy(t => t.Start.X)
-            .ThenBy(t => t.Start.Y)
+            .ThenBy(t =>
+            {
+                var neighbors = t.Centers.SelectMany(c => centerToConnectedCenters[c]).Except(t.Centers).ToHashSet();
+                var centroidX = neighbors.Average(l => l.X);
+                var centroidY = neighbors.Average(l => l.Y);
+                return GetEuclideanDistance(t.Start, centroidX, centroidY) + GetEuclideanDistance(t.End, centroidX, centroidY);
+            })
             .ToList();
 
         // Eliminate lower priority trunks that have pumpjacks shared with higher priority trunks.
