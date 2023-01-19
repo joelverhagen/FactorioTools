@@ -69,7 +69,7 @@ internal abstract class SquareGrid
 
     public abstract IEnumerable<Location> GetNeighbors(Location id);
 
-    protected IEnumerable<Location> GetAdjacent(Location id)
+    public IEnumerable<Location> GetAdjacent(Location id)
     {
         foreach (var dir in Directions)
         {

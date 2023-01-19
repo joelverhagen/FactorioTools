@@ -53,9 +53,14 @@ internal static class AddPipes
 
         public List<FlutePoint> Points { get; } = new List<FlutePoint>();
         public HashSet<Location> Centers { get; } = new HashSet<Location>();
-        public int Length => Start.GetManhattanDistance(End);
+        public int Length => Start.GetManhattanDistance(End) + 1;
         public Location Start => Points[0].Location;
         public Location End => Points.Last().Location;
+
+        public override string ToString()
+        {
+            return $"{Start} -> {End}";
+        }
     }
 
     private class PumpjackGroup
@@ -308,6 +313,8 @@ internal static class AddPipes
             groups.Add(group);
         }
 
+        // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+
         while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
         {
             var bestGroup = groups
@@ -331,10 +338,31 @@ internal static class AddPipes
                                     var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, group.Pipes, stopOnFirstGoal: true);
                                     var paths = result.GetStraightPaths(result.ReachedGoals.Single());
 
-                                    // Prefer the path that is cumulatively closer to the group centroid.
-                                    var path = paths
-                                        .OrderBy(p => p.Sum(l => group.GetCentroidDistance(l)))
-                                        .First();
+                                    List<Location> path;
+                                    if (paths.Count > 1)
+                                    {
+                                        // Prefer the path that is adjacent to more pumpjack sides, then prefer one that is
+                                        // cumulatively closer to the group centroid.
+                                        if ((paths[0][0].X == 31 && paths[0][0].Y == 32) || (paths[0].Last().X == 31 && paths[0].Last().Y == 32))
+                                        {
+                                        }
+                                        var pathToAdjacentPipes = paths.ToDictionary(p => p, p => p.Count(l => context
+                                            .Grid
+                                            .GetAdjacent(l)
+                                            .Any(a => context.Grid.IsEntityType<PumpjackSide>(a))));
+
+                                        var pathToCentroidDistance = paths.ToDictionary(p => p, p => p.Sum(l => group.GetCentroidDistance(l)));
+
+                                        path = paths
+                                            .OrderByDescending(p => pathToAdjacentPipes[p])
+                                            .ThenBy(p => pathToCentroidDistance[p])
+                                            .First();
+                                    }
+                                    else
+                                    {
+                                        path = paths.Single();
+                                    }
+
 
                                     return new
                                     {
@@ -443,7 +471,7 @@ internal static class AddPipes
         var trunkCandidates = new List<Trunk>();
         foreach (var translation in Translations)
         {
-            foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.X).ThenBy(c => c.Y))
+            foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.Y).ThenBy(c => c.X))
             {
                 foreach (var terminal in context.CenterToTerminals[startingCenter])
                 {
@@ -462,6 +490,7 @@ internal static class AddPipes
                         {
                             if (point.IsSteinerPoint)
                             {
+                                // Don't let trunks end with Steiner points
                                 trunk.Points.Add(point);
                             }
                             else
@@ -491,6 +520,11 @@ internal static class AddPipes
 
                     if (trunk.Centers.Count > 1)
                     {
+                        while (trunk.Points.Last().IsSteinerPoint)
+                        {
+                            trunk.Points.RemoveAt(trunk.Points.Count - 1);
+                        }
+
                         trunkCandidates.Add(trunk);
                     }
                 }
