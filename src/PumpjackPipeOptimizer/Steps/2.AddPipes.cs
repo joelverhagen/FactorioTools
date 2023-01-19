@@ -195,7 +195,7 @@ internal static class AddPipes
 
         trunkCandidates = trunkCandidates
             .OrderByDescending(t => t.Centers.Count)
-            .ThenByDescending(t => t.Length)
+            .ThenBy(t => t.Length)
             .ThenBy(t => t.Start.X)
             .ThenBy(t => t.Start.Y)
             .ToList();
