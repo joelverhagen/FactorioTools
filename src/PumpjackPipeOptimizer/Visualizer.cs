@@ -49,10 +49,23 @@ internal static class Visualizer
                     color = Color.White;
                 }
 
-                var cell = new Rectangle(location.X * CellSize, location.Y * CellSize, CellSize, CellSize);
-                image.Mutate(c => c.Fill(Color.Black, cell));
+                Color gridColor;
+                int gridLineWidth;
+                if (location.X % 10 == 9 || location.Y % 10 == 9)
+                {
+                    gridColor = Color.Black;
+                    gridLineWidth = 3;
+                }
+                else
+                {
+                    gridColor = Color.Gray;
+                    gridLineWidth = 1;
+                }
 
-                var entityR = new Rectangle(location.X * CellSize + 1, location.Y * CellSize + 1 , CellSize - 2, CellSize - 2);
+                var cell = new Rectangle(location.X * CellSize, location.Y * CellSize, CellSize, CellSize);
+                image.Mutate(c => c.Fill(gridColor, cell));
+
+                var entityR = new Rectangle(location.X * CellSize + gridLineWidth, location.Y * CellSize + gridLineWidth, CellSize - (2 * gridLineWidth), CellSize - (2 * gridLineWidth));
                 image.Mutate(c => c.Fill(color, entityR));
             }
         }

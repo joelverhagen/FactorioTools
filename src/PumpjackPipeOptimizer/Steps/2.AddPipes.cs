@@ -149,34 +149,49 @@ internal static class AddPipes
 
             foreach (var center in IncludedCenters)
             {
-                var queue = new Queue<(Location Location, bool ShouldRecurse)>();
-                var visited = new HashSet<Location>();
-                queue.Enqueue((center, ShouldRecurse: true));
+                HashSet<Location> visited = GetChildCenters(
+                    _centerToConnectedCenters,
+                    IncludedCenters,
+                    _allIncludedCenters,
+                    center);
 
-                while (queue.Count > 0)
-                {
-                    (var current, var shouldRecurse) = queue.Dequeue();
-                    if (!visited.Add(current) || !shouldRecurse)
-                    {
-                        continue;
-                    }
-
-                    foreach (var other in _centerToConnectedCenters[current])
-                    {
-                        if (IncludedCenters.Contains(other))
-                        {
-                            continue;
-                        }
-
-                        // If the other center is in another group, don't recursively explore.
-                        queue.Enqueue((other, ShouldRecurse: !_allIncludedCenters.Contains(other)));
-                    }
-                }
-
-                visited.Remove(center);
                 IncludedCenterToChildCenters.Add(center, visited);
             }
         }
+    }
+
+    private static HashSet<Location> GetChildCenters(
+        Dictionary<Location, HashSet<Location>> centerToConnectedCenters,
+        HashSet<Location> ignoreCenters,
+        HashSet<Location> shallowExploreCenters,
+        Location startingCenter)
+    {
+        var queue = new Queue<(Location Location, bool ShouldRecurse)>();
+        var visited = new HashSet<Location>();
+        queue.Enqueue((startingCenter, ShouldRecurse: true));
+
+        while (queue.Count > 0)
+        {
+            (var current, var shouldRecurse) = queue.Dequeue();
+            if (!visited.Add(current) || !shouldRecurse)
+            {
+                continue;
+            }
+
+            foreach (var other in centerToConnectedCenters[current])
+            {
+                if (ignoreCenters.Contains(other))
+                {
+                    continue;
+                }
+
+                // If the other center is in another group, don't recursively explore.
+                queue.Enqueue((other, ShouldRecurse: !shallowExploreCenters.Contains(other)));
+            }
+        }
+
+        visited.Remove(startingCenter);
+        return visited;
     }
 
     private record ClosestTerminal(TerminalLocation Terminal, List<Location> Path, double ChildCentroidDistance);
@@ -195,6 +210,13 @@ internal static class AddPipes
             .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
 
         var centerToConnectedCenters = GetConnectedPumpjacks(context, centerToPoints);
+
+        /*
+        Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
+            .SelectMany(p => p.Value.Select(o => (p.Key, o))
+            .Select(p => (IEdge)new Edge(0, new Point(p.Key.X, p.Key.Y), new Point(p.o.X, p.o.Y)))
+            .Distinct()));
+        */
 
         var trunkCandidates = GetTrunkCandidates(context, locationToPoint, centerToConnectedCenters);
 
@@ -470,9 +492,14 @@ internal static class AddPipes
         {
             foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.Y).ThenBy(c => c.X))
             {
+                if (startingCenter.Y == 13)
+                {
+                }
+
                 foreach (var terminal in context.CenterToTerminals[startingCenter])
                 {
                     var currentCenter = startingCenter;
+                    var expandedChildCenters = false;
                     var nextCenters = centerToConnectedCenters[currentCenter];
                     var maxX = centerToMaxX[currentCenter];
                     var maxY = centerToMaxY[currentCenter];
@@ -500,15 +527,30 @@ internal static class AddPipes
                                     break;
                                 }
 
+                                var nextCenter = matchedCenters.First();
+
+                                if (!expandedChildCenters)
+                                {
+                                    nextCenters = GetChildCenters(
+                                        centerToConnectedCenters,
+                                        ignoreCenters: new HashSet<Location> { currentCenter },
+                                        shallowExploreCenters: new HashSet<Location> { nextCenter },
+                                        nextCenter);
+
+                                    if (nextCenters.Count == 0)
+                                    {
+                                        break;
+                                    }
+
+                                    maxX = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X));
+                                    maxY = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y));
+                                    expandedChildCenters = true;
+                                }
+
                                 trunk.Points.Add(point);
+                                trunk.Centers.Add(nextCenter);
 
-                                currentCenter = matchedCenters.First();
-
-                                trunk.Centers.Add(currentCenter);
-
-                                nextCenters = centerToConnectedCenters[currentCenter];
-                                maxX = centerToMaxX[currentCenter];
-                                maxY = centerToMaxY[currentCenter];
+                                currentCenter = nextCenter;
                             }
                         }
 

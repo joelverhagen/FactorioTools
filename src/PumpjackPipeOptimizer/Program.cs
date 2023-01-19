@@ -1,4 +1,5 @@
-﻿using PumpjackPipeOptimizer.Data;
+﻿using DelaunatorSharp;
+using PumpjackPipeOptimizer.Data;
 using PumpjackPipeOptimizer.Steps;
 
 namespace PumpjackPipeOptimizer;
@@ -60,7 +61,7 @@ internal partial class Program
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToList();
         var blueprintStrings = blueprintStringsAll;
         // var blueprintStrings = new[] { blueprintStringsAll[1] };
-        // var blueprintStrings = new[] { blueprintStringsAll[40] };
+        // var blueprintStrings = new[] { blueprintStringsAll[41] };
         foreach (var blueprintString in blueprintStrings)
         {
             var inputBlueprint = ParseBlueprint.Execute(blueprintString);
@@ -78,6 +79,10 @@ internal partial class Program
             var pipes = AddPipes.Execute(context);
 
             pipes = RotateOptimize.Execute(context, pipes);
+
+            AddPipes.AddGridEntities(context.Grid, context.CenterToTerminals, pipes);
+
+            // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
             sum += pipes.Count;
             count++;
