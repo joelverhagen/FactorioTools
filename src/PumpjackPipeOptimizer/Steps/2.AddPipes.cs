@@ -205,14 +205,17 @@ internal static class AddPipes
             })
             .ToList();
 
-        // Eliminate lower priority trunks that have pumpjacks shared with higher priority trunks.
+        // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
+        var includedPipes = new HashSet<Location>();
         var includedCenters = new HashSet<Location>();
         var selectedTrunks = new List<Trunk>();
         foreach (var trunk in trunkCandidates)
         {
-            if (!includedCenters.Intersect(trunk.Centers).Any())
+            var path = MakeStraightLine(trunk.Start, trunk.End);
+            if (!includedPipes.Intersect(path).Any() && !includedCenters.Intersect(trunk.Centers).Any())
             {
                 selectedTrunks.Add(trunk);
+                includedPipes.UnionWith(path);
                 includedCenters.UnionWith(trunk.Centers);
             }
         }
