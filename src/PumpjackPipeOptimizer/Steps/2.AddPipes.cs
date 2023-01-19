@@ -115,6 +115,7 @@ internal static class AddPipes
 
         public void ConnectPumpjack(Location center, IEnumerable<Location> path)
         {
+            _allIncludedCenters.Add(center);
             IncludedCenters.Add(center);
             Pipes.UnionWith(path);
             UpdateFrontierCenters();
