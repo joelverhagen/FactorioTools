@@ -343,9 +343,6 @@ internal static class AddPipes
                                     {
                                         // Prefer the path that is adjacent to more pumpjack sides, then prefer one that is
                                         // cumulatively closer to the group centroid.
-                                        if ((paths[0][0].X == 31 && paths[0][0].Y == 32) || (paths[0].Last().X == 31 && paths[0].Last().Y == 32))
-                                        {
-                                        }
                                         var pathToAdjacentPipes = paths.ToDictionary(p => p, p => p.Count(l => context
                                             .Grid
                                             .GetAdjacent(l)
@@ -410,28 +407,28 @@ internal static class AddPipes
             }
         }
 
-        // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+        // AddGridEntities(context, groups.Single().Pipes);
 
-        AddGridEntities(context, groups.Single().Pipes);
+        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
         return groups.Single().Pipes;
     }
 
-    private static void AddGridEntities(Context context, HashSet<Location> pipes)
+    public static void AddGridEntities(SquareGrid grid, IReadOnlyDictionary<Location, List<TerminalLocation>> centerToTerminals, HashSet<Location> pipes)
     {
         var addedTerminals = new HashSet<Location>();
-        foreach (var terminals in context.CenterToTerminals.Values)
+        foreach (var terminals in centerToTerminals.Values)
         {
             var location = terminals.Single().Terminal;
             if (addedTerminals.Add(location))
             {
-                context.Grid.AddEntity(location, new Terminal());
+                grid.AddEntity(location, new Terminal());
             }
         }
 
         foreach (var pipe in pipes.Except(addedTerminals))
         {
-            context.Grid.AddEntity(pipe, new Pipe());
+            grid.AddEntity(pipe, new Pipe());
         }
     }
 

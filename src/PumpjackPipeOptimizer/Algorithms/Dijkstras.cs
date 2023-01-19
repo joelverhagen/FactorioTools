@@ -60,7 +60,7 @@ internal static class Dijkstras
             }
         }
 
-        return new DijkstrasResult(locationToCost, locationToPrevious, reachedGoals);
+        return new DijkstrasResult(grid, locationToCost, locationToPrevious, reachedGoals);
     }
 
 }

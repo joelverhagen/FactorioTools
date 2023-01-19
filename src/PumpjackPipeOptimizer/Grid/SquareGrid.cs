@@ -2,12 +2,12 @@
 
 internal abstract class SquareGrid
 {
-    private static readonly Location[] Directions = new[]
+    public static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Directions = new[]
     {
-        new Location(1, 0),
-        new Location(0, -1),
-        new Location(-1, 0),
-        new Location(0, 1)
+        (1, 0),
+        (0, -1),
+        (-1, 0),
+        (0, 1),
     };
 
     private const string EmptyLabel = ".";
@@ -73,7 +73,7 @@ internal abstract class SquareGrid
     {
         foreach (var dir in Directions)
         {
-            Location next = new Location(id.X + dir.X, id.Y + dir.Y);
+            Location next = id.Translate(dir);
             if (IsInBounds(next))
             {
                 yield return next;

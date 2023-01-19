@@ -106,12 +106,12 @@ internal static class InitializeContext
     /// + j j j .
     /// . + . . .
     /// </summary>
-    private static readonly IReadOnlyList<(Direction Direction, int X, int Y)> TerminalOffsets = new List<(Direction Direction, int X, int Y)>
+    public static readonly IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))> TerminalOffsets = new List<(Direction Direction, (int DeltaX, int DeltaY))>
     {
-        (Direction.Up, 1, -2),
-        (Direction.Right, 2, -1),
-        (Direction.Down, -1, 2),
-        (Direction.Left, -2, 1),
+        (Direction.Up, (1, -2)),
+        (Direction.Right, (2, -1)),
+        (Direction.Down, (-1, 2)),
+        (Direction.Left, (-2, 1)),
     };
 
     private static Dictionary<Location, List<TerminalLocation>> GetCenterToTerminals(IReadOnlySet<Location> centers, SquareGrid grid)
@@ -120,9 +120,9 @@ internal static class InitializeContext
         foreach (var center in centers)
         {
             var candidateTerminals = new List<TerminalLocation>();
-            foreach ((var direction, var x, var y) in TerminalOffsets)
+            foreach ((var direction, var translation) in TerminalOffsets)
             {
-                var location = new Location(center.X + x, center.Y + y);
+                var location = center.Translate(translation);
                 var terminal = new TerminalLocation(center, location, direction);
                 if (grid.IsEmpty(location))
                 {
