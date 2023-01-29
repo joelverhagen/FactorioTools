@@ -222,6 +222,10 @@ internal static class AddPipes
                 var centroidY = neighbors.Average(l => l.Y);
                 return GetEuclideanDistance(t.Start, centroidX, centroidY) + GetEuclideanDistance(t.End, centroidX, centroidY);
             })
+            .ThenBy(t =>
+            {
+                return Math.Min(t.Start.GetEuclideanDistance(context.Grid.Middle), t.End.GetEuclideanDistance(context.Grid.Middle));
+            })
             .ToList();
 
         // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
@@ -619,30 +623,7 @@ internal static class AddPipes
             }
         }
 
-        var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistance);
-        var mst = Prims.GetMinimumSpanningTree(graph, closestToMiddle);
-
-        // Make the MST bidirectional.
-        foreach (var center in mst.Keys.ToList())
-        {
-            foreach (var neighbor in mst[center])
-            {
-                if (!mst.TryGetValue(neighbor, out var otherNeighbors))
-                {
-                    otherNeighbors = new HashSet<Location> { center };
-                    mst.Add(neighbor, otherNeighbors);
-                }
-                else
-                {
-                    otherNeighbors.Add(center);
-                }
-            }
-        }
-
-        // Visualizer.Show(context.Grid, points, delaunator.GetEdges());
-        // Visualizer.Show(context.Grid, points, mst.SelectMany(p => p.Value.Select(o => (IEdge)new Edge(0, new Point(o.X, o.Y), new Point(p.Key.X, p.Key.Y)))));
-
-        return mst;
+        return graph.ToDictionary(p => p.Key, p => p.Value.Keys.ToHashSet());
     }
 
     private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
