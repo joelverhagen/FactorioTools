@@ -1,5 +1,4 @@
-﻿using DelaunatorSharp;
-using PumpjackPipeOptimizer.Algorithms;
+﻿using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
 using PumpjackPipeOptimizer.Steps;
 

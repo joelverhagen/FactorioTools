@@ -1,5 +1,4 @@
-﻿using DelaunatorSharp;
-using PumpjackPipeOptimizer.Data;
+﻿using PumpjackPipeOptimizer.Data;
 using PumpjackPipeOptimizer.Steps;
 
 namespace PumpjackPipeOptimizer;
@@ -61,7 +60,7 @@ internal partial class Program
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToList();
         var blueprintStrings = blueprintStringsAll;
         // var blueprintStrings = new[] { blueprintStringsAll[1] };
-        // var blueprintStrings = new[] { blueprintStringsAll[41] };
+        // var blueprintStrings = new[] { blueprintStringsAll[35] };
         foreach (var blueprintString in blueprintStrings)
         {
             var inputBlueprint = ParseBlueprint.Execute(blueprintString);

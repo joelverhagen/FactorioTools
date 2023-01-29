@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using PumpjackPipeOptimizer.Grid;
+﻿using PumpjackPipeOptimizer.Grid;
 
 namespace PumpjackPipeOptimizer.Steps;
 

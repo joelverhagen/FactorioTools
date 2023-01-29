@@ -555,52 +555,94 @@ internal static class AddPipes
 
     private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context)
     {
-        var locationToPoint = GetLocationToFlutePoint(context);
-
-        var centerToPoints = context
+        var centers = context
             .CenterToTerminals
-            .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
+            .Keys
+            .OrderBy(c => c.X)
+            .ThenBy(c => c.Y)
+            .ToList();
 
-        // Determine which terminals should be connected to each other either directly or via only Steiner points.
-        var centerToCenters = new Dictionary<Location, HashSet<Location>>();
-        foreach (var center in context.CenterToTerminals.Keys)
+        if (centers.Count == 2)
         {
-            var otherCenters = new HashSet<Location>();
-            var visitedPoints = new HashSet<FlutePoint>();
-            var queue = new Queue<FlutePoint>();
-            foreach (var point in centerToPoints[center])
+            return new Dictionary<Location, HashSet<Location>>
             {
-                queue.Enqueue(point);
-            }
+                { centers[0], new HashSet<Location> { centers[1] } },
+                { centers[1], new HashSet<Location> { centers[0] } },
+            };
+        }
 
-            while (queue.Count > 0)
+        // Check that nodes are not collinear
+        double lastSlope = 0;
+        for (var i = 0; i < centers.Count; i++)
+        {
+            if (i == centers.Count - 1)
             {
-                var point = queue.Dequeue();
-
-                if (!visitedPoints.Add(point))
+                // The points are collinear. Connect them to their adjacent point.
+                var connected = centers.ToDictionary(c => c, c => new HashSet<Location>());
+                for (var j = 1; j < centers.Count; j++)
                 {
-                    continue;
+                    connected[centers[j - 1]].Add(centers[j]);
+                    connected[centers[j]].Add(centers[j - 1]);
                 }
 
-                if ((point.Centers.Contains(center) && point.Centers.Count > 1)
-                    || (!point.Centers.Contains(center) && point.Centers.Count > 0))
+                return connected;
+            }
+
+            var node = centers[i];
+            var next = centers[i + 1];
+            double dX = Math.Abs(node.X - next.X);
+            double dY = Math.Abs(node.Y - next.Y);
+            if (i == 0)
+            {
+                lastSlope = dY / dX;
+            }
+            else if (lastSlope != dY / dX)
+            {
+                break;
+            }
+        }
+
+        var points = centers.Select(p => (IPoint)new Point(p.X, p.Y)).ToArray();
+        var delaunator = new Delaunator(points);
+        var graph = centers.ToDictionary(c => c, c => new Dictionary<Location, double>());
+
+        for (var e = 0; e < delaunator.Triangles.Length; e++)
+        {
+            if (e > delaunator.Halfedges[e])
+            {
+                var p = centers[delaunator.Triangles[e]];
+                var q = centers[delaunator.Triangles[e % 3 == 2 ? e - 2 : e + 1]];
+
+                var cost = p.GetEuclideanDistance(q);
+                graph[p][q] = cost;
+                graph[q][p] = cost;
+            }
+        }
+
+        var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistance);
+        var mst = Prims.GetMinimumSpanningTree(graph, closestToMiddle);
+
+        // Make the MST bidirectional.
+        foreach (var center in mst.Keys.ToList())
+        {
+            foreach (var neighbor in mst[center])
+            {
+                if (!mst.TryGetValue(neighbor, out var otherNeighbors))
                 {
-                    otherCenters.UnionWith(point.Centers);
+                    otherNeighbors = new HashSet<Location> { center };
+                    mst.Add(neighbor, otherNeighbors);
                 }
                 else
                 {
-                    foreach (var neighbor in point.Neighbors)
-                    {
-                        queue.Enqueue(neighbor);
-                    }
+                    otherNeighbors.Add(center);
                 }
             }
-
-            otherCenters.Remove(center);
-            centerToCenters.Add(center, otherCenters);
         }
 
-        return centerToCenters;
+        // Visualizer.Show(context.Grid, points, delaunator.GetEdges());
+        // Visualizer.Show(context.Grid, points, mst.SelectMany(p => p.Value.Select(o => (IEdge)new Edge(0, new Point(o.X, o.Y), new Point(p.Key.X, p.Key.Y)))));
+
+        return mst;
     }
 
     private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
