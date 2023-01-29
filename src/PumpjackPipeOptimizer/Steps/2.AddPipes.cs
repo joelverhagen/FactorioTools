@@ -45,17 +45,17 @@ internal static class AddPipes
 
     private class Trunk
     {
-        public Trunk(FlutePoint startingPoint, Location center)
+        public Trunk(TerminalLocation startingTerminal, Location center)
         {
-            Points.Add(startingPoint);
+            Terminals.Add(startingTerminal);
             Centers.Add(center);
         }
 
-        public List<FlutePoint> Points { get; } = new List<FlutePoint>();
+        public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
         public HashSet<Location> Centers { get; } = new HashSet<Location>();
         public int Length => Start.GetManhattanDistance(End) + 1;
-        public Location Start => Points[0].Location;
-        public Location End => Points.Last().Location;
+        public Location Start => Terminals[0].Terminal;
+        public Location End => Terminals.Last().Terminal;
 
         public override string ToString()
         {
@@ -194,8 +194,6 @@ internal static class AddPipes
         return visited;
     }
 
-    private record ClosestTerminal(TerminalLocation Terminal, List<Location> Path, double ChildCentroidDistance);
-
     private static double GetEuclideanDistance(Location a, double bX, double bY)
     {
         return Math.Sqrt(Math.Pow(a.X - bX, 2) + Math.Pow(a.Y - bY, 2));
@@ -203,13 +201,7 @@ internal static class AddPipes
 
     public static HashSet<Location> Execute(Context context)
     {
-        var locationToPoint = GetLocationToFlutePoint(context);
-
-        var centerToPoints = context
-            .CenterToTerminals
-            .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
-
-        var centerToConnectedCenters = GetConnectedPumpjacks(context, centerToPoints);
+        var centerToConnectedCenters = GetConnectedPumpjacks(context);
 
         /*
         Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
@@ -218,7 +210,7 @@ internal static class AddPipes
             .Distinct()));
         */
 
-        var trunkCandidates = GetTrunkCandidates(context, locationToPoint, centerToConnectedCenters);
+        var trunkCandidates = GetTrunkCandidates(context, centerToConnectedCenters);
 
         trunkCandidates = trunkCandidates
             .OrderByDescending(t => t.Centers.Count)
@@ -261,12 +253,9 @@ internal static class AddPipes
         // its terminal selected.
         foreach (var trunk in selectedTrunks)
         {
-            foreach (var point in trunk.Points)
+            foreach (var terminal in trunk.Terminals)
             {
-                foreach (var terminal in point.Terminals)
-                {
-                    EliminateOtherTerminals(context, locationToPoint, terminal);
-                }
+                EliminateOtherTerminals(context, terminal);
             }
         }
 
@@ -322,8 +311,8 @@ internal static class AddPipes
                 .ThenBy(t => t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
                 .First();
 
-            EliminateOtherTerminals(context, locationToPoint, bestConnection.Terminal);
-            EliminateOtherTerminals(context, locationToPoint, bestConnection.BestTerminal.Terminal);
+            EliminateOtherTerminals(context, bestConnection.Terminal);
+            EliminateOtherTerminals(context, bestConnection.BestTerminal.Terminal);
 
             var group = new PumpjackGroup(
                 context,
@@ -423,7 +412,7 @@ internal static class AddPipes
             {
                 // Add the newly connected pumpjack to the current group.
                 group.ConnectPumpjack(center, path);
-                EliminateOtherTerminals(context, locationToPoint, terminal);
+                EliminateOtherTerminals(context, terminal);
 
                 // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
             }
@@ -475,8 +464,15 @@ internal static class AddPipes
         throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
     }
 
-    private static List<Trunk> GetTrunkCandidates(Context context, Dictionary<Location, FlutePoint> locationToPoint, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
+    private static List<Trunk> GetTrunkCandidates(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
     {
+        var locationToTerminals = context
+            .CenterToTerminals
+            .Values
+            .SelectMany(ts => ts)
+            .GroupBy(t => t.Terminal)
+            .ToDictionary(t => t.Key, t => t.ToHashSet());
+
         var centerToMaxX = context
             .CenterToTerminals
             .Keys
@@ -492,10 +488,6 @@ internal static class AddPipes
         {
             foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.Y).ThenBy(c => c.X))
             {
-                if (startingCenter.Y == 13)
-                {
-                }
-
                 foreach (var terminal in context.CenterToTerminals[startingCenter])
                 {
                     var currentCenter = startingCenter;
@@ -506,52 +498,45 @@ internal static class AddPipes
 
                     var location = terminal.Terminal.Translate(translation);
 
-                    var trunk = new Trunk(locationToPoint[terminal.Terminal], currentCenter);
+                    var trunk = new Trunk(terminal, currentCenter);
 
                     while (location.X <= maxX && location.Y <= maxY && context.Grid.IsEmpty(location))
                     {
-                        if (locationToPoint.TryGetValue(location, out var point))
+                        if (locationToTerminals.TryGetValue(location, out var terminals))
                         {
-                            if (point.IsSteinerPoint)
+                            var centers = terminals.Select(t => t.Center);
+                            var matchedCenters = centers.Intersect(nextCenters).ToHashSet();
+                            if (matchedCenters.Count == 0)
                             {
-                                // Don't let trunks end with Steiner points
-                                trunk.Points.Add(point);
+                                // The pumpjack terminal we ran into does not belong to the a pumpjack that the current
+                                // pumpjack should be connected to.
+                                break;
                             }
-                            else
+
+                            var nextCenter = matchedCenters.First();
+
+                            if (!expandedChildCenters)
                             {
-                                var matchedCenters = point.Centers.Intersect(nextCenters).ToHashSet();
-                                if (matchedCenters.Count == 0)
+                                nextCenters = GetChildCenters(
+                                    centerToConnectedCenters,
+                                    ignoreCenters: new HashSet<Location> { currentCenter },
+                                    shallowExploreCenters: new HashSet<Location> { nextCenter },
+                                    nextCenter);
+
+                                if (nextCenters.Count == 0)
                                 {
-                                    // The pumpjack terminal we ran into does not belong to the a pumpjack that the current
-                                    // pumpjack should be connected to.
                                     break;
                                 }
 
-                                var nextCenter = matchedCenters.First();
-
-                                if (!expandedChildCenters)
-                                {
-                                    nextCenters = GetChildCenters(
-                                        centerToConnectedCenters,
-                                        ignoreCenters: new HashSet<Location> { currentCenter },
-                                        shallowExploreCenters: new HashSet<Location> { nextCenter },
-                                        nextCenter);
-
-                                    if (nextCenters.Count == 0)
-                                    {
-                                        break;
-                                    }
-
-                                    maxX = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X));
-                                    maxY = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y));
-                                    expandedChildCenters = true;
-                                }
-
-                                trunk.Points.Add(point);
-                                trunk.Centers.Add(nextCenter);
-
-                                currentCenter = nextCenter;
+                                maxX = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X));
+                                maxY = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y));
+                                expandedChildCenters = true;
                             }
+
+                            trunk.Terminals.AddRange(terminals);
+                            trunk.Centers.Add(nextCenter);
+
+                            currentCenter = nextCenter;
                         }
 
                         location = location.Translate(translation);
@@ -559,11 +544,6 @@ internal static class AddPipes
 
                     if (trunk.Centers.Count > 1)
                     {
-                        while (trunk.Points.Last().IsSteinerPoint)
-                        {
-                            trunk.Points.RemoveAt(trunk.Points.Count - 1);
-                        }
-
                         trunkCandidates.Add(trunk);
                     }
                 }
@@ -573,8 +553,14 @@ internal static class AddPipes
         return trunkCandidates;
     }
 
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, Dictionary<Location, HashSet<FlutePoint>> centerToPoints)
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context)
     {
+        var locationToPoint = GetLocationToFlutePoint(context);
+
+        var centerToPoints = context
+            .CenterToTerminals
+            .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
+
         // Determine which terminals should be connected to each other either directly or via only Steiner points.
         var centerToCenters = new Dictionary<Location, HashSet<Location>>();
         foreach (var center in context.CenterToTerminals.Keys)
@@ -617,23 +603,13 @@ internal static class AddPipes
         return centerToCenters;
     }
 
-    private static void EliminateOtherTerminals(Context context, Dictionary<Location, FlutePoint> locationToPoint, TerminalLocation selectedTerminal)
+    private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
     {
         var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];
 
         if (terminalOptions.Count == 1)
         {
             return;
-        }
-
-        foreach (var terminal in terminalOptions)
-        {
-            if (terminal == selectedTerminal)
-            {
-                continue;
-            }
-
-            locationToPoint[terminal.Terminal].IsEliminated = true;
         }
 
         terminalOptions.Clear();
@@ -696,37 +672,6 @@ internal static class AddPipes
         }
 
         return locationToPoint;
-    }
-
-    private static void Visualize(Context context, Dictionary<Location, FlutePoint> locationToPoint, HashSet<Location> pipes)
-    {
-        var grid = new PipeGrid(context.Grid);
-
-        foreach (var pipe in pipes)
-        {
-            if (locationToPoint.TryGetValue(pipe, out var point) && !point.IsSteinerPoint)
-            {
-                if (grid.IsEmpty(pipe))
-                {
-                    grid.AddEntity(pipe, new Terminal());
-                }
-            }
-            else
-            {
-                if (grid.IsEmpty(pipe))
-                {
-                    grid.AddEntity(pipe, new Pipe());
-                }
-            }
-        }
-
-        Visualizer.Show(
-            grid,
-            locationToPoint
-                .Values
-                .Where(p => !p.IsEliminated)
-                .Select(p => (IPoint)new Point(p.Location.X, p.Location.Y)),
-            Array.Empty<IEdge>());
     }
 
     private static Tree GetFluteTree(Context context)
