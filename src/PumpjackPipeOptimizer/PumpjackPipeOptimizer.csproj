@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Delaunator" Version="1.0.10" />
-    <PackageReference Include="Knapcode.FluteSharp" Version="0.3.0" GeneratePathProperty="true" ExcludeAssets="contentFiles" />
+    <PackageReference Include="Knapcode.FluteSharp" Version="0.4.0" GeneratePathProperty="true" ExcludeAssets="contentFiles" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta15" />
   </ItemGroup>

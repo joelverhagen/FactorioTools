@@ -7,15 +7,15 @@ internal class InitializeFLUTE
     public static FLUTE? FLUTE { get; private set; }
     private static readonly object FLUTELock = new object();
 
-    public static void Execute(int lutD, int maxD)
+    public static void Execute(int lutD)
     {
         var assembly = typeof(InitializeFLUTE).Assembly;
         using var powvStream = assembly.GetManifestResourceStream($"{nameof(PumpjackPipeOptimizer)}.POWV{lutD}.dat")!;
         using var postStream = assembly.GetManifestResourceStream($"{nameof(PumpjackPipeOptimizer)}.POST{lutD}.dat")!;
-        Execute(lutD, maxD, powvStream, postStream);
+        Execute(lutD, powvStream, postStream);
     }
 
-    public static void Execute(int lutD, int maxD, Stream powvStream, Stream postStream)
+    public static void Execute(int lutD, Stream powvStream, Stream postStream)
     {
         lock (FLUTELock)
         {
@@ -25,7 +25,7 @@ internal class InitializeFLUTE
             }
 
             var lookUpTable = new LookUpTable(lutD, powvStream, postStream);
-            var flute = new FLUTE(lookUpTable, maxD);
+            var flute = new FLUTE(lookUpTable);
             FLUTE = flute;
         }
     }

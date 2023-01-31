@@ -899,7 +899,7 @@ internal static class PlanPipes
             .ToList();
         */
 
-        InitializeFLUTE.Execute(lutD: 6, maxD: 200);
+        InitializeFLUTE.Execute(lutD: 6);
 
         return InitializeFLUTE.FLUTE!.Execute(terminalPoints);
     }
