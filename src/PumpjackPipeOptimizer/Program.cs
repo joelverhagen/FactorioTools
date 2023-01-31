@@ -78,9 +78,7 @@ internal partial class Program
             // Use Dijksta's algorithm to add good connecting pipes to the grid.
             var pipes = AddPipes.Execute(context);
 
-            pipes = RotateOptimize.Execute(context, pipes);
-
-            AddPipes.AddGridEntities(context.Grid, context.CenterToTerminals, pipes);
+            AddPipeEntities.Execute(context.Grid, context.CenterToTerminals, pipes);
 
             // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 

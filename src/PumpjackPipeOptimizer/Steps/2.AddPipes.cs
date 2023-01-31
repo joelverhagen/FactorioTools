@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using DelaunatorSharp;
 using Knapcode.FluteSharp;
@@ -201,72 +202,107 @@ internal static class AddPipes
 
     public static HashSet<Location> Execute(Context context)
     {
-        var centerToConnectedCenters = GetConnectedPumpjacks(context);
+        var originalCenterToTerminals = context.CenterToTerminals;
+        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
 
-        /*
-        Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
-            .SelectMany(p => p.Value.Select(o => (p.Key, o))
-            .Select(p => (IEdge)new Edge(0, new Point(p.Key.X, p.Key.Y), new Point(p.o.X, p.o.Y)))
-            .Distinct()));
-        */
-
-        var trunkCandidates = GetTrunkCandidates(context, centerToConnectedCenters);
-
-        trunkCandidates = trunkCandidates
-            .OrderByDescending(t => t.Centers.Count)
-            .ThenBy(t => t.Length)
-            .ThenBy(t =>
-            {
-                var neighbors = t.Centers.SelectMany(c => centerToConnectedCenters[c]).Except(t.Centers).ToHashSet();
-                var centroidX = neighbors.Average(l => l.X);
-                var centroidY = neighbors.Average(l => l.Y);
-                return GetEuclideanDistance(t.Start, centroidX, centroidY) + GetEuclideanDistance(t.End, centroidX, centroidY);
-            })
-            .ThenBy(t =>
-            {
-                return Math.Min(t.Start.GetEuclideanDistance(context.Grid.Middle), t.End.GetEuclideanDistance(context.Grid.Middle));
-            })
-            .ToList();
-
-        // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
-        var includedPipes = new HashSet<Location>();
-        var includedCenters = new HashSet<Location>();
-        var selectedTrunks = new List<Trunk>();
-        foreach (var trunk in trunkCandidates)
+        foreach (var strategy in Enum.GetValues<ConnectedPumpjacksStrategy>())
         {
-            var path = MakeStraightLine(trunk.Start, trunk.End);
-            if (!includedPipes.Intersect(path).Any() && !includedCenters.Intersect(trunk.Centers).Any())
+            context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+
+            var centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
+
+            if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
             {
-                selectedTrunks.Add(trunk);
-                includedPipes.UnionWith(path);
-                includedCenters.UnionWith(trunk.Centers);
+                solution.Strategies.Add(strategy);
+                continue;
             }
-        }
 
-        /*
-        for (var i = 1; i <= selectedTrunks.Count; i++)
-        {
-            Visualizer.Show(context.Grid, selectedTrunks.Take(i).SelectMany(t => t.Centers).Distinct().Select(l => (IPoint)new Point(l.X, l.Y)), selectedTrunks
-                .Take(i)
-                .Select(t => (IEdge)new Edge(0, new Point(t.Start.X, t.Start.Y), new Point(t.End.X, t.End.Y)))
-                .ToList());
-        }
-        */
+            var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
 
-        // Eliminate unused terminals for pumpjacks included in all of the trunks. A pumpjack connected to a trunk has
-        // its terminal selected.
-        foreach (var trunk in selectedTrunks)
-        {
-            foreach (var terminal in trunk.Terminals)
+            var optimizedPipes = RotateOptimize.Execute(context, pipes);
+
+            connectedCentersToSolutions.Add(centerToConnectedCenters, new Solution
             {
-                EliminateOtherTerminals(context, terminal);
-            }
+                Strategies = new HashSet<ConnectedPumpjacksStrategy> { strategy },
+                CenterToTerminals = context.CenterToTerminals,
+                CenterToConnectedCenters = centerToConnectedCenters,
+                Pipes = optimizedPipes,
+            });
         }
 
-        // Visualize(context, locationToPoint, selectedTrunks.SelectMany(t => MakeStraightLine(t.Start, t.End)).ToHashSet());
+        var bestSolution = connectedCentersToSolutions.Values.MinBy(s => s.Pipes.Count);
+        return bestSolution!.Pipes;
+    }
 
-        // Find the "child" unconnected pumpjacks of each connected pumpjack. These are pumpjacks are connected via the
-        // given connected pumpjack.
+    private class Solution
+    {
+        public required HashSet<ConnectedPumpjacksStrategy> Strategies { get; set; }
+        public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
+        public required Dictionary<Location, HashSet<Location>> CenterToConnectedCenters { get; set; }
+        public required HashSet<Location> Pipes { get; set; }
+    }
+
+    private class ConnectedCentersComparer : IEqualityComparer<Dictionary<Location, HashSet<Location>>>
+    {
+        public static readonly ConnectedCentersComparer Instance = new ConnectedCentersComparer();
+
+        public bool Equals(Dictionary<Location, HashSet<Location>>? x, Dictionary<Location, HashSet<Location>>? y)
+        {
+            if (x is null && y is null)
+            {
+                return true;
+            }
+
+            if (x is null)
+            {
+                return false;
+            }
+
+            if (y is null)
+            {
+                return false;
+            }
+
+            if (x.Keys.Count != y.Keys.Count)
+            {
+                return false;
+            }
+
+            foreach ((var key, var xValue) in x)
+            {
+                if (!y.TryGetValue(key, out var yValue))
+                {
+                    return false;
+                }
+
+                if (!xValue.SetEquals(yValue))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public int GetHashCode([DisallowNull] Dictionary<Location, HashSet<Location>> obj)
+        {
+            var hashCode = new HashCode();
+            foreach ((var key, var value) in obj)
+            {
+                hashCode.Add(key);
+                foreach (var x in value)
+                {
+                    hashCode.Add(x);
+                }
+            }
+
+            return hashCode.ToHashCode();
+        }
+    }
+
+    private static HashSet<Location> FindTrunksAndConnect(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
+    {
+        var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 
         var allIncludedCenters = selectedTrunks.SelectMany(t => t.Centers).ToHashSet();
 
@@ -279,51 +315,7 @@ internal static class AddPipes
 
         if (groups.Count == 0)
         {
-            // If there are no groups at all, create an arbitrary one with the two pumpjacks that have the shortest
-            // connection.
-            var bestConnection = centerToConnectedCenters
-                .Keys
-                .Select(center =>
-                {
-                    return context
-                        .CenterToTerminals[center]
-                        .Select(terminal =>
-                        {
-                            var bestTerminal = centerToConnectedCenters[center]
-                                .Select(otherCenter =>
-                                {
-                                    var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToHashSet();
-                                    var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, goals, stopOnFirstGoal: true);
-                                    var reachedGoal = result.ReachedGoals.Single();
-                                    var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
-                                    var path = result.GetStraightPaths(reachedGoal).First();
-
-                                    return new { Terminal = closestTerminal, Path = path };
-                                })
-                                .OrderBy(t => t.Path.Count)
-                                .First();
-
-                            return new { Terminal = terminal, BestTerminal = bestTerminal };
-                        })
-                        .OrderBy(t => t.BestTerminal.Path.Count)
-                        .First();
-                })
-                .OrderBy(t => t.BestTerminal.Path.Count)
-                .ThenByDescending(t => centerToConnectedCenters[t.Terminal.Center].Count)
-                .ThenByDescending(t => centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count)
-                .ThenBy(t => t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
-                .ThenBy(t => t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
-                .First();
-
-            EliminateOtherTerminals(context, bestConnection.Terminal);
-            EliminateOtherTerminals(context, bestConnection.BestTerminal.Terminal);
-
-            var group = new PumpjackGroup(
-                context,
-                centerToConnectedCenters,
-                allIncludedCenters,
-                new[] { bestConnection.Terminal.Center, bestConnection.BestTerminal.Terminal.Center },
-                bestConnection.BestTerminal.Path);
+            var group = ConnectTwoClosestPumpjacks(context, centerToConnectedCenters, allIncludedCenters);
 
             groups.Add(group);
         }
@@ -422,29 +414,122 @@ internal static class AddPipes
             }
         }
 
-        // AddGridEntities(context, groups.Single().Pipes);
-
-        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
-
         return groups.Single().Pipes;
     }
 
-    public static void AddGridEntities(SquareGrid grid, IReadOnlyDictionary<Location, List<TerminalLocation>> centerToTerminals, HashSet<Location> pipes)
+    private static List<Trunk> FindTrunks(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
     {
-        var addedTerminals = new HashSet<Location>();
-        foreach (var terminals in centerToTerminals.Values)
-        {
-            var location = terminals.Single().Terminal;
-            if (addedTerminals.Add(location))
+
+        /*
+        Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
+            .SelectMany(p => p.Value.Select(o => (p.Key, o))
+            .Select(p => (IEdge)new Edge(0, new Point(p.Key.X, p.Key.Y), new Point(p.o.X, p.o.Y)))
+            .Distinct()));
+        */
+
+        var trunkCandidates = GetTrunkCandidates(context, centerToConnectedCenters);
+
+        trunkCandidates = trunkCandidates
+            .OrderByDescending(t => t.Centers.Count)
+            .ThenBy(t => t.Length)
+            .ThenBy(t =>
             {
-                grid.AddEntity(location, new Terminal());
+                var neighbors = t.Centers.SelectMany(c => centerToConnectedCenters[c]).Except(t.Centers).ToHashSet();
+                var centroidX = neighbors.Average(l => l.X);
+                var centroidY = neighbors.Average(l => l.Y);
+                return GetEuclideanDistance(t.Start, centroidX, centroidY) + GetEuclideanDistance(t.End, centroidX, centroidY);
+            })
+            .ToList();
+
+        // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
+        var includedPipes = new HashSet<Location>();
+        var includedCenters = new HashSet<Location>();
+        var selectedTrunks = new List<Trunk>();
+        foreach (var trunk in trunkCandidates)
+        {
+            var path = MakeStraightLine(trunk.Start, trunk.End);
+            if (!includedPipes.Intersect(path).Any() && !includedCenters.Intersect(trunk.Centers).Any())
+            {
+                selectedTrunks.Add(trunk);
+                includedPipes.UnionWith(path);
+                includedCenters.UnionWith(trunk.Centers);
             }
         }
 
-        foreach (var pipe in pipes.Except(addedTerminals))
+        /*
+        for (var i = 1; i <= selectedTrunks.Count; i++)
         {
-            grid.AddEntity(pipe, new Pipe());
+            Visualizer.Show(context.Grid, selectedTrunks.Take(i).SelectMany(t => t.Centers).Distinct().Select(l => (IPoint)new Point(l.X, l.Y)), selectedTrunks
+                .Take(i)
+                .Select(t => (IEdge)new Edge(0, new Point(t.Start.X, t.Start.Y), new Point(t.End.X, t.End.Y)))
+                .ToList());
         }
+        */
+
+        // Eliminate unused terminals for pumpjacks included in all of the trunks. A pumpjack connected to a trunk has
+        // its terminal selected.
+        foreach (var trunk in selectedTrunks)
+        {
+            foreach (var terminal in trunk.Terminals)
+            {
+                EliminateOtherTerminals(context, terminal);
+            }
+        }
+
+        // Visualize(context, locationToPoint, selectedTrunks.SelectMany(t => MakeStraightLine(t.Start, t.End)).ToHashSet());
+
+        // Find the "child" unconnected pumpjacks of each connected pumpjack. These are pumpjacks are connected via the
+        // given connected pumpjack.
+        return selectedTrunks;
+    }
+
+    private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters)
+    {
+        var bestConnection = centerToConnectedCenters
+            .Keys
+            .Select(center =>
+            {
+                return context
+                    .CenterToTerminals[center]
+                    .Select(terminal =>
+                    {
+                        var bestTerminal = centerToConnectedCenters[center]
+                            .Select(otherCenter =>
+                            {
+                                var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToHashSet();
+                                var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, goals, stopOnFirstGoal: true);
+                                var reachedGoal = result.ReachedGoals.Single();
+                                var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
+                                var path = result.GetStraightPaths(reachedGoal).First();
+
+                                return new { Terminal = closestTerminal, Path = path };
+                            })
+                            .OrderBy(t => t.Path.Count)
+                            .First();
+
+                        return new { Terminal = terminal, BestTerminal = bestTerminal };
+                    })
+                    .OrderBy(t => t.BestTerminal.Path.Count)
+                    .First();
+            })
+            .OrderBy(t => t.BestTerminal.Path.Count)
+            .ThenByDescending(t => centerToConnectedCenters[t.Terminal.Center].Count)
+            .ThenByDescending(t => centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count)
+            .ThenBy(t => t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
+            .ThenBy(t => t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
+            .First();
+
+        EliminateOtherTerminals(context, bestConnection.Terminal);
+        EliminateOtherTerminals(context, bestConnection.BestTerminal.Terminal);
+
+        var group = new PumpjackGroup(
+            context,
+            centerToConnectedCenters,
+            allIncludedCenters,
+            new[] { bestConnection.Terminal.Center, bestConnection.BestTerminal.Terminal.Center },
+            bestConnection.BestTerminal.Path);
+
+        return group;
     }
 
     private static List<Location> MakeStraightLine(Location a, Location b)
@@ -557,7 +642,14 @@ internal static class AddPipes
         return trunkCandidates;
     }
 
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context)
+    private enum ConnectedPumpjacksStrategy
+    {
+        Delaunay,
+        DelaunayMst,
+        FLUTE,
+    }
+
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, ConnectedPumpjacksStrategy strategy)
     {
         var centers = context
             .CenterToTerminals
@@ -606,6 +698,102 @@ internal static class AddPipes
             }
         }
 
+        return strategy switch
+        {
+            ConnectedPumpjacksStrategy.Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
+            ConnectedPumpjacksStrategy.DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
+            ConnectedPumpjacksStrategy.FLUTE => GetConnectedPumpjacksWithFLUTE(context),
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithDelaunay(List<Location> centers)
+    {
+        var dlGraph = GetDelaunayGraph(centers);
+        return dlGraph.ToDictionary(p => p.Key, p => p.Value.Keys.ToHashSet());
+    }
+
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithFLUTE(Context context)
+    {
+        var locationToPoint = GetLocationToFlutePoint(context);
+
+        var centerToPoints = context
+            .CenterToTerminals
+            .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
+
+        // Determine which terminals should be connected to each other either directly or via only Steiner points.
+        var centerToCenters = new Dictionary<Location, HashSet<Location>>();
+        foreach (var center in context.CenterToTerminals.Keys)
+        {
+            var otherCenters = new HashSet<Location>();
+            var visitedPoints = new HashSet<FlutePoint>();
+            var queue = new Queue<FlutePoint>();
+            foreach (var point in centerToPoints[center])
+            {
+                queue.Enqueue(point);
+            }
+
+            while (queue.Count > 0)
+            {
+                var point = queue.Dequeue();
+
+                if (!visitedPoints.Add(point))
+                {
+                    continue;
+                }
+
+                if ((point.Centers.Contains(center) && point.Centers.Count > 1)
+                    || (!point.Centers.Contains(center) && point.Centers.Count > 0))
+                {
+                    otherCenters.UnionWith(point.Centers);
+                }
+                else
+                {
+                    foreach (var neighbor in point.Neighbors)
+                    {
+                        queue.Enqueue(neighbor);
+                    }
+                }
+            }
+
+            otherCenters.Remove(center);
+            centerToCenters.Add(center, otherCenters);
+        }
+
+        return centerToCenters;
+    }
+
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithDelaunayMst(Context context, List<Location> centers)
+    {
+        var dlGraph2 = GetDelaunayGraph(centers);
+        var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistance);
+        var mst = Prims.GetMinimumSpanningTree(dlGraph2, closestToMiddle);
+
+        // Make the MST bidirectional.
+        foreach (var center in mst.Keys.ToList())
+        {
+            foreach (var neighbor in mst[center])
+            {
+                if (!mst.TryGetValue(neighbor, out var otherNeighbors))
+                {
+                    otherNeighbors = new HashSet<Location> { center };
+                    mst.Add(neighbor, otherNeighbors);
+                }
+                else
+                {
+                    otherNeighbors.Add(center);
+                }
+            }
+        }
+
+        // Visualizer.Show(context.Grid, points, delaunator.GetEdges());
+        // Visualizer.Show(context.Grid, points, mst.SelectMany(p => p.Value.Select(o => (IEdge)new Edge(0, new Point(o.X, o.Y), new Point(p.Key.X, p.Key.Y)))));
+
+        return mst;
+    }
+
+    private static Dictionary<Location, Dictionary<Location, double>> GetDelaunayGraph(List<Location> centers)
+    {
         var points = centers.Select(p => (IPoint)new Point(p.X, p.Y)).ToArray();
         var delaunator = new Delaunator(points);
         var graph = centers.ToDictionary(c => c, c => new Dictionary<Location, double>());
@@ -623,7 +811,7 @@ internal static class AddPipes
             }
         }
 
-        return graph.ToDictionary(p => p.Key, p => p.Value.Keys.ToHashSet());
+        return graph;
     }
 
     private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)

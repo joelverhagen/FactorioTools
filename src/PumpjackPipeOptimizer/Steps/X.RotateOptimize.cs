@@ -1,8 +1,7 @@
 ﻿using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
-using PumpjackPipeOptimizer.Steps;
 
-namespace PumpjackPipeOptimizer;
+namespace PumpjackPipeOptimizer.Steps;
 
 internal class RotateOptimize
 {
@@ -28,24 +27,14 @@ internal class RotateOptimize
                 }
             }
 
-            if (neighbors > 2 || (allTerminals.Contains(pipe) && neighbors > 1))
+            if (neighbors > 2 || allTerminals.Contains(pipe) && neighbors > 1)
             {
                 intersections.Add(pipe);
             }
         }
 
         var existingPipeGrid = new ExistingPipeGrid(context.Grid);
-        foreach (var pipe in pipes)
-        {
-            if (allTerminals.Contains(pipe))
-            {
-                existingPipeGrid.AddEntity(pipe, new Terminal());
-            }
-            else
-            {
-                existingPipeGrid.AddEntity(pipe, new Pipe());
-            }
-        }
+        AddPipeEntities.Execute(existingPipeGrid, context.CenterToTerminals, pipes);
 
         // Visualizer.Show(existingPipeGrid, intersections.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
 
