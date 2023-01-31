@@ -18,9 +18,8 @@
     <None Update="blueprints.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(PkgKnapcode_FluteSharp)\contentFiles\any\netstandard2.1\*.dat">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="$(PkgKnapcode_FluteSharp)\contentFiles\any\netstandard2.1\POWV6.dat" />
+    <EmbeddedResource Include="$(PkgKnapcode_FluteSharp)\contentFiles\any\netstandard2.1\POST6.dat" />
   </ItemGroup>
 
 </Project>

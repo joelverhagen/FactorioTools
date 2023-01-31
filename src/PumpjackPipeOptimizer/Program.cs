@@ -59,8 +59,8 @@ internal partial class Program
         var sum = 0;
         var count = 0;
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToList();
-        var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = blueprintStringsAll;
+        var blueprintStrings = new[] { blueprintStringsAll[1] };
         // var blueprintStrings = new[] { blueprintStringsAll[54] };
         foreach (var blueprintString in blueprintStrings)
         {
@@ -76,7 +76,7 @@ internal partial class Program
             // context.Grid.WriteTo(Console.Out);
 
             // Use Dijksta's algorithm to add good connecting pipes to the grid.
-            var pipes = AddPipes.Execute(context);
+            var pipes = PlanPipes.Execute(context);
 
             AddPipeEntities.Execute(context.Grid, context.CenterToTerminals, pipes);
 

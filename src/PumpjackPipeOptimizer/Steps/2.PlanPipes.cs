@@ -8,20 +8,8 @@ using PumpjackPipeOptimizer.Grid;
 
 namespace PumpjackPipeOptimizer.Steps;
 
-internal static class AddPipes
+internal static class PlanPipes
 {
-    private static readonly Lazy<FLUTE> LazyFlute = new Lazy<FLUTE>(() =>
-    {
-        var d = 9;
-        var assemblyDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!;
-        using var powvStream = File.OpenRead(Path.Combine(assemblyDir, $"POWV{d}.dat"));
-        using var postStream = File.OpenRead(Path.Combine(assemblyDir, $"POST{d}.dat"));
-        var lookUpTable = new LookUpTable(d, powvStream, postStream);
-        return new FLUTE(lookUpTable, maxD: 200);
-    });
-
-    private static FLUTE FLUTE => LazyFlute.Value;
-
     private class FlutePoint
     {
         public FlutePoint(Location location)
@@ -887,11 +875,13 @@ internal static class AddPipes
 
     private static Tree GetFluteTree(Context context)
     {
+        /*
         var centerPoints = context
             .CenterToTerminals
             .Keys
             .Select(l => new System.Drawing.Point(l.X, l.Y))
             .ToList();
+        */
 
         var terminalPoints = context
             .CenterToTerminals
@@ -899,6 +889,7 @@ internal static class AddPipes
             .SelectMany(ts => ts.Select(t => new System.Drawing.Point(t.Terminal.X, t.Terminal.Y)))
             .ToList();
 
+        /*
         var pumpjackPoints = context
             .Grid
             .LocationToEntity
@@ -906,8 +897,11 @@ internal static class AddPipes
             .Select(p => p.Key)
             .Select(l => new System.Drawing.Point(l.X, l.Y))
             .ToList();
+        */
 
-        return FLUTE.Execute(terminalPoints);
+        InitializeFLUTE.Execute(lutD: 6, maxD: 200);
+
+        return InitializeFLUTE.FLUTE!.Execute(terminalPoints);
     }
 
     private static void VisualizeFLUTE(Context context, List<System.Drawing.Point> terminalPoints, Tree fluteTree)

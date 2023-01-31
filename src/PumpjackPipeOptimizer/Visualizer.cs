@@ -6,6 +6,7 @@ using System.Diagnostics;
 using PumpjackPipeOptimizer.Grid;
 using DelaunatorSharp;
 using SixLabors.ImageSharp.Drawing;
+using System.Reflection.Metadata;
 
 namespace PumpjackPipeOptimizer;
 
@@ -49,21 +50,9 @@ internal static class Visualizer
                     color = Color.White;
                 }
 
-                Color gridColor;
-                int gridLineWidth;
-                if (location.X % 10 == 9 || location.Y % 10 == 9)
-                {
-                    gridColor = Color.Black;
-                    gridLineWidth = 3;
-                }
-                else
-                {
-                    gridColor = Color.Gray;
-                    gridLineWidth = 1;
-                }
-
+                const int gridLineWidth = 1;
                 var cell = new Rectangle(location.X * CellSize, location.Y * CellSize, CellSize, CellSize);
-                image.Mutate(c => c.Fill(gridColor, cell));
+                image.Mutate(c => c.Fill(Color.Gray, cell));
 
                 var entityR = new Rectangle(location.X * CellSize + gridLineWidth, location.Y * CellSize + gridLineWidth, CellSize - (2 * gridLineWidth), CellSize - (2 * gridLineWidth));
                 image.Mutate(c => c.Fill(color, entityR));
@@ -83,6 +72,28 @@ internal static class Visualizer
                 c.DrawLines(Color.Red.WithAlpha(1f), thickness: 5, ConvertPoint(e.P), ConvertPoint(e.Q));
             });
         }
+
+        // Draw the grid
+        image.Mutate(c =>
+        {
+            var color = Color.Red.WithAlpha(0.5f);
+
+            const int thickness = 4;
+            const int thickness2 = 0;
+
+            c.DrawLines(color, thickness, new PointF(grid.Width * CellSize - 1, 0), new PointF(grid.Width * CellSize - 1, grid.Height * CellSize - 1));
+            c.DrawLines(color, thickness, new PointF(grid.Width * CellSize - 1, grid.Height * CellSize - 1), new PointF(0, grid.Height * CellSize - 1));
+
+            for (var x = 0; x < grid.Width * CellSize; x += 10 * CellSize)
+            {
+                c.DrawLines(color, thickness, new PointF(x - thickness2, 0 - thickness2), new PointF(x - thickness2, grid.Height * CellSize - 1 - thickness2));
+            }
+
+            for (var y = 0; y < grid.Height * CellSize; y += 10 * CellSize)
+            {
+                c.DrawLines(color, thickness, new PointF(grid.Width * CellSize - 1 - thickness2, y - thickness2), new PointF(0 - thickness2, y - thickness2));
+            }
+        });
 
         image.SaveAsBmp(path);
     }
