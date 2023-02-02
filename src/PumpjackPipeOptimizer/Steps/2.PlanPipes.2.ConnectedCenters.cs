@@ -9,12 +9,12 @@ internal static partial class PlanPipes
 {
     private static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Translations = new[] { (1, 0), (0, 1) };
 
-    public static HashSet<Location> Execute(Context context)
+    public static HashSet<Location> ExecuteWithConnectedCenters(Context context)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
-        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
+        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, ConnectedCentersSolution>();
 
-        foreach (var strategy in Enum.GetValues<ConnectedPumpjacksStrategy>())
+        foreach (var strategy in Enum.GetValues<ConnectedCentersStrategy>())
         {
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 
@@ -30,9 +30,9 @@ internal static partial class PlanPipes
 
             var optimizedPipes = RotateOptimize.Execute(context, pipes);
 
-            connectedCentersToSolutions.Add(centerToConnectedCenters, new Solution
+            connectedCentersToSolutions.Add(centerToConnectedCenters, new ConnectedCentersSolution
             {
-                Strategies = new HashSet<ConnectedPumpjacksStrategy> { strategy },
+                Strategies = new HashSet<ConnectedCentersStrategy> { strategy },
                 CenterToTerminals = context.CenterToTerminals,
                 CenterToConnectedCenters = centerToConnectedCenters,
                 Pipes = optimizedPipes,
@@ -43,7 +43,7 @@ internal static partial class PlanPipes
         return bestSolution!.Pipes;
     }
 
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, ConnectedPumpjacksStrategy strategy)
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, ConnectedCentersStrategy strategy)
     {
         var centers = context
             .CenterToTerminals
@@ -94,9 +94,9 @@ internal static partial class PlanPipes
 
         return strategy switch
         {
-            ConnectedPumpjacksStrategy.Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
-            ConnectedPumpjacksStrategy.DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
-            ConnectedPumpjacksStrategy.FLUTE => GetConnectedPumpjacksWithFLUTE(context),
+            ConnectedCentersStrategy.Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
+            ConnectedCentersStrategy.DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
+            ConnectedCentersStrategy.FLUTE => GetConnectedPumpjacksWithFLUTE(context),
             _ => throw new NotImplementedException(),
         };
     }
@@ -495,7 +495,7 @@ internal static partial class PlanPipes
         terminalOptions.Add(selectedTerminal);
     }
 
-    private enum ConnectedPumpjacksStrategy
+    private enum ConnectedCentersStrategy
     {
         Delaunay,
         DelaunayMst,
@@ -619,9 +619,9 @@ internal static partial class PlanPipes
         }
     }
 
-    private class Solution
+    private class ConnectedCentersSolution
     {
-        public required HashSet<ConnectedPumpjacksStrategy> Strategies { get; set; }
+        public required HashSet<ConnectedCentersStrategy> Strategies { get; set; }
         public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
         public required Dictionary<Location, HashSet<Location>> CenterToConnectedCenters { get; set; }
         public required HashSet<Location> Pipes { get; set; }
