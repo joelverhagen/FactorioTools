@@ -6,7 +6,6 @@ using System.Diagnostics;
 using PumpjackPipeOptimizer.Grid;
 using DelaunatorSharp;
 using SixLabors.ImageSharp.Drawing;
-using System.Reflection.Metadata;
 
 namespace PumpjackPipeOptimizer;
 
