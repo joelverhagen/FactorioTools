@@ -167,7 +167,6 @@ internal static partial class PlanPipes
 
     private static List<Trunk> FindTrunks(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
     {
-
         /*
         Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
             .SelectMany(p => p.Value.Select(o => (p.Key, o))

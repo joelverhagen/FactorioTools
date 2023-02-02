@@ -10,76 +10,6 @@ internal static partial class PlanPipes
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
-        // var middle = context.Grid.Middle.Translate((-2, -2)); // 143
-        // var middle = context.Grid.Middle; // 146
-        // var middle = new Location(0, 0); // 142
-        // var middle = new Location(0, context.Grid.Height - 1); // 146
-        // var middle = new Location(context.Grid.Width - 1, 0); // 142
-        // var middle = new Location(context.Grid.Width - 1, context.Grid.Height - 1); // 145
-
-        // var middle = new Location(45, 10); // optimal
-
-        /*
-        var allLocations = Enumerable
-            .Range(0, context.Grid.Height)
-            .SelectMany(y => Enumerable.Range(0, context.Grid.Width).Select(x => new Location(x, y)));
-        */
-
-        /*
-        var metrics = allLocations
-            .ToDictionary(
-                x => x,
-                p => new
-                {
-                    CenterManhattanDistance = context.CenterToTerminals.Keys.Sum(l => l.GetManhattanDistance(p)),
-                    TerminalManhattanDistance = context.CenterToTerminals.Values.SelectMany(t => t).Sum(l => l.Terminal.GetManhattanDistance(p)),
-                    CenterEuclideanDistance = context.CenterToTerminals.Keys.Sum(l => l.GetEuclideanDistance(p)),
-                    TerminalEuclideanDistance = context.CenterToTerminals.Values.SelectMany(t => t).Sum(l => l.Terminal.GetEuclideanDistance(p)),
-                    SumTerminalAligned = context.CenterToTerminals.Values.SelectMany(l => l).Count(l => l.Terminal.X == p.X || l.Terminal.Y == p.Y),
-                    AnyTerminalAligned = context.CenterToTerminals.Values.Count(c => c.Any(l => l.Terminal.X == p.X || l.Terminal.Y == p.Y)),
-                });
-
-        Console.WriteLine();
-        for (var y = 0; y < context.Grid.Height; y++)
-        {
-            for (var x = 0; x < context.Grid.Width; x++)
-            {
-                if (x > 0)
-                {
-                    Console.Write(",");
-                }
-
-                Console.Write(metrics[new Location(x, y)].Metric);
-            }
-            Console.WriteLine();
-        }
-        */
-
-        /*
-        var options = allLocations
-            .AsParallel()
-            .Select(middle =>
-            {
-                var output = DelaunayTriangulation(context, middle);
-                Console.WriteLine($"Middle: {middle} -> pipes: " + output.Pipes.Count);
-                return (output.Terminals, output.Pipes, Middle: middle);
-            })
-            .OrderBy(x => x.Pipes.Count)
-            .ToList();
-
-        var grid = new PipeGrid(context.Grid);
-        foreach (var option in options)
-        {
-            grid.RemoveEntity(option.Middle);
-            grid.AddEntity(option.Middle, new StringEntity(option.Pipes.Count.ToString()));
-        }
-
-        Console.WriteLine();
-        grid.WriteTo(Console.Out, spacing: 1);
-        
-        (var terminals, var pipes, _) = options.First();
-        */
-
         var middle = context.Grid.Middle.Translate((-2, -2));
 
         (var terminals, var pipes) = DelaunayTriangulation(context, middle);
@@ -88,20 +18,6 @@ internal static partial class PlanPipes
         {
             EliminateOtherTerminals(context, terminal);
         }
-
-        /*
-        foreach (var pipe in pipes)
-        {
-            if (!context.Grid.IsEntityType<Terminal>(pipe))
-            {
-                context.Grid.AddEntity(pipe, new Pipe());
-            }
-        }
-        */
-
-        // Console.WriteLine();
-        // Console.WriteLine($"Pipes: " + pipes.Count);
-        // context.Grid.WriteTo(Console.Out);
 
         return pipes;
     }
@@ -143,35 +59,6 @@ internal static partial class PlanPipes
             })
             .Where(x => x.Connections.Count > 0)
             .ToList();
-
-        /*
-        var columnHits = new int[context.Grid.Width];
-        var rowHits = new int[context.Grid.Height];
-        foreach (var line in lines)
-        {
-            foreach (var connection in line.Connections)
-            {
-
-            }
-        }
-        */
-
-        /*
-        for (var i = 0; i < middleMatters.Count; i++)
-        {
-            for (var j = 0; j < middleMatters[i].Count; j++)
-            {
-                var t = middleMatters[i][j];
-                context.Grid.RemoveEntity(t.TerminalA.Terminal);
-                context.Grid.RemoveEntity(t.TerminalB.Terminal);
-                context.Grid.AddEntity(t.TerminalA.Terminal, new StringEntity(j == 0 ? "+" : "-"));
-                context.Grid.AddEntity(t.TerminalB.Terminal, new StringEntity(j == 0 ? "+" : "-"));
-            }
-        }
-
-        Console.WriteLine();
-        context.Grid.WriteTo(Console.Out);
-        */
 
         // GENERATE GROUPS
         var groups = new List<Group>();
@@ -253,31 +140,6 @@ internal static partial class PlanPipes
                 new List<TerminalLocation> { connection.TerminalA, connection.TerminalB },
                 new List<List<Location>> { connection.Line }));
         }
-
-        /*
-        foreach (var group in groups)
-        {
-            foreach (var entity in group.Entities)
-            {
-                context.Grid.RemoveEntity(entity.Terminal);
-                context.Grid.AddEntity(entity.Terminal, new Terminal());
-            }
-
-            foreach (var path in group.Paths)
-            {
-                foreach (var pipe in path)
-                {
-                    if (context.Grid.IsEmpty(pipe))
-                    {
-                        context.Grid.AddEntity(pipe, new Pipe());
-                    }
-                }
-            }
-        }
-
-        Console.WriteLine();
-        context.Grid.WriteTo(Console.Out);
-        */
 
         // CONNECT GROUPS
         var maxTries = 3;
