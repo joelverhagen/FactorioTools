@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using System.Diagnostics.CodeAnalysis;
 using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
 
@@ -9,41 +8,7 @@ internal static partial class PlanPipes
 {
     private static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Translations = new[] { (1, 0), (0, 1) };
 
-    public static HashSet<Location> ExecuteWithConnectedCenters(Context context)
-    {
-        var originalCenterToTerminals = context.CenterToTerminals;
-        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, ConnectedCentersSolution>();
-
-        foreach (var strategy in Enum.GetValues<ConnectedCentersStrategy>())
-        {
-            context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
-
-            var centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
-
-            if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
-            {
-                solution.Strategies.Add(strategy);
-                continue;
-            }
-
-            var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
-
-            var optimizedPipes = RotateOptimize.Execute(context, pipes);
-
-            connectedCentersToSolutions.Add(centerToConnectedCenters, new ConnectedCentersSolution
-            {
-                Strategies = new HashSet<ConnectedCentersStrategy> { strategy },
-                CenterToTerminals = context.CenterToTerminals,
-                CenterToConnectedCenters = centerToConnectedCenters,
-                Pipes = optimizedPipes,
-            });
-        }
-
-        var bestSolution = connectedCentersToSolutions.Values.MinBy(s => s.Pipes.Count);
-        return bestSolution!.Pipes;
-    }
-
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, ConnectedCentersStrategy strategy)
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, PlanPipesStrategy strategy)
     {
         var centers = context
             .CenterToTerminals
@@ -62,41 +27,23 @@ internal static partial class PlanPipes
         }
 
         // Check that nodes are not collinear
-        double lastSlope = 0;
-        for (var i = 0; i < centers.Count; i++)
+        if (AreLocationsCollinear(centers))
         {
-            if (i == centers.Count - 1)
+            var connected = centers.ToDictionary(c => c, c => new HashSet<Location>());
+            for (var j = 1; j < centers.Count; j++)
             {
-                // The points are collinear. Connect them to their adjacent point.
-                var connected = centers.ToDictionary(c => c, c => new HashSet<Location>());
-                for (var j = 1; j < centers.Count; j++)
-                {
-                    connected[centers[j - 1]].Add(centers[j]);
-                    connected[centers[j]].Add(centers[j - 1]);
-                }
-
-                return connected;
+                connected[centers[j - 1]].Add(centers[j]);
+                connected[centers[j]].Add(centers[j - 1]);
             }
 
-            var node = centers[i];
-            var next = centers[i + 1];
-            double dX = Math.Abs(node.X - next.X);
-            double dY = Math.Abs(node.Y - next.Y);
-            if (i == 0)
-            {
-                lastSlope = dY / dX;
-            }
-            else if (lastSlope != dY / dX)
-            {
-                break;
-            }
+            return connected;
         }
 
         return strategy switch
         {
-            ConnectedCentersStrategy.Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
-            ConnectedCentersStrategy.DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
-            ConnectedCentersStrategy.FLUTE => GetConnectedPumpjacksWithFLUTE(context),
+            PlanPipesStrategy.ConnectedCenters_Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
+            PlanPipesStrategy.ConnectedCenters_DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
+            PlanPipesStrategy.ConnectedCenters_FLUTE => GetConnectedPumpjacksWithFLUTE(context),
             _ => throw new NotImplementedException(),
         };
     }
@@ -495,13 +442,6 @@ internal static partial class PlanPipes
         terminalOptions.Add(selectedTerminal);
     }
 
-    private enum ConnectedCentersStrategy
-    {
-        Delaunay,
-        DelaunayMst,
-        FLUTE,
-    }
-
     private class Trunk
     {
         public Trunk(TerminalLocation startingTerminal, Location center)
@@ -616,72 +556,6 @@ internal static partial class PlanPipes
 
                 IncludedCenterToChildCenters.Add(center, visited);
             }
-        }
-    }
-
-    private class ConnectedCentersSolution
-    {
-        public required HashSet<ConnectedCentersStrategy> Strategies { get; set; }
-        public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
-        public required Dictionary<Location, HashSet<Location>> CenterToConnectedCenters { get; set; }
-        public required HashSet<Location> Pipes { get; set; }
-    }
-
-    private class ConnectedCentersComparer : IEqualityComparer<Dictionary<Location, HashSet<Location>>>
-    {
-        public static readonly ConnectedCentersComparer Instance = new ConnectedCentersComparer();
-
-        public bool Equals(Dictionary<Location, HashSet<Location>>? x, Dictionary<Location, HashSet<Location>>? y)
-        {
-            if (x is null && y is null)
-            {
-                return true;
-            }
-
-            if (x is null)
-            {
-                return false;
-            }
-
-            if (y is null)
-            {
-                return false;
-            }
-
-            if (x.Keys.Count != y.Keys.Count)
-            {
-                return false;
-            }
-
-            foreach ((var key, var xValue) in x)
-            {
-                if (!y.TryGetValue(key, out var yValue))
-                {
-                    return false;
-                }
-
-                if (!xValue.SetEquals(yValue))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public int GetHashCode([DisallowNull] Dictionary<Location, HashSet<Location>> obj)
-        {
-            var hashCode = new HashCode();
-            foreach ((var key, var value) in obj)
-            {
-                hashCode.Add(key);
-                foreach (var x in value)
-                {
-                    hashCode.Add(x);
-                }
-            }
-
-            return hashCode.ToHashCode();
         }
     }
 }

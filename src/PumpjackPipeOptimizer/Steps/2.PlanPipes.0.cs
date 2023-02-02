@@ -1,32 +1,174 @@
-﻿namespace PumpjackPipeOptimizer.Steps;
+﻿using PumpjackPipeOptimizer.Grid;
+using System.Diagnostics.CodeAnalysis;
+
+namespace PumpjackPipeOptimizer.Steps;
 
 internal static partial class PlanPipes
 {
     public static HashSet<Location> Execute(Context context)
     {
-        HashSet<Location>? bestPipes = null;
+        var originalCenterToTerminals = context.CenterToTerminals;
+        var solutions = new List<Solution>();
+        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
 
         foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
         {
-            var pipes = strategy switch
-            {
-                PlanPipesStrategy.FBE => ExecuteWithFBE(context),
-                PlanPipesStrategy.ConnectedCenters => ExecuteWithConnectedCenters(context),
-                _ => throw new NotImplementedException(),
-            };
+            context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 
-            if (bestPipes is null || pipes.Count < bestPipes.Count)
+            switch (strategy)
             {
-                bestPipes = pipes;
+                case PlanPipesStrategy.FBE:
+                    {
+                        var pipes = ExecuteWithFBE(context);
+
+                        var optimizedPipes = RotateOptimize.Execute(context, pipes);
+
+                        solutions.Add(new Solution
+                        {
+                            Strategies = new HashSet<PlanPipesStrategy> { strategy },
+                            CenterToConnectedCenters = null,
+                            CenterToTerminals = context.CenterToTerminals,
+                            Pipes = optimizedPipes,
+                        });
+                    }
+                    break;
+
+                case PlanPipesStrategy.ConnectedCenters_Delaunay:
+                case PlanPipesStrategy.ConnectedCenters_DelaunayMst:
+                case PlanPipesStrategy.ConnectedCenters_FLUTE:
+                    {
+                        Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
+                        if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
+                        {
+                            solution.Strategies.Add(strategy);
+                            continue;
+                        }
+
+                        var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
+
+                        var optimizedPipes = RotateOptimize.Execute(context, pipes);
+
+                        solution = new Solution
+                        {
+                            Strategies = new HashSet<PlanPipesStrategy> { strategy },
+                            CenterToTerminals = context.CenterToTerminals,
+                            CenterToConnectedCenters = centerToConnectedCenters,
+                            Pipes = optimizedPipes,
+                        };
+
+                        solutions.Add(solution);
+                        connectedCentersToSolutions.Add(centerToConnectedCenters, solution);
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException();
             }
         }
 
-        return bestPipes!;
+        var bestSolution = solutions.MinBy(s => s.Pipes.Count)!;
+        context.CenterToTerminals = bestSolution.CenterToTerminals;
+        return bestSolution.Pipes;
+    }
+
+    private static bool AreLocationsCollinear(List<Location> locations)
+    {
+        double lastSlope = 0;
+        for (var i = 0; i < locations.Count; i++)
+        {
+            if (i == locations.Count - 1)
+            {
+                return true;
+            }
+
+            var node = locations[i];
+            var next = locations[i + 1];
+            double dX = Math.Abs(node.X - next.X);
+            double dY = Math.Abs(node.Y - next.Y);
+            if (i == 0)
+            {
+                lastSlope = dY / dX;
+            }
+            else if (lastSlope != dY / dX)
+            {
+                break;
+            }
+        }
+
+        return false;
     }
 
     private enum PlanPipesStrategy
     {
         FBE,
-        ConnectedCenters,
+        ConnectedCenters_Delaunay,
+        ConnectedCenters_DelaunayMst,
+        ConnectedCenters_FLUTE,
+    }
+
+    private class Solution
+    {
+        public required HashSet<PlanPipesStrategy> Strategies { get; set; }
+        public required Dictionary<Location, HashSet<Location>>? CenterToConnectedCenters { get; set; }
+        public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
+        public required HashSet<Location> Pipes { get; set; }
+    }
+
+    private class ConnectedCentersComparer : IEqualityComparer<Dictionary<Location, HashSet<Location>>>
+    {
+        public static readonly ConnectedCentersComparer Instance = new ConnectedCentersComparer();
+
+        public bool Equals(Dictionary<Location, HashSet<Location>>? x, Dictionary<Location, HashSet<Location>>? y)
+        {
+            if (x is null && y is null)
+            {
+                return true;
+            }
+
+            if (x is null)
+            {
+                return false;
+            }
+
+            if (y is null)
+            {
+                return false;
+            }
+
+            if (x.Keys.Count != y.Keys.Count)
+            {
+                return false;
+            }
+
+            foreach ((var key, var xValue) in x)
+            {
+                if (!y.TryGetValue(key, out var yValue))
+                {
+                    return false;
+                }
+
+                if (!xValue.SetEquals(yValue))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public int GetHashCode([DisallowNull] Dictionary<Location, HashSet<Location>> obj)
+        {
+            var hashCode = new HashCode();
+            foreach ((var key, var value) in obj)
+            {
+                hashCode.Add(key);
+                foreach (var x in value)
+                {
+                    hashCode.Add(x);
+                }
+            }
+
+            return hashCode.ToHashCode();
+        }
     }
 }

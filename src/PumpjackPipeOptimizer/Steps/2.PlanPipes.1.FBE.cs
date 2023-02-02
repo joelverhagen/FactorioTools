@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DelaunatorSharp;
+﻿using DelaunatorSharp;
 using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
 
@@ -413,30 +408,14 @@ internal static partial class PlanPipes
         }
 
         // Check that nodes are not collinear
-        double lastSlope = 0;
-        for (var i = 0; i < filteredNodes.Count; i++)
+        if (AreLocationsCollinear(filteredNodes))
         {
-            if (i == filteredNodes.Count - 1)
-            {
-                return Enumerable
-                    .Range(1, filteredNodes.Count - 1)
-                    .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
-                    .ToList();
-            }
-
-            var node = filteredNodes[i];
-            var next = filteredNodes[i + 1];
-            double dX = Math.Abs(node.X - next.X);
-            double dY = Math.Abs(node.Y - next.Y);
-            if (i == 0)
-            {
-                lastSlope = dY / dX;
-            }
-            else if (lastSlope != dY / dX)
-            {
-                break;
-            }
+            return Enumerable
+                .Range(1, filteredNodes.Count - 1)
+                .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
+                .ToList();
         }
+
 
         var points = filteredNodes.Select<Location, IPoint>(x => new Point(x.X, x.Y)).ToArray();
         var delaunator = new Delaunator(points);
