@@ -4,6 +4,14 @@ using PumpjackPipeOptimizer.Grid;
 
 namespace PumpjackPipeOptimizer.Steps;
 
+/// <summary>
+/// This "FBE" implementation is copied from Teoxoy's Factorio Blueprint Editor (FBE).
+/// Source:
+/// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/pipe.ts
+/// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts
+/// 
+/// Teoxoy came up with the idea to use Delaunay triangulation for this problem. Awesome!
+/// </summary>
 internal static partial class PlanPipes
 {
     public static HashSet<Location> ExecuteWithFBE(Context context)
