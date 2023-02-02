@@ -71,33 +71,6 @@ internal static partial class PlanPipes
         return bestSolution.Pipes;
     }
 
-    private static bool AreLocationsCollinear(List<Location> locations)
-    {
-        double lastSlope = 0;
-        for (var i = 0; i < locations.Count; i++)
-        {
-            if (i == locations.Count - 1)
-            {
-                return true;
-            }
-
-            var node = locations[i];
-            var next = locations[i + 1];
-            double dX = Math.Abs(node.X - next.X);
-            double dY = Math.Abs(node.Y - next.Y);
-            if (i == 0)
-            {
-                lastSlope = dY / dX;
-            }
-            else if (lastSlope != dY / dX)
-            {
-                break;
-            }
-        }
-
-        return false;
-    }
-
     private enum PlanPipesStrategy
     {
         FBE,

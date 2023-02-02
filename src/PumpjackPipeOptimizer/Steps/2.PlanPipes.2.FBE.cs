@@ -86,16 +86,7 @@ internal static partial class PlanPipes
 
         foreach (var terminal in terminals)
         {
-            var otherTerminals = context.CenterToTerminals[terminal.Center];
-            otherTerminals.Clear();
-            otherTerminals.Add(terminal);
-
-            /*
-            if (!context.Grid.IsEntityType<Terminal>(terminal.Terminal))
-            {
-                context.Grid.AddEntity(terminal.Terminal, new Terminal());
-            }
-            */
+            EliminateOtherTerminals(context, terminal);
         }
 
         /*
@@ -448,27 +439,6 @@ internal static partial class PlanPipes
             .Where(g => g.Lines.Count > 0)
             .OrderBy(g => g.MinDistance)
             .FirstOrDefault();
-    }
-
-    private static int CountTurns(List<Location> path)
-    {
-        var previousDirection = -1;
-        var turns = 0;
-        for (var i = 1; i < path.Count; i++)
-        {
-            var currentDirection = path[i].X == path[i - 1].X ? 0 : 1;
-            if (previousDirection != -1)
-            {
-                if (previousDirection != currentDirection)
-                {
-                    turns++;
-                }
-            }
-
-            previousDirection = currentDirection;
-        }
-
-        return turns;
     }
 
     private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns = 2)

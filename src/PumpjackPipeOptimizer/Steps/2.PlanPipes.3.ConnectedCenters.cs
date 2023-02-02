@@ -403,45 +403,6 @@ internal static partial class PlanPipes
         return trunkCandidates;
     }
 
-    private static double GetEuclideanDistance(Location a, double bX, double bY)
-    {
-        return Math.Sqrt(Math.Pow(a.X - bX, 2) + Math.Pow(a.Y - bY, 2));
-    }
-
-    private static List<Location> MakeStraightLine(Location a, Location b)
-    {
-        if (a.X == b.X)
-        {
-            return Enumerable
-                .Range(Math.Min(a.Y, b.Y), Math.Abs(a.Y - b.Y) + 1)
-                .Select(y => new Location(a.X, y))
-                .ToList();
-        }
-
-        if (a.Y == b.Y)
-        {
-            return Enumerable
-                .Range(Math.Min(a.X, b.X), Math.Abs(a.X - b.X) + 1)
-                .Select(x => new Location(x, a.Y))
-                .ToList();
-        }
-
-        throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
-    }
-
-    private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
-    {
-        var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];
-
-        if (terminalOptions.Count == 1)
-        {
-            return;
-        }
-
-        terminalOptions.Clear();
-        terminalOptions.Add(selectedTerminal);
-    }
-
     private class Trunk
     {
         public Trunk(TerminalLocation startingTerminal, Location center)
