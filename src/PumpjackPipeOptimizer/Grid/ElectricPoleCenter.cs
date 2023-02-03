@@ -13,4 +13,14 @@ internal class ElectricPoleCenter : GridEntity
         _neighbors.Add(neighbor);
         neighbor._neighbors.Add(this);
     }
+
+    public void ClearNeighbors()
+    {
+        foreach (var neighbor in _neighbors)
+        {
+            neighbor._neighbors.Remove(this);
+        }
+
+        _neighbors.Clear();
+    }
 }

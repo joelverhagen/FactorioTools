@@ -16,24 +16,8 @@ internal static partial class PlanPipes
     {
         var dlGraph2 = GetDelaunayGraph(centers);
         var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistance);
-        var mst = Prims.GetMinimumSpanningTree(dlGraph2, closestToMiddle);
+        var mst = Prims.GetMinimumSpanningTree(dlGraph2, closestToMiddle, digraph: false);
 
-        // Make the MST bidirectional.
-        foreach (var center in mst.Keys.ToList())
-        {
-            foreach (var neighbor in mst[center])
-            {
-                if (!mst.TryGetValue(neighbor, out var otherNeighbors))
-                {
-                    otherNeighbors = new HashSet<Location> { center };
-                    mst.Add(neighbor, otherNeighbors);
-                }
-                else
-                {
-                    otherNeighbors.Add(center);
-                }
-            }
-        }
 
         // Visualizer.Show(context.Grid, points, delaunator.GetEdges());
         // Visualizer.Show(context.Grid, points, mst.SelectMany(p => p.Value.Select(o => (IEdge)new Edge(0, new Point(o.X, o.Y), new Point(p.Key.X, p.Key.Y)))));

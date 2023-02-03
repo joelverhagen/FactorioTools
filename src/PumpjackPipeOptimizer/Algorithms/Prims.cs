@@ -2,7 +2,7 @@
 
 internal static class Prims
 {
-    public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(Dictionary<Location, Dictionary<Location, double>> graph, Location firstNode)
+    public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(Dictionary<Location, Dictionary<Location, double>> graph, Location firstNode, bool digraph)
     {
         var visited = new HashSet<Location>();
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), double>();
@@ -37,6 +37,26 @@ internal static class Prims
                 if (!visited.Contains(neighbor))
                 {
                     priority.Enqueue((nodeB, neighbor), cost);
+                }
+            }
+        }
+
+        if (!digraph)
+        {
+            // Make the MST bidirectional (a graph, not a digraph).
+            foreach (var center in mst.Keys.ToList())
+            {
+                foreach (var neighbor in mst[center])
+                {
+                    if (!mst.TryGetValue(neighbor, out var otherNeighbors))
+                    {
+                        otherNeighbors = new HashSet<Location> { center };
+                        mst.Add(neighbor, otherNeighbors);
+                    }
+                    else
+                    {
+                        otherNeighbors.Add(center);
+                    }
                 }
             }
         }

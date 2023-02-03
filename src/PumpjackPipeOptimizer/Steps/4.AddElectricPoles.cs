@@ -40,6 +40,12 @@ internal static class AddElectricPoles
 
         RemoveExtraElectricPoles(context, electricPoles);
 
+        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+
+        PruneNeighbors(context, electricPoles);
+
+        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+
         if (avoidTerminals)
         {
             foreach (var terminal in temporaryTerminals)
@@ -49,6 +55,36 @@ internal static class AddElectricPoles
         }
 
         return electricPoles.Keys.ToHashSet();
+    }
+
+    private static void PruneNeighbors(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    {
+        var graph = new Dictionary<Location, Dictionary<Location, double>>();
+        foreach ((var location, var center) in electricPoles)
+        {
+            var neighbors = new Dictionary<Location, double>();
+            foreach (var neighbor in center.Neighbors)
+            {
+                var neighborLocation = context.Grid.EntityToLocation[neighbor];
+                neighbors.Add(neighborLocation, GetElectricPoleDistance(location, neighborLocation, context.Options));
+            }
+
+            graph.Add(location, neighbors);
+        }
+
+        var firstNode = graph.Keys.OrderBy(context.Grid.Middle.GetEuclideanDistance).First();
+        var mst = Prims.GetMinimumSpanningTree(graph, firstNode, digraph: false);
+
+        foreach ((var location, var neighbors) in mst)
+        {
+            var center = electricPoles[location];
+            center.ClearNeighbors();
+            foreach (var neighbor in neighbors)
+            {
+                var neighborCenter = electricPoles[neighbor];
+                center.AddNeighbor(neighborCenter);
+            }
+        }
     }
 
     private static void RemoveExtraElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)

@@ -76,7 +76,7 @@ internal partial class Program
         var blueprintCount = 0;
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[26] };
+        // var blueprintStrings = new[] { blueprintStringsAll[1] };
         for (int i = 0; i < blueprintStrings.Length; i++)
         {
             string? blueprintString = blueprintStrings[i];
