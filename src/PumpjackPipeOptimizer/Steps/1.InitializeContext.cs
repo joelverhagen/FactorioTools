@@ -86,11 +86,12 @@ internal static class InitializeContext
         // Fill the grid with the pumpjacks
         foreach (var center in pumpjackCenters)
         {
+            var centerEntity = new PumpjackCenter();
             for (var x = -1; x <= 1; x++)
             {
                 for (var y = -1; y <= 1; y++)
                 {
-                    GridEntity entity = x != 0 || y != 0 ? new PumpjackSide() : new PumpjackCenter();
+                    GridEntity entity = x != 0 || y != 0 ? new PumpjackSide(centerEntity) : centerEntity;
                     grid.AddEntity(new Location(center.X + x, center.Y + y), entity);
                 }
             }

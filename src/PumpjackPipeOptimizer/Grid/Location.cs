@@ -35,6 +35,11 @@
         return Math.Sqrt(Math.Pow(X - other.X, 2) + Math.Pow(Y - other.Y, 2));
     }
 
+    public double GetEuclideanDistance(double bX, double bY)
+    {
+        return Math.Sqrt(Math.Pow(X - bX, 2) + Math.Pow(Y - bY, 2));
+    }
+
     public Location Translate((int DeltaX, int DeltaY) translation)
     {
         return new Location(X + translation.DeltaX, Y + translation.DeltaY);

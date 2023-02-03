@@ -27,7 +27,7 @@ internal static class GridToBlueprintString
             return entityNumber;
         }
 
-        foreach ((var location, var gridEntity) in context.Grid.LocationToEntity)
+        foreach ((var gridEntity, var location) in context.Grid.EntityToLocation)
         {
             var position = new Position
             {

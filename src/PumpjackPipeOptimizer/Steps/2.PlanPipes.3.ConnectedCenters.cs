@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
+using static PumpjackPipeOptimizer.Steps.Helpers;
 
 namespace PumpjackPipeOptimizer.Steps;
 
@@ -115,7 +116,6 @@ internal static partial class PlanPipes
                                         path = paths.Single();
                                     }
 
-
                                     return new
                                     {
                                         Terminal = terminal,
@@ -184,7 +184,7 @@ internal static partial class PlanPipes
                 var neighbors = t.Centers.SelectMany(c => centerToConnectedCenters[c]).Except(t.Centers).ToHashSet();
                 var centroidX = neighbors.Average(l => l.X);
                 var centroidY = neighbors.Average(l => l.Y);
-                return GetEuclideanDistance(t.Start, centroidX, centroidY) + GetEuclideanDistance(t.End, centroidX, centroidY);
+                return t.Start.GetEuclideanDistance(centroidX, centroidY) + t.End.GetEuclideanDistance(centroidX, centroidY);
             })
             .ToList();
 
@@ -459,7 +459,7 @@ internal static partial class PlanPipes
         {
             var centroidX = Pipes.Average(l => l.X);
             var centroidY = Pipes.Average(l => l.Y);
-            return GetEuclideanDistance(location, centroidX, centroidY);
+            return location.GetEuclideanDistance(centroidX, centroidY);
         }
 
         public double GetChildCentroidDistance(Location includedCenter, Location terminalCandidate)
@@ -469,7 +469,7 @@ internal static partial class PlanPipes
             var centroidX = terminals.Average(t => t.Terminal.X);
             var centroidY = terminals.Average(t => t.Terminal.Y);
 
-            return GetEuclideanDistance(terminalCandidate, centroidX, centroidY);
+            return terminalCandidate.GetEuclideanDistance(centroidX, centroidY);
         }
 
         public void ConnectPumpjack(Location center, IEnumerable<Location> path)

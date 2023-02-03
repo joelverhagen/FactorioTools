@@ -33,7 +33,8 @@ internal static class Visualizer
             {
                 var location = new Location(x, y);
                 Color color;
-                if (grid.LocationToEntity.TryGetValue(location, out var entity))
+                GridEntity? entity;
+                if ((entity = grid[location]) is not null)
                 {
                     color = entity switch
                     {
@@ -41,6 +42,8 @@ internal static class Visualizer
                         PumpjackCenter _ => Color.DarkGreen,
                         Terminal _ => Color.DarkGray,
                         Pipe _ => Color.Gray,
+                        ElectricPoleSide _ => Color.Yellow,
+                        ElectricPoleCenter _ => Color.Gold,
                         _ => throw new NotImplementedException(),
                     };
                 }
@@ -55,6 +58,23 @@ internal static class Visualizer
 
                 var entityR = new Rectangle(location.X * CellSize + gridLineWidth, location.Y * CellSize + gridLineWidth, CellSize - (2 * gridLineWidth), CellSize - (2 * gridLineWidth));
                 image.Mutate(c => c.Fill(color, entityR));
+            }
+        }
+
+        var pairs = new HashSet<(Location A, Location B)>();
+        foreach ((var pole, var location) in grid.EntityToLocation.Where(p => p.Key is ElectricPoleCenter))
+        {
+            var center = (ElectricPoleCenter)pole;
+            foreach (var neighbor in center.Neighbors)
+            {
+                var pair = new[] { location, grid.EntityToLocation[neighbor] }.Order().ToList();
+                if (pairs.Add((pair[0], pair[1])))
+                {
+                    image.Mutate(c =>
+                    {
+                        c.DrawLines(Color.Chocolate, thickness: 4, new PointF(pair[0].X * CellSize + (CellSize / 2), pair[0].Y * CellSize + (CellSize / 2)), new PointF(pair[1].X * CellSize + (CellSize / 2), pair[1].Y * CellSize + (CellSize / 2)));
+                    });
+                }
             }
         }
 

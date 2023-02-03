@@ -75,10 +75,13 @@ internal class RotateOptimize
                 }
 
                 var result = Dijkstras.GetShortestPaths(context.Grid, terminalCandidate, newPipes, stopOnFirstGoal: true);
-                var reachedGoal = result.ReachedGoals.Single();
-                var path = result.GetStraightPaths(reachedGoal).First();
+                if (result.ReachedGoals.Count > 0)
+                {
+                    var reachedGoal = result.ReachedGoals.Single();
+                    var path = result.GetStraightPaths(reachedGoal).First();
 
-                paths.Add((new TerminalLocation(center, terminalCandidate, direction), path));
+                    paths.Add((new TerminalLocation(center, terminalCandidate, direction), path));
+                }
             }
 
             paths = paths.OrderBy(p => p.Path.Count).ToList();

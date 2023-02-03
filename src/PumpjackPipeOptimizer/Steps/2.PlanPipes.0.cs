@@ -1,4 +1,5 @@
-﻿using PumpjackPipeOptimizer.Grid;
+﻿using PumpjackPipeOptimizer.Algorithms;
+using PumpjackPipeOptimizer.Grid;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PumpjackPipeOptimizer.Steps;
@@ -10,6 +11,8 @@ internal static partial class PlanPipes
         var originalCenterToTerminals = context.CenterToTerminals;
         var solutions = new List<Solution>();
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
+
+        EliminateStrandedTerminals(context);
 
         foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
         {
@@ -69,6 +72,72 @@ internal static partial class PlanPipes
         var bestSolution = solutions.MinBy(s => s.Pipes.Count)!;
         context.CenterToTerminals = bestSolution.CenterToTerminals;
         return bestSolution.Pipes;
+    }
+
+    private static void EliminateStrandedTerminals(Context context)
+    {
+        var locationToTerminals = context
+            .CenterToTerminals
+            .Values
+            .SelectMany(ts => ts)
+            .GroupBy(t => t.Terminal)
+            .ToDictionary(g => g.Key, g => g.ToHashSet());
+
+        var locationsToExplore = locationToTerminals.Keys.ToHashSet();
+
+        while (locationsToExplore.Count > 0)
+        {
+            var goals = new HashSet<Location>(locationsToExplore);
+            var start = goals.First();
+            goals.Remove(start);
+
+            var result = Dijkstras.GetShortestPaths(context.Grid, start, goals, stopOnFirstGoal: false);
+
+            var reachedTerminals = result.ReachedGoals;
+            reachedTerminals.Add(start);
+
+            var unreachedTerminals = goals.Except(result.ReachedGoals).ToHashSet();
+
+            var reachedPumpjacks = result.ReachedGoals.SelectMany(l => locationToTerminals[l]).Select(t => t.Center).ToHashSet();
+
+            HashSet<Location> terminalsToEliminate;
+            if (reachedPumpjacks.Count == context.CenterToTerminals.Count)
+            {
+                terminalsToEliminate = unreachedTerminals;
+                locationsToExplore.Clear();
+            }
+            else
+            {
+                terminalsToEliminate = reachedTerminals;
+                locationsToExplore = unreachedTerminals;
+            }
+
+            foreach (var location in terminalsToEliminate)
+            {
+                foreach (var terminal in locationToTerminals[location])
+                {
+                    var terminals = context.CenterToTerminals[terminal.Center];
+                    terminals.Remove(terminal);
+                    if (terminals.Count == 0)
+                    {
+                        throw new InvalidOperationException("No path can be found for any of the terminals on a pumpjack.");
+                    }
+                }
+            }
+        }
+    }
+
+    private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
+    {
+        var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];
+
+        if (terminalOptions.Count == 1)
+        {
+            return;
+        }
+
+        terminalOptions.Clear();
+        terminalOptions.Add(selectedTerminal);
     }
 
     private enum PlanPipesStrategy

@@ -19,7 +19,7 @@ internal class ExistingPipeGrid : SquareGrid
     {
         foreach (var adjacent in GetAdjacent(id))
         {
-            if (LocationToEntity.TryGetValue(adjacent, out var entity) && entity is Pipe)
+            if (IsEntityType<Pipe>(adjacent))
             {
                 yield return adjacent;
             }

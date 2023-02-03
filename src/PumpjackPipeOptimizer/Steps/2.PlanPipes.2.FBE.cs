@@ -1,6 +1,6 @@
-﻿using DelaunatorSharp;
-using PumpjackPipeOptimizer.Algorithms;
+﻿using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
+using static PumpjackPipeOptimizer.Steps.Helpers;
 
 namespace PumpjackPipeOptimizer.Steps;
 
@@ -251,50 +251,6 @@ internal static partial class PlanPipes
         return (terminals, pipes);
     }
 
-    private static List<Endpoints> PointsToLines(IEnumerable<Location> nodes)
-    {
-        var filteredNodes = nodes
-            .Distinct()
-            .OrderBy(x => x.X)
-            .ThenBy(x => x.Y)
-            .ToList();
-
-        if (filteredNodes.Count == 1)
-        {
-            return new List<Endpoints> { new Endpoints(filteredNodes[0], filteredNodes[0]) };
-        }
-        else if (filteredNodes.Count == 2)
-        {
-            return new List<Endpoints> { new Endpoints(filteredNodes[0], filteredNodes[1]) };
-        }
-
-        // Check that nodes are not collinear
-        if (AreLocationsCollinear(filteredNodes))
-        {
-            return Enumerable
-                .Range(1, filteredNodes.Count - 1)
-                .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
-                .ToList();
-        }
-
-
-        var points = filteredNodes.Select<Location, IPoint>(x => new Point(x.X, x.Y)).ToArray();
-        var delaunator = new Delaunator(points);
-
-        var lines = new List<Endpoints>();
-        for (var e = 0; e < delaunator.Triangles.Length; e++)
-        {
-            if (e > delaunator.Halfedges[e])
-            {
-                var p = filteredNodes[delaunator.Triangles[e]];
-                var q = filteredNodes[delaunator.Triangles[e % 3 == 2 ? e - 2 : e + 1]];
-                lines.Add(new Endpoints(p, q));
-            }
-        }
-
-        return lines;
-    }
-
     private static bool LineContainsAnAddedPumpjack(List<TerminalLocation> addedPumpjacks, PumpjackConnection ent)
     {
         return addedPumpjacks.Any(e =>
@@ -368,7 +324,6 @@ internal static partial class PlanPipes
     {
         public double AverageDistance => Connections.Count > 0 ? Connections.Average(x => x.Line.Count - 1) : 0;
     }
-    private record Endpoints(Location A, Location B);
 
     private record TerminalPair(TerminalLocation TerminalA, TerminalLocation TerminalB, List<Location> Line)
     {

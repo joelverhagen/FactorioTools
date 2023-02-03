@@ -12,17 +12,7 @@ internal partial class Program
         /*
         var options = new Options
         {
-            ElectricPoleEntityName = EntityNames.Vanilla.Substation,
-            ElectricPoleSupplyWidth = 18,
-            ElectricPoleSupplyHeight = 18,
-            ElectricPoleWireReach = 18,
-            ElectricPoleWidth = 2,
-            ElectricPoleHeight = 2,
-        };
-        */
-        /*
-        var options = new Options
-        {
+            UseUndergroundPipes = false,
             ElectricPoleEntityName = EntityNames.SpaceExploration.SmallIronElectricPole,
             ElectricPoleSupplyWidth = 5,
             ElectricPoleSupplyHeight = 5,
@@ -32,6 +22,20 @@ internal partial class Program
         };
         */
 
+        /*
+        var options = new Options
+        {
+            UseUndergroundPipes = false,
+            ElectricPoleEntityName = EntityNames.Vanilla.SmallElectricPole,
+            ElectricPoleSupplyWidth = 5,
+            ElectricPoleSupplyHeight = 5,
+            ElectricPoleWireReach = 7.5,
+            ElectricPoleWidth = 1,
+            ElectricPoleHeight = 1,
+        };
+        */
+
+        /*
         var options = new Options
         {
             UseUndergroundPipes = false,
@@ -42,10 +46,11 @@ internal partial class Program
             ElectricPoleWidth = 1,
             ElectricPoleHeight = 1,
         };
+        */
 
-        /*
         var options = new Options
         {
+            UseUndergroundPipes = false,
             ElectricPoleEntityName = EntityNames.Vanilla.BigElectricPole,
             ElectricPoleSupplyWidth = 4,
             ElectricPoleSupplyHeight = 4,
@@ -53,60 +58,91 @@ internal partial class Program
             ElectricPoleWidth = 2,
             ElectricPoleHeight = 2,
         };
+
+        /*
+        var options = new Options
+        {
+            UseUndergroundPipes = false,
+            ElectricPoleEntityName = EntityNames.Vanilla.Substation,
+            ElectricPoleSupplyWidth = 18,
+            ElectricPoleSupplyHeight = 18,
+            ElectricPoleWireReach = 18,
+            ElectricPoleWidth = 2,
+            ElectricPoleHeight = 2,
+        };
         */
 
-        var sum = 0;
-        var count = 0;
-        var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToList();
+        var pipeSum = 0;
+        var blueprintCount = 0;
+        var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
-        // var blueprintStrings = new[] { blueprintStringsAll[54] };
-        foreach (var blueprintString in blueprintStrings)
+        // var blueprintStrings = new[] { blueprintStringsAll[26] };
+        for (int i = 0; i < blueprintStrings.Length; i++)
         {
+            string? blueprintString = blueprintStrings[i];
             var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
-            var context = InitializeContext.Execute(options, inputBlueprint);
+            var addElectricPolesFirst = false;
 
-            if (context.CenterToTerminals.Count < 2)
+            while (true)
             {
-                throw new InvalidOperationException("The must be at least two pumpjacks in the blueprint.");
+                var context = InitializeContext.Execute(options, inputBlueprint);
+
+                if (context.CenterToTerminals.Count < 2)
+                {
+                    throw new InvalidOperationException("The must be at least two pumpjacks in the blueprint.");
+                }
+
+                HashSet<Location>? poles = null;
+                if (addElectricPolesFirst)
+                {
+                    poles = AddElectricPoles.Execute(context, avoidTerminals: true);
+                    if (poles is null)
+                    {
+                        throw new InvalidOperationException("No valid placement for the electric poles could be found.");
+                    }
+                }
+
+                var pipes = PlanPipes.Execute(context);
+
+                AddPipeEntities.Execute(context.Grid, context.CenterToTerminals, pipes);
+
+                // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+
+                if (context.Options.UseUndergroundPipes)
+                {
+                    // Substitute long stretches of pipes for underground pipes
+                    UseUndergroundPipes.Execute(context, pipes);
+                }
+
+                // Add electric poles to the grid.
+                if (poles is null)
+                {
+                    poles = AddElectricPoles.Execute(context, avoidTerminals: false);
+                    if (poles is null)
+                    {
+                        addElectricPolesFirst = true;
+                        continue;
+                    }
+                }
+
+                // Console.WriteLine();
+                // context.Grid.WriteTo(Console.Out);
+
+                Console.WriteLine($"{pipes.Count} {poles.Count}");
+
+                var newBlueprint = GridToBlueprintString.Execute(context);
+                // Console.WriteLine();
+                // Console.WriteLine(newBlueprint);
+
+                pipeSum += pipes.Count;
+                blueprintCount++;
+
+                break;
             }
-
-            // context.Grid.WriteTo(Console.Out);
-
-            // Use Dijksta's algorithm to add good connecting pipes to the grid.
-            var pipes = PlanPipes.Execute(context);
-
-            AddPipeEntities.Execute(context.Grid, context.CenterToTerminals, pipes);
-
-            // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
-
-            sum += pipes.Count;
-            count++;
-            Console.WriteLine(pipes.Count);
-
-            // Find pipe "squares" (four pipes forming a square) and try to remove one from the square.
-            // PruneSquares.Execute(context, pipes);
-
-            /*
-            if (context.Options.UseUndergroundPipes)
-            {
-                // Substitute long stretches of pipes for underground pipes
-                UseUndergroundPipes.Execute(context, pipes);
-            }
-
-            // Add electric poles to the grid.
-            AddElectricPoles.Execute(context);
-
-            Console.WriteLine();
-            context.Grid.WriteTo(Console.Out);
-            */
-            var newBlueprint = GridToBlueprintString.Execute(context);
-            // Console.WriteLine();
-            // Console.WriteLine(newBlueprint);
         }
 
-        Console.WriteLine(sum * 1.0 / count);
+        Console.WriteLine(pipeSum * 1.0 / blueprintCount);
     }
 
     private static void NormalizeBlueprints()

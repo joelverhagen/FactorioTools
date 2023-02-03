@@ -12,13 +12,16 @@ internal abstract class SquareGrid
 
     private const string EmptyLabel = ".";
 
-    private readonly Dictionary<Location, GridEntity> _locationToEntity = new Dictionary<Location, GridEntity>();
-    private readonly Dictionary<GridEntity, Location> _entityToLocation = new Dictionary<GridEntity, Location>();
+    private readonly Dictionary<GridEntity, Location> _entityToLocation;
+    private readonly GridEntity?[,] _grid;
 
-    public SquareGrid(SquareGrid existing) : this (existing.Width, existing.Height)
+    public SquareGrid(SquareGrid existing)
     {
-        _locationToEntity = new Dictionary<Location, GridEntity>(existing._locationToEntity);
-        _entityToLocation = new Dictionary<GridEntity, Location> (existing._entityToLocation);
+        Width = existing.Width;
+        Height = existing.Height;
+        Middle = new Location(Width / 2, Height / 2);
+        _entityToLocation = new Dictionary<GridEntity, Location>(existing._entityToLocation);
+        _grid = (GridEntity[,])existing._grid.Clone();
     }
 
     public SquareGrid(int width, int height)
@@ -26,40 +29,55 @@ internal abstract class SquareGrid
         Width = width;
         Height = height;
         Middle = new Location(Width / 2, Height / 2);
+        _entityToLocation = new Dictionary<GridEntity, Location>();
+        _grid = new GridEntity?[width, height];
     }
 
     public int Width { get; }
     public int Height { get; }
     public Location Middle { get; }
 
-    public IReadOnlyDictionary<Location, GridEntity> LocationToEntity => _locationToEntity;
+    public GridEntity? this[Location id]
+    {
+        get
+        {
+            return _grid[id.X, id.Y];
+        }
+    }
+
     public IReadOnlyDictionary<GridEntity, Location> EntityToLocation => _entityToLocation;
 
     public bool IsEmpty(Location id)
     {
-        return !_locationToEntity.ContainsKey(id);
+        return _grid[id.X, id.Y] is null;
     }
 
     public abstract double GetNeighborCost(Location a, Location b);
 
     public void AddEntity(Location id, GridEntity entity)
     {
-        _locationToEntity.Add(id, entity);
+        if (_grid[id.X, id.Y] is not null)
+        {
+            throw new InvalidOperationException($"There is already an entity at {id}.");
+        }
+
+        _grid[id.X, id.Y] = entity;
         _entityToLocation.Add(entity, id);
     }
 
     public void RemoveEntity(Location id)
     {
-        if (_locationToEntity.TryGetValue(id, out var entity))
+        var entity = _grid[id.X, id.Y];
+        if (entity is not null)
         {
-            _locationToEntity.Remove(id);
+            _grid[id.X, id.Y] = null;
             _entityToLocation.Remove(entity);
         }
     }
 
     public bool IsEntityType<T>(Location id) where T : GridEntity
     {
-        return _locationToEntity.TryGetValue(id, out var entity) && entity is T;
+        return _grid[id.X, id.Y] is T;
     }
 
     public bool IsInBounds(Location id)
@@ -83,14 +101,15 @@ internal abstract class SquareGrid
 
     public void WriteTo(TextWriter sw, int spacing = 0)
     {
-        var maxLabelLength = _locationToEntity.Values.Max(x => x.Label.Length) + spacing;
+        var maxLabelLength = _entityToLocation.Keys.Max(x => x.Label.Length) + spacing;
 
         for (var y = 0; y < Height; y++)
         {
             for (var x = 0; x < Width; x++)
             {
                 var location = new Location(x, y);
-                if (_locationToEntity.TryGetValue(location, out var entity))
+                var entity = _grid[x, y];
+                if (entity is not null)
                 {
                     sw.Write(entity.Label.PadRight(maxLabelLength));
                 }

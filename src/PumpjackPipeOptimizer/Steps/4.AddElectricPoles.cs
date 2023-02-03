@@ -1,35 +1,185 @@
-﻿using PumpjackPipeOptimizer.Algorithms;
+﻿using DelaunatorSharp;
+using PumpjackPipeOptimizer.Algorithms;
 using PumpjackPipeOptimizer.Grid;
+using static PumpjackPipeOptimizer.Steps.Helpers;
 
 namespace PumpjackPipeOptimizer.Steps;
 
 internal static class AddElectricPoles
 {
-    public static void Execute(Context context)
+    public static HashSet<Location>? Execute(Context context, bool avoidTerminals)
     {
-        // Convert the grid to an electric grid, which has a different neighbor discovery algorithm.
-        context.Grid = new ElectricGrid(context.Grid, context.Options);
+        var temporaryTerminals = new HashSet<Location>();
+        if (avoidTerminals)
+        {
+            foreach (var terminal in context.CenterToTerminals.Values.SelectMany(t => t).Select(t => t.Terminal))
+            {
+                if (context.Grid.IsEmpty(terminal))
+                {
+                    if (temporaryTerminals.Add(terminal))
+                    {
+                        context.Grid.AddEntity(terminal, new Terminal());
+                    }
+                }
+            }
+        }
 
         var electricPoles = AddElectricPolesAroundPumpjacks(context);
+        if (electricPoles is null)
+        {
+            return null;
+        }
+
+        // ConnectExistingElectricPoles(context, electricPoles);
+
+        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
         ConnectElectricPoles(context, electricPoles);
+
+        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+
+        RemoveExtraElectricPoles(context, electricPoles);
+
+        if (avoidTerminals)
+        {
+            foreach (var terminal in temporaryTerminals)
+            {
+                context.Grid.RemoveEntity(terminal);
+            }
+        }
+
+        return electricPoles.Keys.ToHashSet();
     }
 
-    private static Dictionary<Location, ElectricPoleCenter> AddElectricPolesAroundPumpjacks(Context context)
+    private static void RemoveExtraElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    {
+        var poleCenterToCoveredCenters = new Dictionary<Location, HashSet<Location>>();
+        foreach (var center in electricPoles.Keys)
+        {
+            var coveredCenters = new HashSet<Location>();
+            var offsetX = context.Options.ElectricPoleSupplyWidth / 2 - (context.Options.ElectricPoleWidth / 2);
+            var offsetY = context.Options.ElectricPoleSupplyHeight / 2 - (context.Options.ElectricPoleHeight / 2);
+
+            for (var x = Math.Max(center.X - offsetX, 0); x <= Math.Min(center.X + offsetX + (context.Options.ElectricPoleWidth / 2), context.Grid.Width - 1); x++)
+            {
+                for (var y = Math.Max(center.Y - offsetY, 0); y <= Math.Min(center.Y + offsetY + (context.Options.ElectricPoleWidth / 2), context.Grid.Height - 1); y++)
+                {
+                    var location = new Location(x, y);
+
+                    var entity = context.Grid[location];
+                    if (entity is PumpjackCenter)
+                    {
+                        coveredCenters.Add(location);
+                    }
+                    else if (entity is PumpjackSide pumpjackSide)
+                    {
+                        coveredCenters.Add(context.Grid.EntityToLocation[pumpjackSide.Center]);
+                    }
+                }
+            }
+
+            poleCenterToCoveredCenters.Add(center, coveredCenters);
+        }
+
+        var coveredCenterToPoleCenters = poleCenterToCoveredCenters
+            .SelectMany(p => p.Value.Select(c => new { PoleCenter = p.Key, PumpjackCenter = c }))
+            .GroupBy(p => p.PumpjackCenter)
+            .ToDictionary(g => g.Key, g => g.Select(p => p.PoleCenter).ToHashSet());
+
+        if (coveredCenterToPoleCenters.Count != context.CenterToTerminals.Count)
+        {
+            throw new InvalidOperationException("Not all pumpjacks are covered by an electric pole.");
+        }
+
+        var removeCandidates = coveredCenterToPoleCenters
+            .Where(p => p.Value.Count > 2) // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
+            .SelectMany(p => p.Value)
+            .Concat(poleCenterToCoveredCenters.Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
+            .Except(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value)) // Exclude electric poles covering pumpjacks that are only covered by one pole.
+            .ToList();
+
+        foreach (var candidate in removeCandidates)
+        {
+            if (ArePolesConnectedWithout(electricPoles, electricPoles[candidate]))
+            {
+
+            }
+        }
+    }
+
+    private static bool ArePolesConnectedWithout(Dictionary<Location, ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
+    {
+        var queue = new Queue<ElectricPoleCenter>();
+        queue.Enqueue(electricPoles.Values.Where(x => x != except).First());
+        var discovered = new HashSet<ElectricPoleCenter>();
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+
+            if (current == except)
+            {
+                continue;
+            }
+
+            if (discovered.Add(current))
+            {
+                foreach (var neighbor in current.Neighbors)
+                {
+                    queue.Enqueue(neighbor);
+                }
+            }
+        }
+
+        return discovered.Count == electricPoles.Count;
+    }
+
+    private static void ConnectExistingElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location location, ElectricPoleCenter center)
+    {
+        foreach ((var otherLocation, var otherCenter) in electricPoles)
+        {
+            if (location == otherLocation)
+            {
+                continue;
+            }
+
+            if (AreElectricPolesConnected(location, otherLocation, context.Options))
+            {
+                center.AddNeighbor(otherCenter);
+            }
+        }
+    }
+
+    public static bool AreElectricPolesConnected(Location a, Location b, Options options)
+    {
+        return GetElectricPoleDistance(a, b, options) <= options.ElectricPoleWireReach;
+    }
+
+    private static double GetElectricPoleDistance(Location a, Location b, Options options)
+    {
+        var offsetX = (options.ElectricPoleWidth - 1) / 2;
+        var offsetY = (options.ElectricPoleHeight - 1) / 2;
+
+        return b.GetEuclideanDistance(a.X + offsetX, a.Y + offsetY);
+    }
+
+    private static Dictionary<Location, ElectricPoleCenter>? AddElectricPolesAroundPumpjacks(Context context)
     {
         var pumpjackArea = (X: 3, Y: 3);
-        var offsetX = pumpjackArea.X / 2 + context.Options.ElectricPoleSupplyWidth / 2;
-        var offsetY = pumpjackArea.Y / 2 + context.Options.ElectricPoleSupplyHeight / 2;
+        var offsetX = pumpjackArea.X / 2 + context.Options.ElectricPoleSupplyWidth / 2 - (context.Options.ElectricPoleWidth / 2);
+        var offsetY = pumpjackArea.Y / 2 + context.Options.ElectricPoleSupplyHeight / 2 - (context.Options.ElectricPoleHeight / 2);
 
-        // First, find the spots for powerpoles that cover the most pumpjacks.
+        // First, find the spots for electric poles that cover the most pumpjacks.
         var candidateToCovered = new Dictionary<Location, HashSet<Location>>();
 
+        var allTerminals = context.CenterToTerminals.SelectMany(t => t.Value).Select(t => t.Terminal).ToHashSet();
+  
         // Generate electric pole locations
         foreach (var center in context.CenterToTerminals.Keys)
         {
-            for (var x = center.X - offsetX; x <= center.X + offsetX; x++)
+            for (var x = center.X - offsetX - (context.Options.ElectricPoleWidth / 2); x <= center.X + offsetX; x++)
             {
-                for (var y = center.Y - offsetY; y <= center.Y + offsetY; y++)
+                for (var y = center.Y - offsetY - (context.Options.ElectricPoleWidth / 2); y <= center.Y + offsetY; y++)
                 {
                     var candidate = new Location(x, y);
                     (var fits, _) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: false);
@@ -64,16 +214,52 @@ internal static class AddElectricPoles
                 x => x.Key,
                 x => x.Value.Sum(y => y.GetEuclideanDistance(x.Key)));
 
-            // Prefer spots that cover the most pumpjacks. Break ties with spots closer to their pumpjack centers.
+            // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+
+            // Prefer spots that cover the most pumpjacks.
+            // Break ties with spots in range of existing power poles.
+            // Break further ties with spots closer to their pumpjack centers.
             // Break further ties with spots closer to the center of the grid.
             var sortedCandidates = candidateToCovered
                 .Keys
-                .OrderByDescending(x => candidateToCovered[x].Count)
-                .ThenBy(x => candidateToPumpjackDistance[x])
-                .ThenBy(x => candidateToMiddleDistance[x]);
+                .Select(x =>
+                {
+                    var others = electricPoles
+                        .Keys
+                        .Select(y =>
+                        {
+                            var distance = x.GetEuclideanDistance(y);
+                            return new { Location = y, Distance = distance, Connected = distance <= context.Options.ElectricPoleWireReach };
+                        })
+                        .ToList();
 
-            foreach (var candidate in sortedCandidates)
+                    return new
+                    {
+                        Location = x,
+                        Covered = candidateToCovered[x],
+                        Others = others,
+                        Connected = others.Any(c => c.Connected),
+                    };
+                })
+                .OrderByDescending(x => x.Covered.Count)
+                .ThenBy(x => x.Connected ? x.Others.Count(o => o.Connected) : int.MaxValue)
+                .ThenBy(x => !x.Connected ? context
+                    .CenterToTerminals
+                    .Keys
+                    .Except(x.Covered)
+                    .Except(coveredPumpjacks)
+                    .Concat(electricPoles.Keys)
+                    .Select(l => l.GetEuclideanDistance(x.Location))
+                    .DefaultIfEmpty(double.MaxValue)
+                    .Min() : 0)
+                .ThenBy(x => candidateToPumpjackDistance[x.Location])
+                .ThenBy(x => candidateToMiddleDistance[x.Location])
+                .ToList();
+
+            var poleAdded = false;
+            foreach (var candidateInfo in sortedCandidates)
             {
+                var candidate = candidateInfo.Location;
                 var covered = candidateToCovered[candidate];
                 if (covered.IsSubsetOf(coveredPumpjacks))
                 {
@@ -85,10 +271,9 @@ internal static class AddElectricPoles
                 if (fits)
                 {
                     AddElectricPole(context, electricPoles, candidate, sides!);
-
                     coveredPumpjacks.UnionWith(candidateToCovered[candidate]);
 
-                    // Remove the covered pumpjacks from the canidate data, so that the next candidates are discounted
+                    // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
                     // by the pumpjacks that no longer need power.
                     foreach ((var otherCandidate, var otherCovered) in candidateToCovered.ToList())
                     {
@@ -99,15 +284,23 @@ internal static class AddElectricPoles
                         }
                     }
 
+                    poleAdded = true;
                     break;
                 }
+            }
+
+            if (!poleAdded)
+            {
+                // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
+                // existing pipe placement eliminates all electric pole options).
+                return null;
             }
         }
 
         return electricPoles;
     }
 
-    private static void AddElectricPole(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location candidate, List<Location> sides)
+    private static ElectricPoleCenter AddElectricPole(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location candidate, List<Location> sides)
     {
         var center = new ElectricPoleCenter();
         context.Grid.AddEntity(candidate, center);
@@ -117,11 +310,14 @@ internal static class AddElectricPoles
         {
             context.Grid.AddEntity(location, new ElectricPoleSide(center));
         }
+
+        ConnectExistingElectricPoles(context, electricPoles, candidate, center);
+
+        return center;
     }
 
     public static (bool Fits, List<Location>? Sides) GetElectricPoleLocations(SquareGrid grid, Options options, Location center, bool populateSides)
     {
-
         var fits = true;
         var sides = populateSides ? new List<Location>() : null;
 
@@ -133,7 +329,7 @@ internal static class AddElectricPoles
             for (var h = 0; h < options.ElectricPoleHeight && fits; h++)
             {
                 var location = center.Translate((offsetX + w, offsetY + h));
-                fits = grid.IsEmpty(location) && grid.IsInBounds(location);
+                fits = grid.IsInBounds(location) && grid.IsEmpty(location);
 
                 if (fits && location != center && populateSides)
                 {
@@ -145,51 +341,129 @@ internal static class AddElectricPoles
         return (fits, sides);
     }
 
-    public static bool AreElectricPolesConnected(Location a, Location b, Options options)
-    {
-        return a.GetEuclideanDistance(b) <= options.ElectricPoleWireReach;
-    }
-
     private static void ConnectElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
-        // Find the two electric poles closest to the middle of the grid and connect them.
-        var polesByMiddleDistance = electricPoles
-            .OrderBy(x => x.Key.GetEuclideanDistance(context.Grid.Middle))
-            .Select(x => x.Key)
-            .ToList();
+        var groups = GetElectricPoleGroups(context, electricPoles);
 
-        var connectedPoles = new HashSet<Location> { polesByMiddleDistance[0] };
-
-        for (var i = 1; i < polesByMiddleDistance.Count; i++)
+        while (groups.Count > 1)
         {
-            AddToGrid(context, electricPoles, connectedPoles, polesByMiddleDistance[i]);
+            var closest = PointsToLines(electricPoles.Keys)
+                .Select(e => new
+                {
+                    Endpoints = e,
+                    GroupA = groups.Single(g => g.Contains(e.A)),
+                    GroupB = groups.Single(g => g.Contains(e.B)),
+                    Distance = GetElectricPoleDistance(e.A, e.B, context.Options),
+                })
+                .Where(c => c.GroupA != c.GroupB)
+                .Where(c => c.Distance > context.Options.ElectricPoleWireReach)
+                .OrderBy(c => c.Distance)
+                .FirstOrDefault();
+
+            if (closest is null)
+            {
+                throw new NotImplementedException();
+                for (var i = 1; i < groups.Count; i++)
+                {
+                    for (var j = 0; j < i; j++)
+                    {
+
+                    }
+                }
+            }
+
+            AddSinglePoleForConnection(context, electricPoles, groups, closest.Distance, closest.Endpoints);
         }
     }
 
-    private static void AddToGrid(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, HashSet<Location> connectedPoles, Location start)
+    private static void AddSinglePoleForConnection(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, List<HashSet<Location>> groups, double distance, Endpoints endpoints)
     {
-        var result = Dijkstras.GetShortestPaths(context.Grid, start, connectedPoles, stopOnFirstGoal: true);
-
-        var goal = result.ReachedGoals.Single();
-        var path = result.GetStraightPaths(goal).First();
-
-        foreach (var pole in path)
+        var segments = (int)Math.Ceiling(distance / context.Options.ElectricPoleWireReach);
+        var idealLine = BresenhamsLine.GetPath(endpoints.A, endpoints.B);
+        var idealIndex = idealLine.Count / segments;
+        if (!AreElectricPolesConnected(idealLine[0], idealLine[idealIndex], context.Options))
         {
-            if (connectedPoles.Add(pole) && context.Grid.IsEmpty(pole))
-            {
-                (var fits, var sides) = GetElectricPoleLocations(context.Grid, context.Options, pole, populateSides: true);
-                if (!fits)
-                {
-                    throw new InvalidOperationException($"Could not add electric pole to the grid at {pole}. It does not fit.");
-                }
+            idealIndex--;
+        }
+        var idealPoint = idealLine[idealIndex];
 
-                AddElectricPole(context, electricPoles, pole, sides!);
+        var candidates = new Queue<Location>();
+        candidates.Enqueue(idealPoint);
+
+        Location? selectedPoint = null;
+        List<Location>? sides = null;
+        while (candidates.Count > 0)
+        {
+            var candidate = candidates.Dequeue();
+            (var fits, sides) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: true);
+            if (fits)
+            {
+                selectedPoint = candidate;
+                break;
+            }
+
+            foreach (var adjacent in context.Grid.GetAdjacent(candidate))
+            {
+                if (AreElectricPolesConnected(idealLine[0], adjacent, context.Options))
+                {
+                    candidates.Enqueue(adjacent);
+                }
             }
         }
 
-        for (var i = 1; i < path.Count; i++)
+        if (!selectedPoint.HasValue || sides is null)
         {
-            electricPoles[path[i - 1]].AddNeighbor(electricPoles[path[i]]);
+            throw new InvalidOperationException("Could not find a pole that can be connected");
         }
+
+        var center = AddElectricPole(context, electricPoles, selectedPoint.Value, sides);
+        var connectedGroups = groups.Where(g => g.Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
+
+        if (connectedGroups.Count == 0)
+        {
+            Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+        }
+
+        connectedGroups[0].Add(selectedPoint.Value);
+        for (var i = 1; i < connectedGroups.Count; i++)
+        {
+            connectedGroups[0].UnionWith(connectedGroups[i]);
+            groups.Remove(connectedGroups[i]);
+        }
+
+        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+    }
+
+    private static List<HashSet<Location>> GetElectricPoleGroups(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    {
+        var groups = new List<HashSet<Location>>();
+        var remaining = new HashSet<Location>(electricPoles.Keys);
+        while (remaining.Count > 0)
+        {
+            var current = remaining.First();
+            remaining.Remove(current);
+
+            var entities = new HashSet<ElectricPoleCenter>();
+            var explore = new Queue<ElectricPoleCenter>();
+            explore.Enqueue(electricPoles[current]);
+
+            while (explore.Count > 0)
+            {
+                var entity = explore.Dequeue();
+                if (entities.Add(entity))
+                {
+                    foreach (var neighbor in entity.Neighbors)
+                    {
+                        explore.Enqueue(neighbor);
+                    }
+                }
+            }
+
+            var group = entities.Select(e => context.Grid.EntityToLocation[e]).ToHashSet();
+            remaining.ExceptWith(group);
+            groups.Add(group);
+        }
+
+        return groups;
     }
 }
