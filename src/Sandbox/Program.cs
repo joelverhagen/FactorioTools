@@ -6,7 +6,19 @@ internal partial class Program
 {
     private const string DataPath = "blueprints.txt";
 
-    private static void Main()
+    private static void Main(string[] args)
+    {
+        if (args.Length > 0 && args[1] == "normalize")
+        {
+            NormalizeBlueprints.Execute(DataPath);
+        }
+        else
+        {
+            Measure();
+        }
+    }
+
+    private static void Measure()
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
