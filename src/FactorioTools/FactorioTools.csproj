@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RootNamespace>Knapcode.FactorioTools</RootNamespace>
+    <AssemblyName>Knapcode.FactorioTools</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Delaunator" Version="1.0.10" />
+    <PackageReference Include="Knapcode.FluteSharp" Version="0.4.0" GeneratePathProperty="true" ExcludeAssets="contentFiles" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(PkgKnapcode_FluteSharp)\contentFiles\any\netstandard2.1\POWV6.dat" LinkBase="OilField" />
+    <EmbeddedResource Include="$(PkgKnapcode_FluteSharp)\contentFiles\any\netstandard2.1\POST6.dat" LinkBase="OilField" />
+  </ItemGroup>
+
+</Project>
