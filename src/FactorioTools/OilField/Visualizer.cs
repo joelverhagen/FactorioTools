@@ -15,7 +15,7 @@ internal static class Visualizer
 
     public static void Show(SquareGrid grid, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
     {
-        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "PumpjackPipeOptimizer.bmp");
+        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Knapcode.FactorioTools.OilField.bmp");
         Save(grid, path, points, edges);
 
         var p = new Process();

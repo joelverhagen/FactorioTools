@@ -450,7 +450,7 @@ internal static class AddElectricPoles
 
         if (connectedGroups.Count == 0)
         {
-            Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+            throw new NotImplementedException();
         }
 
         connectedGroups[0].Add(selectedPoint.Value);
