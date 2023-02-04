@@ -134,8 +134,8 @@ internal static partial class AddPipes
                         .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
                         .Select(p =>
                         {
-                            var result = Dijkstras.GetShortestPaths(context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal }, stopOnFirstGoal: true);
-                            var path = result.GetStraightPaths(p.B.Terminal).First();
+                            var result = AStar.GetShortestPath(context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal });
+                            var path = result.GetPath();
                             return new TerminalPair(p.A, p.B, path);
                         })
                         .OrderBy(x => x.Line.Count)
@@ -238,6 +238,12 @@ internal static partial class AddPipes
 
             if (connection is null)
             {
+                /*
+                var clone = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone, context.CenterToTerminals, finalGroup.Paths.SelectMany(l => l).ToHashSet());
+                Visualizer.Show(clone, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+                */
+
                 throw new InvalidOperationException("There should be at least one connection between a leftover pumpjack and the final group.");
             }
 
@@ -294,13 +300,10 @@ internal static partial class AddPipes
             .Take(5)
             .Select(l =>
             {
-                var result = Dijkstras.GetShortestPaths(context.Grid, l.A, new HashSet<Location> { l.B }, stopOnFirstGoal: true);
-                var pathAndTurns = result
-                    .GetStraightPaths(l.B)
-                    .Select(p => new { Path = p, Turns = CountTurns(p) })
-                    .OrderBy(x => x.Turns)
-                    .First();
-                return new PathAndTurns(l, pathAndTurns.Path, pathAndTurns.Turns);
+                var result = AStar.GetShortestPath(context.Grid, l.A, new HashSet<Location> { l.B });
+                var path = result.GetPath();
+                var turns = CountTurns(path);
+                return new PathAndTurns(l, path, turns);
             })
             .Where(l => l.Turns > 0 && l.Turns <= maxTurns)
             .ToList());

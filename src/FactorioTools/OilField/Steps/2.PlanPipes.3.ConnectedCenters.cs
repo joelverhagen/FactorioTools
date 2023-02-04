@@ -76,6 +76,9 @@ internal static partial class AddPipes
             var bestGroup = groups
                 .Select(group =>
                 {
+                    var centroidX = group.Pipes.Average(l => l.X);
+                    var centroidY = group.Pipes.Average(l => l.Y);
+
                     var bestCenter = group
                         .FrontierCenters
                         .Select(center =>
@@ -91,31 +94,7 @@ internal static partial class AddPipes
                                 .CenterToTerminals[center]
                                 .Select(terminal =>
                                 {
-                                    var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, group.Pipes, stopOnFirstGoal: true);
-                                    var paths = result.GetStraightPaths(result.ReachedGoals.Single());
-
-                                    List<Location> path;
-                                    if (paths.Count > 1)
-                                    {
-                                        // Prefer the path that is adjacent to more pumpjack sides, then prefer one that is
-                                        // cumulatively closer to the group centroid.
-                                        var pathToAdjacentPipes = paths.ToDictionary(p => p, p => p.Count(l => context
-                                            .Grid
-                                            .GetAdjacent(l)
-                                            .Any(a => context.Grid.IsEntityType<PumpjackSide>(a))));
-
-                                        var pathToCentroidDistance = paths.ToDictionary(p => p, p => p.Sum(l => group.GetCentroidDistance(l)));
-
-                                        path = paths
-                                            .OrderByDescending(p => pathToAdjacentPipes[p])
-                                            .ThenBy(p => pathToCentroidDistance[p])
-                                            .First();
-                                    }
-                                    else
-                                    {
-                                        path = paths.Single();
-                                    }
-
+                                    List<Location> path = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
                                     return new
                                     {
                                         Terminal = terminal,
@@ -163,6 +142,44 @@ internal static partial class AddPipes
         }
 
         return groups.Single().Pipes;
+    }
+
+    private static List<Location> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
+    {
+        var aStarResultV = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
+        var aStarPathV = aStarResultV.GetPath();
+
+        var aStarResultH = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
+        var aStarPathH = aStarResultH.GetPath();
+
+        if (aStarPathV.SequenceEqual(aStarPathH))
+        {
+            return aStarPathV;
+        }
+
+        var distinctPipes = aStarPathV.Concat(aStarPathH).ToHashSet();
+
+        var locationToAdjacentPipes = distinctPipes
+            .ToDictionary(
+                l => l,
+                l => context
+                    .Grid
+                    .GetAdjacent(l)
+                    .Any(a => context.Grid.IsEntityType<PumpjackSide>(a)));
+
+        var locationToCentroidDistance = distinctPipes
+            .ToDictionary(
+                l => l,
+                l => l.GetEuclideanDistance(groupCentroidX, groupCentroidY));
+
+        var paths = new[] { aStarPathV, aStarPathH };
+        var pathToAdjacentPipes = paths.ToDictionary(p => p, p => p.Count(l => locationToAdjacentPipes[l]));
+        var pathToCentroidDistance = paths.ToDictionary(p => p, p => p.Sum(l => locationToCentroidDistance[l]));
+
+        return paths
+            .OrderByDescending(p => pathToAdjacentPipes[p])
+            .ThenBy(p => pathToCentroidDistance[p])
+            .First();
     }
 
     private static List<Trunk> FindTrunks(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
@@ -244,10 +261,10 @@ internal static partial class AddPipes
                             .Select(otherCenter =>
                             {
                                 var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToHashSet();
-                                var result = Dijkstras.GetShortestPaths(context.Grid, terminal.Terminal, goals, stopOnFirstGoal: true);
-                                var reachedGoal = result.ReachedGoals.Single();
+                                var result = AStar.GetShortestPath(context.Grid, terminal.Terminal, goals);
+                                var reachedGoal = result.ReachedGoal!.Value;
                                 var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
-                                var path = result.GetStraightPaths(reachedGoal).First();
+                                var path = result.GetPath();
 
                                 return new { Terminal = closestTerminal, Path = path };
                             })
@@ -454,13 +471,6 @@ internal static partial class AddPipes
         public HashSet<Location> FrontierCenters { get; }
         public Dictionary<Location, HashSet<Location>> IncludedCenterToChildCenters { get; }
         public HashSet<Location> Pipes { get; }
-
-        public double GetCentroidDistance(Location location)
-        {
-            var centroidX = Pipes.Average(l => l.X);
-            var centroidY = Pipes.Average(l => l.Y);
-            return location.GetEuclideanDistance(centroidX, centroidY);
-        }
 
         public double GetChildCentroidDistance(Location includedCenter, Location terminalCandidate)
         {

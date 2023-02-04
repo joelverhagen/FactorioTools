@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RootNamespace>Knapcode.FactorioTools.Benchmark</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FactorioTools\FactorioTools.csproj" />
+  </ItemGroup>
+
+</Project>

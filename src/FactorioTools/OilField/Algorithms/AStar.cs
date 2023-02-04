@@ -1,0 +1,70 @@
+﻿using Knapcode.FactorioTools.OilField.Grid;
+
+namespace Knapcode.FactorioTools.OilField.Algorithms;
+
+/// <summary>
+/// Source: https://www.redblobgames.com/pathfinding/a-star/implementation.html
+/// </summary>
+internal static class AStar
+{
+    public static AStarResult GetShortestPath(SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
+    {
+        var cameFrom = new Dictionary<Location, Location>();
+        var costSoFar = new Dictionary<Location, double>();
+
+        var frontier = new PriorityQueue<Location, double>();
+        frontier.Enqueue(start, 0);
+
+        cameFrom[start] = start;
+        costSoFar[start] = 0;
+
+        Location? reachedGoal = null;
+
+        while (frontier.Count > 0)
+        {
+            var current = frontier.Dequeue();
+
+            if (goals.Contains(current))
+            {
+                reachedGoal = current;
+                break;
+            }
+
+            var previous = cameFrom[current];
+
+            foreach (var next in grid.GetNeighbors(current))
+            {
+                double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
+
+                if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+                {
+                    costSoFar[next] = newCost;
+                    double priority = newCost + Heuristic(next, goals, xWeight, yWeight);
+
+                    // Prefer paths without turns.
+                    if (preferNoTurns && previous != current && IsTurn(previous, current, next))
+                    {
+                        priority += 0.0001;
+                    }
+
+                    frontier.Enqueue(next, priority);
+                    cameFrom[next] = current;
+                }
+            }
+        }
+
+        return new AStarResult(start, reachedGoal, goals, cameFrom, costSoFar);
+    }
+
+    private static bool IsTurn(Location a, Location b, Location c)
+    {
+        var directionA = a.X == b.X ? 0 : 1;
+        var directionB = b.X == c.X ? 0 : 1;
+        return directionA != directionB;
+    }
+
+    private static double Heuristic(Location current, HashSet<Location> goals, int xWeight, int yWeight)
+    {
+        return goals.Min(g => xWeight * Math.Abs(g.X - current.X) + yWeight * Math.Abs(g.Y - current.Y));
+    }
+}

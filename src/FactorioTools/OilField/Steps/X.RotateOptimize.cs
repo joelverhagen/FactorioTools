@@ -51,9 +51,9 @@ internal static class RotateOptimize
             goals.UnionWith(allTerminals);
             goals.Remove(currentTerminal.Terminal);
 
-            var originalPathResult = Dijkstras.GetShortestPaths(existingPipeGrid, currentTerminal.Terminal, goals, stopOnFirstGoal: true);
-            var originalPathGoal = originalPathResult.ReachedGoals.Single();
-            var originalPath = originalPathResult.GetStraightPaths(originalPathGoal).Single();
+            var originalPathResult = AStar.GetShortestPath(existingPipeGrid, currentTerminal.Terminal, goals);
+            var originalPathGoal = originalPathResult.ReachedGoal!.Value;
+            var originalPath = originalPathResult.GetPath();
 
             var newPipes = new HashSet<Location>(pipes);
             newPipes.ExceptWith(originalPath);
@@ -74,12 +74,10 @@ internal static class RotateOptimize
                     continue;
                 }
 
-                var result = Dijkstras.GetShortestPaths(context.Grid, terminalCandidate, newPipes, stopOnFirstGoal: true);
-                if (result.ReachedGoals.Count > 0)
+                var result = AStar.GetShortestPath(context.Grid, terminalCandidate, newPipes);
+                if (result.ReachedGoal.HasValue)
                 {
-                    var reachedGoal = result.ReachedGoals.Single();
-                    var path = result.GetStraightPaths(reachedGoal).First();
-
+                    var path = result.GetPath();
                     paths.Add((new TerminalLocation(center, terminalCandidate, direction), path));
                 }
             }

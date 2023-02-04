@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Numerics;
 using Knapcode.FactorioTools.OilField;
 using Knapcode.FactorioTools.OilField.Steps;
 using Microsoft.AspNetCore.Mvc;

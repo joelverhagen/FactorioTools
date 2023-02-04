@@ -9,10 +9,12 @@ internal static class AddPipeEntities
         var addedTerminals = new HashSet<Location>();
         foreach (var terminals in centerToTerminals.Values)
         {
-            var location = terminals.Single().Terminal;
-            if (addedTerminals.Add(location))
+            foreach (var terminal in terminals)
             {
-                grid.AddEntity(location, new Terminal());
+                if (addedTerminals.Add(terminal.Terminal))
+                {
+                    grid.AddEntity(terminal.Terminal, new Terminal());
+                }
             }
         }
 
