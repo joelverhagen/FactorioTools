@@ -87,16 +87,19 @@ internal abstract class SquareGrid
 
     public abstract IEnumerable<Location> GetNeighbors(Location id);
 
-    public IEnumerable<Location> GetAdjacent(Location id)
+    public List<Location> GetAdjacent(Location id)
     {
+        var adjacent = new List<Location>(Directions.Count);
         foreach (var dir in Directions)
         {
             Location next = id.Translate(dir);
             if (IsInBounds(next))
             {
-                yield return next;
+                adjacent.Add(next);
             }
         }
+
+        return adjacent;
     }
 
     public void WriteTo(TextWriter sw, int spacing = 0)

@@ -34,8 +34,7 @@ internal static class Dijkstras
                 }
             }
 
-            var neighbors = grid.GetNeighbors(current);
-            foreach (var neighbor in neighbors)
+            foreach (var neighbor in grid.GetNeighbors(current))
             {
                 var alternateCost = currentCost + grid.GetNeighborCost(current, neighbor);
                 bool previousExists;
