@@ -278,15 +278,32 @@ internal static class AddElectricPoles
                 })
                 .OrderByDescending(x => x.Covered.Count)
                 .ThenBy(x => x.Connected ? x.Others.Count(o => o.Connected) : int.MaxValue)
-                .ThenBy(x => !x.Connected ? context
-                    .CenterToTerminals
-                    .Keys
-                    .Except(x.Covered)
-                    .Except(coveredPumpjacks)
-                    .Concat(electricPoles.Keys)
-                    .Select(l => l.GetEuclideanDistance(x.Location))
-                    .DefaultIfEmpty(double.MaxValue)
-                    .Min() : 0)
+                .ThenBy(x =>
+                {
+                    if (x.Connected)
+                    {
+                        return 0;
+                    }
+
+                    var min = double.MaxValue;
+                    var values = context
+                        .CenterToTerminals
+                        .Keys
+                        .Except(x.Covered)
+                        .Except(coveredPumpjacks)
+                        .Concat(electricPoles.Keys)
+                        .Select(l => l.GetEuclideanDistance(x.Location));
+
+                    foreach (var val in values)
+                    {
+                        if (val < min)
+                        {
+                            min = val;
+                        }
+                    }
+
+                    return min;
+                })
                 .ThenBy(x => candidateToPumpjackDistance[x.Location])
                 .ThenBy(x => candidateToMiddleDistance[x.Location])
                 .ToList();

@@ -65,6 +65,16 @@ internal static class AStar
 
     private static double Heuristic(Location current, HashSet<Location> goals, int xWeight, int yWeight)
     {
-        return goals.Min(g => xWeight * Math.Abs(g.X - current.X) + yWeight * Math.Abs(g.Y - current.Y));
+        var min = double.MaxValue;
+        foreach (var goal in goals)
+        {
+            var val = xWeight * Math.Abs(goal.X - current.X) + yWeight * Math.Abs(goal.Y - current.Y);
+            if (val < min)
+            {
+                min = val;
+            }
+        }
+
+        return min;
     }
 }
