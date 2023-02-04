@@ -1,0 +1,56 @@
+﻿@page "/"
+@using System.Diagnostics;
+@using Knapcode.FactorioTools.OilField;
+@using Knapcode.FactorioTools.OilField.Steps;
+
+<PageTitle>Index</PageTitle>
+
+<div>
+    <textarea @bind="InputBlueprint" @bind:event="oninput" />
+</div>
+
+<div hidden="@(string.IsNullOrEmpty(Error))">
+    <div>@Error</div>
+</div>
+
+<div hidden="@(string.IsNullOrEmpty(OutputBlueprint))">
+    <code class="text-break">@OutputBlueprint</code>
+    <p>@Status</p>
+</div>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+    public string Error { get; set; } = string.Empty;
+    public string InputBlueprint { get; set; } = "0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F";
+    public string OutputBlueprint { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public bool Loading { get; set; }
+
+    private void IncrementCount()
+    {
+        if (string.IsNullOrEmpty(InputBlueprint))
+        {
+            return;
+        }
+
+        OutputBlueprint = string.Empty;
+        Error = string.Empty;
+        Status = "Running...";
+        var sw = Stopwatch.StartNew();
+
+        try
+        {
+            var options = Options.ForMediumElectricPole;
+            var bp = ParseBlueprint.Execute(InputBlueprint);
+            var context = Planner.Execute(options, bp);
+            OutputBlueprint = GridToBlueprintString.Execute(context);
+            Status = "Done: " + sw.Elapsed;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.ToString();
+            Status = "Error.";
+        }
+    }
+}
