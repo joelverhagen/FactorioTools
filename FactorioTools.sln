@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox", "src\Sandbox\Sand
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorWebApp", "src\BlazorWebApp\BlazorWebApp.csproj", "{A6F55C6B-E834-43A3-A308-BFE109079F2A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "src\WebApp\WebApp.csproj", "{5F337D69-ECC7-42E4-91FD-7BDF39FEE596}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,10 @@ Global
 		{A6F55C6B-E834-43A3-A308-BFE109079F2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6F55C6B-E834-43A3-A308-BFE109079F2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6F55C6B-E834-43A3-A308-BFE109079F2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F337D69-ECC7-42E4-91FD-7BDF39FEE596}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F337D69-ECC7-42E4-91FD-7BDF39FEE596}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F337D69-ECC7-42E4-91FD-7BDF39FEE596}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F337D69-ECC7-42E4-91FD-7BDF39FEE596}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -44,6 +50,7 @@ Global
 		{1736C18D-D61E-45C1-BADB-290D72AC2899} = {2237B275-4DF9-492E-A555-E38CE0DC0E12}
 		{D090243D-54DC-4B91-96F8-6186D2865680} = {2237B275-4DF9-492E-A555-E38CE0DC0E12}
 		{A6F55C6B-E834-43A3-A308-BFE109079F2A} = {2237B275-4DF9-492E-A555-E38CE0DC0E12}
+		{5F337D69-ECC7-42E4-91FD-7BDF39FEE596} = {2237B275-4DF9-492E-A555-E38CE0DC0E12}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E6A453D-7E2E-4504-B5F6-474D9AEA13B8}
