@@ -277,26 +277,26 @@ internal static class AddElectricPoles
                 .Keys
                 .Select(x =>
                 {
-                    var others = electricPoles
-                        .Keys
-                        .Select(y =>
+                    var othersConnected = 0;
+                    for (var i = 0; i < electricPoleList.Count; i++)
+                    {
+                        var distance = x.GetEuclideanDistance(electricPoleList[i]);
+                        if (distance <= context.Options.ElectricPoleWireReach)
                         {
-                            var distance = x.GetEuclideanDistance(y);
-                            return new { Location = y, Distance = distance, Connected = distance <= context.Options.ElectricPoleWireReach };
-                        })
-                        .ToList();
+                            othersConnected++;
+                        }
+                    }
 
                     return new
                     {
                         Location = x,
                         Covered = candidateToCovered[x],
-                        Others = others,
-                        Connected = others.Any(c => c.Connected),
+                        OthersConnected = othersConnected,
                     };
                 })
                 .OrderByDescending(x => x.Covered.CountTrue())
-                .ThenBy(x => x.Connected ? x.Others.Count(o => o.Connected) : int.MaxValue)
-                .ThenBy(x => x.Connected ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location))
+                .ThenBy(x => x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue)
+                .ThenBy(x => x.OthersConnected > 0 ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location))
                 .ThenBy(x => candidateToPumpjackDistance[x.Location])
                 .ThenBy(x => candidateToMiddleDistance[x.Location])
                 .Select(x => x.Location)
