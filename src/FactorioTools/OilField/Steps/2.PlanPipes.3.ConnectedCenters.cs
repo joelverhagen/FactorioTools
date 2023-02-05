@@ -535,10 +535,18 @@ internal static partial class AddPipes
 
         public double GetChildCentroidDistance(Location includedCenter, Location terminalCandidate)
         {
-            var centers = IncludedCenterToChildCenters[includedCenter];
-            var terminals = centers.SelectMany(c => _context.CenterToTerminals[c]);
-            var centroidX = terminals.Average(t => t.Terminal.X);
-            var centroidY = terminals.Average(t => t.Terminal.Y);
+            var sumX = 0;
+            var sumY = 0;
+            var count = 0;
+            foreach (var center in IncludedCenterToChildCenters[includedCenter])
+            {
+                sumX += center.X;
+                sumY += center.Y;
+                count++;
+            }
+
+            var centroidX = (double)sumX / count;
+            var centroidY = (double)sumY / count;
 
             return terminalCandidate.GetEuclideanDistance(centroidX, centroidY);
         }
