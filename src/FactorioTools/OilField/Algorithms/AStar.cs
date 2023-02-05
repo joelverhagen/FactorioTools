@@ -14,6 +14,11 @@ internal static class AStar
 
     public static AStarResult GetShortestPath(SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
     {
+        if (goals.Contains(start))
+        {
+            return new AStarResult(start, new List<Location> { start });
+        }
+
         var goalsList = goals.ToList();
 
         var cameFrom = CameFromPool.Get();
