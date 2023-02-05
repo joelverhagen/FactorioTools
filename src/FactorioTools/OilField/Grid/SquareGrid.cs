@@ -85,21 +85,15 @@ internal abstract class SquareGrid
         return id.X >= 0 && id.X < Width && id.Y >= 0 && id.Y < Height;
     }
 
-    public abstract List<Location> GetNeighbors(Location id);
+    public abstract void GetNeighbors(Span<Location> neighbors, Location id);
 
-    public List<Location> GetAdjacent(Location id)
+    public void GetAdjacent(Span<Location> adjacent, Location id)
     {
-        var adjacent = new List<Location>(Directions.Count);
-        foreach (var dir in Directions)
+        for (int i = 0; i < Directions.Count; i++)
         {
-            Location next = id.Translate(dir);
-            if (IsInBounds(next))
-            {
-                adjacent.Add(next);
-            }
+            Location next = id.Translate(Directions[i]);
+            adjacent[i] = IsInBounds(next) ? next : Location.Invalid;
         }
-
-        return adjacent;
     }
 
     public void WriteTo(TextWriter sw, int spacing = 0)

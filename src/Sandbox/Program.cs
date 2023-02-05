@@ -21,8 +21,9 @@ internal partial class Program
     private static void Measure()
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
-        var blueprintStrings = blueprintStringsAll;
+        // var blueprintStrings = blueprintStringsAll;
         // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
 
         var pipeSum = 0;
         var poleSum = 0;
@@ -49,6 +50,6 @@ internal partial class Program
             var newBlueprint = GridToBlueprintString.Execute(context);
         }
 
-        Console.WriteLine(pipeSum * 1.0 / blueprintCount);
+        Console.WriteLine($"{pipeSum * 1.0 / blueprintCount} {poleSum * 1.0 / blueprintCount}");
     }
 }

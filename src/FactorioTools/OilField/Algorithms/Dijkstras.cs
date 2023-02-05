@@ -1,4 +1,5 @@
-﻿using Knapcode.FactorioTools.OilField.Grid;
+﻿using System.Buffers;
+using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
@@ -18,6 +19,8 @@ internal static class Dijkstras
         priorityQueue.Enqueue(start, 0);
         inQueue.Add(start);
 
+        Span<Location> neighbors = stackalloc Location[4];
+
         while (priorityQueue.Count > 0)
         {
             var current = priorityQueue.Dequeue();
@@ -34,10 +37,15 @@ internal static class Dijkstras
                 }
             }
 
-            List<Location> neighbors = grid.GetNeighbors(current);
-            for (int i = 0; i < neighbors.Count; i++)
+            grid.GetNeighbors(neighbors, current);
+            for (int i = 0; i < neighbors.Length; i++)
             {
-                Location neighbor = neighbors[i];
+                var neighbor = neighbors[i];
+                if (!neighbor.IsValid)
+                {
+                    continue;
+                }
+
                 var alternateCost = currentCost + grid.GetNeighborCost(current, neighbor);
                 bool previousExists;
                 if (!(previousExists = locationToCost.TryGetValue(neighbor, out var neighborCost)) || alternateCost <= neighborCost)

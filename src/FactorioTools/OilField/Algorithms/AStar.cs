@@ -22,6 +22,7 @@ internal static class AStar
         costSoFar[start] = 0;
 
         Location? reachedGoal = null;
+        Span<Location> neighbors = stackalloc Location[4];
 
         while (frontier.Count > 0)
         {
@@ -35,10 +36,15 @@ internal static class AStar
 
             var previous = cameFrom[current];
 
-            List<Location> neighbors = grid.GetNeighbors(current);
-            for (int i = 0; i < neighbors.Count; i++)
+            grid.GetNeighbors(neighbors, current);
+            for (int i = 0; i < neighbors.Length; i++)
             {
                 Location next = neighbors[i];
+                if (!next.IsValid)
+                {
+                    continue;
+                }
+
                 double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
 
                 if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])

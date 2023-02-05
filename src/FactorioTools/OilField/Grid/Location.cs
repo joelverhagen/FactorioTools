@@ -4,10 +4,14 @@
     {
         X = x;
         Y = y;
+        IsValid = X >= 0 && Y >= 0;
     }
 
     public int X { get; }
     public int Y { get; }
+    public bool IsValid { get; }
+
+    public static Location Invalid => new Location(-1, -1);
 
     public override bool Equals(object? obj)
     {

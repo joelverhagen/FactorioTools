@@ -437,6 +437,8 @@ internal static class AddElectricPoles
 
         Location? selectedPoint = null;
         List<Location>? sides = null;
+
+        Span<Location> adjacent = stackalloc Location[4];
         while (candidates.Count > 0)
         {
             var candidate = candidates.Dequeue();
@@ -447,11 +449,17 @@ internal static class AddElectricPoles
                 break;
             }
 
-            foreach (var adjacent in context.Grid.GetAdjacent(candidate))
+            context.Grid.GetAdjacent(adjacent, candidate);
+            for (var i = 0; i < adjacent.Length; i++)
             {
-                if (AreElectricPolesConnected(idealLine[0], adjacent, context.Options))
+                if (!adjacent[i].IsValid)
                 {
-                    candidates.Enqueue(adjacent);
+                    continue;
+                }
+
+                if (AreElectricPolesConnected(idealLine[0], adjacent[i], context.Options))
+                {
+                    candidates.Enqueue(adjacent[i]);
                 }
             }
         }

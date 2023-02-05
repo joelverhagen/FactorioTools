@@ -62,7 +62,26 @@ internal class DijkstrasResult
                     }
 
                     var previousToAdjacentCount = allPrevious
-                        .Select(p => new { Previous = p, AdjacentCount = _grid.GetAdjacent(p).Count(l => !_grid.IsEmpty(l)) })
+                        .Select(p =>
+                        {
+                            Span<Location> adjacent = stackalloc Location[4];
+                            _grid.GetAdjacent(adjacent, p);
+                            var adjacentCount = 0;
+                            for (var i = 0; i < adjacent.Length; i++)
+                            {
+                                if (!adjacent[i].IsValid)
+                                {
+                                    continue;
+                                }
+
+                                if (!_grid.IsEmpty(adjacent[i]))
+                                {
+                                    adjacentCount++;
+                                }
+                            }
+
+                            return new { Previous = p, AdjacentCount = adjacentCount };
+                        })
                         .OrderByDescending(p => p.AdjacentCount)
                         .ToList();
 

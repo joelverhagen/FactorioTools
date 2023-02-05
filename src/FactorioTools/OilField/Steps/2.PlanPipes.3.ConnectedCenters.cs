@@ -162,10 +162,25 @@ internal static partial class AddPipes
         var locationToAdjacentPipes = distinctPipes
             .ToDictionary(
                 l => l,
-                l => context
-                    .Grid
-                    .GetAdjacent(l)
-                    .Any(a => context.Grid.IsEntityType<PumpjackSide>(a)));
+                l =>
+                {
+                    Span<Location> adjacent = stackalloc Location[4];
+                    context.Grid.GetAdjacent(adjacent, l);
+                    for (var i = 0; i < adjacent.Length; i++)
+                    {
+                        if (!adjacent[i].IsValid)
+                        {
+                            continue;
+                        }
+
+                        if (context.Grid.IsEntityType<PumpjackSide>(adjacent[i]))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
 
         var locationToCentroidDistance = distinctPipes
             .ToDictionary(
