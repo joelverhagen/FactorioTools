@@ -3,19 +3,43 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
-internal class DijkstrasResult
+internal class DijkstrasResult : IDisposable
 {
     private readonly SquareGrid _grid;
+    private bool _disposed;
 
-    public DijkstrasResult(SquareGrid grid, Dictionary<Location, double> locationToCost, Dictionary<Location, HashSet<Location>> locationToPrevious, HashSet<Location> reachedGoals)
+    public DijkstrasResult(
+        SquareGrid grid,
+        Dictionary<Location, HashSet<Location>> locationToPrevious,
+        HashSet<Location> reachedGoals)
     {
         _grid = grid;
-        LocationToCost = locationToCost;
         LocationToPrevious = locationToPrevious;
         ReachedGoals = reachedGoals;
     }
 
-    public Dictionary<Location, double> LocationToCost { get; }
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        foreach (var hashSet in LocationToPrevious.Values)
+        {
+            hashSet.Clear();
+            Dijkstras.LocationHashSetPool.Return(hashSet);
+        }
+
+        LocationToPrevious.Clear();
+        Dijkstras.LocationToPreviousPool.Return(LocationToPrevious);
+
+        ReachedGoals.Clear();
+        Dijkstras.LocationHashSetPool.Return(ReachedGoals);
+
+        _disposed = true;
+    }
+
     public Dictionary<Location, HashSet<Location>> LocationToPrevious { get; }
     public HashSet<Location> ReachedGoals { get; }
 

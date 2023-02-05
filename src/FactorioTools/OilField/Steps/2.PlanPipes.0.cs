@@ -94,7 +94,7 @@ internal static partial class AddPipes
             var start = goals.First();
             goals.Remove(start);
 
-            var result = Dijkstras.GetShortestPaths(context.Grid, start, goals, stopOnFirstGoal: false);
+            using var result = Dijkstras.GetShortestPaths(context.Grid, start, goals, stopOnFirstGoal: false);
 
             var reachedTerminals = result.ReachedGoals;
             reachedTerminals.Add(start);
