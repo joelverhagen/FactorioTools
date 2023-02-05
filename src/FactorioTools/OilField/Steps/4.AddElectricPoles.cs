@@ -37,11 +37,11 @@ internal static class AddElectricPoles
 
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
-        RemoveExtraElectricPoles(context, electricPoles);
+        // RemoveExtraElectricPoles(context, electricPoles);
 
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
-        PruneNeighbors(context, electricPoles);
+        // PruneNeighbors(context, electricPoles);
 
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
@@ -286,13 +286,13 @@ internal static class AddElectricPoles
                     }
 
                     var min = double.MaxValue;
-                    var values = context
-                        .CenterToTerminals
-                        .Keys
-                        .Except(x.Covered)
-                        .Except(coveredPumpjacks)
-                        .Concat(electricPoles.Keys)
-                        .Select(l => l.GetEuclideanDistance(x.Location));
+
+                    var candidates = new HashSet<Location>(context.CenterToTerminals.Keys);
+                    candidates.ExceptWith(x.Covered);
+                    candidates.ExceptWith(coveredPumpjacks);
+                    candidates.UnionWith(electricPoles.Keys);
+
+                    var values = candidates.Select(l => l.GetEuclideanDistance(x.Location));
 
                     foreach (var val in values)
                     {

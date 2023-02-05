@@ -85,7 +85,7 @@ internal abstract class SquareGrid
         return id.X >= 0 && id.X < Width && id.Y >= 0 && id.Y < Height;
     }
 
-    public abstract IEnumerable<Location> GetNeighbors(Location id);
+    public abstract List<Location> GetNeighbors(Location id);
 
     public List<Location> GetAdjacent(Location id)
     {

@@ -9,8 +9,11 @@ internal static class AStar
 {
     public static AStarResult GetShortestPath(SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
     {
-        var cameFrom = new Dictionary<Location, Location>();
-        var costSoFar = new Dictionary<Location, double>();
+        var goalsList = goals.ToList();
+
+        var sizeEstimate = 2 * start.GetManhattanDistance(goalsList[0]);
+        var cameFrom = new Dictionary<Location, Location>(sizeEstimate);
+        var costSoFar = new Dictionary<Location, double>(sizeEstimate);
 
         var frontier = new PriorityQueue<Location, double>();
         frontier.Enqueue(start, 0);
@@ -32,14 +35,16 @@ internal static class AStar
 
             var previous = cameFrom[current];
 
-            foreach (var next in grid.GetNeighbors(current))
+            List<Location> neighbors = grid.GetNeighbors(current);
+            for (int i = 0; i < neighbors.Count; i++)
             {
+                Location next = neighbors[i];
                 double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
 
                 if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
                 {
                     costSoFar[next] = newCost;
-                    double priority = newCost + Heuristic(next, goals, xWeight, yWeight);
+                    double priority = newCost + Heuristic(next, goalsList, xWeight, yWeight);
 
                     // Prefer paths without turns.
                     if (preferNoTurns && previous != current && IsTurn(previous, current, next))
@@ -63,11 +68,12 @@ internal static class AStar
         return directionA != directionB;
     }
 
-    private static double Heuristic(Location current, HashSet<Location> goals, int xWeight, int yWeight)
+    private static double Heuristic(Location current, List<Location> goals, int xWeight, int yWeight)
     {
         var min = double.MaxValue;
-        foreach (var goal in goals)
+        for (int i = 0; i < goals.Count; i++)
         {
+            Location goal = goals[i];
             var val = xWeight * Math.Abs(goal.X - current.X) + yWeight * Math.Abs(goal.Y - current.Y);
             if (val < min)
             {

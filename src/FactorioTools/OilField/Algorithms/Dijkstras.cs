@@ -34,8 +34,10 @@ internal static class Dijkstras
                 }
             }
 
-            foreach (var neighbor in grid.GetNeighbors(current))
+            List<Location> neighbors = grid.GetNeighbors(current);
+            for (int i = 0; i < neighbors.Count; i++)
             {
+                Location neighbor = neighbors[i];
                 var alternateCost = currentCost + grid.GetNeighborCost(current, neighbor);
                 bool previousExists;
                 if (!(previousExists = locationToCost.TryGetValue(neighbor, out var neighborCost)) || alternateCost <= neighborCost)

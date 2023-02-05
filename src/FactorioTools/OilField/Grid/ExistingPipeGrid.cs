@@ -15,14 +15,18 @@ internal class ExistingPipeGrid : SquareGrid
         return 1;
     }
 
-    public override IEnumerable<Location> GetNeighbors(Location id)
+    public override List<Location> GetNeighbors(Location id)
     {
-        foreach (var adjacent in GetAdjacent(id))
+        var adjacent = GetAdjacent(id);
+        for (var i = 0; i < adjacent.Count; i++)
         {
-            if (IsEntityType<Pipe>(adjacent))
+            if (!IsEntityType<Pipe>(adjacent[i]))
             {
-                yield return adjacent;
+                adjacent.RemoveAt(i);
+                i--;
             }
         }
+
+        return adjacent;
     }
 }
