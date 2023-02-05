@@ -10,11 +10,6 @@ internal class ExistingPipeGrid : SquareGrid
     {
     }
 
-    public override double GetNeighborCost(Location a, Location b)
-    {
-        return 1;
-    }
-
     public override void GetNeighbors(Span<Location> neighbors, Location id)
     {
         GetAdjacent(neighbors, id);

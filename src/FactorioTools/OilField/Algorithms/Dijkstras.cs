@@ -45,7 +45,7 @@ internal static class Dijkstras
                     continue;
                 }
 
-                var alternateCost = currentCost + grid.GetNeighborCost(current, neighbor);
+                var alternateCost = currentCost + SquareGrid.NeighborCost;
                 bool previousExists;
                 if (!(previousExists = locationToCost.TryGetValue(neighbor, out var neighborCost)) || alternateCost <= neighborCost)
                 {

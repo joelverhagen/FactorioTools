@@ -65,6 +65,7 @@ internal static class AStar
                 }
 
                 var previous = cameFrom[current];
+                var currentCost = costSoFar[current];
 
                 grid.GetNeighbors(neighbors, current);
                 for (int i = 0; i < neighbors.Length; i++)
@@ -75,7 +76,7 @@ internal static class AStar
                         continue;
                     }
 
-                    double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
+                    double newCost = currentCost + SquareGrid.NeighborCost;
 
                     if (!costSoFar.TryGetValue(next, out var thisCostSoFar) || newCost < thisCostSoFar)
                     {

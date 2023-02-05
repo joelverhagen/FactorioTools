@@ -2,6 +2,8 @@
 
 internal abstract class SquareGrid
 {
+    public const int NeighborCost = 1;
+
     public static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Directions = new[]
     {
         (1, 0),
@@ -51,8 +53,6 @@ internal abstract class SquareGrid
     {
         return _grid[id.X, id.Y] is null;
     }
-
-    public abstract double GetNeighborCost(Location a, Location b);
 
     public void AddEntity(Location id, GridEntity entity)
     {
