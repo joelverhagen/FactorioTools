@@ -71,18 +71,26 @@ internal static class Helpers
     {
         if (a.X == b.X)
         {
-            return Enumerable
-                .Range(Math.Min(a.Y, b.Y), Math.Abs(a.Y - b.Y) + 1)
-                .Select(y => new Location(a.X, y))
-                .ToList();
+            (var min, var max) = a.Y < b.Y ? (a.Y, b.Y) : (b.Y, a.Y);
+            var line = new List<Location>(max - min + 1);
+            for (var y = min; y <= max; y++)
+            {
+                line.Add(new Location(a.X, y));
+            }
+
+            return line;
         }
 
         if (a.Y == b.Y)
         {
-            return Enumerable
-                .Range(Math.Min(a.X, b.X), Math.Abs(a.X - b.X) + 1)
-                .Select(x => new Location(x, a.Y))
-                .ToList();
+            (var min, var max) = a.X < b.X ? (a.X, b.X) : (b.X, a.X);
+            var line = new List<Location>(max - min + 1);
+            for (var x = min; x <= max; x++)
+            {
+                line.Add(new Location(x, a.Y));
+            }
+
+            return line;
         }
 
         throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
