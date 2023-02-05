@@ -263,6 +263,7 @@ internal static class AddElectricPoles
 
         var coveredPumpjacks = new BitArray(centerList.Count);
         var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
+        var electricPoleList = new List<Location>();
 
         while (coveredPumpjacks.CountTrue() < context.CenterToTerminals.Count)
         {
@@ -295,9 +296,10 @@ internal static class AddElectricPoles
                 })
                 .OrderByDescending(x => x.Covered.CountTrue())
                 .ThenBy(x => x.Connected ? x.Others.Count(o => o.Connected) : int.MaxValue)
-                .ThenBy(x => x.Connected ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoles, x.Covered, x.Location))
+                .ThenBy(x => x.Connected ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location))
                 .ThenBy(x => candidateToPumpjackDistance[x.Location])
                 .ThenBy(x => candidateToMiddleDistance[x.Location])
+                .Select(x => x.Location)
                 .ToList();
 
             /*
@@ -350,9 +352,8 @@ internal static class AddElectricPoles
             */
 
             var poleAdded = false;
-            foreach (var candidateInfo in sortedCandidates)
+            foreach (var candidate in sortedCandidates)
             {
-                var candidate = candidateInfo.Location;
                 var covered = candidateToCovered[candidate];
                 var isSubsetOf = true;
                 for (var i = 0; i < centerList.Count && isSubsetOf; i++)
@@ -373,6 +374,7 @@ internal static class AddElectricPoles
                 if (fits)
                 {
                     AddElectricPole(context, electricPoles, candidate, sides!);
+                    electricPoleList.Add(candidate);
                     coveredPumpjacks.Or(candidateToCovered[candidate]);
 
                     // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
@@ -427,26 +429,27 @@ internal static class AddElectricPoles
         Context context,
         List<Location> centerList,
         BitArray coveredPumpjacks,
-        Dictionary<Location, ElectricPoleCenter> electricPoles,
+        List<Location> electricPoleList,
         BitArray covered,
         Location location)
     {
         var min = double.MaxValue;
 
-        var candidates = new HashSet<Location>(context.CenterToTerminals.Keys);
         for (var i = 0; i < centerList.Count; i++)
         {
-            if (covered[i] || coveredPumpjacks[i])
+            if (!covered[i] && !coveredPumpjacks[i])
             {
-                candidates.Remove(centerList[i]);
+                var val = centerList[i].GetEuclideanDistance(location);
+                if (val < min)
+                {
+                    min = val;
+                }    
             }
         }
-        candidates.UnionWith(electricPoles.Keys);
 
-        var values = candidates.Select(l => l.GetEuclideanDistance(location));
-
-        foreach (var val in values)
+        for (int i = 0; i < electricPoleList.Count; i++)
         {
+            var val = electricPoleList[i].GetEuclideanDistance(location);
             if (val < min)
             {
                 min = val;
