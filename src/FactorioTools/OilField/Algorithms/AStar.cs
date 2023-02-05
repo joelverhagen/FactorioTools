@@ -77,7 +77,7 @@ internal static class AStar
 
                     double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
 
-                    if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+                    if (!costSoFar.TryGetValue(next, out var thisCostSoFar) || newCost < thisCostSoFar)
                     {
                         costSoFar[next] = newCost;
                         double priority;
