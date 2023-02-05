@@ -1,9 +1,24 @@
-﻿using DelaunatorSharp;
+﻿using System.Collections;
+using DelaunatorSharp;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class Helpers
 {
+    public static int CountTrue(this BitArray array)
+    {
+        var count = 0;
+        for (var i = 0; i < array.Length; i++)
+        {
+            if (array[i])
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     public static bool AreLocationsCollinear(List<Location> locations)
     {
         double lastSlope = 0;
