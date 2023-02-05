@@ -6,13 +6,16 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static partial class AddPipes
 {
-    public static HashSet<Location> Execute(Context context)
+    public static HashSet<Location> Execute(Context context, bool eliminateStrandedTerminals)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var solutions = new List<Solution>();
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
 
-        EliminateStrandedTerminals(context);
+        if (eliminateStrandedTerminals)
+        {
+            EliminateStrandedTerminals(context);
+        }
 
         foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
         {

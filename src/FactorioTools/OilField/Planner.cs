@@ -28,7 +28,7 @@ internal static class Planner
                 }
             }
 
-            var pipes = AddPipes.Execute(context);
+            var pipes = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
 
             // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
