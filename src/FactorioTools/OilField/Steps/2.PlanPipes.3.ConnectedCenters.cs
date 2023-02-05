@@ -148,49 +148,99 @@ internal static partial class AddPipes
     {
         var aStarResultV = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
         var aStarResultH = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
+
         if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
         {
             return aStarResultV.Path;
         }
 
-        var distinctPipes = aStarResultV.Path.Concat(aStarResultH.Path).ToHashSet();
+        var adjacentPipesV = 0;
+        double centroidDistanceV = 0;
 
-        var locationToAdjacentPipes = distinctPipes
-            .ToDictionary(
-                l => l,
-                l =>
+        var adjacentPipesH = 0;
+        double centroidDistanceH = 0;
+
+        var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
+        var locationToScores = new Dictionary<Location, (bool AdjacentPipes, double CentroidDistance)>(sizeEstimate);
+
+        for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
+        {
+            if (i < aStarResultV.Path.Count)
+            {
+                var scoresV = GetScores(context, groupCentroidX, groupCentroidY, locationToScores, aStarResultV.Path[i]);
+                if (scoresV.AdjacentPipes)
                 {
-                    Span<Location> adjacent = stackalloc Location[4];
-                    context.Grid.GetAdjacent(adjacent, l);
-                    for (var i = 0; i < adjacent.Length; i++)
-                    {
-                        if (!adjacent[i].IsValid)
-                        {
-                            continue;
-                        }
+                    adjacentPipesV++;
+                }
 
-                        if (context.Grid.IsEntityType<PumpjackSide>(adjacent[i]))
-                        {
-                            return true;
-                        }
-                    }
+                centroidDistanceV += scoresV.CentroidDistance;
+            }
 
-                    return false;
-                });
+            if (i < aStarResultH.Path.Count)
+            {
+                var scoresH = GetScores(context, groupCentroidX, groupCentroidY, locationToScores, aStarResultH.Path[i]);
+                if (scoresH.AdjacentPipes)
+                {
+                    adjacentPipesH++;
+                }
 
-        var locationToCentroidDistance = distinctPipes
-            .ToDictionary(
-                l => l,
-                l => l.GetEuclideanDistance(groupCentroidX, groupCentroidY));
+                centroidDistanceH += scoresH.CentroidDistance;
+            }
+        }
 
-        var paths = new[] { aStarResultV.Path, aStarResultH.Path };
-        var pathToAdjacentPipes = paths.ToDictionary(p => p, p => p.Count(l => locationToAdjacentPipes[l]));
-        var pathToCentroidDistance = paths.ToDictionary(p => p, p => p.Sum(l => locationToCentroidDistance[l]));
+        if (adjacentPipesV > adjacentPipesH)
+        {
+            return aStarResultV.Path;
+        }
+        else if (adjacentPipesV < adjacentPipesH)
+        {
+            return aStarResultH.Path;
+        }
+        else if (centroidDistanceV < centroidDistanceH)
+        {
+            return aStarResultV.Path;
+        }
+        else
+        {
+            return aStarResultH.Path;
+        }
+    }
 
-        return paths
-            .OrderByDescending(p => pathToAdjacentPipes[p])
-            .ThenBy(p => pathToCentroidDistance[p])
-            .First();
+    private static (bool AdjacentPipes, double CentroidDistance) GetScores(
+        Context context,
+        double groupCentroidX,
+        double groupCentroidY,
+        Dictionary<Location, (bool AdjacentPipes, double CentroidDistance)> locationToScores,
+        Location location)
+    {
+        if (!locationToScores.TryGetValue(location, out var scores))
+        {
+            scores = (HasAdjacentPumpjack(context, location), location.GetEuclideanDistance(groupCentroidX, groupCentroidY));
+            locationToScores.Add(location, scores);
+        }
+
+        return scores;
+    }
+
+    private static bool HasAdjacentPumpjack(Context context, Location l)
+    {
+        Span<Location> adjacent = stackalloc Location[4];
+
+        context.Grid.GetAdjacent(adjacent, l);
+        for (var i = 0; i < adjacent.Length; i++)
+        {
+            if (!adjacent[i].IsValid)
+            {
+                continue;
+            }
+
+            if (context.Grid.IsEntityType<PumpjackSide>(adjacent[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static List<Trunk> FindTrunks(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
