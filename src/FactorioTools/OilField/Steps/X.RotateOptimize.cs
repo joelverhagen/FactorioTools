@@ -53,7 +53,7 @@ internal static class RotateOptimize
 
             var originalPathResult = AStar.GetShortestPath(existingPipeGrid, currentTerminal.Terminal, goals);
             var originalPathGoal = originalPathResult.ReachedGoal!.Value;
-            var originalPath = originalPathResult.GetPath();
+            var originalPath = originalPathResult.Path;
 
             var newPipes = new HashSet<Location>(pipes);
             newPipes.ExceptWith(originalPath);
@@ -77,7 +77,7 @@ internal static class RotateOptimize
                 var result = AStar.GetShortestPath(context.Grid, terminalCandidate, newPipes);
                 if (result.ReachedGoal.HasValue)
                 {
-                    var path = result.GetPath();
+                    var path = result.Path;
                     paths.Add((new TerminalLocation(center, terminalCandidate, direction), path));
                 }
             }

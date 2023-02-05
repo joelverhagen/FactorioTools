@@ -135,8 +135,7 @@ internal static partial class AddPipes
                         .Select(p =>
                         {
                             var result = AStar.GetShortestPath(context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal });
-                            var path = result.GetPath();
-                            return new TerminalPair(p.A, p.B, path);
+                            return new TerminalPair(p.A, p.B, result.Path);
                         })
                         .OrderBy(x => x.Line.Count)
                         .First();
@@ -301,7 +300,7 @@ internal static partial class AddPipes
             .Select(l =>
             {
                 var result = AStar.GetShortestPath(context.Grid, l.A, new HashSet<Location> { l.B });
-                var path = result.GetPath();
+                var path = result.Path;
                 var turns = CountTurns(path);
                 return new PathAndTurns(l, path, turns);
             })

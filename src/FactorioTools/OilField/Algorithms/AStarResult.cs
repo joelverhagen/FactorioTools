@@ -2,42 +2,26 @@
 
 internal class AStarResult
 {
-    public AStarResult(Location start, Location? reachedGoal, HashSet<Location> goals, Dictionary<Location, Location> cameFrom, Dictionary<Location, double> costSoFar)
+    private readonly List<Location>? _path;
+
+    public AStarResult(Location? reachedGoal, List<Location>? path)
     {
-        Start = start;
         ReachedGoal = reachedGoal;
-        Goals = goals;
-        CameFrom = cameFrom;
-        CostSoFar = costSoFar;
+        _path = path;
     }
 
-    public Location Start { get; }
     public Location? ReachedGoal { get; }
-    public HashSet<Location> Goals { get; }
-    public Dictionary<Location, Location> CameFrom { get; }
-    public Dictionary<Location, double> CostSoFar { get; }
 
-    public List<Location> GetPath()
+    public List<Location> Path
     {
-        if (!ReachedGoal.HasValue)
+        get
         {
-            throw new InvalidOperationException("No goal location was reached.");
-        }
-
-        var path = new List<Location>();
-        var current = ReachedGoal.Value;
-        while (true)
-        {
-            var next = CameFrom[current];
-            path.Add(current);
-            if (next == current)
+            if (_path is null)
             {
-                break;
+                throw new InvalidOperationException("No goal location was reached.");
             }
 
-            current = next;
+            return _path;
         }
-
-        return path;
     }
 }

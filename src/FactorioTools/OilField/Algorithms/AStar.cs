@@ -1,4 +1,5 @@
 ﻿using Knapcode.FactorioTools.OilField.Grid;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
@@ -7,64 +8,81 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 /// </summary>
 internal static class AStar
 {
+    private static readonly ObjectPool<Dictionary<Location, Location>> CameFromPool = ObjectPool.Create<Dictionary<Location, Location>>();
+    private static readonly ObjectPool<Dictionary<Location, double>> CostSoFarPool = ObjectPool.Create<Dictionary<Location, double>>();
+    private static readonly ObjectPool<PriorityQueue<Location, double>> FrontierPool = ObjectPool.Create<PriorityQueue<Location, double>>();
+
     public static AStarResult GetShortestPath(SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
     {
         var goalsList = goals.ToList();
 
-        var sizeEstimate = 2 * start.GetManhattanDistance(goalsList[0]);
-        var cameFrom = new Dictionary<Location, Location>(sizeEstimate);
-        var costSoFar = new Dictionary<Location, double>(sizeEstimate);
+        var cameFrom = CameFromPool.Get();
+        var costSoFar = CostSoFarPool.Get();
+        var frontier = FrontierPool.Get();
 
-        var frontier = new PriorityQueue<Location, double>();
-        frontier.Enqueue(start, 0);
-
-        cameFrom[start] = start;
-        costSoFar[start] = 0;
-
-        Location? reachedGoal = null;
-        Span<Location> neighbors = stackalloc Location[4];
-
-        while (frontier.Count > 0)
+        try
         {
-            var current = frontier.Dequeue();
+            frontier.Enqueue(start, 0);
 
-            if (goals.Contains(current))
+            cameFrom[start] = start;
+            costSoFar[start] = 0;
+
+            Location? reachedGoal = null;
+            Span<Location> neighbors = stackalloc Location[4];
+
+            while (frontier.Count > 0)
             {
-                reachedGoal = current;
-                break;
-            }
+                var current = frontier.Dequeue();
 
-            var previous = cameFrom[current];
-
-            grid.GetNeighbors(neighbors, current);
-            for (int i = 0; i < neighbors.Length; i++)
-            {
-                Location next = neighbors[i];
-                if (!next.IsValid)
+                if (goals.Contains(current))
                 {
-                    continue;
+                    reachedGoal = current;
+                    break;
                 }
 
-                double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
+                var previous = cameFrom[current];
 
-                if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+                grid.GetNeighbors(neighbors, current);
+                for (int i = 0; i < neighbors.Length; i++)
                 {
-                    costSoFar[next] = newCost;
-                    double priority = newCost + Heuristic(next, goalsList, xWeight, yWeight);
-
-                    // Prefer paths without turns.
-                    if (preferNoTurns && previous != current && IsTurn(previous, current, next))
+                    Location next = neighbors[i];
+                    if (!next.IsValid)
                     {
-                        priority += 0.0001;
+                        continue;
                     }
 
-                    frontier.Enqueue(next, priority);
-                    cameFrom[next] = current;
+                    double newCost = costSoFar[current] + grid.GetNeighborCost(current, next);
+
+                    if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
+                    {
+                        costSoFar[next] = newCost;
+                        double priority = newCost + Heuristic(next, goalsList, xWeight, yWeight);
+
+                        // Prefer paths without turns.
+                        if (preferNoTurns && previous != current && IsTurn(previous, current, next))
+                        {
+                            priority += 0.0001;
+                        }
+
+                        frontier.Enqueue(next, priority);
+                        cameFrom[next] = current;
+                    }
                 }
             }
-        }
 
-        return new AStarResult(start, reachedGoal, goals, cameFrom, costSoFar);
+            return new AStarResult(reachedGoal, GetPath(cameFrom, start, reachedGoal));
+        }
+        finally
+        {
+            cameFrom.Clear();
+            CameFromPool.Return(cameFrom);
+
+            costSoFar.Clear();
+            CostSoFarPool.Return(costSoFar);
+
+            frontier.Clear();
+            FrontierPool.Return(frontier);
+        }
     }
 
     private static bool IsTurn(Location a, Location b, Location c)
@@ -88,5 +106,30 @@ internal static class AStar
         }
 
         return min;
+    }
+
+    private static List<Location>? GetPath(Dictionary<Location, Location> cameFrom, Location start, Location? reachedGoal)
+    {
+        if (!reachedGoal.HasValue)
+        {
+            return null;
+        }
+
+        var current = reachedGoal.Value;
+        var sizeEstimate = 2 * start.GetManhattanDistance(current);
+        var path = new List<Location>(sizeEstimate);
+        while (true)
+        {
+            var next = cameFrom[current];
+            path.Add(current);
+            if (next == current)
+            {
+                break;
+            }
+
+            current = next;
+        }
+
+        return path;
     }
 }

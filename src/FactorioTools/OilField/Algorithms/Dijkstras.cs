@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using Knapcode.FactorioTools.OilField.Grid;
+﻿using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 

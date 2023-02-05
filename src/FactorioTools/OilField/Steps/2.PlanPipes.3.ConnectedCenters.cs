@@ -147,17 +147,13 @@ internal static partial class AddPipes
     private static List<Location> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
         var aStarResultV = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
-        var aStarPathV = aStarResultV.GetPath();
-
         var aStarResultH = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
-        var aStarPathH = aStarResultH.GetPath();
-
-        if (aStarPathV.SequenceEqual(aStarPathH))
+        if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
         {
-            return aStarPathV;
+            return aStarResultV.Path;
         }
 
-        var distinctPipes = aStarPathV.Concat(aStarPathH).ToHashSet();
+        var distinctPipes = aStarResultV.Path.Concat(aStarResultH.Path).ToHashSet();
 
         var locationToAdjacentPipes = distinctPipes
             .ToDictionary(
@@ -187,7 +183,7 @@ internal static partial class AddPipes
                 l => l,
                 l => l.GetEuclideanDistance(groupCentroidX, groupCentroidY));
 
-        var paths = new[] { aStarPathV, aStarPathH };
+        var paths = new[] { aStarResultV.Path, aStarResultH.Path };
         var pathToAdjacentPipes = paths.ToDictionary(p => p, p => p.Count(l => locationToAdjacentPipes[l]));
         var pathToCentroidDistance = paths.ToDictionary(p => p, p => p.Sum(l => locationToCentroidDistance[l]));
 
@@ -279,7 +275,7 @@ internal static partial class AddPipes
                                 var result = AStar.GetShortestPath(context.Grid, terminal.Terminal, goals);
                                 var reachedGoal = result.ReachedGoal!.Value;
                                 var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
-                                var path = result.GetPath();
+                                var path = result.Path;
 
                                 return new { Terminal = closestTerminal, Path = path };
                             })
