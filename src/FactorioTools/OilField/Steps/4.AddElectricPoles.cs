@@ -287,12 +287,7 @@ internal static class AddElectricPoles
                         }
                     }
 
-                    return new
-                    {
-                        Location = x,
-                        Covered = candidateToCovered[x],
-                        OthersConnected = othersConnected,
-                    };
+                    return (Location: x, Covered: candidateToCovered[x], OthersConnected: othersConnected);
                 })
                 .OrderByDescending(x => x.Covered.CountTrue())
                 .ThenBy(x => x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue)
