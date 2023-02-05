@@ -1,4 +1,6 @@
-﻿using Knapcode.FactorioTools.OilField.Grid;
+﻿using System.Buffers;
+using System.Numerics;
+using Knapcode.FactorioTools.OilField.Grid;
 using Microsoft.Extensions.ObjectPool;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
@@ -19,7 +21,24 @@ internal static class AStar
             return new AStarResult(start, new List<Location> { start });
         }
 
-        var goalsList = goals.ToList();
+        var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
+        var goalsArray = ArrayPool<Location>.Shared.Rent(goals.Count);
+        goals.CopyTo(goalsArray);
+
+        int[]? xs = null;
+        int[]? ys = null;
+        if (useVector)
+        {
+            xs = ArrayPool<int>.Shared.Rent(goals.Count);
+            ys = ArrayPool<int>.Shared.Rent(goals.Count);
+            for (var i = 0; i < goals.Count; i++)
+            {
+                xs[i] = goalsArray[i].X;
+                ys[i] = goalsArray[i].Y;
+            }
+
+            ArrayPool<Location>.Shared.Return(goalsArray);
+        }
 
         var cameFrom = CameFromPool.Get();
         var costSoFar = CostSoFarPool.Get();
@@ -61,7 +80,15 @@ internal static class AStar
                     if (!costSoFar.ContainsKey(next) || newCost < costSoFar[next])
                     {
                         costSoFar[next] = newCost;
-                        double priority = newCost + Heuristic(next, goalsList, xWeight, yWeight);
+                        double priority;
+                        if (useVector)
+                        {
+                            priority = newCost + Heuristic(next, xs!, ys!, goals.Count, xWeight, yWeight);
+                        }
+                        else
+                        {
+                            priority = newCost + Heuristic(next, goalsArray, goals.Count, xWeight, yWeight);
+                        }
 
                         // Prefer paths without turns.
                         if (preferNoTurns && previous != current && IsTurn(previous, current, next))
@@ -87,6 +114,17 @@ internal static class AStar
 
             frontier.Clear();
             FrontierPool.Return(frontier);
+
+            if (useVector)
+            {
+                ArrayPool<int>.Shared.Return(xs!);
+                ArrayPool<int>.Shared.Return(ys!);
+            }
+            else
+            {
+                ArrayPool<Location>.Shared.Return(goalsArray);
+            }
+
         }
     }
 
@@ -97,13 +135,58 @@ internal static class AStar
         return directionA != directionB;
     }
 
-    private static double Heuristic(Location current, List<Location> goals, int xWeight, int yWeight)
+    private static int Heuristic(Location current, Location[] goals, int goalsCount, int xWeight, int yWeight)
     {
-        var min = double.MaxValue;
-        for (int i = 0; i < goals.Count; i++)
+        var min = int.MaxValue;
+        for (int i = 0; i < goalsCount; i++)
         {
-            Location goal = goals[i];
-            var val = xWeight * Math.Abs(goal.X - current.X) + yWeight * Math.Abs(goal.Y - current.Y);
+            var val = xWeight * Math.Abs(goals[i].X - current.X) + yWeight * Math.Abs(goals[i].Y - current.Y);
+            if (val < min)
+            {
+                min = val;
+            }
+        }
+
+        return min;
+    }
+
+    private static int Heuristic(Location current, int[] xs, int[] ys, int goalsCount, int xWeight, int yWeight)
+    {
+        var remaining = goalsCount % Vector<int>.Count;
+
+        var xWeightVector = new Vector<int>(xWeight);
+        var yWeightVector = new Vector<int>(yWeight);
+        var xCurrentVector = new Vector<int>(current.X);
+        var yCurrentVector = new Vector<int>(current.Y);
+
+        var minVector = new Vector<int>(int.MaxValue);
+
+        for (var i = 0; i < goalsCount - remaining; i += Vector<int>.Count)
+        {
+            var xVector = new Vector<int>(xs, i);
+            var yVector = new Vector<int>(ys, i);
+
+            var xDeltaVector = Vector.Abs(xVector - xCurrentVector) * xWeightVector;
+            var yDeltaVector = Vector.Abs(yVector - yCurrentVector) * yWeightVector;
+
+            var manhattanDistanceVector = xDeltaVector + yDeltaVector;
+
+            minVector = Vector.Min(minVector, manhattanDistanceVector);
+        }
+
+        var min = int.MaxValue;
+
+        for (var i = 0; i < Vector<int>.Count; i++)
+        {
+            if (minVector[i] < min)
+            {
+                min = minVector[i];
+            }
+        }
+
+        for (var i = goalsCount - remaining - 1; i < goalsCount; i++)
+        {
+            var val = xWeight * Math.Abs(xs[i] - current.X) + yWeight * Math.Abs(ys[i] - current.Y);
             if (val < min)
             {
                 min = val;
