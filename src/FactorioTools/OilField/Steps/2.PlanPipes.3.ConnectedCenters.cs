@@ -486,8 +486,8 @@ internal static partial class AddPipes
             Centers.Add(center);
         }
 
-        public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
-        public HashSet<Location> Centers { get; } = new HashSet<Location>();
+        public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>(2);
+        public HashSet<Location> Centers { get; } = new HashSet<Location>(2);
         public int Length => Start.GetManhattanDistance(End) + 1;
         public Location Start => Terminals[0].Terminal;
         public Location End => Terminals.Last().Terminal;
