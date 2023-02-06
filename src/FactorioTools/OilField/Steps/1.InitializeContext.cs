@@ -1,4 +1,5 @@
-﻿using Knapcode.FactorioTools.OilField.Data;
+﻿using System.Runtime.Serialization.Formatters;
+using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -22,6 +23,7 @@ internal static class InitializeContext
         var centers = GetPumpjackCenters(root, marginX, marginY);
         var grid = InitializeGrid(centers, marginX, marginY);
         var centerToTerminals = GetCenterToTerminals(centers, grid);
+        var locationToTerminals = GetLocationToTerminals(centerToTerminals);
 
         return new Context
         {
@@ -29,7 +31,28 @@ internal static class InitializeContext
             InputBlueprint = root,
             Grid = grid,
             CenterToTerminals = centerToTerminals,
+            LocationToTerminals = locationToTerminals,
         };
+    }
+
+    private static Dictionary<Location, List<TerminalLocation>> GetLocationToTerminals(Dictionary<Location, List<TerminalLocation>> centerToTerminals)
+    {
+        var locationToTerminals = new Dictionary<Location, List<TerminalLocation>>();
+        foreach (var terminals in centerToTerminals.Values)
+        {
+            foreach (var terminal in terminals)
+            {
+                if (!locationToTerminals.TryGetValue(terminal.Terminal, out var list))
+                {
+                    list = new List<TerminalLocation>(2);
+                    locationToTerminals.Add(terminal.Terminal, list);
+                }
+
+                list.Add(terminal);
+            }
+        }
+
+        return locationToTerminals;
     }
 
     private static HashSet<Location> GetPumpjackCenters(BlueprintRoot root, int marginX, int marginY)

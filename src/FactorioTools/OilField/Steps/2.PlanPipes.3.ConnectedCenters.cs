@@ -393,13 +393,6 @@ internal static partial class AddPipes
 
     private static List<Trunk> GetTrunkCandidates(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
     {
-        var locationToTerminals = context
-            .CenterToTerminals
-            .Values
-            .SelectMany(ts => ts)
-            .GroupBy(t => t.Terminal)
-            .ToDictionary(t => t.Key, t => t.ToHashSet());
-
         var centerToMaxX = context
             .CenterToTerminals
             .Keys
@@ -429,7 +422,7 @@ internal static partial class AddPipes
 
                     while (location.X <= maxX && location.Y <= maxY && context.Grid.IsEmpty(location))
                     {
-                        if (locationToTerminals.TryGetValue(location, out var terminals))
+                        if (context.LocationToTerminals.TryGetValue(location, out var terminals))
                         {
                             var centers = terminals.Select(t => t.Center);
                             var matchedCenters = centers.Intersect(nextCenters).ToHashSet();

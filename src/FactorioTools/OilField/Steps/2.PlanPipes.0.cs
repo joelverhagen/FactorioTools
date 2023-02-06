@@ -9,6 +9,8 @@ internal static partial class AddPipes
     public static HashSet<Location> Execute(Context context, bool eliminateStrandedTerminals)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
+        var originalLocationToTerminals = context.LocationToTerminals;
+
         var solutions = new List<Solution>();
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
 
@@ -20,6 +22,7 @@ internal static partial class AddPipes
         foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
         {
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+            context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 
             switch (strategy)
             {
@@ -34,6 +37,7 @@ internal static partial class AddPipes
                             Strategies = new HashSet<PlanPipesStrategy> { strategy },
                             CenterToConnectedCenters = null,
                             CenterToTerminals = context.CenterToTerminals,
+                            LocationToTerminals = context.LocationToTerminals,
                             Pipes = optimizedPipes,
                         });
                     }
@@ -57,8 +61,9 @@ internal static partial class AddPipes
                         solution = new Solution
                         {
                             Strategies = new HashSet<PlanPipesStrategy> { strategy },
-                            CenterToTerminals = context.CenterToTerminals,
                             CenterToConnectedCenters = centerToConnectedCenters,
+                            CenterToTerminals = context.CenterToTerminals,
+                            LocationToTerminals = context.LocationToTerminals,
                             Pipes = optimizedPipes,
                         };
 
@@ -82,14 +87,7 @@ internal static partial class AddPipes
 
     private static void EliminateStrandedTerminals(Context context)
     {
-        var locationToTerminals = context
-            .CenterToTerminals
-            .Values
-            .SelectMany(ts => ts)
-            .GroupBy(t => t.Terminal)
-            .ToDictionary(g => g.Key, g => g.ToHashSet());
-
-        var locationsToExplore = locationToTerminals.Keys.ToHashSet();
+        var locationsToExplore = context.LocationToTerminals.Keys.ToHashSet();
 
         while (locationsToExplore.Count > 0)
         {
@@ -104,7 +102,7 @@ internal static partial class AddPipes
 
             var unreachedTerminals = goals.Except(result.ReachedGoals).ToHashSet();
 
-            var reachedPumpjacks = result.ReachedGoals.SelectMany(l => locationToTerminals[l]).Select(t => t.Center).ToHashSet();
+            var reachedPumpjacks = result.ReachedGoals.SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToHashSet();
 
             HashSet<Location> terminalsToEliminate;
             if (reachedPumpjacks.Count == context.CenterToTerminals.Count)
@@ -120,7 +118,7 @@ internal static partial class AddPipes
 
             foreach (var location in terminalsToEliminate)
             {
-                foreach (var terminal in locationToTerminals[location])
+                foreach (var terminal in context.LocationToTerminals[location])
                 {
                     var terminals = context.CenterToTerminals[terminal.Center];
                     terminals.Remove(terminal);
@@ -142,6 +140,26 @@ internal static partial class AddPipes
             return;
         }
 
+        for (var i = 0; i < terminalOptions.Count; i++)
+        {
+            var otherTerminal = terminalOptions[i];
+            if (otherTerminal == selectedTerminal)
+            {
+                continue;
+            }
+
+            var terminals = context.LocationToTerminals[otherTerminal.Terminal];
+
+            if (terminals.Count == 1)
+            {
+                context.LocationToTerminals.Remove(otherTerminal.Terminal);
+            }
+            else
+            {
+                terminals.Remove(otherTerminal);
+            }
+        }
+
         terminalOptions.Clear();
         terminalOptions.Add(selectedTerminal);
     }
@@ -159,6 +177,7 @@ internal static partial class AddPipes
         public required HashSet<PlanPipesStrategy> Strategies { get; set; }
         public required Dictionary<Location, HashSet<Location>>? CenterToConnectedCenters { get; set; }
         public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
+        public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
         public required HashSet<Location> Pipes { get; set; }
     }
 
