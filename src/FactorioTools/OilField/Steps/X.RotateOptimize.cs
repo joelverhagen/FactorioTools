@@ -98,9 +98,11 @@ internal static class RotateOptimize
 
                 intersections = GetIntersections(context, pipes);
 
+                /*
                 var clone = new PipeGrid(context.Grid);
                 AddPipeEntities.Execute(clone, context.CenterToTerminals, pipes);
-                // Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+                */
             }
         }
 
