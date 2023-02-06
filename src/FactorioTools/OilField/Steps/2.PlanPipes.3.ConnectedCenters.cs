@@ -418,7 +418,7 @@ internal static partial class AddPipes
 
                     var location = terminal.Terminal.Translate(translation);
 
-                    var trunk = new Trunk(terminal, currentCenter);
+                    Trunk? trunk = null;
 
                     while (location.X <= maxX && location.Y <= maxY && context.Grid.IsEmpty(location))
                     {
@@ -453,6 +453,11 @@ internal static partial class AddPipes
                                 expandedChildCenters = true;
                             }
 
+                            if (trunk is null)
+                            {
+                                trunk = new Trunk(terminal, currentCenter);
+                            }
+
                             trunk.Terminals.AddRange(terminals);
                             trunk.Centers.Add(nextCenter);
 
@@ -462,7 +467,7 @@ internal static partial class AddPipes
                         location = location.Translate(translation);
                     }
 
-                    if (trunk.Centers.Count > 1)
+                    if (trunk is not null && trunk.Centers.Count > 1)
                     {
                         trunkCandidates.Add(trunk);
                     }
