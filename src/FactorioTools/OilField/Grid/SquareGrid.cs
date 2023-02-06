@@ -3,15 +3,6 @@
 internal abstract class SquareGrid
 {
     public const int NeighborCost = 1;
-
-    public static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Directions = new[]
-    {
-        (1, 0),
-        (0, -1),
-        (-1, 0),
-        (0, 1),
-    };
-
     private const string EmptyLabel = ".";
 
     private readonly Dictionary<GridEntity, Location> _entityToLocation;

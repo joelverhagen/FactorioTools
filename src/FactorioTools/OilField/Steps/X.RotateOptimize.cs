@@ -115,13 +115,25 @@ internal static class RotateOptimize
         foreach (var pipe in pipes)
         {
             var neighbors = 0;
-            foreach (var direction in SquareGrid.Directions)
+
+            if (pipes.Contains(pipe.Translate((1, 0))))
             {
-                var neighbor = pipe.Translate(direction);
-                if (pipes.Contains(neighbor))
-                {
-                    neighbors++;
-                }
+                neighbors++;
+            }
+
+            if (pipes.Contains(pipe.Translate((0, -1))))
+            {
+                neighbors++;
+            }
+
+            if (pipes.Contains(pipe.Translate((-1, 0))))
+            {
+                neighbors++;
+            }
+
+            if (pipes.Contains(pipe.Translate((0, 1))))
+            {
+                neighbors++;
             }
 
             if (neighbors > 2 || context.LocationToTerminals.ContainsKey(pipe) && neighbors > 1)
