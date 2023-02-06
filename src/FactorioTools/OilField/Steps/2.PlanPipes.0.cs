@@ -30,7 +30,11 @@ internal static partial class AddPipes
                     {
                         var pipes = ExecuteWithFBE(context);
 
+                        // Visualizer.Show(context.Grid, pipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+
                         var optimizedPipes = RotateOptimize.Execute(context, pipes);
+
+                        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
 
                         solutions.Add(new Solution
                         {
@@ -77,8 +81,36 @@ internal static partial class AddPipes
             }
         }
 
+        /*
+        foreach (var solution in solutions)
+        {
+            foreach (var terminals in solution.CenterToTerminals.Values)
+            {
+                if (terminals.Count != 1)
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+
+            var goals = solution.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
+            var clone = new ExistingPipeGrid(context.Grid);
+            AddPipeEntities.Execute(clone, solution.CenterToTerminals, solution.Pipes);
+            var start = goals.First();
+            goals.Remove(start);
+            var result = Dijkstras.GetShortestPaths(clone, start, goals, stopOnFirstGoal: false);
+            var reachedGoals = result.ReachedGoals;
+            reachedGoals.Add(start);
+            var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
+            if (unreachedGoals.Count > 0)
+            {
+                Visualizer.Show(clone, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+            }
+        }
+        */
+
         var bestSolution = solutions.MinBy(s => s.Pipes.Count)!;
         context.CenterToTerminals = bestSolution.CenterToTerminals;
+        context.LocationToTerminals = bestSolution.LocationToTerminals;
 
         AddPipeEntities.Execute(context.Grid, context.CenterToTerminals, bestSolution.Pipes);
 
@@ -129,39 +161,6 @@ internal static partial class AddPipes
                 }
             }
         }
-    }
-
-    private static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
-    {
-        var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];
-
-        if (terminalOptions.Count == 1)
-        {
-            return;
-        }
-
-        for (var i = 0; i < terminalOptions.Count; i++)
-        {
-            var otherTerminal = terminalOptions[i];
-            if (otherTerminal == selectedTerminal)
-            {
-                continue;
-            }
-
-            var terminals = context.LocationToTerminals[otherTerminal.Terminal];
-
-            if (terminals.Count == 1)
-            {
-                context.LocationToTerminals.Remove(otherTerminal.Terminal);
-            }
-            else
-            {
-                terminals.Remove(otherTerminal);
-            }
-        }
-
-        terminalOptions.Clear();
-        terminalOptions.Add(selectedTerminal);
     }
 
     private enum PlanPipesStrategy

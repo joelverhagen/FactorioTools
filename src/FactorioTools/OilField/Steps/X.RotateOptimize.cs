@@ -1,5 +1,6 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -7,31 +8,7 @@ internal static class RotateOptimize
 {
     internal static HashSet<Location> Execute(Context context, HashSet<Location> pipes)
     {
-        var intersections = new HashSet<Location>();
-        var allTerminals = context
-            .CenterToTerminals
-            .Values
-            .SelectMany(ts => ts)
-            .Select(t => t.Terminal)
-            .ToHashSet();
-
-        foreach (var pipe in pipes)
-        {
-            var neighbors = 0;
-            foreach (var direction in SquareGrid.Directions)
-            {
-                var neighbor = pipe.Translate(direction);
-                if (pipes.Contains(neighbor))
-                {
-                    neighbors++;
-                }
-            }
-
-            if (neighbors > 2 || allTerminals.Contains(pipe) && neighbors > 1)
-            {
-                intersections.Add(pipe);
-            }
-        }
+        var intersections = GetIntersections(context, pipes);
 
         var existingPipeGrid = new ExistingPipeGrid(context.Grid);
         AddPipeEntities.Execute(existingPipeGrid, context.CenterToTerminals, pipes);
@@ -47,22 +24,31 @@ internal static class RotateOptimize
                 continue;
             }
 
-            var goals = new HashSet<Location>(intersections);
-            goals.UnionWith(allTerminals);
-            goals.Remove(currentTerminal.Terminal);
-
-            var originalPathResult = AStar.GetShortestPath(existingPipeGrid, currentTerminal.Terminal, goals);
-            var originalPathGoal = originalPathResult.ReachedGoal!.Value;
-            var originalPath = originalPathResult.Path;
-
             var newPipes = new HashSet<Location>(pipes);
-            newPipes.ExceptWith(originalPath);
-            newPipes.Add(originalPathGoal);
 
-            var paths = new List<(TerminalLocation Terminal, List<Location> Path)>
+            var goals = new HashSet<Location>(intersections);
+            goals.UnionWith(context.LocationToTerminals.Keys);
+
+            var paths = new List<(TerminalLocation Terminal, List<Location> Path)>();
+
+            List<Location> originalPath;
+            if (context.LocationToTerminals[currentTerminal.Terminal].Count == 1)
             {
-                (currentTerminal, originalPath)
-            };
+                goals.Remove(currentTerminal.Terminal);
+
+                var originalPathResult = AStar.GetShortestPath(existingPipeGrid, currentTerminal.Terminal, goals);
+                var originalPathGoal = originalPathResult.ReachedGoal!.Value;
+                originalPath = originalPathResult.Path;
+
+                newPipes.ExceptWith(originalPath);
+                newPipes.Add(originalPathGoal);
+            }
+            else
+            {
+                originalPath = new List<Location> { currentTerminal.Terminal };
+            }
+
+            paths.Add((currentTerminal, originalPath));
 
             foreach ((var direction, var translation) in InitializeContext.TerminalOffsets)
             {
@@ -86,20 +72,62 @@ internal static class RotateOptimize
 
             if (paths[0].Path.Count < originalPath.Count)
             {
-                newPipes.UnionWith(paths[0].Path);
-                context.CenterToTerminals[center].Clear();
-                context.CenterToTerminals[center].Add(paths[0].Terminal);
+                var newPath = paths[0].Path;
+                var newTerminal = paths[0].Terminal;
+
+                newPipes.UnionWith(newPath);
+
+                if (newTerminal != currentTerminal)
+                {
+                    context.CenterToTerminals[center].Add(newTerminal);
+
+                    if (!context.LocationToTerminals.TryGetValue(newTerminal.Terminal, out var locationTerminals))
+                    {
+                        locationTerminals = new List<TerminalLocation> { newTerminal };
+                        context.LocationToTerminals.Add(newTerminal.Terminal, locationTerminals);
+                    }
+                    else
+                    {
+                        locationTerminals.Add(newTerminal);
+                    }
+
+                    EliminateOtherTerminals(context, newTerminal);
+                }
 
                 pipes = newPipes;
 
-                /*
+                intersections = GetIntersections(context, pipes);
+
                 var clone = new PipeGrid(context.Grid);
-                AddPipes.AddGridEntities(clone, context.CenterToTerminals, pipes);
-                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
-                */
+                AddPipeEntities.Execute(clone, context.CenterToTerminals, pipes);
+                // Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
             }
         }
 
         return pipes;
+    }
+
+    private static HashSet<Location> GetIntersections(Context context, HashSet<Location> pipes)
+    {
+        var intersections = new HashSet<Location>();
+        foreach (var pipe in pipes)
+        {
+            var neighbors = 0;
+            foreach (var direction in SquareGrid.Directions)
+            {
+                var neighbor = pipe.Translate(direction);
+                if (pipes.Contains(neighbor))
+                {
+                    neighbors++;
+                }
+            }
+
+            if (neighbors > 2 || context.LocationToTerminals.ContainsKey(pipe) && neighbors > 1)
+            {
+                intersections.Add(pipe);
+            }
+        }
+
+        return intersections;
     }
 }

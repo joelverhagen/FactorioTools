@@ -1,5 +1,4 @@
-﻿using System.Runtime.Serialization.Formatters;
-using Knapcode.FactorioTools.OilField.Data;
+﻿using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;

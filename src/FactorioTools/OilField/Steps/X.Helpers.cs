@@ -1,10 +1,44 @@
 ﻿using System.Collections;
 using DelaunatorSharp;
+using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class Helpers
 {
+    public static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
+    {
+        var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];
+
+        if (terminalOptions.Count == 1)
+        {
+            return;
+        }
+
+        for (var i = 0; i < terminalOptions.Count; i++)
+        {
+            var otherTerminal = terminalOptions[i];
+            if (otherTerminal == selectedTerminal)
+            {
+                continue;
+            }
+
+            var terminals = context.LocationToTerminals[otherTerminal.Terminal];
+
+            if (terminals.Count == 1)
+            {
+                context.LocationToTerminals.Remove(otherTerminal.Terminal);
+            }
+            else
+            {
+                terminals.Remove(otherTerminal);
+            }
+        }
+
+        terminalOptions.Clear();
+        terminalOptions.Add(selectedTerminal);
+    }
+
     public static int CountTrue(this BitArray array)
     {
         var count = 0;
