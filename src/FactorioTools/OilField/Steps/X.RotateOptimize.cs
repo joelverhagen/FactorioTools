@@ -19,6 +19,11 @@ internal static class RotateOptimize
         {
             var currentTerminal = terminals.Single();
 
+            if (context.LocationToTerminals[currentTerminal.Terminal].Count > 1)
+            {
+                continue;
+            }
+
             if (intersections.Contains(currentTerminal.Terminal))
             {
                 continue;
@@ -31,22 +36,14 @@ internal static class RotateOptimize
 
             var paths = new List<(TerminalLocation Terminal, List<Location> Path)>();
 
-            List<Location> originalPath;
-            if (context.LocationToTerminals[currentTerminal.Terminal].Count == 1)
-            {
-                goals.Remove(currentTerminal.Terminal);
+            goals.Remove(currentTerminal.Terminal);
 
-                var originalPathResult = AStar.GetShortestPath(existingPipeGrid, currentTerminal.Terminal, goals);
-                var originalPathGoal = originalPathResult.ReachedGoal!.Value;
-                originalPath = originalPathResult.Path;
+            var originalPathResult = AStar.GetShortestPath(existingPipeGrid, currentTerminal.Terminal, goals);
+            var originalPathGoal = originalPathResult.ReachedGoal!.Value;
+            var originalPath = originalPathResult.Path;
 
-                newPipes.ExceptWith(originalPath);
-                newPipes.Add(originalPathGoal);
-            }
-            else
-            {
-                originalPath = new List<Location> { currentTerminal.Terminal };
-            }
+            newPipes.ExceptWith(originalPath);
+            newPipes.Add(originalPathGoal);
 
             paths.Add((currentTerminal, originalPath));
 
