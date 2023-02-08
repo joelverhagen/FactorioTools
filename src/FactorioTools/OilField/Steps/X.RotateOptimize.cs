@@ -1,4 +1,5 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
+using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -6,12 +7,12 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class RotateOptimize
 {
-    internal static HashSet<Location> Execute(Context context, HashSet<Location> pipes)
-    {
-        var intersections = GetIntersections(context.LocationToTerminals, pipes);
-        var goals = GetGoals(context.LocationToTerminals, intersections);
+    private static readonly IReadOnlyDictionary<Direction, IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))>> DirectionToTerminalOffsets = InitializeContext.TerminalOffsets
+        .ToDictionary(x => x.Direction, x => (IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))>)new[] { x });
 
-        var existingPipeGrid = new ExistingPipeGrid(context.Grid, pipes);
+    internal static HashSet<Location> Execute(Context parentContext, HashSet<Location> pipes)
+    {
+        var context = new ChildContext(parentContext, pipes);        
 
         // Visualizer.Show(existingPipeGrid, intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -34,8 +35,8 @@ internal static class RotateOptimize
             }
             */
 
-            goals.Remove(currentTerminal.Terminal);
-            var exploredPaths = ExplorePaths(existingPipeGrid, currentTerminal.Terminal, goals);
+            context.Goals.Remove(currentTerminal.Terminal);
+            var exploredPaths = ExplorePaths(context, currentTerminal.Terminal);
 
             /*
             if (exploredPaths.ReachedGoals.Count == 0)
@@ -51,92 +52,164 @@ internal static class RotateOptimize
             }
             */
 
-            if (intersections.Contains(currentTerminal.Terminal))
+            if (context.Intersections.Contains(currentTerminal.Terminal))
             {
-                goals.Add(currentTerminal.Terminal);
-
                 /*
-                foreach (var goal in exploredPaths.ReachedGoals)
+                if (exploredPaths.ReachedGoals.Count < 1)
                 {
-
+                    throw new NotImplementedException();
+                    var clone = new PipeGrid(context.ExistingPipeGrid);
+                    AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
+                    Visualizer.Show(clone, context.Goals.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
                 }
                 */
+
+                foreach (var goal in exploredPaths.ReachedGoals)
+                {
+                    var existingPath = exploredPaths.GetPath(goal);
+                    context.Pipes.ExceptWith(existingPath);
+                    context.Pipes.Add(goal);
+
+                    var disconnectedPipes = ExplorePipes(context, goal);
+                    UseBestTerminal(context, currentTerminal, exploredPaths, goal, DirectionToTerminalOffsets[currentTerminal.Direction], disconnectedPipes);
+                }
             }
             else
             {
-                var goal = exploredPaths.ReachedGoals.Single();
-                var existingPath = exploredPaths.GetPath(goal);
-                pipes.ExceptWith(existingPath);
-                pipes.Add(goal);
-
-                var paths = new List<(TerminalLocation Terminal, List<Location> Path)>
+                /*
+                if (exploredPaths.ReachedGoals.Count == 0)
                 {
-                    (currentTerminal, existingPath)
-                };
-
-                for (var i = 0; i < InitializeContext.TerminalOffsets.Count; i++)
-                {
-                    (var direction, var translation) = InitializeContext.TerminalOffsets[i];
-                    if (currentTerminal.Direction == direction)
-                    {
-                        continue;
-                    }
-
-                    var terminalCandidate = center.Translate(translation);
-                    if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
-                    {
-                        continue;
-                    }
-
-                    var result = AStar.GetShortestPath(context.Grid, terminalCandidate, pipes);
-                    if (result.ReachedGoal.HasValue)
-                    {
-                        var path = result.Path;
-                        paths.Add((new TerminalLocation(center, terminalCandidate, direction), path));
-                    }
+                    throw new NotImplementedException();
+                    var clone = new PipeGrid(context.ExistingPipeGrid);
+                    AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
+                    Visualizer.Show(clone, context.Goals.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
                 }
+                */
 
-                paths = paths
-                    .OrderBy(p => p.Path.Count)
-                    .ThenBy(p => CountTurns(p.Path))
-                    .ToList();
+                var goal = exploredPaths.ReachedGoals.Single();
+                UseBestTerminal(context, currentTerminal, exploredPaths, goal, InitializeContext.TerminalOffsets, context.Pipes);
+            }
+        }
 
-                pipes.UnionWith(paths[0].Path);
+        return context.Pipes;
+    }
 
-                if (paths[0].Path != existingPath)
+    private static void UseBestTerminal(
+        ChildContext context,
+        TerminalLocation originalTerminal,
+        ExploredPaths exploredPaths,
+        Location originalGoal,
+        IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))> terminalOffsets,
+        HashSet<Location> connectionPoints)
+    {
+        var originalPath = exploredPaths.GetPath(originalGoal);
+        context.Pipes.ExceptWith(originalPath);
+        context.Pipes.Add(originalGoal);
+
+        var paths = new List<(TerminalLocation Terminal, List<Location> Path)>
+        {
+            (originalTerminal, originalPath)
+        };
+
+        for (var i = 0; i < terminalOffsets.Count; i++)
+        {
+            (var direction, var translation) = terminalOffsets[i];
+
+            var terminalCandidate = originalTerminal.Center.Translate(translation);
+            if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
+            {
+                continue;
+            }
+
+            var result = AStar.GetShortestPath(context.Grid, terminalCandidate, connectionPoints);
+
+            if (result.ReachedGoal.HasValue)
+            {
+                var path = result.Path;
+                paths.Add((new TerminalLocation(originalTerminal.Center, terminalCandidate, direction), path));
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        paths.Sort((a, b) =>
+        {
+            var pathCountCompare = a.Path.Count.CompareTo(b.Path.Count);
+            if (pathCountCompare != 0)
+            {
+                return pathCountCompare;
+            }
+
+            return CountTurns(a.Path).CompareTo(CountTurns(b.Path));
+        });
+
+        context.Pipes.UnionWith(paths[0].Path);
+
+        if (paths[0].Path != originalPath)
+        {
+            var newPath = paths[0].Path!;
+            var newTerminal = paths[0].Terminal;
+
+            if (newTerminal != originalTerminal)
+            {
+                context.CenterToTerminals[originalTerminal.Center].Add(newTerminal);
+
+                if (!context.LocationToTerminals.TryGetValue(newTerminal.Terminal, out var locationTerminals))
                 {
-                    var newPath = paths[0].Path!;
-                    var newTerminal = paths[0].Terminal;
-
-                    if (newTerminal != currentTerminal)
-                    {
-                        context.CenterToTerminals[center].Add(newTerminal);
-
-                        if (!context.LocationToTerminals.TryGetValue(newTerminal.Terminal, out var locationTerminals))
-                        {
-                            locationTerminals = new List<TerminalLocation> { newTerminal };
-                            context.LocationToTerminals.Add(newTerminal.Terminal, locationTerminals);
-                        }
-                        else
-                        {
-                            locationTerminals.Add(newTerminal);
-                        }
-
-                        EliminateOtherTerminals(context, newTerminal);
-                    }
-
-                    intersections = GetIntersections(context.LocationToTerminals, pipes);
-                    goals = GetGoals(context.LocationToTerminals, intersections);
-
-                    /*
-                    var clone = new PipeGrid(context.Grid);
-                    AddPipeEntities.Execute(clone, context.CenterToTerminals, pipes);
-                    Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
-                    */
+                    locationTerminals = new List<TerminalLocation> { newTerminal };
+                    context.LocationToTerminals.Add(newTerminal.Terminal, locationTerminals);
                 }
                 else
                 {
-                    goals.Add(currentTerminal.Terminal);
+                    locationTerminals.Add(newTerminal);
+                }
+
+                EliminateOtherTerminals(context.ParentContext, newTerminal);
+            }
+
+            context.UpdateIntersectionsAndGoals();
+
+            /*
+            if (paths[0].Terminal.Direction == originalTerminal.Direction)
+            {
+                var clone = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
+                Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            }
+            */
+
+            /*
+            var clone = new PipeGrid(context.Grid);
+            AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
+            Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            */
+        }
+        else
+        {
+            context.Goals.Add(originalTerminal.Terminal);
+        }
+    }
+
+    private static HashSet<Location> ExplorePipes(ChildContext context, Location start)
+    {
+        var toExplore = new Queue<Location>();
+        toExplore.Enqueue(start);
+        var pipes = new HashSet<Location> { start };
+
+        Span<Location> neighbors = stackalloc Location[4];
+
+        while (toExplore.Count > 0)
+        {
+            var current = toExplore.Dequeue();
+
+            context.ExistingPipeGrid.GetNeighbors(neighbors, current);
+            for (var i = 0; i < neighbors.Length; i++)
+            {
+                if (neighbors[i].IsValid && pipes.Add(neighbors[i]))
+                {
+                    toExplore.Enqueue(neighbors[i]);
                 }
             }
         }
@@ -144,20 +217,13 @@ internal static class RotateOptimize
         return pipes;
     }
 
-    private static HashSet<Location> GetGoals(Dictionary<Location, List<TerminalLocation>> locationToTerminals, HashSet<Location> intersections)
-    {
-        var goals = new HashSet<Location>(intersections);
-        goals.UnionWith(locationToTerminals.Keys);
-        return goals;
-    }
-
-    private static ExploredPaths ExplorePaths(SquareGrid grid, Location start, HashSet<Location> goals)
+    private static ExploredPaths ExplorePaths(ChildContext context, Location start)
     {
         var cameFrom = new Dictionary<Location, Location>();
         cameFrom[start] = start;
 
-        var toExplore = new Stack<Location>();
-        toExplore.Push(start);
+        var toExplore = new Queue<Location>();
+        toExplore.Enqueue(start);
 
         Span<Location> neighbors = stackalloc Location[4];
 
@@ -165,15 +231,15 @@ internal static class RotateOptimize
 
         while (toExplore.Count > 0)
         {
-            var current = toExplore.Pop();
+            var current = toExplore.Dequeue();
 
-            if (current != start && goals.Contains(current))
+            if (current != start && context.Goals.Contains(current))
             {
                 reachedGoals.Add(current);
                 continue;
             }
 
-            grid.GetNeighbors(neighbors, current);
+            context.ExistingPipeGrid.GetNeighbors(neighbors, current);
             for (var i = 0; i < neighbors.Length; i++)
             {
                 if (!neighbors[i].IsValid || cameFrom.ContainsKey(neighbors[i]))
@@ -182,47 +248,73 @@ internal static class RotateOptimize
                 }
 
                 cameFrom.Add(neighbors[i], current);
-                toExplore.Push(neighbors[i]);
+                toExplore.Enqueue(neighbors[i]);
             }
         }
 
         return new ExploredPaths(start, cameFrom, reachedGoals);
     }
 
-    private static HashSet<Location> GetIntersections(Dictionary<Location, List<TerminalLocation>> locationToTerminals, HashSet<Location> pipes)
+    private class ChildContext
     {
-        var intersections = new HashSet<Location>();
-        foreach (var pipe in pipes)
+        public ChildContext(Context parentContext, HashSet<Location> pipes)
         {
-            var neighbors = 0;
+            ParentContext = parentContext;
+            Pipes = pipes;
+            Intersections = new HashSet<Location>(pipes.Count);
+            Goals = new HashSet<Location>(pipes.Count);
+            ExistingPipeGrid = new ExistingPipeGrid(parentContext.Grid, pipes);
 
-            if (pipes.Contains(pipe.Translate((1, 0))))
-            {
-                neighbors++;
-            }
-
-            if (pipes.Contains(pipe.Translate((0, -1))))
-            {
-                neighbors++;
-            }
-
-            if (pipes.Contains(pipe.Translate((-1, 0))))
-            {
-                neighbors++;
-            }
-
-            if (pipes.Contains(pipe.Translate((0, 1))))
-            {
-                neighbors++;
-            }
-
-            if (neighbors > 2 || locationToTerminals.ContainsKey(pipe) && neighbors > 1)
-            {
-                intersections.Add(pipe);
-            }
+            UpdateIntersectionsAndGoals();
         }
 
-        return intersections;
+        public Context ParentContext { get; }
+        public SquareGrid Grid => ParentContext.Grid;
+        public Dictionary<Location, List<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
+        public IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
+        public HashSet<Location> Pipes { get; }
+        public HashSet<Location> Intersections { get; }
+        public HashSet<Location> Goals { get; }
+        public ExistingPipeGrid ExistingPipeGrid { get; }
+
+        public void UpdateIntersectionsAndGoals()
+        {
+            Intersections.Clear();
+
+            Goals.Clear();
+            Goals.UnionWith(LocationToTerminals.Keys);
+
+            foreach (var pipe in Pipes)
+            {
+                var neighbors = 0;
+
+                if (Pipes.Contains(pipe.Translate((1, 0))))
+                {
+                    neighbors++;
+                }
+
+                if (Pipes.Contains(pipe.Translate((0, -1))))
+                {
+                    neighbors++;
+                }
+
+                if (Pipes.Contains(pipe.Translate((-1, 0))))
+                {
+                    neighbors++;
+                }
+
+                if (Pipes.Contains(pipe.Translate((0, 1))))
+                {
+                    neighbors++;
+                }
+
+                if (neighbors > 2 || LocationToTerminals.ContainsKey(pipe) && neighbors > 1)
+                {
+                    Intersections.Add(pipe);
+                    Goals.Add(pipe);
+                }
+            }
+        }
     }
 
     private class ExploredPaths

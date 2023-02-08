@@ -30,7 +30,7 @@ internal static class Planner
 
             var pipes = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
 
-            // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
             if (context.Options.UseUndergroundPipes)
             {

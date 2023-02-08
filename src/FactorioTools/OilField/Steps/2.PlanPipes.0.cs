@@ -37,11 +37,11 @@ internal static partial class AddPipes
                     {
                         var pipes = ExecuteWithFBE(context);
 
-                        // Visualizer.Show(context.Grid, pipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                        // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
                         var optimizedPipes = RotateOptimize.Execute(context, pipes);
 
-                        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
                         solutions.Add(new Solution
                         {
@@ -67,7 +67,11 @@ internal static partial class AddPipes
 
                         var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
 
+                        // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+
                         var optimizedPipes = RotateOptimize.Execute(context, pipes);
+
+                        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
                         solution = new Solution
                         {

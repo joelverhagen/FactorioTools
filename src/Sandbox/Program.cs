@@ -22,7 +22,7 @@ internal partial class Program
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = new[] { blueprintStringsAll[55] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
 
         var pipeSum = 0;
