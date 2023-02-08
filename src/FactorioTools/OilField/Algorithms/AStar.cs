@@ -2,6 +2,7 @@
 using System.Numerics;
 using Knapcode.FactorioTools.OilField.Grid;
 using Microsoft.Extensions.ObjectPool;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
@@ -103,7 +104,8 @@ internal static class AStar
                 }
             }
 
-            return new AStarResult(reachedGoal, GetPath(cameFrom, start, reachedGoal));
+            var path = reachedGoal.HasValue ? GetPath(cameFrom, start, reachedGoal.Value) : null;
+            return new AStarResult(reachedGoal, path);
         }
         finally
         {
@@ -195,30 +197,5 @@ internal static class AStar
         }
 
         return min;
-    }
-
-    private static List<Location>? GetPath(Dictionary<Location, Location> cameFrom, Location start, Location? reachedGoal)
-    {
-        if (!reachedGoal.HasValue)
-        {
-            return null;
-        }
-
-        var current = reachedGoal.Value;
-        var sizeEstimate = 2 * start.GetManhattanDistance(current);
-        var path = new List<Location>(sizeEstimate);
-        while (true)
-        {
-            var next = cameFrom[current];
-            path.Add(current);
-            if (next == current)
-            {
-                break;
-            }
-
-            current = next;
-        }
-
-        return path;
     }
 }

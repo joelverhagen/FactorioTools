@@ -21,6 +21,13 @@ internal static partial class AddPipes
 
         foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
         {
+            /*
+            if (strategy != PlanPipesStrategy.ConnectedCenters_Delaunay)
+            {
+                continue;
+            }
+            */
+
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 

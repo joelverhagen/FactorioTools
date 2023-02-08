@@ -2,26 +2,25 @@
 
 internal class ExistingPipeGrid : SquareGrid
 {
-    public ExistingPipeGrid(SquareGrid squareGrid) : base(squareGrid)
-    {
-    }
+    private readonly HashSet<Location> _pipes;
 
-    public ExistingPipeGrid(int width, int height) : base(width, height)
+    public ExistingPipeGrid(SquareGrid squareGrid, HashSet<Location> pipes) : base(squareGrid)
     {
+        _pipes = pipes;
     }
 
     public override void GetNeighbors(Span<Location> neighbors, Location id)
     {
         var a = id.Translate((1, 0));
-        neighbors[0] = IsInBounds(a) && IsEntityType<Pipe>(a) ? a : Location.Invalid;
+        neighbors[0] = _pipes.Contains(a) ? a : Location.Invalid;
 
         var b = id.Translate((0, -1));
-        neighbors[1] = IsInBounds(b) && IsEntityType<Pipe>(b) ? b : Location.Invalid;
+        neighbors[1] = _pipes.Contains(b) ? b : Location.Invalid;
 
         var c = id.Translate((-1, 0));
-        neighbors[2] = IsInBounds(c) && IsEntityType<Pipe>(c) ? c : Location.Invalid;
+        neighbors[2] = _pipes.Contains(c) ? c : Location.Invalid;
 
         var d = id.Translate((0, 1));
-        neighbors[3] = IsInBounds(d) && IsEntityType<Pipe>(d) ? d : Location.Invalid;
+        neighbors[3] = _pipes.Contains(d) ? d : Location.Invalid;
     }
 }

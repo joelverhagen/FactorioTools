@@ -8,109 +8,146 @@ internal static class RotateOptimize
 {
     internal static HashSet<Location> Execute(Context context, HashSet<Location> pipes)
     {
-        var intersections = GetIntersections(context, pipes);
-        var goals = GetGoals(context, intersections);
+        var intersections = GetIntersections(context.LocationToTerminals, pipes);
+        var goals = GetGoals(context.LocationToTerminals, intersections);
 
-        var existingPipeGrid = new ExistingPipeGrid(context.Grid);
-        AddPipeEntities.Execute(existingPipeGrid, context.CenterToTerminals, pipes);
+        var existingPipeGrid = new ExistingPipeGrid(context.Grid, pipes);
 
-        Visualizer.Show(existingPipeGrid, intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // Visualizer.Show(existingPipeGrid, intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         foreach ((var center, var terminals) in context.CenterToTerminals)
         {
             var currentTerminal = terminals.Single();
 
+            // Locations that are used by two pumpjack terminals are not eligible for this optimization flow. A better
+            // pipe configuration can only be detected if a new path is shorter to other pipes. When a terminal is
+            // shared with another pumpjack, the current path length (1, start = goal) will always be less than or equal
+            // to the alternatives.
             if (context.LocationToTerminals[currentTerminal.Terminal].Count > 1)
             {
                 continue;
             }
 
-            if (intersections.Contains(currentTerminal.Terminal))
+            /*
+            if (goals.Contains(new Location(39, 25)))
             {
-                continue;
             }
+            */
 
             goals.Remove(currentTerminal.Terminal);
             var exploredPaths = ExplorePaths(existingPipeGrid, currentTerminal.Terminal, goals);
 
-            var goal = exploredPaths.ReachedGoals.Single();
-            var newPipes = new HashSet<Location>(pipes);
-            exploredPaths.RemovePathTo(goal, newPipes);
-
-            var paths = new List<(TerminalLocation Terminal, int PathLength, List<Location>? Path)>
+            /*
+            if (exploredPaths.ReachedGoals.Count == 0)
             {
-                (currentTerminal, PathLength: pipes.Count - newPipes.Count + 1, Path: null)
-            };
-
-            foreach ((var direction, var translation) in InitializeContext.TerminalOffsets)
-            {
-                var terminalCandidate = center.Translate(translation);
-
-                if (terminalCandidate == currentTerminal.Terminal
-                    || context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
-                {
-                    continue;
-                }
-
-                var result = AStar.GetShortestPath(context.Grid, terminalCandidate, newPipes);
-                if (result.ReachedGoal.HasValue)
-                {
-                    var path = result.Path;
-                    paths.Add((new TerminalLocation(center, terminalCandidate, direction), path.Count, path));
-                }
+                Visualizer.Show(existingPipeGrid, goals.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
             }
+            */
 
-            paths = paths.OrderBy(p => p.PathLength).ToList();
-
-            if (paths[0].Path is not null)
+            /*
+            if (currentTerminal.Terminal == new Location(16, 30))
             {
-                var newPath = paths[0].Path!;
-                var newTerminal = paths[0].Terminal;
+                Visualizer.Show(existingPipeGrid, goals.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            }
+            */
 
-                newPipes.UnionWith(newPath);
-
-                if (newTerminal != currentTerminal)
-                {
-                    context.CenterToTerminals[center].Add(newTerminal);
-
-                    if (!context.LocationToTerminals.TryGetValue(newTerminal.Terminal, out var locationTerminals))
-                    {
-                        locationTerminals = new List<TerminalLocation> { newTerminal };
-                        context.LocationToTerminals.Add(newTerminal.Terminal, locationTerminals);
-                    }
-                    else
-                    {
-                        locationTerminals.Add(newTerminal);
-                    }
-
-                    EliminateOtherTerminals(context, newTerminal);
-                }
-
-                pipes = newPipes;
-
-                intersections = GetIntersections(context, pipes);
-                goals = GetGoals(context, intersections);
+            if (intersections.Contains(currentTerminal.Terminal))
+            {
+                goals.Add(currentTerminal.Terminal);
 
                 /*
-                var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, context.CenterToTerminals, pipes);
-                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+                foreach (var goal in exploredPaths.ReachedGoals)
+                {
+
+                }
                 */
             }
             else
             {
-                // This goal was removed above so we add it back for subsequent iterations.
-                goals.Add(currentTerminal.Terminal);
+                var goal = exploredPaths.ReachedGoals.Single();
+                var existingPath = exploredPaths.GetPath(goal);
+                pipes.ExceptWith(existingPath);
+                pipes.Add(goal);
+
+                var paths = new List<(TerminalLocation Terminal, List<Location> Path)>
+                {
+                    (currentTerminal, existingPath)
+                };
+
+                for (var i = 0; i < InitializeContext.TerminalOffsets.Count; i++)
+                {
+                    (var direction, var translation) = InitializeContext.TerminalOffsets[i];
+                    if (currentTerminal.Direction == direction)
+                    {
+                        continue;
+                    }
+
+                    var terminalCandidate = center.Translate(translation);
+                    if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
+                    {
+                        continue;
+                    }
+
+                    var result = AStar.GetShortestPath(context.Grid, terminalCandidate, pipes);
+                    if (result.ReachedGoal.HasValue)
+                    {
+                        var path = result.Path;
+                        paths.Add((new TerminalLocation(center, terminalCandidate, direction), path));
+                    }
+                }
+
+                paths = paths
+                    .OrderBy(p => p.Path.Count)
+                    .ThenBy(p => CountTurns(p.Path))
+                    .ToList();
+
+                pipes.UnionWith(paths[0].Path);
+
+                if (paths[0].Path != existingPath)
+                {
+                    var newPath = paths[0].Path!;
+                    var newTerminal = paths[0].Terminal;
+
+                    if (newTerminal != currentTerminal)
+                    {
+                        context.CenterToTerminals[center].Add(newTerminal);
+
+                        if (!context.LocationToTerminals.TryGetValue(newTerminal.Terminal, out var locationTerminals))
+                        {
+                            locationTerminals = new List<TerminalLocation> { newTerminal };
+                            context.LocationToTerminals.Add(newTerminal.Terminal, locationTerminals);
+                        }
+                        else
+                        {
+                            locationTerminals.Add(newTerminal);
+                        }
+
+                        EliminateOtherTerminals(context, newTerminal);
+                    }
+
+                    intersections = GetIntersections(context.LocationToTerminals, pipes);
+                    goals = GetGoals(context.LocationToTerminals, intersections);
+
+                    /*
+                    var clone = new PipeGrid(context.Grid);
+                    AddPipeEntities.Execute(clone, context.CenterToTerminals, pipes);
+                    Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+                    */
+                }
+                else
+                {
+                    goals.Add(currentTerminal.Terminal);
+                }
             }
         }
 
         return pipes;
     }
 
-    private static HashSet<Location> GetGoals(Context context, HashSet<Location> intersections)
+    private static HashSet<Location> GetGoals(Dictionary<Location, List<TerminalLocation>> locationToTerminals, HashSet<Location> intersections)
     {
         var goals = new HashSet<Location>(intersections);
-        goals.UnionWith(context.LocationToTerminals.Keys);
+        goals.UnionWith(locationToTerminals.Keys);
         return goals;
     }
 
@@ -149,10 +186,10 @@ internal static class RotateOptimize
             }
         }
 
-        return new ExploredPaths(cameFrom, reachedGoals);
+        return new ExploredPaths(start, cameFrom, reachedGoals);
     }
 
-    private static HashSet<Location> GetIntersections(Context context, HashSet<Location> pipes)
+    private static HashSet<Location> GetIntersections(Dictionary<Location, List<TerminalLocation>> locationToTerminals, HashSet<Location> pipes)
     {
         var intersections = new HashSet<Location>();
         foreach (var pipe in pipes)
@@ -179,7 +216,7 @@ internal static class RotateOptimize
                 neighbors++;
             }
 
-            if (neighbors > 2 || context.LocationToTerminals.ContainsKey(pipe) && neighbors > 1)
+            if (neighbors > 2 || locationToTerminals.ContainsKey(pipe) && neighbors > 1)
             {
                 intersections.Add(pipe);
             }
@@ -190,34 +227,20 @@ internal static class RotateOptimize
 
     private class ExploredPaths
     {
-        public ExploredPaths(Dictionary<Location, Location> cameFrom, List<Location> reachedGoals)
+        public ExploredPaths(Location start, Dictionary<Location, Location> cameFrom, List<Location> reachedGoals)
         {
+            Start = start;
             CameFrom = cameFrom;
             ReachedGoals = reachedGoals;
         }
 
+        public Location Start { get; }
         public Dictionary<Location, Location> CameFrom { get; }
         public List<Location> ReachedGoals { get; }
 
-        public void RemovePathTo(Location goal, HashSet<Location> removeFrom)
+        public List<Location> GetPath(Location goal)
         {
-            var current = goal;
-
-            while (true)
-            {
-                if (!CameFrom.TryGetValue(current, out var previous))
-                {
-                    throw new InvalidOperationException("No path to this goal was found.");
-                }
-
-                if (current == previous)
-                {
-                    break;
-                }
-
-                removeFrom.Remove(previous);
-                current = previous;
-            }
+            return Helpers.GetPath(CameFrom, Start, goal);
         }
     }
 }

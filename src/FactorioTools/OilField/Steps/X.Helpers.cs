@@ -39,6 +39,26 @@ internal static class Helpers
         terminalOptions.Add(selectedTerminal);
     }
 
+    public static List<Location> GetPath(Dictionary<Location, Location> cameFrom, Location start, Location reachedGoal)
+    {
+        var current = reachedGoal;
+        var sizeEstimate = 2 * start.GetManhattanDistance(current);
+        var path = new List<Location>(sizeEstimate);
+        while (true)
+        {
+            var next = cameFrom[current];
+            path.Add(current);
+            if (next == current)
+            {
+                break;
+            }
+
+            current = next;
+        }
+
+        return path;
+    }
+
     public static int CountTrue(this BitArray array)
     {
         var count = 0;
