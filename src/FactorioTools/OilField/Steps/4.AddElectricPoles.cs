@@ -36,9 +36,9 @@ internal static class AddElectricPoles
 
         ConnectElectricPoles(context, electricPoles);
 
-        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+        // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        // RemoveExtraElectricPoles(context, electricPoles);
+        RemoveExtraElectricPoles(context, electricPoles);
 
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
 
@@ -118,7 +118,7 @@ internal static class AddElectricPoles
         }
 
         var coveredCenterToPoleCenters = poleCenterToCoveredCenters
-            .SelectMany(p => p.Value.Select(c => new { PoleCenter = p.Key, PumpjackCenter = c }))
+            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, PumpjackCenter: c )))
             .GroupBy(p => p.PumpjackCenter)
             .ToDictionary(g => g.Key, g => g.Select(p => p.PoleCenter).ToHashSet());
 
@@ -136,9 +136,26 @@ internal static class AddElectricPoles
 
         foreach (var candidate in removeCandidates)
         {
-            if (ArePolesConnectedWithout(electricPoles, electricPoles[candidate]))
+            var center = electricPoles[candidate];
+            if (ArePolesConnectedWithout(electricPoles, center))
             {
+                RemoveElectricPole(context, electricPoles, candidate, center);
+            }
+        }
+    }
 
+    private static void RemoveElectricPole(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location location, ElectricPoleCenter center)
+    {
+        center.ClearNeighbors();
+        electricPoles.Remove(location);
+
+        (var offsetX, var offsetY) = GetOffsets(context.Options);
+        for (var w = 0; w < context.Options.ElectricPoleWidth; w++)
+        {
+            for (var h = 0; h < context.Options.ElectricPoleHeight; h++)
+            {
+                var entityLocation = location.Translate(offsetX + w, offsetY + h);
+                context.Grid.RemoveEntity(entityLocation);
             }
         }
     }
@@ -167,7 +184,7 @@ internal static class AddElectricPoles
             }
         }
 
-        return discovered.Count == electricPoles.Count;
+        return discovered.Count == electricPoles.Count - 1;
     }
 
     private static void ConnectExistingElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location location, ElectricPoleCenter center)
@@ -295,7 +312,7 @@ internal static class AddElectricPoles
                 .MinBy(x => (
                     int.MaxValue - x.Covered.CountTrue(),
                     x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue,
-                    x.OthersConnected > 0 ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location),
+                    x.OthersConnected > 0 ? 0 : GetDistanceToClosestCandidate(centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location),
                     candidateToPumpjackDistance[x.Location],
                     candidateToMiddleDistance[x.Location]
                 ))!.Location;
@@ -360,7 +377,6 @@ internal static class AddElectricPoles
     }
 
     private static double GetDistanceToClosestCandidate(
-        Context context,
         List<Location> centerList,
         BitArray coveredPumpjacks,
         List<Location> electricPoleList,
