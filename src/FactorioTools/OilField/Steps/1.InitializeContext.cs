@@ -42,6 +42,8 @@ internal static class InitializeContext
                 LocationToLocation = new Dictionary<Location, Location>(),
                 LocationToDouble = new Dictionary<Location, double>(),
                 LocationPriorityQueue = new PriorityQueue<Location, double>(),
+                LocationListA = new List<Location>(),
+                LocationListB = new List<Location>(),
 #endif
             },
         };

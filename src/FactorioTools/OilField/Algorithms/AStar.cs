@@ -24,7 +24,7 @@ internal static class AStar
     public static int ArrayPoolCount;
 #endif
 
-    public static AStarResult GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
+    public static AStarResult GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1, List<Location>? outputList = null)
     {
         if (goals.Contains(start))
         {
@@ -154,8 +154,20 @@ internal static class AStar
                 }
             }
 
-            var path = reachedGoal.HasValue ? GetPath(cameFrom, start, reachedGoal.Value) : null;
-            return new AStarResult(reachedGoal, path);
+            if (!reachedGoal.HasValue)
+            {
+                outputList = null;
+            }
+            else if (outputList is not null)
+            {
+                AddPath(cameFrom, reachedGoal.Value, outputList);
+            }
+            else
+            {
+                outputList = GetPath(cameFrom, start, reachedGoal.Value);
+            }
+
+            return new AStarResult(reachedGoal, outputList);
         }
         finally
         {

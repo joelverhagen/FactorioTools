@@ -10,6 +10,8 @@ internal class SharedInstances
     public required Dictionary<Location, Location> LocationToLocation;
     public required Dictionary<Location, double> LocationToDouble;
     public required PriorityQueue<Location, double> LocationPriorityQueue;
+    public required List<Location> LocationListA;
+    public required List<Location> LocationListB;
 
     public T[] GetArray<T>(ref T[] array, int length) where T : struct
     {

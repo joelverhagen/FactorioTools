@@ -140,78 +140,92 @@ internal static partial class AddPipes
 
     private static List<Location> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
-        var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
-        var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
-
-        if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
+        try
         {
-            return aStarResultV.Path;
-        }
+#if USE_SHARED_INSTANCES
+            var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2, outputList: context.SharedInstances.LocationListA);
+            var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2, outputList: context.SharedInstances.LocationListB);
+#else
+            var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
+            var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
+#endif
 
-        var adjacentPipesV = 0;
-        double centroidDistanceV = 0;
+            if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
+            {
+                return aStarResultV.Path.ToList();
+            }
 
-        var adjacentPipesH = 0;
-        double centroidDistanceH = 0;
+            var adjacentPipesV = 0;
+            double centroidDistanceV = 0;
 
-        var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
+            var adjacentPipesH = 0;
+            double centroidDistanceH = 0;
+
+            var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
 
 #if USE_SHARED_INSTANCES
-        var locationToCentroidDistance = context.SharedInstances.LocationToDouble;
+            var locationToCentroidDistance = context.SharedInstances.LocationToDouble;
 #else
         var locationToCentroidDistance = new Dictionary<Location, double>(sizeEstimate);
 #endif
 
-        try
-        {
-            for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
+            try
             {
-                if (i < aStarResultV.Path.Count)
+                for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
                 {
-                    var location = aStarResultV.Path[i];
-                    if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                    if (i < aStarResultV.Path.Count)
                     {
-                        adjacentPipesV++;
+                        var location = aStarResultV.Path[i];
+                        if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                        {
+                            adjacentPipesV++;
+                        }
+
+                        centroidDistanceV += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
                     }
 
-                    centroidDistanceV += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
-                }
-
-                if (i < aStarResultH.Path.Count)
-                {
-                    var location = aStarResultH.Path[i];
-                    if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                    if (i < aStarResultH.Path.Count)
                     {
-                        adjacentPipesH++;
-                    }
+                        var location = aStarResultH.Path[i];
+                        if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                        {
+                            adjacentPipesH++;
+                        }
 
-                    centroidDistanceH += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
+                        centroidDistanceH += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
+                    }
                 }
+            }
+            finally
+            {
+#if USE_SHARED_INSTANCES
+                locationToCentroidDistance.Clear();
+#endif
+            }
+
+            if (adjacentPipesV > adjacentPipesH)
+            {
+                return aStarResultV.Path.ToList();
+            }
+            else if (adjacentPipesV < adjacentPipesH)
+            {
+                return aStarResultH.Path.ToList();
+            }
+            else if (centroidDistanceV < centroidDistanceH)
+            {
+                return aStarResultV.Path.ToList();
+            }
+            else
+            {
+                return aStarResultH.Path.ToList();
             }
         }
         finally
         {
 #if USE_SHARED_INSTANCES
-            locationToCentroidDistance.Clear();
+            context.SharedInstances.LocationListA.Clear();
+            context.SharedInstances.LocationListB.Clear();
 #endif
-        }
-
-
-        if (adjacentPipesV > adjacentPipesH)
-        {
-            return aStarResultV.Path;
-        }
-        else if (adjacentPipesV < adjacentPipesH)
-        {
-            return aStarResultH.Path;
-        }
-        else if (centroidDistanceV < centroidDistanceH)
-        {
-            return aStarResultV.Path;
-        }
-        else
-        {
-            return aStarResultH.Path;
         }
     }
 

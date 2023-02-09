@@ -41,13 +41,19 @@ internal static class Helpers
 
     public static List<Location> GetPath(Dictionary<Location, Location> cameFrom, Location start, Location reachedGoal)
     {
-        var current = reachedGoal;
-        var sizeEstimate = 2 * start.GetManhattanDistance(current);
+        var sizeEstimate = 2 * start.GetManhattanDistance(reachedGoal);
         var path = new List<Location>(sizeEstimate);
+        AddPath(cameFrom, reachedGoal, path);
+        return path;
+    }
+
+    public static void AddPath(Dictionary<Location, Location> cameFrom, Location reachedGoal, List<Location> outputList)
+    {
+        var current = reachedGoal;
         while (true)
         {
             var next = cameFrom[current];
-            path.Add(current);
+            outputList.Add(current);
             if (next == current)
             {
                 break;
@@ -55,8 +61,6 @@ internal static class Helpers
 
             current = next;
         }
-
-        return path;
     }
 
     public static int CountTrue(this BitArray array)

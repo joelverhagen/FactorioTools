@@ -78,93 +78,120 @@ internal static class RotateOptimize
 
         var originalGoal = exploredPaths.ReachedGoals.Single();
 
-        var originalPath = exploredPaths.GetPath(originalGoal);
-        for (var i = 1; i < originalPath.Count; i++)
-        {
-            context.Pipes.Remove(originalPath[i]);
-        }
+#if USE_SHARED_INSTANCES
+        var originalPath = context.ParentContext.SharedInstances.LocationListA;
+#else
+        var originalPath = new List<Location>();
+#endif
 
-        var paths = new List<(TerminalLocation Terminal, List<Location> Path)>
+        try
         {
-            (originalTerminal, originalPath)
-        };
+            exploredPaths.AddPath(originalGoal, originalPath);
 
-        for (var i = 0; i < InitializeContext.TerminalOffsets.Count; i++)
-        {
-            (var direction, var translation) = InitializeContext.TerminalOffsets[i];
-
-            var terminalCandidate = originalTerminal.Center.Translate(translation);
-            if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
+            for (var i = 1; i < originalPath.Count; i++)
             {
-                continue;
+                context.Pipes.Remove(originalPath[i]);
             }
 
-            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes);
-            if (result.ReachedGoal.HasValue)
+            var minTerminal = originalTerminal;
+            var minPath = originalPath;
+            var minPathTurns = CountTurns(minPath);
+            var changedPath = false;
+
+            for (var i = 0; i < InitializeContext.TerminalOffsets.Count; i++)
             {
-                var path = result.Path;
-                paths.Add((new TerminalLocation(originalTerminal.Center, terminalCandidate, direction), path));
-            }
-        }
+                (var direction, var translation) = InitializeContext.TerminalOffsets[i];
 
-        paths.Sort((a, b) =>
-        {
-            var pathCountCompare = a.Path.Count.CompareTo(b.Path.Count);
-            if (pathCountCompare != 0)
-            {
-                return pathCountCompare;
-            }
-
-            return CountTurns(a.Path).CompareTo(CountTurns(b.Path));
-        });
-
-        context.Pipes.UnionWith(paths[0].Path);
-
-        if (paths[0].Path != originalPath)
-        {
-            var newPath = paths[0].Path!;
-            var newTerminal = paths[0].Terminal;
-
-            if (newTerminal != originalTerminal)
-            {
-                context.CenterToTerminals[originalTerminal.Center].Add(newTerminal);
-
-                if (!context.LocationToTerminals.TryGetValue(newTerminal.Terminal, out var locationTerminals))
+                var terminalCandidate = originalTerminal.Center.Translate(translation);
+                if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
                 {
-                    locationTerminals = new List<TerminalLocation> { newTerminal };
-                    context.LocationToTerminals.Add(newTerminal.Terminal, locationTerminals);
+                    continue;
+                }
+
+#if USE_SHARED_INSTANCES
+                var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
+#else
+            var newPath = new List<Location>();
+#endif
+                var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
+                if (result.ReachedGoal.HasValue)
+                {
+                    var terminal = new TerminalLocation(originalTerminal.Center, terminalCandidate, direction);
+                    var pathTurns = CountTurns(newPath);
+
+                    if (newPath.Count < minPath.Count
+                        || (newPath.Count == minPath.Count && pathTurns < minPathTurns))
+                    {
+                        minPath.Clear();
+
+                        minTerminal = terminal;
+                        minPath = newPath;
+                        minPathTurns = pathTurns;
+                        changedPath = true;
+                    }
+                    else
+                    {
+                        newPath.Clear();
+                    }
                 }
                 else
                 {
-                    locationTerminals.Add(newTerminal);
+                    newPath.Clear();
                 }
-
-                EliminateOtherTerminals(context.ParentContext, newTerminal);
             }
 
-            context.UpdateIntersectionsAndGoals();
+            context.Pipes.UnionWith(minPath);
 
-            /*
-            if (paths[0].Terminal.Direction == originalTerminal.Direction)
+            if (changedPath)
             {
+                if (minTerminal != originalTerminal)
+                {
+                    context.CenterToTerminals[originalTerminal.Center].Add(minTerminal);
+
+                    if (!context.LocationToTerminals.TryGetValue(minTerminal.Terminal, out var locationTerminals))
+                    {
+                        locationTerminals = new List<TerminalLocation> { minTerminal };
+                        context.LocationToTerminals.Add(minTerminal.Terminal, locationTerminals);
+                    }
+                    else
+                    {
+                        locationTerminals.Add(minTerminal);
+                    }
+
+                    EliminateOtherTerminals(context.ParentContext, minTerminal);
+                }
+
+                context.UpdateIntersectionsAndGoals();
+
+                /*
+                if (paths[0].Terminal.Direction == originalTerminal.Direction)
+                {
+                    var clone = new PipeGrid(context.Grid);
+                    AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
+                    Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                }
+                */
+
+                /*
                 var clone = new PipeGrid(context.Grid);
                 AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
                 Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                */
+
+                return true;
             }
-            */
-
-            /*
-            var clone = new PipeGrid(context.Grid);
-            AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-            Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-            */
-
-            return true;
+            else
+            {
+                context.Goals.Add(originalTerminal.Terminal);
+                return false;
+            }
         }
-        else
+        finally
         {
-            context.Goals.Add(originalTerminal.Terminal);
-            return false;
+#if USE_SHARED_INSTANCES
+            context.ParentContext.SharedInstances.LocationListA.Clear();
+            context.ParentContext.SharedInstances.LocationListB.Clear();
+#endif
         }
     }
 
@@ -174,7 +201,12 @@ internal static class RotateOptimize
         Location start,
         Location originalGoal)
     {
-        var originalPath = exploredPaths.GetPath(originalGoal);
+#if USE_SHARED_INSTANCES
+        var originalPath = context.ParentContext.SharedInstances.LocationListA;
+#else
+        var originalPath = new List<Location>();
+#endif
+        exploredPaths.AddPath(originalGoal, originalPath);
         for (var i = 1; i < originalPath.Count; i++)
         {
             context.Pipes.Remove(originalPath[i]);
@@ -187,25 +219,41 @@ internal static class RotateOptimize
         */
 
         var connectionPoints = ExplorePipes(context, originalGoal);
+
+#if USE_SHARED_INSTANCES
+        var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
+#else
         var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
+#endif
 
-        if (result.Path.Count > originalPath.Count
-            || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
+        try
         {
-            context.Pipes.UnionWith(originalPath);
-            return false;
+            if (result.Path.Count > originalPath.Count
+                || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
+            {
+                context.Pipes.UnionWith(originalPath);
+
+                return false;
+            }
+
+            context.Pipes.UnionWith(result.Path);
+            context.UpdateIntersectionsAndGoals();
+
+            /*
+            var clone = new PipeGrid(context.Grid);
+            AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
+            Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            */
+
+            return true;
         }
-
-        context.Pipes.UnionWith(result.Path);
-        context.UpdateIntersectionsAndGoals();
-
-        /*
-        var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-        Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-        */
-
-        return true;
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            context.ParentContext.SharedInstances.LocationListA.Clear();
+            context.ParentContext.SharedInstances.LocationListB.Clear();
+#endif
+        }
     }
 
     private static HashSet<Location> ExplorePipes(ChildContext context, Location start)
@@ -389,9 +437,9 @@ internal static class RotateOptimize
         public Dictionary<Location, Location> CameFrom { get; }
         public List<Location> ReachedGoals { get; }
 
-        public List<Location> GetPath(Location goal)
+        public void AddPath(Location goal, List<Location> outputList)
         {
-            return Helpers.GetPath(CameFrom, Start, goal);
+            Helpers.AddPath(CameFrom, goal, outputList);
         }
     }
 }
