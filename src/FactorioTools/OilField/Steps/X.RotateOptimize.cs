@@ -1,11 +1,14 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
+using Microsoft.Extensions.ObjectPool;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class RotateOptimize
 {
+    private static readonly ObjectPool<Queue<Location>> QueuePool = ObjectPool.Create<Queue<Location>>();
+
     internal static HashSet<Location> Execute(Context parentContext, HashSet<Location> pipes)
     {
         var context = new ChildContext(parentContext, pipes);
@@ -202,65 +205,81 @@ internal static class RotateOptimize
 
     private static HashSet<Location> ExplorePipes(ChildContext context, Location start)
     {
-        var toExplore = new Queue<Location>();
-        toExplore.Enqueue(start);
-        var pipes = new HashSet<Location>(context.Pipes.Count) { start };
-
-        Span<Location> neighbors = stackalloc Location[4];
-
-        while (toExplore.Count > 0)
+        var toExplore = QueuePool.Get();        
+        try
         {
-            var current = toExplore.Dequeue();
+            toExplore.Enqueue(start);
+            var pipes = new HashSet<Location>(context.Pipes.Count) { start };
 
-            context.ExistingPipeGrid.GetNeighbors(neighbors, current);
-            for (var i = 0; i < neighbors.Length; i++)
+            Span<Location> neighbors = stackalloc Location[4];
+
+            while (toExplore.Count > 0)
             {
-                if (neighbors[i].IsValid && pipes.Add(neighbors[i]))
+                var current = toExplore.Dequeue();
+
+                context.ExistingPipeGrid.GetNeighbors(neighbors, current);
+                for (var i = 0; i < neighbors.Length; i++)
                 {
-                    toExplore.Enqueue(neighbors[i]);
+                    if (neighbors[i].IsValid && pipes.Add(neighbors[i]))
+                    {
+                        toExplore.Enqueue(neighbors[i]);
+                    }
                 }
             }
-        }
 
-        return pipes;
+            return pipes;
+        }
+        finally
+        {
+            toExplore.Clear();
+            QueuePool.Return(toExplore);
+        }
     }
 
     private static ExploredPaths ExplorePaths(ChildContext context, Location start)
     {
-        var cameFrom = new Dictionary<Location, Location>();
-        cameFrom[start] = start;
-
         var toExplore = new Queue<Location>();
-        toExplore.Enqueue(start);
-
-        Span<Location> neighbors = stackalloc Location[4];
-
-        var reachedGoals = new List<Location>();
-
-        while (toExplore.Count > 0)
+        try
         {
-            var current = toExplore.Dequeue();
+            toExplore.Enqueue(start);
+            var cameFrom = new Dictionary<Location, Location>();
+            cameFrom[start] = start;
 
-            if (current != start && context.Goals.Contains(current))
-            {
-                reachedGoals.Add(current);
-                continue;
-            }
 
-            context.ExistingPipeGrid.GetNeighbors(neighbors, current);
-            for (var i = 0; i < neighbors.Length; i++)
+            Span<Location> neighbors = stackalloc Location[4];
+
+            var reachedGoals = new List<Location>();
+
+            while (toExplore.Count > 0)
             {
-                if (!neighbors[i].IsValid || cameFrom.ContainsKey(neighbors[i]))
+                var current = toExplore.Dequeue();
+
+                if (current != start && context.Goals.Contains(current))
                 {
+                    reachedGoals.Add(current);
                     continue;
                 }
 
-                cameFrom.Add(neighbors[i], current);
-                toExplore.Enqueue(neighbors[i]);
-            }
-        }
+                context.ExistingPipeGrid.GetNeighbors(neighbors, current);
+                for (var i = 0; i < neighbors.Length; i++)
+                {
+                    if (!neighbors[i].IsValid || cameFrom.ContainsKey(neighbors[i]))
+                    {
+                        continue;
+                    }
 
-        return new ExploredPaths(start, cameFrom, reachedGoals);
+                    cameFrom.Add(neighbors[i], current);
+                    toExplore.Enqueue(neighbors[i]);
+                }
+            }
+
+            return new ExploredPaths(start, cameFrom, reachedGoals);
+        }
+        finally
+        {
+            toExplore.Clear();
+            QueuePool.Return(toExplore);
+        }
     }
 
     private class ChildContext
@@ -296,22 +315,22 @@ internal static class RotateOptimize
             {
                 var neighbors = 0;
 
-                if (Pipes.Contains(pipe.Translate((1, 0))))
+                if (Pipes.Contains(pipe.Translate(1, 0)))
                 {
                     neighbors++;
                 }
 
-                if (Pipes.Contains(pipe.Translate((0, -1))))
+                if (Pipes.Contains(pipe.Translate(0, -1)))
                 {
                     neighbors++;
                 }
 
-                if (Pipes.Contains(pipe.Translate((-1, 0))))
+                if (Pipes.Contains(pipe.Translate(-1, 0)))
                 {
                     neighbors++;
                 }
 
-                if (Pipes.Contains(pipe.Translate((0, 1))))
+                if (Pipes.Contains(pipe.Translate(0, 1)))
                 {
                     neighbors++;
                 }

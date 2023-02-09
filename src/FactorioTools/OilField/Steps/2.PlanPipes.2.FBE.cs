@@ -18,7 +18,7 @@ internal static partial class AddPipes
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
-        var middle = context.Grid.Middle.Translate((-2, -2));
+        var middle = context.Grid.Middle.Translate(-2, -2);
 
         (var terminals, var pipes) = DelaunayTriangulation(context, middle);
 

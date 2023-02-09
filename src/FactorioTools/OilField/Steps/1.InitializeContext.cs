@@ -22,7 +22,6 @@ internal static class InitializeContext
         var centers = GetPumpjackCenters(root, marginX, marginY);
         var grid = InitializeGrid(centers, marginX, marginY);
         var centerToTerminals = GetCenterToTerminals(centers, grid);
-        var locationToTerminals = GetLocationToTerminals(centerToTerminals);
 
         return new Context
         {
@@ -30,8 +29,36 @@ internal static class InitializeContext
             InputBlueprint = root,
             Grid = grid,
             CenterToTerminals = centerToTerminals,
-            LocationToTerminals = locationToTerminals,
+            LocationToTerminals = GetLocationToTerminals(centerToTerminals),
+            LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
         };
+    }
+
+    private static int[,] GetLocationToAdjacentCount(SquareGrid grid)
+    {
+        var locationToHasAdjacentPumpjack = new int[grid.Width, grid.Height];
+        Span<Location> adjacent = stackalloc Location[4];
+
+        foreach ((var entity, var location) in grid.EntityToLocation)
+        {
+            if (entity is not PumpjackSide)
+            {
+                continue;
+            }
+
+            grid.GetAdjacent(adjacent, location);
+            for (var i = 0; i < adjacent.Length; i++)
+            {
+                if (!adjacent[i].IsValid)
+                {
+                    continue;
+                }
+
+                locationToHasAdjacentPumpjack[adjacent[i].X, adjacent[i].Y]++;
+            }
+        }
+
+        return locationToHasAdjacentPumpjack;
     }
 
     private static Dictionary<Location, List<TerminalLocation>> GetLocationToTerminals(Dictionary<Location, List<TerminalLocation>> centerToTerminals)

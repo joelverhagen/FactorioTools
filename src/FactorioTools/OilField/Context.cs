@@ -10,4 +10,5 @@ internal class Context
     public required SquareGrid Grid { get; set; }
     public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
     public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
+    public required int[,] LocationToAdjacentCount { get; set; }
 }

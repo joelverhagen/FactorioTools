@@ -80,16 +80,16 @@ internal abstract class SquareGrid
 
     public void GetAdjacent(Span<Location> adjacent, Location id)
     {
-        var a = id.Translate((1, 0));
+        var a = id.Translate(1, 0);
         adjacent[0] = IsInBounds(a) ? a : Location.Invalid;
 
-        var b = id.Translate((0, -1));
+        var b = id.Translate(0, -1);
         adjacent[1] = IsInBounds(b) ? b : Location.Invalid;
 
-        var c = id.Translate((-1, 0));
+        var c = id.Translate(-1, 0);
         adjacent[2] = IsInBounds(c) ? c : Location.Invalid;
 
-        var d = id.Translate((0, 1));
+        var d = id.Translate(0, 1);
         adjacent[3] = IsInBounds(d) ? d : Location.Invalid;
     }
 

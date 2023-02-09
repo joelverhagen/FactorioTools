@@ -406,7 +406,7 @@ internal static class AddElectricPoles
         {
             for (var h = 0 - (context.Options.ElectricPoleHeight - 1); h < context.Options.ElectricPoleHeight; h++)
             {
-                var location = candidate.Translate((offsetX + w, offsetY + h));
+                var location = candidate.Translate(offsetX + w, offsetY + h);
                 candidatesToClean?.Remove(location);
 
                 if (w >= 0 && h >= 0)
@@ -432,7 +432,7 @@ internal static class AddElectricPoles
         {
             for (var h = 0; h < options.ElectricPoleHeight && fits; h++)
             {
-                var location = center.Translate((offsetX + w, offsetY + h));
+                var location = center.Translate(offsetX + w, offsetY + h);
                 fits = grid.IsInBounds(location) && grid.IsEmpty(location);
 
                 if (fits && location != center && populateSides)

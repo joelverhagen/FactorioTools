@@ -44,6 +44,11 @@
         return Math.Sqrt(Math.Pow(X - bX, 2) + Math.Pow(Y - bY, 2));
     }
 
+    public Location Translate(int deltaX, int deltaY)
+    {
+        return new Location(X + deltaX, Y + deltaY);
+    }
+
     public Location Translate((int DeltaX, int DeltaY) translation)
     {
         return new Location(X + translation.DeltaX, Y + translation.DeltaY);

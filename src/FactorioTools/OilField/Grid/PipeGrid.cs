@@ -8,16 +8,16 @@ internal class PipeGrid : SquareGrid
 
     public override void GetNeighbors(Span<Location> neighbors, Location id)
     {
-        var a = id.Translate((1, 0));
+        var a = id.Translate(1, 0);
         neighbors[0] = IsInBounds(a) && IsEmpty(a) ? a : Location.Invalid;
 
-        var b = id.Translate((0, -1));
+        var b = id.Translate(0, -1);
         neighbors[1] = IsInBounds(b) && IsEmpty(b) ? b : Location.Invalid;
 
-        var c = id.Translate((-1, 0));
+        var c = id.Translate(-1, 0);
         neighbors[2] = IsInBounds(c) && IsEmpty(c) ? c : Location.Invalid;
 
-        var d = id.Translate((0, 1));
+        var d = id.Translate(0, 1);
         neighbors[3] = IsInBounds(d) && IsEmpty(d) ? d : Location.Invalid;
     }
 }
