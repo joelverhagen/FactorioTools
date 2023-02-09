@@ -133,7 +133,7 @@ internal static partial class AddPipes
                         .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
                         .Select(p =>
                         {
-                            var result = AStar.GetShortestPath(context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal });
+                            var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal });
                             return new TerminalPair(p.A, p.B, result.Path);
                         })
                         .MinBy(x => x.Line.Count)!;
@@ -284,7 +284,7 @@ internal static partial class AddPipes
             .Take(5)
             .Select(l =>
             {
-                var result = AStar.GetShortestPath(context.Grid, l.A, new HashSet<Location> { l.B });
+                var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new HashSet<Location> { l.B });
                 var path = result.Path;
                 var turns = CountTurns(path);
                 return new PathAndTurns(l, path, turns);

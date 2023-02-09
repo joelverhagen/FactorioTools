@@ -108,7 +108,7 @@ internal static partial class AddPipes
                 var clone = new ExistingPipeGrid(context.Grid, solution.Pipes);
                 var start = goals.First();
                 goals.Remove(start);
-                var result = Dijkstras.GetShortestPaths(clone, start, goals, stopOnFirstGoal: false);
+                var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
                 var reachedGoals = result.ReachedGoals;
                 reachedGoals.Add(start);
                 var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
@@ -138,7 +138,7 @@ internal static partial class AddPipes
             var start = goals.First();
             goals.Remove(start);
 
-            var result = Dijkstras.GetShortestPaths(context.Grid, start, goals, stopOnFirstGoal: false);
+            var result = Dijkstras.GetShortestPaths(context.SharedInstances, context.Grid, start, goals, stopOnFirstGoal: false);
 
             var reachedTerminals = result.ReachedGoals;
             reachedTerminals.Add(start);

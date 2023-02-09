@@ -7,15 +7,13 @@ internal class DijkstrasResult
 {
     private readonly SquareGrid _grid;
 
-    public DijkstrasResult(SquareGrid grid, Dictionary<Location, double> locationToCost, Dictionary<Location, HashSet<Location>> locationToPrevious, HashSet<Location> reachedGoals)
+    public DijkstrasResult(SquareGrid grid, Dictionary<Location, HashSet<Location>> locationToPrevious, HashSet<Location> reachedGoals)
     {
         _grid = grid;
-        LocationToCost = locationToCost;
         LocationToPrevious = locationToPrevious;
         ReachedGoals = reachedGoals;
     }
 
-    public Dictionary<Location, double> LocationToCost { get; }
     public Dictionary<Location, HashSet<Location>> LocationToPrevious { get; }
     public HashSet<Location> ReachedGoals { get; }
 

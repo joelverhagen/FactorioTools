@@ -4,7 +4,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <DefineConstants>$(DefineConstants);USE_OBJECT_POOLING</DefineConstants>
+    <DefineConstants>$(DefineConstants);USE_OBJECT_POOLING_FALSE;USE_SHARED_INSTANCES</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>

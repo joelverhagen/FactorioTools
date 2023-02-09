@@ -31,6 +31,19 @@ internal static class InitializeContext
             CenterToTerminals = centerToTerminals,
             LocationToTerminals = GetLocationToTerminals(centerToTerminals),
             LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
+
+            SharedInstances = new SharedInstances
+            {
+#if USE_SHARED_INSTANCES
+                LocationQueue = new Queue<Location>(),
+                LocationArray = Array.Empty<Location>(),
+                IntArrayX = Array.Empty<int>(),
+                IntArrayY = Array.Empty<int>(),
+                LocationToLocation = new Dictionary<Location, Location>(),
+                LocationToDouble = new Dictionary<Location, double>(),
+                LocationPriorityQueue = new PriorityQueue<Location, double>(),
+#endif
+            },
         };
     }
 

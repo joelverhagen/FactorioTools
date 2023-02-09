@@ -99,7 +99,7 @@ internal static class RotateOptimize
                 continue;
             }
 
-            var result = AStar.GetShortestPath(context.Grid, terminalCandidate, context.Pipes);
+            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes);
             if (result.ReachedGoal.HasValue)
             {
                 var path = result.Path;
@@ -187,7 +187,7 @@ internal static class RotateOptimize
         */
 
         var connectionPoints = ExplorePipes(context, originalGoal);
-        var result = AStar.GetShortestPath(context.Grid, start, connectionPoints);
+        var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
 
         if (result.Path.Count > originalPath.Count
             || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
@@ -210,14 +210,7 @@ internal static class RotateOptimize
 
     private static HashSet<Location> ExplorePipes(ChildContext context, Location start)
     {
-#if USE_OBJECT_POOLING
-        var toExplore = QueuePool.Get();
-#else
-        var toExplore = new Queue<Location>();
-#endif
-#if DEBUG && USE_OBJECT_POOLING
-        Interlocked.Increment(ref QueuePoolCount);
-#endif
+        var toExplore = GetQueue(context);
         try
         {
             toExplore.Enqueue(start);
@@ -243,26 +236,13 @@ internal static class RotateOptimize
         }
         finally
         {
-#if USE_OBJECT_POOLING
-            toExplore.Clear();
-            QueuePool.Return(toExplore);
-#endif
-#if DEBUG && USE_OBJECT_POOLING
-            Interlocked.Decrement(ref QueuePoolCount);
-#endif
+            ReturnQueue(toExplore);
         }
     }
 
     private static ExploredPaths ExplorePaths(ChildContext context, Location start)
     {
-#if USE_OBJECT_POOLING
-        var toExplore = QueuePool.Get();
-#else
-        var toExplore = new Queue<Location>();
-#endif
-#if DEBUG && USE_OBJECT_POOLING
-        Interlocked.Increment(ref QueuePoolCount);
-#endif
+        var toExplore = GetQueue(context);
         try
         {
             toExplore.Enqueue(start);
@@ -301,14 +281,37 @@ internal static class RotateOptimize
         }
         finally
         {
+            ReturnQueue(toExplore);
+        }
+    }
+
+    private static Queue<Location> GetQueue(ChildContext context)
+    {
 #if USE_OBJECT_POOLING
-            toExplore.Clear();
-            QueuePool.Return(toExplore);
+        return QueuePool.Get();
+#elif USE_SHARED_INSTANCES
+        return context.ParentContext.SharedInstances.LocationQueue;
+#else
+        return new Queue<Location>();
 #endif
-#if DEBUG
+
+#if DEBUG && USE_OBJECT_POOLING
+        Interlocked.Increment(ref QueuePoolCount);
+#endif
+    }
+
+    private static void ReturnQueue(Queue<Location> toExplore)
+    {
+#if USE_OBJECT_POOLING
+        toExplore.Clear();
+        QueuePool.Return(toExplore);
+#elif USE_SHARED_INSTANCES
+        toExplore.Clear();
+#endif
+
+#if DEBUG && USE_OBJECT_POOLING
             Interlocked.Decrement(ref QueuePoolCount);
 #endif
-        }
     }
 
     private class ChildContext

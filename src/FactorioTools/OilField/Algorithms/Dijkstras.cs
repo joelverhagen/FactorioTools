@@ -4,71 +4,88 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 
 internal static class Dijkstras
 {
-    public static DijkstrasResult GetShortestPaths(SquareGrid grid, Location start, HashSet<Location> goals, bool stopOnFirstGoal)
+    public static DijkstrasResult GetShortestPaths(SharedInstances sharedInstances, SquareGrid grid, Location start, HashSet<Location> goals, bool stopOnFirstGoal)
     {
-        var locationToCost = new Dictionary<Location, double>();
-        locationToCost[start] = 0;
-        var locationToPrevious = new Dictionary<Location, HashSet<Location>>();
-        locationToPrevious[start] = new HashSet<Location>();
+        var cameFrom = new Dictionary<Location, HashSet<Location>>();
+        cameFrom[start] = new HashSet<Location>();
         var remainingGoals = new HashSet<Location>(goals);
         var reachedGoals = new HashSet<Location>();
 
+#if USE_SHARED_INSTANCES
+        var priorityQueue = sharedInstances.LocationPriorityQueue;
+        var costSoFar = sharedInstances.LocationToDouble;
+#else
         var priorityQueue = new PriorityQueue<Location, double>();
-        var inQueue = new HashSet<Location>();
-        priorityQueue.Enqueue(start, 0);
-        inQueue.Add(start);
+        var costSoFar = new Dictionary<Location, double>();
+#endif
 
-        Span<Location> neighbors = stackalloc Location[4];
+        costSoFar[start] = 0;
 
-        while (priorityQueue.Count > 0)
+        try
         {
-            var current = priorityQueue.Dequeue();
-            inQueue.Remove(current);
-            var currentCost = locationToCost[current];
+            var inQueue = new HashSet<Location>();
+            priorityQueue.Enqueue(start, 0);
+            inQueue.Add(start);
 
-            if (remainingGoals.Remove(current))
+            Span<Location> neighbors = stackalloc Location[4];
+
+            while (priorityQueue.Count > 0)
             {
-                reachedGoals.Add(current);
+                var current = priorityQueue.Dequeue();
+                inQueue.Remove(current);
+                var currentCost = costSoFar[current];
 
-                if (stopOnFirstGoal || remainingGoals.Count == 0)
+                if (remainingGoals.Remove(current))
                 {
-                    break;
-                }
-            }
+                    reachedGoals.Add(current);
 
-            grid.GetNeighbors(neighbors, current);
-            for (int i = 0; i < neighbors.Length; i++)
-            {
-                var neighbor = neighbors[i];
-                if (!neighbor.IsValid)
-                {
-                    continue;
-                }
-
-                var alternateCost = currentCost + SquareGrid.NeighborCost;
-                bool previousExists;
-                if (!(previousExists = locationToCost.TryGetValue(neighbor, out var neighborCost)) || alternateCost <= neighborCost)
-                {
-                    if (!previousExists || alternateCost < neighborCost)
+                    if (stopOnFirstGoal || remainingGoals.Count == 0)
                     {
-                        locationToCost[neighbor] = alternateCost;
-                        locationToPrevious[neighbor] = new HashSet<Location> { current };
+                        break;
                     }
-                    else
+                }
+
+                grid.GetNeighbors(neighbors, current);
+                for (int i = 0; i < neighbors.Length; i++)
+                {
+                    var neighbor = neighbors[i];
+                    if (!neighbor.IsValid)
                     {
-                        locationToPrevious[neighbor].Add(current);
+                        continue;
                     }
 
-                    if (!inQueue.Contains(neighbor))
+                    var alternateCost = currentCost + SquareGrid.NeighborCost;
+                    bool previousExists;
+                    if (!(previousExists = costSoFar.TryGetValue(neighbor, out var neighborCost)) || alternateCost <= neighborCost)
                     {
-                        priorityQueue.Enqueue(neighbor, alternateCost);
-                        inQueue.Add(neighbor);
+                        if (!previousExists || alternateCost < neighborCost)
+                        {
+                            costSoFar[neighbor] = alternateCost;
+                            cameFrom[neighbor] = new HashSet<Location> { current };
+                        }
+                        else
+                        {
+                            cameFrom[neighbor].Add(current);
+                        }
+
+                        if (!inQueue.Contains(neighbor))
+                        {
+                            priorityQueue.Enqueue(neighbor, alternateCost);
+                            inQueue.Add(neighbor);
+                        }
                     }
                 }
             }
         }
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            priorityQueue.Clear();
+            costSoFar.Clear();
+#endif
+        }
 
-        return new DijkstrasResult(grid, locationToCost, locationToPrevious, reachedGoals);
+        return new DijkstrasResult(grid, cameFrom, reachedGoals);
     }
 
 }

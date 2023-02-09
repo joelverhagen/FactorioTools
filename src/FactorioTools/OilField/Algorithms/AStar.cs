@@ -24,7 +24,7 @@ internal static class AStar
     public static int ArrayPoolCount;
 #endif
 
-    public static AStarResult GetShortestPath(SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
+    public static AStarResult GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
     {
         if (goals.Contains(start))
         {
@@ -34,6 +34,8 @@ internal static class AStar
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
 #if USE_OBJECT_POOLING
         var goalsArray = ArrayPool<Location>.Shared.Rent(goals.Count);
+#elif USE_SHARED_INSTANCES
+        var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
 #else
         var goalsArray = new Location[goals.Count];
 #endif
@@ -49,6 +51,9 @@ internal static class AStar
 #if USE_OBJECT_POOLING
             xs = ArrayPool<int>.Shared.Rent(goals.Count);
             ys = ArrayPool<int>.Shared.Rent(goals.Count);
+#elif USE_SHARED_INSTANCES
+            xs = sharedInstances.GetArray(ref sharedInstances.IntArrayX, goals.Count);
+            ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
 #else
             xs = new int[goals.Count];
             ys = new int[goals.Count];
@@ -75,6 +80,10 @@ internal static class AStar
         var cameFrom = CameFromPool.Get();
         var costSoFar = CostSoFarPool.Get();
         var frontier = FrontierPool.Get();
+#elif USE_SHARED_INSTANCES
+        var cameFrom = sharedInstances.LocationToLocation;
+        var costSoFar = sharedInstances.LocationToDouble;
+        var frontier = sharedInstances.LocationPriorityQueue;
 #else
         var cameFrom = new Dictionary<Location, Location>();
         var costSoFar = new Dictionary<Location, double>();
@@ -159,6 +168,10 @@ internal static class AStar
 
             frontier.Clear();
             FrontierPool.Return(frontier);
+#elif USE_SHARED_INSTANCES
+            cameFrom.Clear();
+            costSoFar.Clear();
+            frontier.Clear();
 #endif
 
 #if DEBUG

@@ -140,8 +140,8 @@ internal static partial class AddPipes
 
     private static List<Location> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
-        var aStarResultV = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
-        var aStarResultH = AStar.GetShortestPath(context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
+        var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
+        var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
 
         if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
         {
@@ -155,32 +155,47 @@ internal static partial class AddPipes
         double centroidDistanceH = 0;
 
         var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
+
+#if USE_SHARED_INSTANCES
+        var locationToCentroidDistance = context.SharedInstances.LocationToDouble;
+#else
         var locationToCentroidDistance = new Dictionary<Location, double>(sizeEstimate);
+#endif
 
-        for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
+        try
         {
-            if (i < aStarResultV.Path.Count)
+            for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
             {
-                var location = aStarResultV.Path[i];
-                if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                if (i < aStarResultV.Path.Count)
                 {
-                    adjacentPipesV++;
+                    var location = aStarResultV.Path[i];
+                    if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                    {
+                        adjacentPipesV++;
+                    }
+
+                    centroidDistanceV += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
                 }
 
-                centroidDistanceV += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
-            }
-
-            if (i < aStarResultH.Path.Count)
-            {
-                var location = aStarResultH.Path[i];
-                if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                if (i < aStarResultH.Path.Count)
                 {
-                    adjacentPipesH++;
-                }
+                    var location = aStarResultH.Path[i];
+                    if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                    {
+                        adjacentPipesH++;
+                    }
 
-                centroidDistanceH += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
+                    centroidDistanceH += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
+                }
             }
         }
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            locationToCentroidDistance.Clear();
+#endif
+        }
+
 
         if (adjacentPipesV > adjacentPipesH)
         {
@@ -294,7 +309,7 @@ internal static partial class AddPipes
                             .Select(otherCenter =>
                             {
                                 var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToHashSet();
-                                var result = AStar.GetShortestPath(context.Grid, terminal.Terminal, goals);
+                                var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, goals);
                                 var reachedGoal = result.ReachedGoal!.Value;
                                 var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
                                 var path = result.Path;
