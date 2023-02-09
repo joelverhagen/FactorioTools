@@ -72,7 +72,7 @@ internal static class AddElectricPoles
             graph.Add(location, neighbors);
         }
 
-        var firstNode = graph.Keys.OrderBy(context.Grid.Middle.GetEuclideanDistance).First();
+        var firstNode = graph.Keys.MinBy(context.Grid.Middle.GetEuclideanDistance)!;
         var mst = Prims.GetMinimumSpanningTree(graph, firstNode, digraph: false);
 
         foreach ((var location, var neighbors) in mst)

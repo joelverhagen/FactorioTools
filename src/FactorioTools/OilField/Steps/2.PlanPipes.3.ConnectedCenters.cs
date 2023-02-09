@@ -329,13 +329,11 @@ internal static partial class AddPipes
 
                                 return new { Terminal = closestTerminal, Path = path };
                             })
-                            .OrderBy(t => t.Path.Count)
-                            .First();
+                            .MinBy(t => t.Path.Count)!;
 
                         return new { Terminal = terminal, BestTerminal = bestTerminal };
                     })
-                    .OrderBy(t => t.BestTerminal.Path.Count)
-                    .First();
+                    .MinBy(t => t.BestTerminal.Path.Count)!;
             })
             .OrderBy(t => t.BestTerminal.Path.Count)
             .ThenByDescending(t => centerToConnectedCenters[t.Terminal.Center].Count)

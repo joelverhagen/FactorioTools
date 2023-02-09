@@ -17,7 +17,7 @@ internal static class CleanBlueprint
         {
             // Pumpjacks are given a direction that doesn't overlap with another pumpjack, preferring the direction
             // starting at the top then proceeding clockwise.
-            var terminal = context.CenterToTerminals[center].OrderBy(x => x.Direction).First();
+            var terminal = context.CenterToTerminals[center].MinBy(x => x.Direction)!;
 
             entities.Add(new Entity
             {

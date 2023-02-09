@@ -137,11 +137,9 @@ internal static partial class AddPipes
                             var result = AStar.GetShortestPath(context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal });
                             return new TerminalPair(p.A, p.B, result.Path);
                         })
-                        .OrderBy(x => x.Line.Count)
-                        .First();
+                        .MinBy(x => x.Line.Count)!;
                 })
-                .OrderBy(x => x.Line.Count)
-                .First();
+                .MinBy(x => x.Line.Count);
 
             groups.Add(new Group(
                 new List<TerminalLocation> { connection.TerminalA, connection.TerminalB },

@@ -106,7 +106,7 @@ internal class DijkstrasResult
                     }
                     else
                     {
-                        var nextBest = directionToPrevious.OrderByDescending(x => directionHits[x.Key]).First();
+                        var nextBest = directionToPrevious.MaxBy(x => directionHits[x.Key]);
                         directionHits[nextBest.Key]++;
                         current = nextBest.Value;
                     }
@@ -166,7 +166,7 @@ internal class DijkstrasResult
                     }
                     else
                     {
-                        var nextBest = directionToPrevious.OrderByDescending(x => directionHits[x.Key]).First();
+                        var nextBest = directionToPrevious.MaxBy(x => directionHits[x.Key]);
                         directionHits[nextBest.Key]++;
                         current = nextBest.Value;
                     }
