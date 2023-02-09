@@ -204,7 +204,7 @@ internal static class RotateOptimize
     {
         var toExplore = new Queue<Location>();
         toExplore.Enqueue(start);
-        var pipes = new HashSet<Location> { start };
+        var pipes = new HashSet<Location>(context.Pipes.Count) { start };
 
         Span<Location> neighbors = stackalloc Location[4];
 
