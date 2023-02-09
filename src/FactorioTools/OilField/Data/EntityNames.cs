@@ -13,7 +13,7 @@ internal class EntityNames
         public const string Substation = "substation";
     }
 
-    public static class SpaceExploration
+    public static class AaiIndustry
     {
         public const string SmallIronElectricPole = "small-iron-electric-pole";
     }

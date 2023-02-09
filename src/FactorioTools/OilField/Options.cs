@@ -10,7 +10,7 @@ class Options
         {
             return new Options
             {
-                ElectricPoleEntityName = EntityNames.SpaceExploration.SmallIronElectricPole,
+                ElectricPoleEntityName = EntityNames.AaiIndustry.SmallIronElectricPole,
                 ElectricPoleSupplyWidth = 5,
                 ElectricPoleSupplyHeight = 5,
                 ElectricPoleWireReach = 7.5,
@@ -86,10 +86,10 @@ class Options
 
     public bool UseUndergroundPipes { get; set; } = true;
 
-    public string ElectricPoleEntityName { get; set; } = EntityNames.SpaceExploration.SmallIronElectricPole;
-    public int ElectricPoleSupplyWidth { get; set; } = 3;
-    public int ElectricPoleSupplyHeight { get; set; } = 3;
-    public double ElectricPoleWireReach { get; set; } = 7.5;
+    public string ElectricPoleEntityName { get; set; } = EntityNames.Vanilla.MediumElectricPole;
+    public int ElectricPoleSupplyWidth { get; set; } = 7;
+    public int ElectricPoleSupplyHeight { get; set; } = 7;
+    public double ElectricPoleWireReach { get; set; } = 9;
     public int ElectricPoleWidth { get; set; } = 1;
     public int ElectricPoleHeight { get; set; } = 1;
 
