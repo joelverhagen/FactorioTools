@@ -7,7 +7,12 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class RotateOptimize
 {
-    private static readonly ObjectPool<Queue<Location>> QueuePool = ObjectPool.Create<Queue<Location>>();
+#if USE_OBJECT_POOLING
+    public static readonly ObjectPool<Queue<Location>> QueuePool = ObjectPool.Create<Queue<Location>>();
+#endif
+#if DEBUG && USE_OBJECT_POOLING
+    public static int QueuePoolCount;
+#endif
 
     internal static HashSet<Location> Execute(Context parentContext, HashSet<Location> pipes)
     {
@@ -205,7 +210,14 @@ internal static class RotateOptimize
 
     private static HashSet<Location> ExplorePipes(ChildContext context, Location start)
     {
-        var toExplore = QueuePool.Get();        
+#if USE_OBJECT_POOLING
+        var toExplore = QueuePool.Get();
+#else
+        var toExplore = new Queue<Location>();
+#endif
+#if DEBUG && USE_OBJECT_POOLING
+        Interlocked.Increment(ref QueuePoolCount);
+#endif
         try
         {
             toExplore.Enqueue(start);
@@ -231,14 +243,26 @@ internal static class RotateOptimize
         }
         finally
         {
+#if USE_OBJECT_POOLING
             toExplore.Clear();
             QueuePool.Return(toExplore);
+#endif
+#if DEBUG && USE_OBJECT_POOLING
+            Interlocked.Decrement(ref QueuePoolCount);
+#endif
         }
     }
 
     private static ExploredPaths ExplorePaths(ChildContext context, Location start)
     {
+#if USE_OBJECT_POOLING
+        var toExplore = QueuePool.Get();
+#else
         var toExplore = new Queue<Location>();
+#endif
+#if DEBUG && USE_OBJECT_POOLING
+        Interlocked.Increment(ref QueuePoolCount);
+#endif
         try
         {
             toExplore.Enqueue(start);
@@ -277,8 +301,13 @@ internal static class RotateOptimize
         }
         finally
         {
+#if USE_OBJECT_POOLING
             toExplore.Clear();
             QueuePool.Return(toExplore);
+#endif
+#if DEBUG
+            Interlocked.Decrement(ref QueuePoolCount);
+#endif
         }
     }
 

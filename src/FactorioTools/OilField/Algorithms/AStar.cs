@@ -11,9 +11,18 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 /// </summary>
 internal static class AStar
 {
-    private static readonly ObjectPool<Dictionary<Location, Location>> CameFromPool = ObjectPool.Create<Dictionary<Location, Location>>();
-    private static readonly ObjectPool<Dictionary<Location, double>> CostSoFarPool = ObjectPool.Create<Dictionary<Location, double>>();
-    private static readonly ObjectPool<PriorityQueue<Location, double>> FrontierPool = ObjectPool.Create<PriorityQueue<Location, double>>();
+#if USE_OBJECT_POOLING
+    public static readonly ObjectPool<Dictionary<Location, Location>> CameFromPool = ObjectPool.Create<Dictionary<Location, Location>>();
+    public static readonly ObjectPool<Dictionary<Location, double>> CostSoFarPool = ObjectPool.Create<Dictionary<Location, double>>();
+    public static readonly ObjectPool<PriorityQueue<Location, double>> FrontierPool = ObjectPool.Create<PriorityQueue<Location, double>>();
+#endif
+
+#if DEBUG
+    public static int CameFromPoolCount;
+    public static int CostSoFarPoolCount;
+    public static int FrontierPoolCount;
+    public static int ArrayPoolCount;
+#endif
 
     public static AStarResult GetShortestPath(SquareGrid grid, Location start, HashSet<Location> goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1)
     {
@@ -23,27 +32,59 @@ internal static class AStar
         }
 
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
+#if USE_OBJECT_POOLING
         var goalsArray = ArrayPool<Location>.Shared.Rent(goals.Count);
+#else
+        var goalsArray = new Location[goals.Count];
+#endif
+#if DEBUG
+        Interlocked.Increment(ref ArrayPoolCount);
+#endif
         goals.CopyTo(goalsArray);
 
         int[]? xs = null;
         int[]? ys = null;
         if (useVector)
         {
+#if USE_OBJECT_POOLING
             xs = ArrayPool<int>.Shared.Rent(goals.Count);
             ys = ArrayPool<int>.Shared.Rent(goals.Count);
+#else
+            xs = new int[goals.Count];
+            ys = new int[goals.Count];
+#endif
+#if DEBUG
+            Interlocked.Increment(ref ArrayPoolCount);
+            Interlocked.Increment(ref ArrayPoolCount);
+#endif
             for (var i = 0; i < goals.Count; i++)
             {
                 xs[i] = goalsArray[i].X;
                 ys[i] = goalsArray[i].Y;
             }
 
+#if USE_OBJECT_POOLING
             ArrayPool<Location>.Shared.Return(goalsArray);
+#endif
+#if DEBUG
+            Interlocked.Decrement(ref ArrayPoolCount);
+#endif
         }
 
+#if USE_OBJECT_POOLING
         var cameFrom = CameFromPool.Get();
         var costSoFar = CostSoFarPool.Get();
         var frontier = FrontierPool.Get();
+#else
+        var cameFrom = new Dictionary<Location, Location>();
+        var costSoFar = new Dictionary<Location, double>();
+        var frontier = new PriorityQueue<Location, double>();
+#endif
+#if DEBUG
+        Interlocked.Increment(ref CostSoFarPoolCount);
+        Interlocked.Increment(ref FrontierPoolCount);
+        Interlocked.Increment(ref CameFromPoolCount);
+#endif
 
         try
         {
@@ -109,6 +150,7 @@ internal static class AStar
         }
         finally
         {
+#if USE_OBJECT_POOLING
             cameFrom.Clear();
             CameFromPool.Return(cameFrom);
 
@@ -117,15 +159,35 @@ internal static class AStar
 
             frontier.Clear();
             FrontierPool.Return(frontier);
+#endif
+
+#if DEBUG
+            Interlocked.Decrement(ref CameFromPoolCount);
+            Interlocked.Decrement(ref CostSoFarPoolCount);
+            Interlocked.Decrement(ref FrontierPoolCount);
+#endif
 
             if (useVector)
             {
+#if USE_OBJECT_POOLING
                 ArrayPool<int>.Shared.Return(xs!);
                 ArrayPool<int>.Shared.Return(ys!);
+#endif
+
+#if DEBUG
+                Interlocked.Decrement(ref ArrayPoolCount);
+                Interlocked.Decrement(ref ArrayPoolCount);
+#endif
             }
             else
             {
+#if USE_OBJECT_POOLING
                 ArrayPool<Location>.Shared.Return(goalsArray);
+#endif
+
+#if DEBUG
+                Interlocked.Decrement(ref ArrayPoolCount);
+#endif
             }
 
         }
