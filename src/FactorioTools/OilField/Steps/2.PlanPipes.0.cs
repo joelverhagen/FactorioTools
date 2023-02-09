@@ -1,6 +1,7 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using System.Diagnostics.CodeAnalysis;
+using System.Xml;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -92,32 +93,32 @@ internal static partial class AddPipes
             }
         }
 
-        /*
-        foreach (var solution in solutions)
+        if (context.Options.ValidateSolution)
         {
-            foreach (var terminals in solution.CenterToTerminals.Values)
+            foreach (var solution in solutions)
             {
-                if (terminals.Count != 1)
+                foreach (var terminals in solution.CenterToTerminals.Values)
                 {
-                    throw new InvalidOperationException();
+                    if (terminals.Count != 1)
+                    {
+                        throw new InvalidOperationException("A pumpjack has more than one terminal.");
+                    }
+                }
+
+                var goals = solution.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
+                var clone = new ExistingPipeGrid(context.Grid, solution.Pipes);
+                var start = goals.First();
+                goals.Remove(start);
+                var result = Dijkstras.GetShortestPaths(clone, start, goals, stopOnFirstGoal: false);
+                var reachedGoals = result.ReachedGoals;
+                reachedGoals.Add(start);
+                var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
+                if (unreachedGoals.Count > 0)
+                {
+                    throw new InvalidOperationException("The pipes are not fully connected.");
                 }
             }
-
-            var goals = solution.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
-            var clone = new ExistingPipeGrid(context.Grid);
-            AddPipeEntities.Execute(clone, solution.CenterToTerminals, solution.Pipes);
-            var start = goals.First();
-            goals.Remove(start);
-            var result = Dijkstras.GetShortestPaths(clone, start, goals, stopOnFirstGoal: false);
-            var reachedGoals = result.ReachedGoals;
-            reachedGoals.Add(start);
-            var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
-            if (unreachedGoals.Count > 0)
-            {
-                Visualizer.Show(clone, Array.Empty<IPoint>(), Array.Empty<IEdge>());
-            }
         }
-        */
 
         var bestSolution = solutions.MinBy(s => s.Pipes.Count)!;
         context.CenterToTerminals = bestSolution.CenterToTerminals;

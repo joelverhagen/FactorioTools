@@ -93,6 +93,8 @@ class Options
     public int ElectricPoleWidth { get; set; } = 1;
     public int ElectricPoleHeight { get; set; } = 1;
 
+    public bool ValidateSolution { get; set; }
+
     public Dictionary<string, int> PumpjackModules { get; set; } = new Dictionary<string, int>
     {
         { ItemNames.Vanilla.EffectivityModule3, 2 },
