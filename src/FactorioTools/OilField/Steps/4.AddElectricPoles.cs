@@ -119,8 +119,8 @@ internal static class AddElectricPoles
 
         var coveredCenterToPoleCenters = poleCenterToCoveredCenters
             .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, PumpjackCenter: c )))
-            .GroupBy(p => p.PumpjackCenter)
-            .ToDictionary(g => g.Key, g => g.Select(p => p.PoleCenter).ToHashSet());
+            .GroupBy(p => p.PumpjackCenter, p => p.PoleCenter)
+            .ToDictionary(g => g.Key, g => g.ToHashSet());
 
         if (coveredCenterToPoleCenters.Count != context.CenterToTerminals.Count)
         {
