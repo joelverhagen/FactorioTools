@@ -8,13 +8,13 @@ internal abstract class SquareGrid
     private readonly Dictionary<GridEntity, Location> _entityToLocation;
     private readonly GridEntity?[,] _grid;
 
-    public SquareGrid(SquareGrid existing)
+    public SquareGrid(SquareGrid existing, bool clone)
     {
         Width = existing.Width;
         Height = existing.Height;
         Middle = new Location(Width / 2, Height / 2);
-        _entityToLocation = new Dictionary<GridEntity, Location>(existing._entityToLocation);
-        _grid = (GridEntity[,])existing._grid.Clone();
+        _entityToLocation = clone ? new Dictionary<GridEntity, Location>(existing._entityToLocation) : existing._entityToLocation;
+        _grid = clone ? (GridEntity[,])existing._grid.Clone() : existing._grid;
     }
 
     public SquareGrid(int width, int height)

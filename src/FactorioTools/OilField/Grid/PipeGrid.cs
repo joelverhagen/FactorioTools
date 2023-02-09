@@ -6,10 +6,6 @@ internal class PipeGrid : SquareGrid
     {
     }
 
-    public PipeGrid(SquareGrid squareGrid) : base(squareGrid)
-    {
-    }
-
     public override void GetNeighbors(Span<Location> neighbors, Location id)
     {
         var a = id.Translate((1, 0));

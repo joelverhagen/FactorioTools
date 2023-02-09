@@ -2,7 +2,7 @@
 
 internal class ExistingPipeGrid : SquareGrid
 {
-    public ExistingPipeGrid(SquareGrid squareGrid, HashSet<Location> pipes) : base(squareGrid)
+    public ExistingPipeGrid(SquareGrid squareGrid, HashSet<Location> pipes) : base(squareGrid, clone: false)
     {
         Pipes = pipes;
     }

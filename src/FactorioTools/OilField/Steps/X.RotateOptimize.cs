@@ -59,12 +59,14 @@ internal static class RotateOptimize
         context.Goals.Remove(originalTerminal.Terminal);
         var exploredPaths = ExplorePaths(context, originalTerminal.Terminal);
 
+        /*
         if (exploredPaths.ReachedGoals.Count == 0)
         {
             var clone = new PipeGrid(context.ExistingPipeGrid);
             AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
             Visualizer.Show(clone, context.Goals.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
         }
+        */
 
         var originalGoal = exploredPaths.ReachedGoals.Single();
 
@@ -90,16 +92,8 @@ internal static class RotateOptimize
             }
 
             var result = AStar.GetShortestPath(context.Grid, terminalCandidate, context.Pipes);
-
-            if (result.ReachedGoal.HasValue)
-            {
-                var path = result.Path;
-                paths.Add((new TerminalLocation(originalTerminal.Center, terminalCandidate, direction), path));
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+            var path = result.Path;
+            paths.Add((new TerminalLocation(originalTerminal.Center, terminalCandidate, direction), path));
         }
 
         paths.Sort((a, b) =>
