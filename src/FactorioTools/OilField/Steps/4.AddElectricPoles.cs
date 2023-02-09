@@ -267,13 +267,16 @@ internal static class AddElectricPoles
 
         while (coveredPumpjacks.CountTrue() < context.CenterToTerminals.Count)
         {
-            // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-            // Prefer spots that cover the most pumpjacks.
-            // Break ties with spots in range of existing power poles.
-            // Break further ties with spots closer to their pumpjack centers.
-            // Break further ties with spots closer to the center of the grid.
-            var sortedCandidates = candidateToCovered
+            if (candidateToCovered.Count == 0)
+            {
+                // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
+                // existing pipe placement eliminates all electric pole options).
+                return null;
+            }
+
+            var candidate = candidateToCovered
                 .Keys
                 .Select(x =>
                 {
@@ -289,65 +292,15 @@ internal static class AddElectricPoles
 
                     return (Location: x, Covered: candidateToCovered[x], OthersConnected: othersConnected);
                 })
-                .OrderByDescending(x => x.Covered.CountTrue())
-                .ThenBy(x => x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue)
-                .ThenBy(x => x.OthersConnected > 0 ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location))
-                .ThenBy(x => candidateToPumpjackDistance[x.Location])
-                .ThenBy(x => candidateToMiddleDistance[x.Location])
-                .Select(x => x.Location)
-                .ToList();
+                .MinBy(x => (
+                    int.MaxValue - x.Covered.CountTrue(),
+                    x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue,
+                    x.OthersConnected > 0 ? 0 : GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoleList, x.Covered, x.Location),
+                    candidateToPumpjackDistance[x.Location],
+                    candidateToMiddleDistance[x.Location]
+                ))!.Location;
 
-            /*
-            sortedCandidates.Sort((a, b) =>
-            {
-                var coveredCountDelta = b.CoveredCount.CompareTo(a.CoveredCount);
-                if (coveredCountDelta != 0)
-                {
-                    return coveredCountDelta;
-                }
-
-                var connectedCountDelta = a.OthersConnectedCount.CompareTo(b.OthersConnectedCount);
-                if (connectedCountDelta != 0)
-                {
-                    return connectedCountDelta;
-                }
-
-                var closestCandidateDelta = a.ClosestCandidate.CompareTo(b.ClosestCandidate);
-                if (closestCandidateDelta != 0)
-                {
-                    return closestCandidateDelta;
-                }
-
-                var pumpjackDistanceDelta = candidateToPumpjackDistance[a.Location].CompareTo(candidateToPumpjackDistance[b.Location]);
-                if (pumpjackDistanceDelta != 0)
-                {
-                    return pumpjackDistanceDelta;
-                }
-
-                return candidateToMiddleDistance[a.Location].CompareTo(candidateToMiddleDistance[b.Location]);
-            });
-            */
-
-            /*
-            sortedCandidates = sortedCandidates
-                .OrderByDescending(x => x.Covered.CountTrue())
-                .ThenBy(x => x.Connected ? x.Others.Count(o => o.Connected) : int.MaxValue)
-                .ThenBy(x =>
-                {
-                    if (x.Connected)
-                    {
-                        return 0;
-                    }
-
-                    return GetDistanceToClosestCandidate(context, centerList, coveredPumpjacks, electricPoles, x.Covered, x.Location);
-                })
-                .ThenBy(x => candidateToPumpjackDistance[x.Location])
-                .ThenBy(x => candidateToMiddleDistance[x.Location])
-                .ToList();
-            */
-
-            var poleAdded = false;
-            foreach (var candidate in sortedCandidates)
+            if (context.Options.ValidateSolution)
             {
                 var covered = candidateToCovered[candidate];
                 var isSubsetOf = true;
@@ -363,57 +316,43 @@ internal static class AddElectricPoles
                 {
                     throw new InvalidOperationException($"Candidate {candidate} should have been eliminated.");
                 }
-
-                (var fits, var sides) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: true);
-
-                if (fits)
-                {
-                    AddElectricPole(context, electricPoles, candidate, sides!);
-                    electricPoleList.Add(candidate);
-                    coveredPumpjacks.Or(candidateToCovered[candidate]);
-
-                    // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
-                    // by the pumpjacks that no longer need power.
-                    foreach ((var otherCandidate, var otherCovered) in candidateToCovered.ToList())
-                    {
-                        var modified = false;
-                        var otherCoveredCount = otherCovered.CountTrue();
-                        for (var i = 0; i < centerList.Count && otherCoveredCount > 0; i++)
-                        {
-                            if (coveredPumpjacks[i] && otherCovered[i])
-                            {
-                                otherCovered[i] = false;
-                                modified = true;
-                                otherCoveredCount--;
-                            }
-                        }
-
-                        if (otherCoveredCount == 0)
-                        {
-                            candidateToCovered.Remove(otherCandidate);
-                            candidateToPumpjackDistance.Remove(otherCandidate);
-                        }
-                        else if (modified)
-                        {
-                            double pumpjackDistance = 0;
-                            for (var i = 0; i < centerList.Count; i++)
-                            {
-                                pumpjackDistance += otherCandidate.GetEuclideanDistance(centerList[i]);
-                            }
-                            candidateToPumpjackDistance[otherCandidate] = pumpjackDistance;
-                        }
-                    }
-
-                    poleAdded = true;
-                    break;
-                }
             }
 
-            if (!poleAdded)
+            electricPoleList.Add(candidate);
+            coveredPumpjacks.Or(candidateToCovered[candidate]);
+
+            AddElectricPole(context, electricPoles, candidate, candidateToCovered);
+
+            // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
+            // by the pumpjacks that no longer need power.
+            foreach ((var otherCandidate, var otherCovered) in candidateToCovered.ToList())
             {
-                // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
-                // existing pipe placement eliminates all electric pole options).
-                return null;
+                var modified = false;
+                var otherCoveredCount = otherCovered.CountTrue();
+                for (var i = 0; i < centerList.Count && otherCoveredCount > 0; i++)
+                {
+                    if (coveredPumpjacks[i] && otherCovered[i])
+                    {
+                        otherCovered[i] = false;
+                        modified = true;
+                        otherCoveredCount--;
+                    }
+                }
+
+                if (otherCoveredCount == 0)
+                {
+                    candidateToCovered.Remove(otherCandidate);
+                    candidateToPumpjackDistance.Remove(otherCandidate);
+                }
+                else if (modified)
+                {
+                    double pumpjackDistance = 0;
+                    for (var i = 0; i < centerList.Count; i++)
+                    {
+                        pumpjackDistance += otherCandidate.GetEuclideanDistance(centerList[i]);
+                    }
+                    candidateToPumpjackDistance[otherCandidate] = pumpjackDistance;
+                }
             }
         }
 
@@ -454,17 +393,30 @@ internal static class AddElectricPoles
         return min;
     }
 
-    private static ElectricPoleCenter AddElectricPole(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location candidate, List<Location> sides)
+    private static ElectricPoleCenter AddElectricPole(
+        Context context,
+        Dictionary<Location, ElectricPoleCenter> electricPoles,
+        Location candidate,
+        Dictionary<Location, BitArray>? candidatesToClean)
     {
         var center = new ElectricPoleCenter();
-        context.Grid.AddEntity(candidate, center);
-        electricPoles.Add(candidate, center);
 
-        foreach (var location in sides)
+        (var offsetX, var offsetY) = GetOffsets(context.Options);
+        for (var w = 0 - (context.Options.ElectricPoleWidth - 1); w < context.Options.ElectricPoleWidth; w++)
         {
-            context.Grid.AddEntity(location, new ElectricPoleSide(center));
+            for (var h = 0 - (context.Options.ElectricPoleHeight - 1); h < context.Options.ElectricPoleHeight; h++)
+            {
+                var location = candidate.Translate((offsetX + w, offsetY + h));
+                candidatesToClean?.Remove(location);
+
+                if (w >= 0 && h >= 0)
+                {
+                    context.Grid.AddEntity(location, location == candidate ? center : new ElectricPoleSide(center));
+                }
+            }
         }
 
+        electricPoles.Add(candidate, center);
         ConnectExistingElectricPoles(context, electricPoles, candidate, center);
 
         return center;
@@ -475,9 +427,7 @@ internal static class AddElectricPoles
         var fits = true;
         var sides = populateSides ? new List<Location>() : null;
 
-        var offsetX = (options.ElectricPoleWidth - 1) / 2 * -1;
-        var offsetY = (options.ElectricPoleHeight - 1) / 2 * -1;
-
+        (var offsetX, var offsetY) = GetOffsets(options);
         for (var w = 0; w < options.ElectricPoleWidth && fits; w++)
         {
             for (var h = 0; h < options.ElectricPoleHeight && fits; h++)
@@ -493,6 +443,13 @@ internal static class AddElectricPoles
         }
 
         return (fits, sides);
+    }
+
+    private static (int OffsetX, int OffsetY) GetOffsets(Options options)
+    {
+        var offsetX = (options.ElectricPoleWidth - 1) / 2 * -1;
+        var offsetY = (options.ElectricPoleHeight - 1) / 2 * -1;
+        return (offsetX, offsetY);
     }
 
     private static void ConnectElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
@@ -538,13 +495,12 @@ internal static class AddElectricPoles
         candidates.Enqueue(idealPoint);
 
         Location? selectedPoint = null;
-        List<Location>? sides = null;
 
         Span<Location> adjacent = stackalloc Location[4];
         while (candidates.Count > 0)
         {
             var candidate = candidates.Dequeue();
-            (var fits, sides) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: true);
+            (var fits, _) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: false);
             if (fits)
             {
                 selectedPoint = candidate;
@@ -566,12 +522,12 @@ internal static class AddElectricPoles
             }
         }
 
-        if (!selectedPoint.HasValue || sides is null)
+        if (!selectedPoint.HasValue)
         {
             throw new InvalidOperationException("Could not find a pole that can be connected");
         }
 
-        var center = AddElectricPole(context, electricPoles, selectedPoint.Value, sides);
+        var center = AddElectricPole(context, electricPoles, selectedPoint.Value, candidatesToClean: null);
         var connectedGroups = groups.Where(g => g.Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
 
         if (connectedGroups.Count == 0)

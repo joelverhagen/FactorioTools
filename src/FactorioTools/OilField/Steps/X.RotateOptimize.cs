@@ -92,8 +92,11 @@ internal static class RotateOptimize
             }
 
             var result = AStar.GetShortestPath(context.Grid, terminalCandidate, context.Pipes);
-            var path = result.Path;
-            paths.Add((new TerminalLocation(originalTerminal.Center, terminalCandidate, direction), path));
+            if (result.ReachedGoal.HasValue)
+            {
+                var path = result.Path;
+                paths.Add((new TerminalLocation(originalTerminal.Center, terminalCandidate, direction), path));
+            }
         }
 
         paths.Sort((a, b) =>
