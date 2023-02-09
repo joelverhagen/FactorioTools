@@ -1,7 +1,6 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using System.Diagnostics.CodeAnalysis;
-using System.Xml;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 

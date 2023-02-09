@@ -102,21 +102,15 @@ internal static partial class AddPipes
                                         ChildCentroidDistance = group.GetChildCentroidDistance(includedCenter, terminal.Terminal),
                                     };
                                 })
-                                .OrderBy(t => t.Path.Count)
-                                .ThenBy(t => t.ChildCentroidDistance)
-                                .First();
+                                .MinBy(t => (t.Path.Count, t.ChildCentroidDistance))!;
 
                             return new { BestTerminal = bestTerminal, Center = center };
                         })
-                        .OrderBy(t => t.BestTerminal.Path.Count)
-                        .ThenBy(t => t.BestTerminal.ChildCentroidDistance)
-                        .First();
+                        .MinBy(t => (t.BestTerminal.Path.Count, t.BestTerminal.ChildCentroidDistance))!;
 
                     return new { BestCenter = bestCenter, Group = group };
                 })
-                .OrderBy(t => t.BestCenter.BestTerminal.Path.Count)
-                .ThenBy(t => t.BestCenter.BestTerminal.ChildCentroidDistance)
-                .First();
+                .MinBy(t => (t.BestCenter.BestTerminal.Path.Count, t.BestCenter.BestTerminal.ChildCentroidDistance))!;
 
             var group = bestGroup.Group;
             var center = bestGroup.BestCenter.Center;
@@ -335,12 +329,13 @@ internal static partial class AddPipes
                     })
                     .MinBy(t => t.BestTerminal.Path.Count)!;
             })
-            .OrderBy(t => t.BestTerminal.Path.Count)
-            .ThenByDescending(t => centerToConnectedCenters[t.Terminal.Center].Count)
-            .ThenByDescending(t => centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count)
-            .ThenBy(t => t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
-            .ThenBy(t => t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle))
-            .First();
+            .MinBy(t => (
+                t.BestTerminal.Path.Count,
+                int.MaxValue - centerToConnectedCenters[t.Terminal.Center].Count,
+                int.MaxValue - centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count,
+                t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle),
+                t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle)
+            ))!;
 
         EliminateOtherTerminals(context, bestConnection.Terminal);
         EliminateOtherTerminals(context, bestConnection.BestTerminal.Terminal);

@@ -73,15 +73,14 @@ internal static partial class AddPipes
         var addedPumpjacks = new List<TerminalLocation>();
         while (lines.Count > 0)
         {
-            lines = lines
-                .OrderByDescending(ent => LineContainsAnAddedPumpjack(addedPumpjacks, ent))
-                .ThenByDescending(ent => ent.Endpoints.A.GetManhattanDistance(true ? middle : context.Grid.Middle) + ent.Endpoints.B.GetManhattanDistance(true ? middle : context.Grid.Middle))
-                .ThenBy(ent => ent.Connections.Count)
-                .ThenBy(ent => ent.AverageDistance)
-                .ToList();
-
-            var line = lines.First();
-            lines.RemoveAt(0);
+            var line = lines
+                .MinBy(ent => (
+                    !LineContainsAnAddedPumpjack(addedPumpjacks, ent),
+                    int.MaxValue - (ent.Endpoints.A.GetManhattanDistance(middle) + ent.Endpoints.B.GetManhattanDistance(middle)),
+                    ent.Connections.Count,
+                    ent.AverageDistance
+                ))!;
+            lines.Remove(line);
 
             var addedA = addedPumpjacks.FirstOrDefault(x => x.Center == line.Endpoints.A);
             var addedB = addedPumpjacks.FirstOrDefault(x => x.Center == line.Endpoints.B);
