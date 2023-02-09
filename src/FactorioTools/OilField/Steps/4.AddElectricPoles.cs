@@ -468,8 +468,7 @@ internal static class AddElectricPoles
                 })
                 .Where(c => c.GroupA != c.GroupB)
                 .Where(c => c.Distance > context.Options.ElectricPoleWireReach)
-                .OrderBy(c => c.Distance)
-                .FirstOrDefault();
+                .MinBy(c => c.Distance);
 
             if (closest is null)
             {

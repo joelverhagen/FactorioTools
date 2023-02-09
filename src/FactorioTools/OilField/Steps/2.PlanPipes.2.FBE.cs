@@ -105,7 +105,7 @@ internal static partial class AddPipes
                 if (addedA is null && addedB is not null && addedB.Direction == connection.TerminalB.Direction)
                 {
                     var group = groups.First(g => g.Entities.Contains(addedB));
-                    group.Entities.Add(connection.TerminalA);
+                    group.Add(connection.TerminalA);
                     group.Paths.Add(connection.Line);
                     addedPumpjacks.Add(connection.TerminalA);
                     break;
@@ -114,7 +114,7 @@ internal static partial class AddPipes
                 if (addedA is not null && addedB is null && addedA.Direction == connection.TerminalA.Direction)
                 {
                     var group = groups.First(g => g.Entities.Contains(addedA));
-                    group.Entities.Add(connection.TerminalB);
+                    group.Add(connection.TerminalB);
                     group.Paths.Add(connection.Line);
                     addedPumpjacks.Add(connection.TerminalB);
                     break;
@@ -138,7 +138,7 @@ internal static partial class AddPipes
                         })
                         .MinBy(x => x.Line.Count)!;
                 })
-                .MinBy(x => x.Line.Count);
+                .MinBy(x => x.Line.Count)!;
 
             groups.Add(new Group(
                 new List<TerminalLocation> { connection.TerminalA, connection.TerminalB },
@@ -153,21 +153,8 @@ internal static partial class AddPipes
 
         while (groups.Count > 0)
         {
-            foreach (var g in groups)
-            {
-                g.Location = new Location(
-                    (int)Math.Round(g.Entities.Average(e => e.Center.X), 0),
-                    (int)Math.Round(g.Entities.Average(e => e.Center.Y), 0));
-            }
-
-            groups = groups
-                .OrderBy(x => x.Paths.Sum(p => p.Count))
-                .ToList();
-
-            var groupsCopy = groups.ToList();
-
-            var group = groups[0];
-            groups.RemoveAt(0);
+            var group = groups.MinBy(x => x.Paths.Sum(p => p.Count))!;
+            groups.Remove(group);
 
             if (groups.Count == 0)
             {
@@ -184,12 +171,14 @@ internal static partial class AddPipes
                 break;
             }
 
-            var locationToGroup = groupsCopy.ToDictionary(x => x.Location, x => x);
+            var locationToGroup = groups.ToDictionary(x => x.Location, x => x);
+            locationToGroup.Add(group.Location, group);
+
             var par = PointsToLines(locationToGroup.Keys)
-                    .Where(l => l.A == group.Location || l.B == group.Location)
-                    .Select(l => l.A == group.Location ? l.B : l.A)
-                    .Select(l => locationToGroup[l])
-                    .ToList();
+                .Where(l => l.A == group.Location || l.B == group.Location)
+                .Select(l => l.A == group.Location ? l.B : l.A)
+                .Select(l => locationToGroup[l])
+                .ToList();
 
             var connection = GetPathBetweenGroups(
                 context,
@@ -199,7 +188,7 @@ internal static partial class AddPipes
 
             if (connection is not null)
             {
-                connection.FirstGroup.Entities.AddRange(group.Entities);
+                connection.FirstGroup.AddRange(group.Entities);
                 connection.FirstGroup.Paths.AddRange(group.Paths);
                 connection.FirstGroup.Paths.Add(connection.Lines[0]);
             }
@@ -243,7 +232,7 @@ internal static partial class AddPipes
                 throw new InvalidOperationException("There should be at least one connection between a leftover pumpjack and the final group.");
             }
 
-            finalGroup.Entities.Add(connection.FirstGroup.Entities.Single());
+            finalGroup.Add(connection.FirstGroup.Entities.Single());
             finalGroup.Paths.Add(connection.Lines[0]);
         }
 
@@ -265,8 +254,7 @@ internal static partial class AddPipes
         return groups
             .Select(g => ConnectTwoGroups(context, g, group, maxTurns))
             .Where(g => g.Lines.Count > 0)
-            .OrderBy(g => g.MinDistance)
-            .FirstOrDefault();
+            .MinBy(g => g.MinDistance);
     }
 
     private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns = 2)
@@ -314,9 +302,48 @@ internal static partial class AddPipes
 
     private record PathAndTurns(Endpoints Endpoints, List<Location> Path, int Turns);
 
-    private record Group(List<TerminalLocation> Entities, List<List<Location>> Paths)
+    private class Group
     {
-        public Location Location { get; set; }
+        private readonly List<TerminalLocation> _entities;
+        private double _sumX = 0;
+        private double _sumY = 0;
+
+        public Group(List<TerminalLocation> entities, List<List<Location>> paths)
+        {
+            _entities = entities;
+            UpdateLocation(0);
+            Paths = paths;
+        }
+
+        public IReadOnlyList<TerminalLocation> Entities => _entities;
+        public List<List<Location>> Paths { get; }
+        public Location Location { get; private set; }
+
+        public void Add(TerminalLocation entity)
+        {
+            _entities.Add(entity);
+            UpdateLocation(_entities.Count - 1);
+        }
+
+        public void AddRange(IEnumerable<TerminalLocation> entities)
+        {
+            var countBefore = _entities.Count;
+            _entities.AddRange(entities);
+            UpdateLocation(countBefore);
+        }
+
+        private void UpdateLocation(int countBefore)
+        {
+            for (var i = countBefore; i < _entities.Count; i++)
+            {
+                _sumX += _entities[i].Center.X;
+                _sumY += _entities[i].Center.Y;
+            }
+
+            Location = new Location(
+                (int)Math.Round(_sumX / _entities.Count, 0),
+                (int)Math.Round(_sumY / _entities.Count, 0));
+        }
     }
 
     private record PumpjackConnection(Endpoints Endpoints, List<TerminalPair> Connections)
