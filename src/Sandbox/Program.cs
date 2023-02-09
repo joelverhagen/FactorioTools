@@ -21,8 +21,8 @@ internal partial class Program
     private static void Measure()
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
-        var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[20] };
+        // var blueprintStrings = blueprintStringsAll;
+        var blueprintStrings = new[] { blueprintStringsAll[56] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
 
         var pipeSum = 0;
@@ -34,22 +34,29 @@ internal partial class Program
             var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
             var options = Options.ForMediumElectricPole;
-            options.UseUndergroundPipes = false;
+            // options.UseUndergroundPipes = false;
+            // options.ValidateSolution = true;
 
             var context = Planner.Execute(options, inputBlueprint);
 
             var pipeCount = context.Grid.EntityToLocation.Keys.OfType<Pipe>().Count();
             var poleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count();
 
-            Console.WriteLine($"{pipeCount} {poleCount}");
+            // Console.WriteLine($"{pipeCount} {poleCount}");
+            Console.WriteLine($"{pipeCount}");
 
             pipeSum += pipeCount;
             poleSum += poleCount;
             blueprintCount++;
 
-            var newBlueprint = GridToBlueprintString.Execute(context);
+            if (blueprintStrings.Length == 1)
+            {
+                var newBlueprint = GridToBlueprintString.Execute(context);
+                Console.WriteLine(newBlueprint);
+            }
         }
 
         Console.WriteLine($"{pipeSum * 1.0 / blueprintCount} {poleSum * 1.0 / blueprintCount}");
+        // Console.WriteLine($"{pipeSum * 1.0 / blueprintCount}");
     }
 }
