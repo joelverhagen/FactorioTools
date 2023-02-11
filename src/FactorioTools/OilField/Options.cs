@@ -93,9 +93,20 @@ class Options
     public int ElectricPoleWidth { get; set; } = 1;
     public int ElectricPoleHeight { get; set; } = 1;
 
+    public string BeaconEntityName { get; set; } = EntityNames.Vanilla.Beacon;
+    public int BeaconSupplyWidth { get; set; } = 9;
+    public int BeaconSupplyHeight { get; set; } = 9;
+    public int BeaconWidth { get; set; } = 3;
+    public int BeaconHeight { get; set; } = 3;
+
     public bool ValidateSolution { get; set; }
 
     public Dictionary<string, int> PumpjackModules { get; set; } = new Dictionary<string, int>
+    {
+        { ItemNames.Vanilla.EffectivityModule3, 2 },
+    };
+
+    public Dictionary<string, int> BeaconModules { get; set; } = new Dictionary<string, int>
     {
         { ItemNames.Vanilla.EffectivityModule3, 2 },
     };

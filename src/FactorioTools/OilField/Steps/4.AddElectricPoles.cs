@@ -220,7 +220,6 @@ internal static class AddElectricPoles
     {
         // First, find the spots for electric poles that cover the most pumpjacks.
         var centerList = context.CenterToTerminals.Keys.ToList();
-
         var allTerminals = context.CenterToTerminals.SelectMany(t => t.Value).Select(t => t.Terminal).ToHashSet();
 
         // Generate electric pole locations
