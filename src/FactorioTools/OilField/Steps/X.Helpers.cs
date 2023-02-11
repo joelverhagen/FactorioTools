@@ -6,6 +6,75 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class Helpers
 {
+    public static Dictionary<Location, BitArray> GetCandidateToCovered(Context context, List<Location> centerList, int providerWidth, int providerHeight, int supplyWidth, int supplyHeight)
+    {
+        var candidateToCovered = new Dictionary<Location, BitArray>();
+        var pumpjackArea = (X: 3, Y: 3);
+        var offsetX = pumpjackArea.X / 2 + supplyWidth / 2 - providerWidth / 2;
+        var offsetY = pumpjackArea.Y / 2 + supplyHeight / 2 - providerHeight / 2;
+
+        for (int i = 0; i < centerList.Count; i++)
+        {
+            var center = centerList[i];
+            for (var x = center.X - offsetX - providerWidth / 2; x <= center.X + offsetX; x++)
+            {
+                for (var y = center.Y - offsetY - providerHeight / 2; y <= center.Y + offsetY; y++)
+                {
+                    var candidate = new Location(x, y);
+                    (var fits, _) = GetProviderLocations(context.Grid, providerWidth, providerHeight, candidate, populateSides: false);
+
+                    if (!fits)
+                    {
+                        continue;
+                    }
+
+                    if (!candidateToCovered.TryGetValue(candidate, out var covered))
+                    {
+                        covered = new BitArray(centerList.Count);
+                        covered[i] = true;
+                        candidateToCovered.Add(candidate, covered);
+                    }
+                    else
+                    {
+                        covered[i] = true;
+                    }
+                }
+            }
+        }
+
+        return candidateToCovered;
+    }
+
+    public static (bool Fits, List<Location>? Sides) GetProviderLocations(SquareGrid grid, int providerWidth, int providerHeight, Location center, bool populateSides)
+    {
+        var fits = true;
+        var sides = populateSides ? new List<Location>() : null;
+
+        (var offsetX, var offsetY) = GetProviderCenterOffset(providerWidth, providerHeight);
+        for (var w = 0; w < providerWidth && fits; w++)
+        {
+            for (var h = 0; h < providerHeight && fits; h++)
+            {
+                var location = center.Translate(offsetX + w, offsetY + h);
+                fits = grid.IsInBounds(location) && grid.IsEmpty(location);
+
+                if (fits && location != center && populateSides)
+                {
+                    sides!.Add(location);
+                }
+            }
+        }
+
+        return (fits, sides);
+    }
+
+    public static (int OffsetX, int OffsetY) GetProviderCenterOffset(int providerWidth, int providerHeight)
+    {
+        var offsetX = (providerWidth - 1) / 2 * -1;
+        var offsetY = (providerHeight - 1) / 2 * -1;
+        return (offsetX, offsetY);
+    }
+
     public static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)
     {
         var terminalOptions = context.CenterToTerminals[selectedTerminal.Center];

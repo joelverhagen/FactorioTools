@@ -21,8 +21,8 @@ internal partial class Program
     private static void Measure()
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
-        // var blueprintStrings = blueprintStringsAll;
-        var blueprintStrings = new[] { blueprintStringsAll[56] };
+        var blueprintStrings = blueprintStringsAll;
+        // var blueprintStrings = new[] { blueprintStringsAll[45] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
 
         var pipeSum = 0;
@@ -34,8 +34,8 @@ internal partial class Program
             var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
             var options = Options.ForMediumElectricPole;
-            // options.UseUndergroundPipes = false;
-            // options.ValidateSolution = true;
+            options.UseUndergroundPipes = false;
+            options.ValidateSolution = true;
 
             var context = Planner.Execute(options, inputBlueprint);
 

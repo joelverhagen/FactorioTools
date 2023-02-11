@@ -149,7 +149,7 @@ internal static class AddElectricPoles
         center.ClearNeighbors();
         electricPoles.Remove(location);
 
-        (var offsetX, var offsetY) = GetOffsets(context.Options);
+        (var offsetX, var offsetY) = GetProviderCenterOffset(context.Options);
         for (var w = 0; w < context.Options.ElectricPoleWidth; w++)
         {
             for (var h = 0; h < context.Options.ElectricPoleHeight; h++)
@@ -218,45 +218,19 @@ internal static class AddElectricPoles
 
     private static Dictionary<Location, ElectricPoleCenter>? AddElectricPolesAroundPumpjacks(Context context)
     {
-        var pumpjackArea = (X: 3, Y: 3);
-        var offsetX = pumpjackArea.X / 2 + context.Options.ElectricPoleSupplyWidth / 2 - context.Options.ElectricPoleWidth / 2;
-        var offsetY = pumpjackArea.Y / 2 + context.Options.ElectricPoleSupplyHeight / 2 - context.Options.ElectricPoleHeight / 2;
-
         // First, find the spots for electric poles that cover the most pumpjacks.
         var centerList = context.CenterToTerminals.Keys.ToList();
-        var candidateToCovered = new Dictionary<Location, BitArray>();
 
         var allTerminals = context.CenterToTerminals.SelectMany(t => t.Value).Select(t => t.Terminal).ToHashSet();
 
         // Generate electric pole locations
-        for (int i = 0; i < centerList.Count; i++)
-        {
-            var center = centerList[i];
-            for (var x = center.X - offsetX - context.Options.ElectricPoleWidth / 2; x <= center.X + offsetX; x++)
-            {
-                for (var y = center.Y - offsetY - context.Options.ElectricPoleWidth / 2; y <= center.Y + offsetY; y++)
-                {
-                    var candidate = new Location(x, y);
-                    (var fits, _) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: false);
-
-                    if (!fits)
-                    {
-                        continue;
-                    }
-
-                    if (!candidateToCovered.TryGetValue(candidate, out var covered))
-                    {
-                        covered = new BitArray(centerList.Count);
-                        covered[i] = true;
-                        candidateToCovered.Add(candidate, covered);
-                    }
-                    else
-                    {
-                        covered[i] = true;
-                    }
-                }
-            }
-        }
+        var candidateToCovered = GetCandidateToCovered(
+            context,
+            centerList,
+            context.Options.ElectricPoleWidth,
+            context.Options.ElectricPoleHeight,
+            context.Options.ElectricPoleSupplyWidth,
+            context.Options.ElectricPoleSupplyHeight);
 
         var candidateToMiddleDistance = candidateToCovered.ToDictionary(
             x => x.Key,
@@ -417,7 +391,7 @@ internal static class AddElectricPoles
     {
         var center = new ElectricPoleCenter();
 
-        (var offsetX, var offsetY) = GetOffsets(context.Options);
+        (var offsetX, var offsetY) = GetProviderCenterOffset(context.Options);
         for (var w = 0 - (context.Options.ElectricPoleWidth - 1); w < context.Options.ElectricPoleWidth; w++)
         {
             for (var h = 0 - (context.Options.ElectricPoleHeight - 1); h < context.Options.ElectricPoleHeight; h++)
@@ -438,34 +412,9 @@ internal static class AddElectricPoles
         return center;
     }
 
-    public static (bool Fits, List<Location>? Sides) GetElectricPoleLocations(SquareGrid grid, Options options, Location center, bool populateSides)
+    private static (int OffsetX, int OffsetY) GetProviderCenterOffset(Options options)
     {
-        var fits = true;
-        var sides = populateSides ? new List<Location>() : null;
-
-        (var offsetX, var offsetY) = GetOffsets(options);
-        for (var w = 0; w < options.ElectricPoleWidth && fits; w++)
-        {
-            for (var h = 0; h < options.ElectricPoleHeight && fits; h++)
-            {
-                var location = center.Translate(offsetX + w, offsetY + h);
-                fits = grid.IsInBounds(location) && grid.IsEmpty(location);
-
-                if (fits && location != center && populateSides)
-                {
-                    sides!.Add(location);
-                }
-            }
-        }
-
-        return (fits, sides);
-    }
-
-    private static (int OffsetX, int OffsetY) GetOffsets(Options options)
-    {
-        var offsetX = (options.ElectricPoleWidth - 1) / 2 * -1;
-        var offsetY = (options.ElectricPoleHeight - 1) / 2 * -1;
-        return (offsetX, offsetY);
+        return Helpers.GetProviderCenterOffset(options.ElectricPoleWidth, options.ElectricPoleHeight);
     }
 
     private static void ConnectElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
@@ -515,7 +464,7 @@ internal static class AddElectricPoles
         while (candidates.Count > 0)
         {
             var candidate = candidates.Dequeue();
-            (var fits, _) = GetElectricPoleLocations(context.Grid, context.Options, candidate, populateSides: false);
+            (var fits, _) = GetProviderLocations(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate, populateSides: false);
             if (fits)
             {
                 selectedPoint = candidate;
