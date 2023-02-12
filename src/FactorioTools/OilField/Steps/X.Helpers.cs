@@ -118,19 +118,101 @@ internal static class Helpers
     /// </summary>
     public static bool DoesProviderFit(SquareGrid grid, int providerWidth, int providerHeight, Location center)
     {
-        var fits = true;
+        var minX = center.X - ((providerWidth - 1) / 2);
+        var maxX = center.X + (providerWidth / 2);
+        var minY = center.Y - ((providerHeight - 1) / 2);
+        var maxY = center.Y + (providerHeight / 2);
 
-        (var offsetX, var offsetY) = GetProviderCenterOffset(providerWidth, providerHeight);
-        for (var w = 0; w < providerWidth && fits; w++)
+        for (var x = minX; x <= maxX; x++)
         {
-            for (var h = 0; h < providerHeight && fits; h++)
+            for (var y = minY; y <= maxY; y++)
             {
-                var location = center.Translate(offsetX + w, offsetY + h);
-                fits = grid.IsEmpty(location);
+                if (!grid.IsEmpty(new Location(x, y)))
+                {
+                    return false;
+                }
             }
         }
 
-        return fits;
+        return true;
+    }
+
+    public static void RemoveProvider(SquareGrid grid, Location center, int providerWidth, int providerHeight)
+    {
+        var minX = center.X - ((providerWidth - 1) / 2);
+        var maxX = center.X + (providerWidth / 2);
+        var minY = center.Y - ((providerHeight - 1) / 2);
+        var maxY = center.Y + (providerHeight / 2);
+
+        for (var x = minX; x <= maxX; x++)
+        {
+            for (var y = minY; y <= maxY; y++)
+            {
+                grid.RemoveEntity(new Location(x, y));
+            }
+        }
+    }
+
+    public static void AddProviderCenter<TCenter, TSide>(
+        SquareGrid grid,
+        Location center,
+        TCenter centerEntity,
+        Func<TCenter, TSide> getNewSide,
+        int providerWidth,
+        int providerHeight,
+        Dictionary<Location, BitArray> candidateToCovered)
+        where TCenter : GridEntity
+        where TSide : GridEntity
+    {
+        var entityMinX = center.X - ((providerWidth - 1) / 2);
+        var entityMaxX = center.X + (providerWidth / 2);
+        var entityMinY = center.Y - ((providerHeight - 1) / 2);
+        var entityMaxY = center.Y + (providerHeight / 2);
+
+        var minX = entityMinX - providerWidth + 1;
+        var maxX = entityMaxX + providerWidth - 1;
+        var minY = entityMinY - providerHeight + 1;
+        var maxY = entityMaxY + providerHeight - 1;
+
+        for (var x = minX; x <= maxX; x++)
+        {
+            for (var y = minY; y <= maxY; y++)
+            {
+                var location = new Location(x, y);
+                candidateToCovered?.Remove(location);
+
+                if (x >= entityMinX && x <= entityMaxX
+                    && y >= entityMinY && y <= entityMaxY)
+                {
+                    grid.AddEntity(location, location == center ? centerEntity : getNewSide(centerEntity));
+                }
+            }
+        }
+    }
+
+    public static void AddProviderCenter<TCenter, TSide>(
+        SquareGrid grid,
+        Location center,
+        TCenter centerEntity,
+        Func<TCenter, TSide> getNewSide,
+        int providerWidth,
+        int providerHeight)
+        where TCenter : GridEntity
+        where TSide : GridEntity
+    {
+        var minX = center.X - ((providerWidth - 1) / 2);
+        var maxX = center.X + (providerWidth / 2);
+        var minY = center.Y - ((providerHeight - 1) / 2);
+        var maxY = center.Y + (providerHeight / 2);
+
+        for (var x = minX; x <= maxX; x++)
+        {
+            for (var y = minY; y <= maxY; y++)
+            {
+                var location = new Location(x, y);
+                grid.AddEntity(location, location == center ? centerEntity : getNewSide(centerEntity));
+            }
+        }
     }
 
     public static bool IsProviderInBounds(SquareGrid grid, int providerWidth, int providerHeight, Location center)
@@ -139,13 +221,6 @@ internal static class Helpers
             && center.Y - ((providerHeight - 1) / 2) > 0
             && center.X + (providerWidth / 2) < grid.Width
             && center.Y + (providerHeight / 2) < grid.Height;
-    }
-
-    public static (int OffsetX, int OffsetY) GetProviderCenterOffset(int providerWidth, int providerHeight)
-    {
-        var offsetX = (providerWidth - 1) / 2 * -1;
-        var offsetY = (providerHeight - 1) / 2 * -1;
-        return (offsetX, offsetY);
     }
 
     public static void EliminateOtherTerminals(Context context, TerminalLocation selectedTerminal)

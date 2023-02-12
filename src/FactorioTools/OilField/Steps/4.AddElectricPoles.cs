@@ -112,28 +112,14 @@ internal static class AddElectricPoles
             .Except(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value)) // Exclude electric poles covering pumpjacks that are only covered by one pole.
             .ToList();
 
-        foreach (var candidate in removeCandidates)
+        foreach (var center in removeCandidates)
         {
-            var center = electricPoles[candidate];
-            if (ArePolesConnectedWithout(electricPoles, center))
+            var centerEntity = electricPoles[center];
+            if (ArePolesConnectedWithout(electricPoles, centerEntity))
             {
-                RemoveElectricPole(context, electricPoles, candidate, center);
-            }
-        }
-    }
-
-    private static void RemoveElectricPole(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location location, ElectricPoleCenter center)
-    {
-        center.ClearNeighbors();
-        electricPoles.Remove(location);
-
-        (var offsetX, var offsetY) = GetProviderCenterOffset(context.Options);
-        for (var w = 0; w < context.Options.ElectricPoleWidth; w++)
-        {
-            for (var h = 0; h < context.Options.ElectricPoleHeight; h++)
-            {
-                var entityLocation = location.Translate(offsetX + w, offsetY + h);
-                context.Grid.RemoveEntity(entityLocation);
+                electricPoles.Remove(center);
+                centerEntity.ClearNeighbors();
+                RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
             }
         }
     }
@@ -378,14 +364,18 @@ internal static class AddElectricPoles
         Context context,
         Dictionary<Location, ElectricPoleCenter> electricPoles,
         Location center,
-        Dictionary<Location, BitArray>? candidatesToClean)
+        Dictionary<Location, BitArray> candidateToCovered)
     {
-        var centerEntity = AddProviderCenter(
+        var centerEntity = new ElectricPoleCenter();
+
+        AddProviderCenter(
             context.Grid,
             center,
+            centerEntity,
+            c => new ElectricPoleSide(c),
             context.Options.ElectricPoleWidth,
             context.Options.ElectricPoleHeight,
-            candidatesToClean);
+            candidateToCovered);
 
         electricPoles.Add(center, centerEntity);
         ConnectExistingElectricPoles(context, electricPoles, center, centerEntity);
@@ -393,46 +383,25 @@ internal static class AddElectricPoles
         return centerEntity;
     }
 
-    private static ElectricPoleCenter AddProviderCenter(
-        SquareGrid grid,
-        Location center,
-        int providerWidth,
-        int providerHeight,
-        Dictionary<Location, BitArray>? candidatesToClean)
+    private static ElectricPoleCenter AddElectricPole(
+        Context context,
+        Dictionary<Location, ElectricPoleCenter> electricPoles,
+        Location center)
     {
         var centerEntity = new ElectricPoleCenter();
 
-        var entityMinX = center.X - ((providerWidth - 1) / 2);
-        var entityMaxX = center.X + (providerWidth / 2);
-        var entityMinY = center.Y - ((providerHeight - 1) / 2);
-        var entityMaxY = center.Y + (providerHeight / 2);
+        AddProviderCenter(
+            context.Grid,
+            center,
+            centerEntity,
+            c => new ElectricPoleSide(c),
+            context.Options.ElectricPoleWidth,
+            context.Options.ElectricPoleHeight);
 
-        var minX = entityMinX - providerWidth + 1;
-        var maxX = entityMaxX + providerWidth - 1;
-        var minY = entityMinY - providerHeight + 1;
-        var maxY = entityMaxY + providerHeight - 1;
-
-        for (var x = minX; x <= maxX; x++)
-        {
-            for (var y = minY; y <= maxY; y++)
-            {
-                var location = new Location(x, y);
-                candidatesToClean?.Remove(location);
-
-                if (x >= entityMinX && x <= entityMaxX
-                    && y >= entityMinY && y <= entityMaxY)
-                {
-                    grid.AddEntity(location, location == center ? centerEntity : new ElectricPoleSide(centerEntity));
-                }
-            }
-        }
+        electricPoles.Add(center, centerEntity);
+        ConnectExistingElectricPoles(context, electricPoles, center, centerEntity);
 
         return centerEntity;
-    }
-
-    private static (int OffsetX, int OffsetY) GetProviderCenterOffset(Options options)
-    {
-        return Helpers.GetProviderCenterOffset(options.ElectricPoleWidth, options.ElectricPoleHeight);
     }
 
     private static void ConnectElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
@@ -504,7 +473,7 @@ internal static class AddElectricPoles
             throw new InvalidOperationException("Could not find a pole that can be connected");
         }
 
-        var center = AddElectricPole(context, electricPoles, selectedPoint.Value, candidatesToClean: null);
+        var center = AddElectricPole(context, electricPoles, selectedPoint.Value);
         var connectedGroups = groups.Where(g => g.Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
 
         if (connectedGroups.Count == 0)
