@@ -197,10 +197,8 @@ internal static class AddElectricPoles
     private static Dictionary<Location, ElectricPoleCenter>? AddElectricPolesAroundEntities(Context context)
     {
         // First, find the spots for electric poles that cover the most pumpjacks.
-        var poweredEntities = context.CenterToTerminals.Keys.Select(c => new PoweredEntity(c, Width: 3, Height: 3)).ToList();
-        var allTerminals = context.CenterToTerminals.SelectMany(t => t.Value).Select(t => t.Terminal).ToHashSet();
-
         // Generate electric pole locations
+        var poweredEntities = context.CenterToTerminals.Keys.Select(c => new PoweredEntity(c, Width: 3, Height: 3)).ToList();
         var candidateToCovered = GetCandidateToCovered(
             context,
             poweredEntities,
