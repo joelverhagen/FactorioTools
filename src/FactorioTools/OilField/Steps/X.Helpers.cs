@@ -5,9 +5,18 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class Helpers
 {
-    public record PoweredEntity(Location Center, int Width, int Height);
+    /// <summary>
+    /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
+    /// </summary>
+    public record ProviderRecipients(Location Center, int Width, int Height);
 
-    public static Dictionary<Location, BitArray> GetCandidateToCovered(Context context, List<PoweredEntity> entities, int providerWidth, int providerHeight, int supplyWidth, int supplyHeight)
+    public static Dictionary<Location, BitArray> GetCandidateToCovered(
+        Context context,
+        List<ProviderRecipients> recipients,
+        int providerWidth,
+        int providerHeight,
+        int supplyWidth,
+        int supplyHeight)
     {
         var candidateToCovered = new Dictionary<Location, BitArray>();
 
@@ -18,9 +27,9 @@ internal static class Helpers
         supplyHeight = 7;
         */
 
-        for (int i = 0; i < entities.Count; i++)
+        for (int i = 0; i < recipients.Count; i++)
         {
-            var entity = entities[i];
+            var entity = recipients[i];
 
             // entity = new PoweredEntity(new Location(3, 3), 4, 4);
 
@@ -45,7 +54,7 @@ internal static class Helpers
 
                     if (!candidateToCovered.TryGetValue(candidate, out var covered))
                     {
-                        covered = new BitArray(entities.Count);
+                        covered = new BitArray(recipients.Count);
                         covered[i] = true;
                         candidateToCovered.Add(candidate, covered);
                     }
@@ -137,23 +146,101 @@ internal static class Helpers
         return true;
     }
 
-    public static void RemoveProvider(SquareGrid grid, Location center, int providerWidth, int providerHeight)
+    /// <summary>
+    /// Add a new provider to the grid at the specified location and update the state of
+    /// <paramref name="coveredEntities"/>, <paramref name="candidateToCovered"/>, and
+    /// <paramref name="candidateToEntityDistance"/> based on the latest state of <paramref name="coveredEntities"/>.
+    /// </summary>
+    public static void AddProviderAndUpdateCandidateState<TCenter, TSide>(
+        SquareGrid grid,
+        SharedInstances sharedInstances,
+        Location center,
+        TCenter centerEntity,
+        Func<TCenter, TSide> getNewSide,
+        int providerWidth,
+        int providerHeight,
+        List<ProviderRecipients> recipients,
+        BitArray coveredEntities,
+        Dictionary<Location, BitArray> candidateToCovered,
+        Dictionary<Location, double> candidateToEntityDistance)
+        where TCenter : GridEntity
+        where TSide : GridEntity
     {
-        var minX = center.X - ((providerWidth - 1) / 2);
-        var maxX = center.X + (providerWidth / 2);
-        var minY = center.Y - ((providerHeight - 1) / 2);
-        var maxY = center.Y + (providerHeight / 2);
+        coveredEntities.Or(candidateToCovered[center]);
 
-        for (var x = minX; x <= maxX; x++)
+        AddProvider(
+            grid,
+            center,
+            centerEntity,
+            getNewSide,
+            providerWidth,
+            providerHeight,
+            candidateToCovered);
+
+        if (coveredEntities.CountTrue() == recipients.Count)
         {
-            for (var y = minY; y <= maxY; y++)
+            return;
+        }
+
+#if USE_SHARED_INSTANCES
+        var toRemove = sharedInstances.LocationListA;
+#else
+        var toRemove = new List<Location>();
+#endif
+
+        try
+        {
+            // Remove the covered entities from the candidate data, so that the next candidates are discounted
+            // by the entities that no longer need to be covered.
+            foreach ((var otherCandidate, var otherCovered) in candidateToCovered)
             {
-                grid.RemoveEntity(new Location(x, y));
+                var modified = false;
+                var otherCoveredCount = otherCovered.CountTrue();
+                for (var i = 0; i < recipients.Count && otherCoveredCount > 0; i++)
+                {
+                    if (coveredEntities[i] && otherCovered[i])
+                    {
+                        otherCovered[i] = false;
+                        modified = true;
+                        otherCoveredCount--;
+                    }
+                }
+
+                if (otherCoveredCount == 0)
+                {
+                    toRemove.Add(otherCandidate);
+                    candidateToEntityDistance.Remove(otherCandidate);
+                }
+                else if (modified)
+                {
+                    double entityDistance = 0;
+                    for (var i = 0; i < recipients.Count; i++)
+                    {
+                        entityDistance += otherCandidate.GetEuclideanDistance(recipients[i].Center);
+                    }
+                    candidateToEntityDistance[otherCandidate] = entityDistance;
+                }
             }
+
+            if (toRemove.Count > 0)
+            {
+                for (var i = 0; i < toRemove.Count; i++)
+                {
+                    candidateToCovered.Remove(toRemove[i]);
+                }
+
+                toRemove.Clear();
+            }
+        }
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            toRemove.Clear();
+#endif
         }
     }
 
-    public static void AddProviderCenter<TCenter, TSide>(
+    private static void AddProvider<TCenter, TSide>(
         SquareGrid grid,
         Location center,
         TCenter centerEntity,
@@ -190,7 +277,23 @@ internal static class Helpers
         }
     }
 
-    public static void AddProviderCenter<TCenter, TSide>(
+    public static void RemoveProvider(SquareGrid grid, Location center, int providerWidth, int providerHeight)
+    {
+        var minX = center.X - ((providerWidth - 1) / 2);
+        var maxX = center.X + (providerWidth / 2);
+        var minY = center.Y - ((providerHeight - 1) / 2);
+        var maxY = center.Y + (providerHeight / 2);
+
+        for (var x = minX; x <= maxX; x++)
+        {
+            for (var y = minY; y <= maxY; y++)
+            {
+                grid.RemoveEntity(new Location(x, y));
+            }
+        }
+    }
+
+    public static void AddProvider<TCenter, TSide>(
         SquareGrid grid,
         Location center,
         TCenter centerEntity,

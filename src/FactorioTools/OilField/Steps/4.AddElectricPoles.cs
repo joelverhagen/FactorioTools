@@ -184,7 +184,7 @@ internal static class AddElectricPoles
     {
         // First, find the spots for electric poles that cover the most pumpjacks.
         // Generate electric pole locations
-        var poweredEntities = context.CenterToTerminals.Keys.Select(c => new PoweredEntity(c, Width: 3, Height: 3)).ToList();
+        var poweredEntities = context.CenterToTerminals.Keys.Select(c => new ProviderRecipients(c, Width: 3, Height: 3)).ToList();
         var candidateToCovered = GetCandidateToCovered(
             context,
             poweredEntities,
@@ -269,78 +269,45 @@ internal static class AddElectricPoles
                 }
             }
 
-            electricPoleList.Add(candidate);
-            coveredEntities.Or(candidateToCovered[candidate]);
+            var centerEntity = new ElectricPoleCenter();
 
-            AddElectricPole(context, electricPoles, candidate, candidateToCovered);
+            AddProviderAndUpdateCandidateState(
+                context.Grid,
+                context.SharedInstances,
+                candidate,
+                centerEntity,
+                c => new ElectricPoleSide(c),
+                context.Options.ElectricPoleWidth,
+                context.Options.ElectricPoleHeight,
+                poweredEntities,
+                coveredEntities,
+                candidateToCovered,
+                candidateToEntityDistance);
+
+            electricPoles.Add(candidate, centerEntity);
+            electricPoleList.Add(candidate);
+            ConnectExistingElectricPoles(context, electricPoles, candidate, centerEntity);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-
-            if (coveredEntities.CountTrue() == poweredEntities.Count)
-            {
-                break;
-            }
-
-            // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
-            // by the pumpjacks that no longer need power.
-            foreach ((var otherCandidate, var otherCovered) in candidateToCovered)
-            {
-                var modified = false;
-                var otherCoveredCount = otherCovered.CountTrue();
-                for (var i = 0; i < poweredEntities.Count && otherCoveredCount > 0; i++)
-                {
-                    if (coveredEntities[i] && otherCovered[i])
-                    {
-                        otherCovered[i] = false;
-                        modified = true;
-                        otherCoveredCount--;
-                    }
-                }
-
-                if (otherCoveredCount == 0)
-                {
-                    toRemove.Add(otherCandidate);
-                    candidateToEntityDistance.Remove(otherCandidate);
-                }
-                else if (modified)
-                {
-                    double entityDistance = 0;
-                    for (var i = 0; i < poweredEntities.Count; i++)
-                    {
-                        entityDistance += otherCandidate.GetEuclideanDistance(poweredEntities[i].Center);
-                    }
-                    candidateToEntityDistance[otherCandidate] = entityDistance;
-                }
-            }
-
-            if (toRemove.Count > 0)
-            {
-                for (var i = 0; i < toRemove.Count; i++)
-                {
-                    candidateToCovered.Remove(toRemove[i]);
-                }
-
-                toRemove.Clear();
-            }
         }
 
         return electricPoles;
     }
 
     private static double GetDistanceToClosestCandidate(
-        List<PoweredEntity> poweredEntities,
+        List<ProviderRecipients> recipients,
         BitArray coveredEntities,
-        List<Location> electricPoleList,
+        List<Location> providerCenters,
         BitArray covered,
         Location location)
     {
         var min = double.MaxValue;
 
-        for (var i = 0; i < poweredEntities.Count; i++)
+        for (var i = 0; i < recipients.Count; i++)
         {
             if (!covered[i] && !coveredEntities[i])
             {
-                var val = poweredEntities[i].Center.GetEuclideanDistance(location);
+                var val = recipients[i].Center.GetEuclideanDistance(location);
                 if (val < min)
                 {
                     min = val;
@@ -348,9 +315,9 @@ internal static class AddElectricPoles
             }
         }
 
-        for (int i = 0; i < electricPoleList.Count; i++)
+        for (int i = 0; i < providerCenters.Count; i++)
         {
-            var val = electricPoleList[i].GetEuclideanDistance(location);
+            var val = providerCenters[i].GetEuclideanDistance(location);
             if (val < min)
             {
                 min = val;
@@ -363,34 +330,11 @@ internal static class AddElectricPoles
     private static ElectricPoleCenter AddElectricPole(
         Context context,
         Dictionary<Location, ElectricPoleCenter> electricPoles,
-        Location center,
-        Dictionary<Location, BitArray> candidateToCovered)
-    {
-        var centerEntity = new ElectricPoleCenter();
-
-        AddProviderCenter(
-            context.Grid,
-            center,
-            centerEntity,
-            c => new ElectricPoleSide(c),
-            context.Options.ElectricPoleWidth,
-            context.Options.ElectricPoleHeight,
-            candidateToCovered);
-
-        electricPoles.Add(center, centerEntity);
-        ConnectExistingElectricPoles(context, electricPoles, center, centerEntity);
-
-        return centerEntity;
-    }
-
-    private static ElectricPoleCenter AddElectricPole(
-        Context context,
-        Dictionary<Location, ElectricPoleCenter> electricPoles,
         Location center)
     {
         var centerEntity = new ElectricPoleCenter();
 
-        AddProviderCenter(
+        AddProvider(
             context.Grid,
             center,
             centerEntity,
