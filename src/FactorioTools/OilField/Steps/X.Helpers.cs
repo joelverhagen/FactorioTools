@@ -6,19 +6,21 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class Helpers
 {
-    public static Dictionary<Location, BitArray> GetCandidateToCovered(Context context, List<Location> centerList, int providerWidth, int providerHeight, int supplyWidth, int supplyHeight)
+    public record PoweredEntity(Location Center, int Width, int Height);
+
+    public static Dictionary<Location, BitArray> GetCandidateToCovered(Context context, List<PoweredEntity> entities, int providerWidth, int providerHeight, int supplyWidth, int supplyHeight)
     {
         var candidateToCovered = new Dictionary<Location, BitArray>();
         var pumpjackArea = (X: 3, Y: 3);
         var offsetX = pumpjackArea.X / 2 + supplyWidth / 2 - providerWidth / 2;
         var offsetY = pumpjackArea.Y / 2 + supplyHeight / 2 - providerHeight / 2;
 
-        for (int i = 0; i < centerList.Count; i++)
+        for (int i = 0; i < entities.Count; i++)
         {
-            var center = centerList[i];
-            for (var x = center.X - offsetX - providerWidth / 2; x <= center.X + offsetX; x++)
+            var entity = entities[i];
+            for (var x = entity.Center.X - offsetX - providerWidth / 2; x <= entity.Center.X + offsetX; x++)
             {
-                for (var y = center.Y - offsetY - providerHeight / 2; y <= center.Y + offsetY; y++)
+                for (var y = entity.Center.Y - offsetY - providerHeight / 2; y <= entity.Center.Y + offsetY; y++)
                 {
                     var candidate = new Location(x, y);
                     (var fits, _) = GetProviderLocations(context.Grid, providerWidth, providerHeight, candidate, populateSides: false);
@@ -30,7 +32,7 @@ internal static class Helpers
 
                     if (!candidateToCovered.TryGetValue(candidate, out var covered))
                     {
-                        covered = new BitArray(centerList.Count);
+                        covered = new BitArray(entities.Count);
                         covered[i] = true;
                         candidateToCovered.Add(candidate, covered);
                     }
