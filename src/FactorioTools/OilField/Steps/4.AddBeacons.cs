@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Knapcode.FactorioTools.OilField.Steps.Helpers;
-
-namespace Knapcode.FactorioTools.OilField.Steps;
+﻿namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class AddBeacons
 {

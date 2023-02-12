@@ -30,9 +30,7 @@ internal static class AddElectricPoles
             return null;
         }
 
-        // ConnectExistingElectricPoles(context, electricPoles);
-
-        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+        // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
         ConnectElectricPoles(context, electricPoles);
 
@@ -40,11 +38,11 @@ internal static class AddElectricPoles
 
         RemoveExtraElectricPoles(context, electricPoles);
 
-        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+        // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
         // PruneNeighbors(context, electricPoles);
 
-        // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+        // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
         if (avoidTerminals)
         {
@@ -89,43 +87,16 @@ internal static class AddElectricPoles
 
     private static void RemoveExtraElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
-        var poleCenterToCoveredCenters = new Dictionary<Location, HashSet<Location>>();
-        foreach (var center in electricPoles.Keys)
-        {
-            var coveredCenters = new HashSet<Location>();
-            var offsetX = context.Options.ElectricPoleSupplyWidth / 2 - context.Options.ElectricPoleWidth / 2;
-            var offsetY = context.Options.ElectricPoleSupplyHeight / 2 - context.Options.ElectricPoleHeight / 2;
-
-            for (var x = Math.Max(center.X - offsetX, 0); x <= Math.Min(center.X + offsetX + context.Options.ElectricPoleWidth / 2, context.Grid.Width - 1); x++)
-            {
-                for (var y = Math.Max(center.Y - offsetY, 0); y <= Math.Min(center.Y + offsetY + context.Options.ElectricPoleWidth / 2, context.Grid.Height - 1); y++)
-                {
-                    var location = new Location(x, y);
-
-                    var entity = context.Grid[location];
-                    switch (entity)
-                    {
-                        case PumpjackCenter:
-                            coveredCenters.Add(location);
-                            break;
-                        case PumpjackSide pumpjackSide:
-                            coveredCenters.Add(context.Grid.EntityToLocation[pumpjackSide.Center]);
-                            break;
-                        case BeaconCenter:
-                            coveredCenters.Add(location);
-                            break;
-                        case BeaconSide beaconSide:
-                            coveredCenters.Add(context.Grid.EntityToLocation[beaconSide.Center]);
-                            break;
-                    }
-                }
-            }
-
-            poleCenterToCoveredCenters.Add(center, coveredCenters);
-        }
+        var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
+            context.Grid,
+            context.Options.ElectricPoleWidth,
+            context.Options.ElectricPoleHeight,
+            context.Options.ElectricPoleSupplyWidth,
+            context.Options.ElectricPoleSupplyHeight,
+            electricPoles.Keys);
 
         var coveredCenterToPoleCenters = poleCenterToCoveredCenters
-            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, PumpjackCenter: c )))
+            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, PumpjackCenter: c)))
             .GroupBy(p => p.PumpjackCenter, p => p.PoleCenter)
             .ToDictionary(g => g.Key, g => g.ToHashSet());
 
@@ -264,8 +235,6 @@ internal static class AddElectricPoles
 
         while (coveredEntities.CountTrue() < poweredEntities.Count)
         {
-            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-
             if (candidateToCovered.Count == 0)
             {
                 // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
@@ -319,6 +288,13 @@ internal static class AddElectricPoles
             coveredEntities.Or(candidateToCovered[candidate]);
 
             AddElectricPole(context, electricPoles, candidate, candidateToCovered);
+
+            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+
+            if (coveredEntities.CountTrue() == poweredEntities.Count)
+            {
+                break;
+            }
 
             // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
             // by the pumpjacks that no longer need power.
@@ -470,8 +446,8 @@ internal static class AddElectricPoles
         while (candidates.Count > 0)
         {
             var candidate = candidates.Dequeue();
-            (var fits, _) = GetProviderLocations(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate, populateSides: false);
-            if (fits)
+            if (DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
+                && IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate))
             {
                 selectedPoint = candidate;
                 break;
@@ -480,12 +456,7 @@ internal static class AddElectricPoles
             context.Grid.GetAdjacent(adjacent, candidate);
             for (var i = 0; i < adjacent.Length; i++)
             {
-                if (!adjacent[i].IsValid)
-                {
-                    continue;
-                }
-
-                if (AreElectricPolesConnected(idealLine[0], adjacent[i], context.Options))
+                if (adjacent[i].IsValid && AreElectricPolesConnected(idealLine[0], adjacent[i], context.Options))
                 {
                     candidates.Enqueue(adjacent[i]);
                 }

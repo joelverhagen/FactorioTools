@@ -22,7 +22,7 @@ internal partial class Program
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[45] };
+        // var blueprintStrings = new[] { blueprintStringsAll[0] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
 
         var pipeSum = 0;
@@ -34,6 +34,11 @@ internal partial class Program
             var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
             var options = Options.ForMediumElectricPole;
+            // var options = Options.ForSubstation;
+            // options.ElectricPoleWidth = 3;
+            // options.ElectricPoleHeight = 3;
+            // options.ElectricPoleSupplyWidth = 9;
+            // options.ElectricPoleSupplyHeight = 9;
             options.UseUndergroundPipes = false;
             options.ValidateSolution = true;
 

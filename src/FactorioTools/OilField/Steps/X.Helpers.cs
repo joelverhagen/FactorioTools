@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using DelaunatorSharp;
 using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -11,19 +10,33 @@ internal static class Helpers
     public static Dictionary<Location, BitArray> GetCandidateToCovered(Context context, List<PoweredEntity> entities, int providerWidth, int providerHeight, int supplyWidth, int supplyHeight)
     {
         var candidateToCovered = new Dictionary<Location, BitArray>();
-        var pumpjackArea = (X: 3, Y: 3);
-        var offsetX = pumpjackArea.X / 2 + supplyWidth / 2 - providerWidth / 2;
-        var offsetY = pumpjackArea.Y / 2 + supplyHeight / 2 - providerHeight / 2;
+
+        /*
+        providerWidth = 1;
+        providerHeight = 1;
+        supplyWidth = 7;
+        supplyHeight = 7;
+        */
 
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            for (var x = entity.Center.X - offsetX - providerWidth / 2; x <= entity.Center.X + offsetX; x++)
+
+            // entity = new PoweredEntity(new Location(3, 3), 4, 4);
+
+            var minX = Math.Max((providerWidth - 1) / 2, entity.Center.X - ((entity.Width - 1) / 2) - (supplyWidth / 2));
+            var minY = Math.Max((providerHeight - 1) / 2, entity.Center.Y - ((entity.Height - 1) / 2) - (supplyHeight / 2));
+            var maxX = Math.Min(context.Grid.Width - (providerWidth / 2) - 1, entity.Center.X + (entity.Width / 2) + ((supplyWidth - 1) / 2));
+            var maxY = Math.Min(context.Grid.Height - (providerHeight / 2) - 1, entity.Center.Y + (entity.Height / 2) + ((supplyHeight - 1) / 2));
+
+            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+
+            for (var x = minX; x <= maxX; x++)
             {
-                for (var y = entity.Center.Y - offsetY - providerHeight / 2; y <= entity.Center.Y + offsetY; y++)
+                for (var y = minY; y <= maxY; y++)
                 {
                     var candidate = new Location(x, y);
-                    (var fits, _) = GetProviderLocations(context.Grid, providerWidth, providerHeight, candidate, populateSides: false);
+                    var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
 
                     if (!fits)
                     {
@@ -47,10 +60,65 @@ internal static class Helpers
         return candidateToCovered;
     }
 
-    public static (bool Fits, List<Location>? Sides) GetProviderLocations(SquareGrid grid, int providerWidth, int providerHeight, Location center, bool populateSides)
+    public static Dictionary<Location, HashSet<Location>> GetProviderCenterToCoveredCenters(
+        SquareGrid grid,
+        int providerWidth,
+        int providerHeight,
+        int supplyWidth,
+        int supplyHeight,
+        IEnumerable<Location> providerCenters)
+    {
+        var poleCenterToCoveredCenters = new Dictionary<Location, HashSet<Location>>();
+
+        const int minPoweredEntityWidth = 3;
+        const int minPoweredEntityHeight = 3;
+
+        foreach (var center in providerCenters)
+        {
+            var coveredCenters = new HashSet<Location>();
+
+            var minX = Math.Max(minPoweredEntityWidth - 1, center.X - ((providerWidth - 1) / 2) - (supplyWidth / 2));
+            var minY = Math.Max(minPoweredEntityHeight - 1, center.Y - ((providerHeight - 1) / 2) - (supplyHeight / 2));
+            var maxX = Math.Min(grid.Width - minPoweredEntityWidth + 1, center.X + (providerWidth / 2) + ((supplyWidth - 1) / 2));
+            var maxY = Math.Min(grid.Height - minPoweredEntityHeight + 1, center.Y + (providerHeight / 2) + ((supplyHeight - 1) / 2));
+
+            for (var x = minX; x <= maxX; x++)
+            {
+                for (var y = minY; y <= maxY; y++)
+                {
+                    var location = new Location(x, y);
+
+                    var entity = grid[location];
+                    switch (entity)
+                    {
+                        case PumpjackCenter:
+                            coveredCenters.Add(location);
+                            break;
+                        case PumpjackSide pumpjackSide:
+                            coveredCenters.Add(grid.EntityToLocation[pumpjackSide.Center]);
+                            break;
+                        case BeaconCenter:
+                            coveredCenters.Add(location);
+                            break;
+                        case BeaconSide beaconSide:
+                            coveredCenters.Add(grid.EntityToLocation[beaconSide.Center]);
+                            break;
+                    }
+                }
+            }
+
+            poleCenterToCoveredCenters.Add(center, coveredCenters);
+        }
+
+        return poleCenterToCoveredCenters;
+    }
+
+    /// <summary>
+    /// Checks if the provider fits at the provided center location. This does NOT account for grid bounds.
+    /// </summary>
+    public static bool DoesProviderFit(SquareGrid grid, int providerWidth, int providerHeight, Location center)
     {
         var fits = true;
-        var sides = populateSides ? new List<Location>() : null;
 
         (var offsetX, var offsetY) = GetProviderCenterOffset(providerWidth, providerHeight);
         for (var w = 0; w < providerWidth && fits; w++)
@@ -58,16 +126,19 @@ internal static class Helpers
             for (var h = 0; h < providerHeight && fits; h++)
             {
                 var location = center.Translate(offsetX + w, offsetY + h);
-                fits = grid.IsInBounds(location) && grid.IsEmpty(location);
-
-                if (fits && location != center && populateSides)
-                {
-                    sides!.Add(location);
-                }
+                fits = grid.IsEmpty(location);
             }
         }
 
-        return (fits, sides);
+        return fits;
+    }
+
+    public static bool IsProviderInBounds(SquareGrid grid, int providerWidth, int providerHeight, Location center)
+    {
+        return center.X - ((providerWidth - 1) / 2) > 0
+            && center.Y - ((providerHeight - 1) / 2) > 0
+            && center.X + (providerWidth / 2) < grid.Width
+            && center.Y + (providerHeight / 2) < grid.Height;
     }
 
     public static (int OffsetX, int OffsetY) GetProviderCenterOffset(int providerWidth, int providerHeight)
@@ -255,8 +326,8 @@ internal static class Helpers
         }
 
 
-        var points = filteredNodes.Select<Location, IPoint>(x => new Point(x.X, x.Y)).ToArray();
-        var delaunator = new Delaunator(points);
+        var points = filteredNodes.Select<Location, DelaunatorSharp.IPoint>(x => new DelaunatorSharp.Point(x.X, x.Y)).ToArray();
+        var delaunator = new DelaunatorSharp.Delaunator(points);
 
         var lines = new List<Endpoints>();
         for (var e = 0; e < delaunator.Triangles.Length; e++)
