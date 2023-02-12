@@ -230,6 +230,7 @@ internal static class AddElectricPoles
         var coveredEntities = new BitArray(poweredEntities.Count);
         var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
         var electricPoleList = new List<Location>();
+        var toRemove = new List<Location>();
 
         while (coveredEntities.CountTrue() < poweredEntities.Count)
         {
@@ -296,7 +297,7 @@ internal static class AddElectricPoles
 
             // Remove the covered pumpjacks from the candidate data, so that the next candidates are discounted
             // by the pumpjacks that no longer need power.
-            foreach ((var otherCandidate, var otherCovered) in candidateToCovered.ToList())
+            foreach ((var otherCandidate, var otherCovered) in candidateToCovered)
             {
                 var modified = false;
                 var otherCoveredCount = otherCovered.CountTrue();
@@ -312,7 +313,7 @@ internal static class AddElectricPoles
 
                 if (otherCoveredCount == 0)
                 {
-                    candidateToCovered.Remove(otherCandidate);
+                    toRemove.Add(otherCandidate);
                     candidateToEntityDistance.Remove(otherCandidate);
                 }
                 else if (modified)
@@ -324,6 +325,16 @@ internal static class AddElectricPoles
                     }
                     candidateToEntityDistance[otherCandidate] = entityDistance;
                 }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                for (var i = 0; i < toRemove.Count; i++)
+                {
+                    candidateToCovered.Remove(toRemove[i]);
+                }
+
+                toRemove.Clear();
             }
         }
 
