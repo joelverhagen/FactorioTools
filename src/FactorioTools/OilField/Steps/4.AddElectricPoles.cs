@@ -24,7 +24,21 @@ internal static class AddElectricPoles
             }
         }
 
-        var electricPoles = AddElectricPolesAroundEntities(context);
+        var poweredEntities = new List<ProviderRecipient>();
+        foreach ((var entity, var location) in context.Grid.EntityToLocation)
+        {
+            switch (entity)
+            {
+                case PumpjackCenter:
+                    poweredEntities.Add(new ProviderRecipient(location, Width: 3, Height: 3));
+                    break;
+                case BeaconCenter:
+                    poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
+                    break;
+            }
+        }
+
+        var electricPoles = AddElectricPolesAroundEntities(context, poweredEntities);
         if (electricPoles is null)
         {
             return null;
@@ -36,7 +50,7 @@ internal static class AddElectricPoles
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        RemoveExtraElectricPoles(context, electricPoles);
+        RemoveExtraElectricPoles(context, poweredEntities, electricPoles);
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -85,7 +99,7 @@ internal static class AddElectricPoles
         }
     }
 
-    private static void RemoveExtraElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
         var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
             context.Grid,
@@ -100,7 +114,7 @@ internal static class AddElectricPoles
             .GroupBy(p => p.PumpjackCenter, p => p.PoleCenter)
             .ToDictionary(g => g.Key, g => g.ToHashSet());
 
-        if (coveredCenterToPoleCenters.Count != context.CenterToTerminals.Count)
+        if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
         {
             throw new InvalidOperationException("Not all pumpjacks are covered by an electric pole.");
         }
@@ -180,11 +194,8 @@ internal static class AddElectricPoles
         return b.GetEuclideanDistance(a.X + offsetX, a.Y + offsetY);
     }
 
-    private static Dictionary<Location, ElectricPoleCenter>? AddElectricPolesAroundEntities(Context context)
+    private static Dictionary<Location, ElectricPoleCenter>? AddElectricPolesAroundEntities(Context context, List<ProviderRecipient> poweredEntities)
     {
-        // First, find the spots for electric poles that cover the most pumpjacks.
-        // Generate electric pole locations
-        var poweredEntities = context.CenterToTerminals.Keys.Select(c => new ProviderRecipients(c, Width: 3, Height: 3)).ToList();
         var candidateToCovered = GetCandidateToCovered(
             context,
             poweredEntities,
@@ -197,21 +208,7 @@ internal static class AddElectricPoles
             x => x.Key,
             x => x.Key.GetEuclideanDistance(context.Grid.Middle));
 
-        var candidateToEntityDistance = candidateToCovered.ToDictionary(
-            x => x.Key,
-            x =>
-            {
-                double sum = 0;
-                for (var i = 0; i < poweredEntities.Count; i++)
-                {
-                    if (x.Value[i])
-                    {
-                        sum += x.Key.GetEuclideanDistance(poweredEntities[i].Center);
-                    }
-                }
-
-                return sum;
-            });
+        var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
 
         var coveredEntities = new BitArray(poweredEntities.Count);
         var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
@@ -295,7 +292,7 @@ internal static class AddElectricPoles
     }
 
     private static double GetDistanceToClosestCandidate(
-        List<ProviderRecipients> recipients,
+        List<ProviderRecipient> recipients,
         BitArray coveredEntities,
         List<Location> providerCenters,
         BitArray covered,

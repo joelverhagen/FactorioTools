@@ -8,11 +8,11 @@ internal static class Helpers
     /// <summary>
     /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
     /// </summary>
-    public record ProviderRecipients(Location Center, int Width, int Height);
+    public record ProviderRecipient(Location Center, int Width, int Height);
 
     public static Dictionary<Location, BitArray> GetCandidateToCovered(
         Context context,
-        List<ProviderRecipients> recipients,
+        List<ProviderRecipient> recipients,
         int providerWidth,
         int providerHeight,
         int supplyWidth,
@@ -67,6 +67,25 @@ internal static class Helpers
         }
 
         return candidateToCovered;
+    }
+
+    public static Dictionary<Location, double> GetCandidateToEntityDistance(List<ProviderRecipient> poweredEntities, Dictionary<Location, BitArray> candidateToCovered)
+    {
+        return candidateToCovered.ToDictionary(
+            x => x.Key,
+            x =>
+            {
+                double sum = 0;
+                for (var i = 0; i < poweredEntities.Count; i++)
+                {
+                    if (x.Value[i])
+                    {
+                        sum += x.Key.GetEuclideanDistance(poweredEntities[i].Center);
+                    }
+                }
+
+                return sum;
+            });
     }
 
     public static Dictionary<Location, HashSet<Location>> GetProviderCenterToCoveredCenters(
@@ -159,7 +178,7 @@ internal static class Helpers
         Func<TCenter, TSide> getNewSide,
         int providerWidth,
         int providerHeight,
-        List<ProviderRecipients> recipients,
+        List<ProviderRecipient> recipients,
         BitArray coveredEntities,
         Dictionary<Location, BitArray> candidateToCovered,
         Dictionary<Location, double> candidateToEntityDistance)
@@ -240,7 +259,7 @@ internal static class Helpers
         }
     }
 
-    private static void AddProvider<TCenter, TSide>(
+    public static void AddProvider<TCenter, TSide>(
         SquareGrid grid,
         Location center,
         TCenter centerEntity,
@@ -252,14 +271,16 @@ internal static class Helpers
         where TSide : GridEntity
     {
         var entityMinX = center.X - ((providerWidth - 1) / 2);
-        var entityMaxX = center.X + (providerWidth / 2);
         var entityMinY = center.Y - ((providerHeight - 1) / 2);
+        var entityMaxX = center.X + (providerWidth / 2);
         var entityMaxY = center.Y + (providerHeight / 2);
 
-        var minX = entityMinX - providerWidth + 1;
-        var maxX = entityMaxX + providerWidth - 1;
-        var minY = entityMinY - providerHeight + 1;
-        var maxY = entityMaxY + providerHeight - 1;
+        // Expand the loop bounds beyond the entity bounds so we can removed candidates that are not longer valid with
+        // the newly added provider, i.e. they would overlap with what was just added.
+        var minX = Math.Max((providerWidth - 1) / 2, entityMinX - (providerWidth / 2));
+        var minY = Math.Max((providerHeight - 1) / 2, entityMinY - (providerHeight / 2));
+        var maxX = Math.Min(grid.Width - (providerWidth / 2) - 1, entityMaxX + ((providerWidth - 1) / 2));
+        var maxY = Math.Min(grid.Height - (providerHeight / 2) - 1, entityMaxY + ((providerHeight - 1) / 2));
 
         for (var x = minX; x <= maxX; x++)
         {

@@ -38,6 +38,11 @@ internal static class Planner
                 UseUndergroundPipes.Execute(context, pipes);
             }
 
+            if (context.Options.AddBeacons)
+            {
+                AddBeacons.Execute(context);
+            }
+
             if (poles is null)
             {
                 poles = AddElectricPoles.Execute(context, avoidTerminals: false);

@@ -85,6 +85,7 @@ class Options
     }
 
     public bool UseUndergroundPipes { get; set; } = true;
+    public bool AddBeacons { get; set; } = true;
 
     public string ElectricPoleEntityName { get; set; } = EntityNames.Vanilla.MediumElectricPole;
     public int ElectricPoleSupplyWidth { get; set; } = 7;

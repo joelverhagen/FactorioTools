@@ -14,6 +14,12 @@ internal static class InitializeContext
         var marginX = 1 + 1 + options.ElectricPoleWidth;
         var marginY = 1 + 1 + options.ElectricPoleHeight;
 
+        if (options.AddBeacons)
+        {
+            marginX += options.BeaconSupplyWidth + (options.BeaconWidth / 2);
+            marginY += options.BeaconSupplyHeight + (options.BeaconHeight / 2);
+        }
+
         return Execute(options, root, marginX, marginY);
     }
 

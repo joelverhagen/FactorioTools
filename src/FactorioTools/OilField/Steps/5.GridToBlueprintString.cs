@@ -89,6 +89,28 @@ internal static class GridToBlueprintString
                 case ElectricPoleSide:
                     // Ignore
                     break;
+                case BeaconCenter beacon:
+                    if (context.Options.BeaconWidth % 2 == 0)
+                    {
+                        position.X += 0.5f;
+                    }
+
+                    if (context.Options.BeaconHeight % 2 == 0)
+                    {
+                        position.Y += 0.5f;
+                    }
+
+                    entities.Add(new Entity
+                    {
+                        EntityNumber = nextEntityNumber++,
+                        Name = context.Options.BeaconEntityName,
+                        Position = position,
+                        Items = context.Options.BeaconModules,
+                    });
+                    break;
+                case BeaconSide:
+                    // Ignore
+                    break;
                 default:
                     throw new NotImplementedException("Unknown entity type: " + gridEntity.GetType().FullName);
             }

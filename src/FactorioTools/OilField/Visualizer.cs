@@ -44,6 +44,8 @@ internal static class Visualizer
                         Pipe _ => Color.Gray,
                         ElectricPoleSide _ => Color.Yellow,
                         ElectricPoleCenter _ => Color.Gold,
+                        BeaconSide _ => Color.MediumPurple,
+                        BeaconCenter _ => Color.Purple,
                         _ => throw new NotImplementedException(),
                     };
                 }
