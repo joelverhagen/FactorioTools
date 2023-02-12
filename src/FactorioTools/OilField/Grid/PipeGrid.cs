@@ -2,6 +2,10 @@
 
 internal class PipeGrid : SquareGrid
 {
+    public PipeGrid(SquareGrid existing) : base(existing, clone: true)
+    {
+    }
+
     public PipeGrid(int width, int height) : base(width, height)
     {
     }

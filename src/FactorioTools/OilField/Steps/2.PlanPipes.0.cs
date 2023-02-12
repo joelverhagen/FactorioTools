@@ -22,7 +22,7 @@ internal static partial class AddPipes
         foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
         {
             /*
-            if (strategy != PlanPipesStrategy.ConnectedCenters_Delaunay)
+            if (strategy != PlanPipesStrategy.ConnectedCenters_DelaunayMst)
             {
                 continue;
             }
@@ -114,6 +114,7 @@ internal static partial class AddPipes
                 var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
                 if (unreachedGoals.Count > 0)
                 {
+                    // Visualizer.Show(context.Grid, solution.Pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
                     throw new InvalidOperationException("The pipes are not fully connected.");
                 }
             }

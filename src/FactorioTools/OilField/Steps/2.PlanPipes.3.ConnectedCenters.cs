@@ -69,7 +69,10 @@ internal static partial class AddPipes
             groups.Add(group);
         }
 
-        // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+        /*
+        var clone = new PipeGrid(context.Grid);
+        Visualizer.Show(clone, groups.SelectMany(g => g.Pipes).Distinct().Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        */
 
         while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
         {
@@ -123,7 +126,11 @@ internal static partial class AddPipes
                 group.MergeGroup(otherGroup, path);
                 groups.Remove(otherGroup);
 
-                // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+                /*
+                var clone2 = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone2, context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToHashSet());
+                Visualizer.Show(clone2, path.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                */
             }
             else
             {
@@ -131,7 +138,11 @@ internal static partial class AddPipes
                 group.ConnectPumpjack(center, path);
                 EliminateOtherTerminals(context, terminal);
 
-                // Visualize(context, locationToPoint, groups.SelectMany(g => g.Pipes).ToHashSet());
+                /*
+                var clone2 = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone2, context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToHashSet());
+                Visualizer.Show(clone2, path.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                */
             }
         }
 
@@ -256,7 +267,7 @@ internal static partial class AddPipes
         var trunkCandidates = GetTrunkCandidates(context, centerToConnectedCenters);
 
         trunkCandidates = trunkCandidates
-            .OrderByDescending(t => t.Centers.Count)
+            .OrderByDescending(t => t.TerminalLocations.Count)
             .ThenBy(t => t.Length)
             .ThenBy(t =>
             {
@@ -459,7 +470,8 @@ internal static partial class AddPipes
                             }
 
                             trunk.Terminals.AddRange(terminals);
-                            trunk.Centers.Add(nextCenter);
+                            trunk.TerminalLocations.UnionWith(terminals.Select(t => t.Terminal));
+                            trunk.Centers.UnionWith(centers);
 
                             currentCenter = nextCenter;
                         }
@@ -483,10 +495,12 @@ internal static partial class AddPipes
         public Trunk(TerminalLocation startingTerminal, Location center)
         {
             Terminals.Add(startingTerminal);
+            TerminalLocations.Add(startingTerminal.Terminal);
             Centers.Add(center);
         }
 
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>(2);
+        public HashSet<Location> TerminalLocations { get; } = new HashSet<Location>(2);
         public HashSet<Location> Centers { get; } = new HashSet<Location>(2);
         public int Length => Start.GetManhattanDistance(End) + 1;
         public Location Start => Terminals[0].Terminal;

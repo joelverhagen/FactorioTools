@@ -22,51 +22,62 @@ internal partial class Program
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = new[] { blueprintStringsAll[35] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
-        var pipeSum = 0;
-        var poleSum = 0;
-        var beaconSum = 0;
-        var blueprintCount = 0;
-        for (int i = 0; i < blueprintStrings.Length; i++)
+        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
+        var outputs = new List<string>();
+
+        foreach (var options in optionsAll)
         {
-            string? blueprintString = blueprintStrings[i];
-            var inputBlueprint = ParseBlueprint.Execute(blueprintString);
-
-            var options = Options.ForMediumElectricPole;
-            // var options = Options.ForSubstation;
-            // options.ElectricPoleWidth = 3;
-            // options.ElectricPoleHeight = 3;
-            // options.ElectricPoleSupplyWidth = 9;
-            // options.ElectricPoleSupplyHeight = 9;
-            options.AddBeacons = false;
-            options.UseUndergroundPipes = false;
-            // options.ValidateSolution = true;
-
-            var context = Planner.Execute(options, inputBlueprint);
-
-            var pipeCount = context.Grid.EntityToLocation.Keys.OfType<Pipe>().Count();
-            var poleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count();
-            var beaconCount = context.Grid.EntityToLocation.Keys.OfType<BeaconCenter>().Count();
-
-            // Console.WriteLine($"{pipeCount} {poleCount}");
-            Console.WriteLine($"{pipeCount}");
-
-            pipeSum += pipeCount;
-            poleSum += poleCount;
-            beaconSum += beaconCount;
-            blueprintCount++;
-
-            if (blueprintStrings.Length == 1)
+            var pipeSum = 0;
+            var poleSum = 0;
+            var beaconSum = 0;
+            var blueprintCount = 0;
+            for (int i = 0; i < blueprintStrings.Length; i++)
             {
-                var newBlueprint = GridToBlueprintString.Execute(context);
-                Console.WriteLine(newBlueprint);
+                string? blueprintString = blueprintStrings[i];
+                var inputBlueprint = ParseBlueprint.Execute(blueprintString);
+
+                // var options = Options.ForSubstation;
+                // options.ElectricPoleWidth = 3;
+                // options.ElectricPoleHeight = 3;
+                // options.ElectricPoleSupplyWidth = 9;
+                // options.ElectricPoleSupplyHeight = 9;
+                options.AddBeacons = true;
+                options.UseUndergroundPipes = true;
+                options.ValidateSolution = true;
+
+                var context = Planner.Execute(options, inputBlueprint);
+
+                var pipeCount = context.Grid.EntityToLocation.Keys.OfType<Pipe>().Count();
+                var poleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count();
+                var beaconCount = context.Grid.EntityToLocation.Keys.OfType<BeaconCenter>().Count();
+
+                // Console.WriteLine($"{pipeCount} {poleCount}");
+                Console.WriteLine($"{pipeCount}");
+
+                pipeSum += pipeCount;
+                poleSum += poleCount;
+                beaconSum += beaconCount;
+                blueprintCount++;
+
+                if (blueprintStrings.Length == 1)
+                {
+                    var newBlueprint = GridToBlueprintString.Execute(context);
+                    Console.WriteLine(newBlueprint);
+                }
             }
+
+            outputs.Add($"{pipeSum * 1.0 / blueprintCount} {poleSum * 1.0 / blueprintCount} {beaconSum * 1.0 / blueprintCount}");
+            // Console.WriteLine($"{pipeSum * 1.0 / blueprintCount}");
         }
 
-        Console.WriteLine($"{pipeSum * 1.0 / blueprintCount} {poleSum * 1.0 / blueprintCount} {beaconSum * 1.0 / blueprintCount}");
-        // Console.WriteLine($"{pipeSum * 1.0 / blueprintCount}");
+        var maxWidth = optionsAll.Max(o => o.ElectricPoleEntityName.Length);
+        for (int i = 0; i < outputs.Count; i++)
+        {
+            Console.WriteLine($"{optionsAll[i].ElectricPoleEntityName.PadRight(maxWidth)}: {outputs[i]}");
+        }
     }
 }
