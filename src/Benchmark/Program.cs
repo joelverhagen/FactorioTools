@@ -25,10 +25,20 @@ public class Benchmark
     }
 
     [Benchmark]
-    public void OilFieldPlanner()
+    public void MediumElectricPole_NoBeacon_NoUnderground()
     {
         var options = Options.ForMediumElectricPole;
+        options.AddBeacons = false;
         options.UseUndergroundPipes = false;
-        var context = Planner.Execute(options, Blueprint!);
+        Planner.Execute(options, Blueprint);
+    }
+
+    [Benchmark]
+    public void MediumElectricPole_Beacon_Underground()
+    {
+        var options = Options.ForMediumElectricPole;
+        options.AddBeacons = true;
+        options.UseUndergroundPipes = true;
+        Planner.Execute(options, Blueprint);
     }
 }

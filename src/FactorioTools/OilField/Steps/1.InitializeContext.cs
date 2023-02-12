@@ -50,6 +50,7 @@ internal static class InitializeContext
                 LocationPriorityQueue = new PriorityQueue<Location, double>(),
                 LocationListA = new List<Location>(),
                 LocationListB = new List<Location>(),
+                LocationSet = new HashSet<Location>(),
 #endif
             },
         };

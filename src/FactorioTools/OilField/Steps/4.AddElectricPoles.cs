@@ -243,7 +243,7 @@ internal static class AddElectricPoles
                 .MinBy(x => (
                     int.MaxValue - x.Covered.CountTrue(),
                     x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue,
-                    x.OthersConnected > 0 ? 0 : GetDistanceToClosestCandidate(poweredEntities, coveredEntities, electricPoleList, x.Covered, x.Location),
+                    x.OthersConnected > 0 ? 0 : GetDistanceToClosestElectricPole(electricPoleList, x.Location),
                     candidateToEntityDistance[x.Location],
                     candidateToMiddleDistance[x.Location]
                 ))!.Location;
@@ -291,26 +291,9 @@ internal static class AddElectricPoles
         return electricPoles;
     }
 
-    private static double GetDistanceToClosestCandidate(
-        List<ProviderRecipient> recipients,
-        BitArray coveredEntities,
-        List<Location> providerCenters,
-        BitArray covered,
-        Location location)
+    private static double GetDistanceToClosestElectricPole(List<Location> providerCenters, Location location)
     {
         var min = double.MaxValue;
-
-        for (var i = 0; i < recipients.Count; i++)
-        {
-            if (!covered[i] && !coveredEntities[i])
-            {
-                var val = recipients[i].Center.GetEuclideanDistance(location);
-                if (val < min)
-                {
-                    min = val;
-                }    
-            }
-        }
 
         for (int i = 0; i < providerCenters.Count; i++)
         {
@@ -383,37 +366,55 @@ internal static class AddElectricPoles
         }
         var idealPoint = idealLine[idealIndex];
 
+#if USE_SHARED_INSTANCES
+        var candidates = context.SharedInstances.LocationQueue;
+        var attempted = context.SharedInstances.LocationSet;
+#else
         var candidates = new Queue<Location>();
-        candidates.Enqueue(idealPoint);
+        var attempted = new HashSet<Location>();
+#endif
 
         Location? selectedPoint = null;
-
-        Span<Location> adjacent = stackalloc Location[4];
-        while (candidates.Count > 0)
+        try
         {
-            var candidate = candidates.Dequeue();
-            if (DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
-                && IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate))
-            {
-                selectedPoint = candidate;
-                break;
-            }
+            candidates.Enqueue(idealPoint);
+            attempted.Add(idealPoint);
 
-            context.Grid.GetAdjacent(adjacent, candidate);
-            for (var i = 0; i < adjacent.Length; i++)
+            Span<Location> adjacent = stackalloc Location[4];
+            while (candidates.Count > 0)
             {
-                if (adjacent[i].IsValid && AreElectricPolesConnected(idealLine[0], adjacent[i], context.Options))
+                var candidate = candidates.Dequeue();
+                if (DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
+                    && IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate))
                 {
-                    candidates.Enqueue(adjacent[i]);
+                    selectedPoint = candidate;
+                    break;
+                }
+
+                context.Grid.GetAdjacent(adjacent, candidate);
+                for (var i = 0; i < adjacent.Length; i++)
+                {
+                    if (adjacent[i].IsValid
+                        && AreElectricPolesConnected(idealLine[0], adjacent[i], context.Options)
+                        && attempted.Add(adjacent[i]))
+                    {
+                        candidates.Enqueue(adjacent[i]);
+                    }
                 }
             }
+        }
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            candidates.Clear();
+            attempted.Clear();
+#endif
         }
 
         if (!selectedPoint.HasValue)
         {
             throw new InvalidOperationException("Could not find a pole that can be connected");
         }
-
         var center = AddElectricPole(context, electricPoles, selectedPoint.Value);
         var connectedGroups = groups.Where(g => g.Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
 
