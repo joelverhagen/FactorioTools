@@ -9,21 +9,23 @@ internal static class Dijkstras
         var cameFrom = new Dictionary<Location, HashSet<Location>>();
         cameFrom[start] = new HashSet<Location>();
         var remainingGoals = new HashSet<Location>(goals);
-        var reachedGoals = new HashSet<Location>();
 
 #if USE_SHARED_INSTANCES
         var priorityQueue = sharedInstances.LocationPriorityQueue;
         var costSoFar = sharedInstances.LocationToDouble;
+        var reachedGoals = sharedInstances.LocationSetA;
+        var inQueue = sharedInstances.LocationSetB;
 #else
         var priorityQueue = new PriorityQueue<Location, double>();
         var costSoFar = new Dictionary<Location, double>();
+        var reachedGoals = new HashSet<Location>();
+        var inQueue = new HashSet<Location>();
 #endif
 
         costSoFar[start] = 0;
 
         try
         {
-            var inQueue = new HashSet<Location>();
             priorityQueue.Enqueue(start, 0);
             inQueue.Add(start);
 
@@ -82,6 +84,8 @@ internal static class Dijkstras
 #if USE_SHARED_INSTANCES
             priorityQueue.Clear();
             costSoFar.Clear();
+            reachedGoals.Clear();
+            inQueue.Clear();
 #endif
         }
 

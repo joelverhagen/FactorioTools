@@ -29,6 +29,10 @@ internal static class InitializeContext
         var grid = InitializeGrid(centers, marginX, marginY);
         var centerToTerminals = GetCenterToTerminals(centers, grid);
 
+#if USE_SHARED_INSTANCES
+        centers.Clear();
+#endif
+
         return new Context
         {
             Options = options,
@@ -50,7 +54,8 @@ internal static class InitializeContext
                 LocationPriorityQueue = new PriorityQueue<Location, double>(),
                 LocationListA = new List<Location>(),
                 LocationListB = new List<Location>(),
-                LocationSet = new HashSet<Location>(),
+                LocationSetA = centers,
+                LocationSetB = new HashSet<Location>(),
 #endif
             },
         };

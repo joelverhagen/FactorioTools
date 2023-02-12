@@ -85,7 +85,7 @@ internal static class AddElectricPoles
         }
 
         var firstNode = graph.Keys.MinBy(context.Grid.Middle.GetEuclideanDistance)!;
-        var mst = Prims.GetMinimumSpanningTree(graph, firstNode, digraph: false);
+        var mst = Prims.GetMinimumSpanningTree(context.SharedInstances, graph, firstNode, digraph: false);
 
         foreach ((var location, var neighbors) in mst)
         {
@@ -368,7 +368,7 @@ internal static class AddElectricPoles
 
 #if USE_SHARED_INSTANCES
         var candidates = context.SharedInstances.LocationQueue;
-        var attempted = context.SharedInstances.LocationSet;
+        var attempted = context.SharedInstances.LocationSetA;
 #else
         var candidates = new Queue<Location>();
         var attempted = new HashSet<Location>();

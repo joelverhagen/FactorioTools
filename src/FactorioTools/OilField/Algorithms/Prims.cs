@@ -2,65 +2,82 @@
 
 internal static class Prims
 {
-    public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(Dictionary<Location, Dictionary<Location, double>> graph, Location firstNode, bool digraph)
+    public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(
+        SharedInstances sharedInstances,
+        Dictionary<Location, Dictionary<Location, double>> graph,
+        Location firstNode,
+        bool digraph)
     {
+#if USE_SHARED_INSTANCES
+        var visited = sharedInstances.LocationSetA;
+#else
         var visited = new HashSet<Location>();
+#endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), double>();
         var mst = new Dictionary<Location, HashSet<Location>>();
 
-        visited.Add(firstNode);
-        foreach ((var otherNode, var cost) in graph[firstNode])
+        try
         {
-            priority.Enqueue((firstNode, otherNode), cost);
-        }
-
-        while (priority.Count > 0)
-        {
-            (var nodeA, var nodeB) = priority.Dequeue();
-            if (!visited.Add(nodeB))
+            visited.Add(firstNode);
+            foreach ((var otherNode, var cost) in graph[firstNode])
             {
-                continue;
+                priority.Enqueue((firstNode, otherNode), cost);
             }
 
-            if (!mst.TryGetValue(nodeA, out var nodes))
+            while (priority.Count > 0)
             {
-                nodes = new HashSet<Location> { nodeB };
-                mst.Add(nodeA, nodes);
-            }
-            else
-            {
-                nodes.Add(nodeB);
-            }
-
-            foreach ((var neighbor, var cost) in graph[nodeB])
-            {
-                if (!visited.Contains(neighbor))
+                (var nodeA, var nodeB) = priority.Dequeue();
+                if (!visited.Add(nodeB))
                 {
-                    priority.Enqueue((nodeB, neighbor), cost);
+                    continue;
                 }
-            }
-        }
 
-        if (!digraph)
-        {
-            // Make the MST bidirectional (a graph, not a digraph).
-            foreach (var center in mst.Keys.ToList())
-            {
-                foreach (var neighbor in mst[center])
+                if (!mst.TryGetValue(nodeA, out var nodes))
                 {
-                    if (!mst.TryGetValue(neighbor, out var otherNeighbors))
+                    nodes = new HashSet<Location> { nodeB };
+                    mst.Add(nodeA, nodes);
+                }
+                else
+                {
+                    nodes.Add(nodeB);
+                }
+
+                foreach ((var neighbor, var cost) in graph[nodeB])
+                {
+                    if (!visited.Contains(neighbor))
                     {
-                        otherNeighbors = new HashSet<Location> { center };
-                        mst.Add(neighbor, otherNeighbors);
-                    }
-                    else
-                    {
-                        otherNeighbors.Add(center);
+                        priority.Enqueue((nodeB, neighbor), cost);
                     }
                 }
             }
-        }
 
-        return mst;
+            if (!digraph)
+            {
+                // Make the MST bidirectional (a graph, not a digraph).
+                foreach (var center in mst.Keys.ToList())
+                {
+                    foreach (var neighbor in mst[center])
+                    {
+                        if (!mst.TryGetValue(neighbor, out var otherNeighbors))
+                        {
+                            otherNeighbors = new HashSet<Location> { center };
+                            mst.Add(neighbor, otherNeighbors);
+                        }
+                        else
+                        {
+                            otherNeighbors.Add(center);
+                        }
+                    }
+                }
+            }
+
+            return mst;
+        }
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            visited.Clear();
+#endif
+        }
     }
 }

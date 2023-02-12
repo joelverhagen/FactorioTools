@@ -23,12 +23,12 @@ internal static class UseUndergroundPipes
             .GroupBy(x => x.Value.Single().Terminal, x => x.Key)
             .ToDictionary(g => g.Key, g => g.ToHashSet());
 
-        ConvertInOneDirection(context.Grid, terminalToCenters, pipes, (X: 0, Y: 1));
-        ConvertInOneDirection(context.Grid, terminalToCenters, pipes, (X: 1, Y: 0));
+        ConvertInOneDirection(context, terminalToCenters, pipes, (X: 0, Y: 1));
+        ConvertInOneDirection(context, terminalToCenters, pipes, (X: 1, Y: 0));
     }
 
     private static void ConvertInOneDirection(
-        SquareGrid grid,
+        Context context,
         Dictionary<Location, HashSet<Location>> terminalToCenters,
         HashSet<Location> pipesAndTerminals,
         (int X, int Y) forward)
@@ -49,58 +49,72 @@ internal static class UseUndergroundPipes
         // Find candidates for underground pipes. These are pipes that have other pipes before and after them in
         // axis they are going and no pipes next to them.
 
+#if USE_SHARED_INSTANCES
+        var candidates = context.SharedInstances.LocationSetA;
+#else
         var candidates = new HashSet<Location>();
-        var backward = (X: forward.X * -1, Y: forward.Y * -1);
-        var right = (X: forward.Y, Y: forward.X);
-        var left = (X: right.X * -1, Y: right.Y * -1);
+#endif
 
-        foreach (var goal in pipesAndTerminals)
+        try
         {
-            if ((grid.IsEntityType<Pipe>(goal.Translate(forward)) || grid.IsEntityType<Pipe>(goal.Translate(backward)))
-                && !grid.IsEntityType<Pipe>(goal.Translate(right))
-                && !grid.IsEntityType<Pipe>(goal.Translate(left)))
+            var backward = (X: forward.X * -1, Y: forward.Y * -1);
+            var right = (X: forward.Y, Y: forward.X);
+            var left = (X: right.X * -1, Y: right.Y * -1);
+
+            foreach (var goal in pipesAndTerminals)
             {
-                if (grid.IsEntityType<Terminal>(goal))
+                if ((context.Grid.IsEntityType<Pipe>(goal.Translate(forward)) || context.Grid.IsEntityType<Pipe>(goal.Translate(backward)))
+                    && !context.Grid.IsEntityType<Pipe>(goal.Translate(right))
+                    && !context.Grid.IsEntityType<Pipe>(goal.Translate(left)))
                 {
-                    var centers = terminalToCenters[goal];
-                    if (centers.Count > 1)
+                    if (context.Grid.IsEntityType<Terminal>(goal))
                     {
-                        continue;
+                        var centers = terminalToCenters[goal];
+                        if (centers.Count > 1)
+                        {
+                            continue;
+                        }
+
+                        var center = centers.Single();
+                        var direction = GetTerminalDirection(center, goal);
+                        if (direction != forwardDirection && direction != backwardDirection)
+                        {
+                            continue;
+                        }
                     }
 
-                    var center = centers.Single();
-                    var direction = GetTerminalDirection(center, goal);
-                    if (direction != forwardDirection && direction != backwardDirection)
-                    {
-                        continue;
-                    }
+                    candidates.Add(goal);
+                }
+            }
+
+            var sorted = sort(candidates).ToList();
+            var currentRun = new List<Location> { sorted[0] };
+            for (var i = 1; i < sorted.Count; i++)
+            {
+                var previous = currentRun[currentRun.Count - 1];
+                var current = sorted[i];
+
+                if (previous.X + forward.X == current.X
+                    && previous.Y + forward.Y == current.Y
+                    && currentRun.Count < MaxUnderground)
+                {
+                    currentRun.Add(current);
+                    continue;
                 }
 
-                candidates.Add(goal);
-            }
-        }
+                AddRunAndClear(context.Grid, forwardDirection, backwardDirection, currentRun);
 
-        var sorted = sort(candidates).ToList();
-        var currentRun = new List<Location> { sorted[0] };
-        for (var i = 1; i < sorted.Count; i++)
-        {
-            var previous = currentRun[currentRun.Count - 1];
-            var current = sorted[i];
-
-            if (previous.X + forward.X == current.X
-                && previous.Y + forward.Y == current.Y
-                && currentRun.Count < MaxUnderground)
-            {
                 currentRun.Add(current);
-                continue;
             }
 
-            AddRunAndClear(grid, forwardDirection, backwardDirection, currentRun);
-
-            currentRun.Add(current);
+            AddRunAndClear(context.Grid, forwardDirection, backwardDirection, currentRun);
         }
-
-        AddRunAndClear(grid, forwardDirection, backwardDirection, currentRun);
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            candidates.Clear();
+#endif
+        }
     }
 
     private static void AddRunAndClear(SquareGrid grid, Direction forwardDirection, Direction backwardDirection, List<Location> currentRun)

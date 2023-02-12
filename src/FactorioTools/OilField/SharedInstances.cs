@@ -12,7 +12,8 @@ internal class SharedInstances
     public required PriorityQueue<Location, double> LocationPriorityQueue;
     public required List<Location> LocationListA;
     public required List<Location> LocationListB;
-    public required HashSet<Location> LocationSet;
+    public required HashSet<Location> LocationSetA;
+    public required HashSet<Location> LocationSetB;
 
     public T[] GetArray<T>(ref T[] array, int length) where T : struct
     {

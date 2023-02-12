@@ -14,10 +14,9 @@ internal static partial class AddPipes
 
     private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithDelaunayMst(Context context, List<Location> centers)
     {
-        var dlGraph2 = GetDelaunayGraph(centers);
+        var dlGraph = GetDelaunayGraph(centers);
         var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistance);
-        var mst = Prims.GetMinimumSpanningTree(dlGraph2, closestToMiddle, digraph: false);
-
+        var mst = Prims.GetMinimumSpanningTree(context.SharedInstances, dlGraph, closestToMiddle, digraph: false);
 
         // Visualizer.Show(context.Grid, points, delaunator.GetEdges());
         // Visualizer.Show(context.Grid, points, mst.SelectMany(p => p.Value.Select(o => (IEdge)new Edge(0, new Point(o.X, o.Y), new Point(p.Key.X, p.Key.Y)))));
