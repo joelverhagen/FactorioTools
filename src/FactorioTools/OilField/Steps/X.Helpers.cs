@@ -5,6 +5,9 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class Helpers
 {
+    public const int PumpjackWidth = 3;
+    public const int PumpjackHeight = 3;
+
     /// <summary>
     /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
     /// </summary>

@@ -30,7 +30,7 @@ internal static class AddElectricPoles
             switch (entity)
             {
                 case PumpjackCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, Width: 3, Height: 3));
+                    poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
                     break;
                 case BeaconCenter:
                     poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
