@@ -22,12 +22,12 @@ internal partial class Program
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = new[] { blueprintStringsAll[38] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
-        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
-        // var optionsAll = new[] { Options.ForBigElectricPole };
+        // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
+        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation };
         var outputs = new List<string>();
 
         foreach (var options in optionsAll)

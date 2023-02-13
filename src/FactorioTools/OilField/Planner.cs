@@ -53,6 +53,11 @@ internal static class Planner
                 }
             }
 
+            if (context.Options.ValidateSolution)
+            {
+                AddElectricPoles.VerifyAllEntitiesHasPower(context);
+            }
+
             return context;
         }
     }

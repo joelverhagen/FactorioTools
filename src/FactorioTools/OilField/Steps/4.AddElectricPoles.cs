@@ -26,19 +26,9 @@ internal static class AddElectricPoles
             }
         }
 
-        var poweredEntities = new List<ProviderRecipient>();
-        foreach ((var entity, var location) in context.Grid.EntityToLocation)
-        {
-            switch (entity)
-            {
-                case PumpjackCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
-                    break;
-                case BeaconCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
-                    break;
-            }
-        }
+        var poweredEntities = GetPoweredEntities(context);
+
+        // Visualizer.Show(context.Grid, poweredEntities.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.Center.X, c.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         var electricPoles = AddElectricPolesAroundEntities(context, poweredEntities);
         if (electricPoles is null)
@@ -69,6 +59,41 @@ internal static class AddElectricPoles
         }
 
         return electricPoles.Keys.ToHashSet();
+    }
+
+    public static void VerifyAllEntitiesHasPower(Context context)
+    {
+        var poweredEntities = GetPoweredEntities(context);
+
+        var electricPoleCenters = new List<Location>();
+        foreach ((var entity, var location) in context.Grid.EntityToLocation)
+        {
+            if (entity is ElectricPoleCenter)
+            {
+                electricPoleCenters.Add(location);
+            }
+        }
+
+        GetPoleCoverage(context, poweredEntities, electricPoleCenters);
+    }
+
+    private static List<ProviderRecipient> GetPoweredEntities(Context context)
+    {
+        var poweredEntities = new List<ProviderRecipient>();
+        foreach ((var entity, var location) in context.Grid.EntityToLocation)
+        {
+            switch (entity)
+            {
+                case PumpjackCenter:
+                    poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
+                    break;
+                case BeaconCenter:
+                    poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
+                    break;
+            }
+        }
+
+        return poweredEntities;
     }
 
     private static void PruneNeighbors(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
@@ -103,41 +128,73 @@ internal static class AddElectricPoles
 
     private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
-        var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
-            context.Grid,
-            context.Options.ElectricPoleWidth,
-            context.Options.ElectricPoleHeight,
-            context.Options.ElectricPoleSupplyWidth,
-            context.Options.ElectricPoleSupplyHeight,
-            electricPoles.Keys);
-
-        var coveredCenterToPoleCenters = poleCenterToCoveredCenters
-            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, PumpjackCenter: c)))
-            .GroupBy(p => p.PumpjackCenter, p => p.PoleCenter)
-            .ToDictionary(g => g.Key, g => g.ToHashSet());
-
-        if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
-        {
-            throw new InvalidOperationException("Not all pumpjacks are covered by an electric pole.");
-        }
+        (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetPoleCoverage(context, poweredEntities, electricPoles.Keys);
 
         var removeCandidates = coveredCenterToPoleCenters
             .Where(p => p.Value.Count > 2) // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
             .SelectMany(p => p.Value)
             .Concat(poleCenterToCoveredCenters.Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
             .Except(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value)) // Exclude electric poles covering pumpjacks that are only covered by one pole.
-            .ToList();
+            .ToHashSet();
 
-        foreach (var center in removeCandidates)
+        while (removeCandidates.Count > 0)
         {
+            var center = removeCandidates.First();
             var centerEntity = electricPoles[center];
             if (ArePolesConnectedWithout(electricPoles, centerEntity))
             {
                 electricPoles.Remove(center);
                 centerEntity.ClearNeighbors();
                 RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
+
+                foreach (var coveredCenter in poleCenterToCoveredCenters[center])
+                {
+                    var poleCenters = coveredCenterToPoleCenters[coveredCenter];
+                    poleCenters.Remove(center);
+                    if (poleCenters.Count == 1)
+                    {
+                        removeCandidates.ExceptWith(poleCenters);
+                    }
+                }
+
+                poleCenterToCoveredCenters.Remove(center);
             }
+
+            removeCandidates.Remove(center);
         }
+    }
+
+    private static (Dictionary<Location, HashSet<Location>> PoleCenterToCoveredCenters, Dictionary<Location, HashSet<Location>> CoveredCenterToPoleCenters) GetPoleCoverage(
+        Context context,
+        List<ProviderRecipient> poweredEntities,
+        IEnumerable<Location> electricPoleCenters)
+    {
+        var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
+            context.Grid,
+            context.Options.ElectricPoleWidth,
+            context.Options.ElectricPoleHeight,
+            context.Options.ElectricPoleSupplyWidth,
+            context.Options.ElectricPoleSupplyHeight,
+            electricPoleCenters);
+
+        var coveredCenterToPoleCenters = poleCenterToCoveredCenters
+            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, RecipientCenter: c)))
+            .GroupBy(p => p.RecipientCenter, p => p.PoleCenter)
+            .ToDictionary(g => g.Key, g => g.ToHashSet());
+
+        if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
+        {
+            /*
+            var uncoveredCenters = poweredEntities
+                .Select(e => e.Center)
+                .Except(coveredCenterToPoleCenters.Keys)
+                .ToList();
+            Visualizer.Show(context.Grid, uncoveredCenters.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            */
+            throw new InvalidOperationException("Not all powered entities are covered by an electric pole.");
+        }
+
+        return (PoleCenterToCoveredCenters: poleCenterToCoveredCenters, CoveredCenterToPoleCenters: coveredCenterToPoleCenters);
     }
 
     private static bool ArePolesConnectedWithout(Dictionary<Location, ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
@@ -282,6 +339,8 @@ internal static class AddElectricPoles
                 coveredEntities,
                 candidateToCovered,
                 candidateToEntityDistance);
+
+            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
             electricPoles.Add(candidate, centerEntity);
             electricPoleList.Add(candidate);
