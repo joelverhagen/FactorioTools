@@ -9,9 +9,11 @@ internal static class AddElectricPoles
 {
     public static HashSet<Location>? Execute(Context context, bool avoidTerminals)
     {
-        var temporaryTerminals = new HashSet<Location>();
+        HashSet<Location>? temporaryTerminals = null;
         if (avoidTerminals)
         {
+            temporaryTerminals = new HashSet<Location>();
+
             foreach (var terminal in context.CenterToTerminals.Values.SelectMany(t => t).Select(t => t.Terminal))
             {
                 if (context.Grid.IsEmpty(terminal))
@@ -60,7 +62,7 @@ internal static class AddElectricPoles
 
         if (avoidTerminals)
         {
-            foreach (var terminal in temporaryTerminals)
+            foreach (var terminal in temporaryTerminals!)
             {
                 context.Grid.RemoveEntity(terminal);
             }
