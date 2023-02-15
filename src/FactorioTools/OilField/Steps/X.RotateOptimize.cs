@@ -97,9 +97,9 @@ internal static class RotateOptimize
             var minPathTurns = CountTurns(minPath);
             var changedPath = false;
 
-            for (var i = 0; i < InitializeContext.TerminalOffsets.Count; i++)
+            for (var i = 0; i < TerminalOffsets.Count; i++)
             {
-                (var direction, var translation) = InitializeContext.TerminalOffsets[i];
+                (var direction, var translation) = TerminalOffsets[i];
 
                 var terminalCandidate = originalTerminal.Center.Translate(translation);
                 if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))

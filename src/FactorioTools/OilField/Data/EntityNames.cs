@@ -15,6 +15,8 @@ internal class EntityNames
         public const string Substation = "substation";
 
         public const string Beacon = "beacon";
+
+        public const string Wall = "stone-wall";
     }
 
     public static class AaiIndustry

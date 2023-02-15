@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -9,19 +10,89 @@ internal static class Helpers
     public const int PumpjackHeight = 3;
 
     /// <summary>
-    /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
+    /// . . . + .
+    /// . j j j +
+    /// . j J j .
+    /// + j j j .
+    /// . + . . .
     /// </summary>
-    public record ProviderRecipient(Location Center, int Width, int Height);
+    public static readonly IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))> TerminalOffsets = new List<(Direction Direction, (int DeltaX, int DeltaY))>
+    {
+        (Direction.Up, (1, -2)),
+        (Direction.Right, (2, -1)),
+        (Direction.Down, (-1, 2)),
+        (Direction.Left, (-2, 1)),
+    };
 
-    public static Dictionary<Location, BitArray> GetCandidateToCovered(
+    public static PumpjackCenter AddPumpjack(SquareGrid grid, Location center)
+    {
+        var centerEntity = new PumpjackCenter();
+        for (var x = -1; x <= 1; x++)
+        {
+            for (var y = -1; y <= 1; y++)
+            {
+                GridEntity entity = x != 0 || y != 0 ? new PumpjackSide(centerEntity) : centerEntity;
+                grid.AddEntity(new Location(center.X + x, center.Y + y), entity);
+            }
+        }
+
+        return centerEntity;
+    }
+
+    public static Dictionary<Location, List<TerminalLocation>> GetCenterToTerminals(SquareGrid grid, IEnumerable<Location> centers)
+    {
+        var centerToTerminals = new Dictionary<Location, List<TerminalLocation>>();
+        foreach (var center in centers)
+        {
+            var candidateTerminals = new List<TerminalLocation>();
+            foreach ((var direction, var translation) in TerminalOffsets)
+            {
+                var location = center.Translate(translation);
+                var terminal = new TerminalLocation(center, location, direction);
+                if (grid.IsEmpty(location))
+                {
+                    candidateTerminals.Add(terminal);
+                }
+            }
+
+            centerToTerminals.Add(center, candidateTerminals);
+        }
+
+        return centerToTerminals;
+    }
+
+    public static Dictionary<Location, List<TerminalLocation>> GetLocationToTerminals(Dictionary<Location, List<TerminalLocation>> centerToTerminals)
+    {
+        var locationToTerminals = new Dictionary<Location, List<TerminalLocation>>();
+        foreach (var terminals in centerToTerminals.Values)
+        {
+            foreach (var terminal in terminals)
+            {
+                if (!locationToTerminals.TryGetValue(terminal.Terminal, out var list))
+                {
+                    list = new List<TerminalLocation>(2);
+                    locationToTerminals.Add(terminal.Terminal, list);
+                }
+
+                list.Add(terminal);
+            }
+        }
+
+        return locationToTerminals;
+    }
+
+    public static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
         Context context,
         List<ProviderRecipient> recipients,
         int providerWidth,
         int providerHeight,
         int supplyWidth,
         int supplyHeight)
+        where TProvider : GridEntity
     {
         var candidateToCovered = new Dictionary<Location, BitArray>();
+        var coveredEntities = new BitArray(recipients.Count);
+        var providers = new Dictionary<Location, TProvider>();
 
         /*
         providerWidth = 1;
@@ -48,28 +119,52 @@ internal static class Helpers
                 for (var y = minY; y <= maxY; y++)
                 {
                     var candidate = new Location(x, y);
-                    var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
-
-                    if (!fits)
+                    var existing = context.Grid[candidate];
+                    if (existing is not null)
                     {
-                        continue;
-                    }
-
-                    if (!candidateToCovered.TryGetValue(candidate, out var covered))
-                    {
-                        covered = new BitArray(recipients.Count);
-                        covered[i] = true;
-                        candidateToCovered.Add(candidate, covered);
+                        if (existing is TProvider provider)
+                        {
+                            coveredEntities[i] = true;
+                            if (!providers.ContainsKey(candidate))
+                            {
+                                providers.Add(candidate, provider);
+                            }
+                        }
                     }
                     else
                     {
-                        covered[i] = true;
+                        var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
+                        if (!fits)
+                        {
+                            continue;
+                        }
+
+                        if (!candidateToCovered.TryGetValue(candidate, out var covered))
+                        {
+                            covered = new BitArray(recipients.Count);
+                            covered[i] = true;
+                            candidateToCovered.Add(candidate, covered);
+                        }
+                        else
+                        {
+                            covered[i] = true;
+                        }
                     }
                 }
             }
         }
 
-        return candidateToCovered;
+        if (context.Options.ValidateSolution)
+        {
+            var pairs = context.Grid.EntityToLocation.Where(p => p.Key is TProvider).ToList();
+            if (!pairs.Select(p => p.Key).ToHashSet().SetEquals(providers.Values)
+                || !pairs.Select(p => p.Value).ToHashSet().SetEquals(providers.Keys))
+            {
+                throw new InvalidOperationException("The providers found matching recipient entities do not match all providers on the grid.");
+            }
+        }
+
+        return (candidateToCovered, coveredEntities, providers);
     }
 
     public static Dictionary<Location, double> GetCandidateToEntityDistance(List<ProviderRecipient> poweredEntities, Dictionary<Location, BitArray> candidateToCovered)
@@ -97,7 +192,9 @@ internal static class Helpers
         int providerHeight,
         int supplyWidth,
         int supplyHeight,
-        IEnumerable<Location> providerCenters)
+        IEnumerable<Location> providerCenters,
+        bool includePumpjacks,
+        bool includeBeacons)
     {
         var poleCenterToCoveredCenters = new Dictionary<Location, HashSet<Location>>();
 
@@ -108,10 +205,10 @@ internal static class Helpers
         {
             var coveredCenters = new HashSet<Location>();
 
-            var minX = Math.Max(minPoweredEntityWidth - 1, center.X - ((providerWidth - 1) / 2) - (supplyWidth / 2));
-            var minY = Math.Max(minPoweredEntityHeight - 1, center.Y - ((providerHeight - 1) / 2) - (supplyHeight / 2));
-            var maxX = Math.Min(grid.Width - minPoweredEntityWidth + 1, center.X + (providerWidth / 2) + ((supplyWidth - 1) / 2));
-            var maxY = Math.Min(grid.Height - minPoweredEntityHeight + 1, center.Y + (providerHeight / 2) + ((supplyHeight - 1) / 2));
+            var minX = Math.Max(minPoweredEntityWidth - 1, center.X - (supplyWidth / 2) + ((providerWidth - 1) % 2));
+            var minY = Math.Max(minPoweredEntityHeight - 1, center.Y - (supplyHeight / 2) + ((providerHeight - 1) % 2));
+            var maxX = Math.Min(grid.Width - minPoweredEntityWidth + 1, center.X + (supplyWidth / 2));
+            var maxY = Math.Min(grid.Height - minPoweredEntityHeight + 1, center.Y + (supplyHeight / 2));
 
             for (var x = minX; x <= maxX; x++)
             {
@@ -120,20 +217,21 @@ internal static class Helpers
                     var location = new Location(x, y);
 
                     var entity = grid[location];
-                    switch (entity)
+                    if (includePumpjacks && entity is PumpjackCenter)
                     {
-                        case PumpjackCenter:
-                            coveredCenters.Add(location);
-                            break;
-                        case PumpjackSide pumpjackSide:
-                            coveredCenters.Add(grid.EntityToLocation[pumpjackSide.Center]);
-                            break;
-                        case BeaconCenter:
-                            coveredCenters.Add(location);
-                            break;
-                        case BeaconSide beaconSide:
-                            coveredCenters.Add(grid.EntityToLocation[beaconSide.Center]);
-                            break;
+                        coveredCenters.Add(location);
+                    }
+                    else if (includePumpjacks && entity is PumpjackSide pumpjackSide)
+                    {
+                        coveredCenters.Add(grid.EntityToLocation[pumpjackSide.Center]);
+                    }
+                    else if (includeBeacons && entity is BeaconCenter)
+                    {
+                        coveredCenters.Add(location);
+                    }
+                    else if (includeBeacons && entity is BeaconSide beaconSide)
+                    {
+                        coveredCenters.Add(grid.EntityToLocation[beaconSide.Center]);
                     }
                 }
             }
@@ -544,6 +642,11 @@ internal static class Helpers
 
         return lines;
     }
+
+    /// <summary>
+    /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
+    /// </summary>
+    public record ProviderRecipient(Location Center, int Width, int Height);
 
     public record Endpoints(Location A, Location B);
 }

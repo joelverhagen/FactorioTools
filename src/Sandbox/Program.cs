@@ -22,12 +22,12 @@ internal partial class Program
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[38] };
+        // var blueprintStrings = new[] { blueprintStringsAll[34] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
-        // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
-        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation };
+        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
+        // var optionsAll = new[] { Options.ForBigElectricPole };
         var outputs = new List<string>();
 
         foreach (var options in optionsAll)
@@ -38,6 +38,7 @@ internal partial class Program
             var blueprintCount = 0;
             for (int i = 0; i < blueprintStrings.Length; i++)
             {
+                // Console.WriteLine("index " + i);
                 string? blueprintString = blueprintStrings[i];
                 var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
@@ -46,8 +47,8 @@ internal partial class Program
                 // options.ElectricPoleHeight = 3;
                 // options.ElectricPoleSupplyWidth = 9;
                 // options.ElectricPoleSupplyHeight = 9;
-                options.AddBeacons = true;
-                options.UseUndergroundPipes = true;
+                options.AddBeacons = false;
+                options.UseUndergroundPipes = false;
                 options.ValidateSolution = true;
 
                 var context = Planner.Execute(options, inputBlueprint);
@@ -66,7 +67,7 @@ internal partial class Program
 
                 if (blueprintStrings.Length == 1)
                 {
-                    var newBlueprint = GridToBlueprintString.Execute(context);
+                    var newBlueprint = GridToBlueprintString.Execute(context, addOffsetCorrection: false);
                     Console.WriteLine(newBlueprint);
                 }
             }

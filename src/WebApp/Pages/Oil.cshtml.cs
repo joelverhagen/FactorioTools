@@ -42,7 +42,7 @@ namespace Knapcode.FactorioTools.WebApp.Pages
                 var options = Options.ForMediumElectricPole;
                 var bp = ParseBlueprint.Execute(Source);
                 var context = Planner.Execute(options, bp);
-                OutputBlueprint = GridToBlueprintString.Execute(context);
+                OutputBlueprint = GridToBlueprintString.Execute(context, addOffsetCorrection: false);
                 Status = "Done: " + sw.Elapsed;
             }
             catch (Exception ex)

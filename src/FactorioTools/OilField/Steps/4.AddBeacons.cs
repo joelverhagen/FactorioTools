@@ -10,7 +10,7 @@ internal static class AddBeacons
     {
         var poweredEntities = context.CenterToTerminals.Keys.Select(c => new ProviderRecipient(c, Width: 3, Height: 3)).ToList();
 
-        var candidateToCovered = GetCandidateToCovered(
+        (var candidateToCovered, var coveredEntities, var beacons) = GetCandidateToCovered<BeaconCenter>(
             context,
             poweredEntities,
             context.Options.BeaconWidth,
@@ -20,11 +20,7 @@ internal static class AddBeacons
 
         var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
 
-        var coveredEntities = new BitArray(poweredEntities.Count);
-
         // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-        var beacons = new Dictionary<Location, BeaconCenter>();
 
         while (candidateToCovered.Count > 0)
         {

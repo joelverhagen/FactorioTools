@@ -187,7 +187,7 @@ internal static partial class AddPipes
     {
         public required HashSet<PlanPipesStrategy> Strategies { get; set; }
         public required Dictionary<Location, HashSet<Location>>? CenterToConnectedCenters { get; set; }
-        public required IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
+        public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
         public required HashSet<Location> Pipes { get; set; }
     }

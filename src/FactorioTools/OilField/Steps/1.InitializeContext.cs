@@ -1,5 +1,6 @@
 ﻿using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -23,11 +24,38 @@ internal static class InitializeContext
         return Execute(options, root, marginX, marginY);
     }
 
-    public static Context Execute(Options options, BlueprintRoot root, int marginX, int marginY)
+    public static Context GetEmpty(Options options, int width, int height)
+    {
+        var root = new BlueprintRoot
+        {
+            Blueprint = new Blueprint
+            {
+                Entities = Array.Empty<Entity>(),
+                Icons = new[]
+                {
+                    new Icon
+                    {
+                        Index = 1,
+                        Signal = new SignalID
+                        {
+                            Name = EntityNames.Vanilla.Pumpjack,
+                            Type = SignalTypes.Vanilla.Item,
+                        },
+                    },
+                },
+                Item = ItemNames.Vanilla.Blueprint,
+                Version = 1,
+            },
+        };
+
+        return Execute(options, root, width, height);
+    }
+
+    private static Context Execute(Options options, BlueprintRoot root, int marginX, int marginY)
     {
         var centers = GetPumpjackCenters(root, marginX, marginY);
         var grid = InitializeGrid(centers, marginX, marginY);
-        var centerToTerminals = GetCenterToTerminals(centers, grid);
+        var centerToTerminals = GetCenterToTerminals(grid, centers);
 
 #if USE_SHARED_INSTANCES
         centers.Clear();
@@ -88,26 +116,6 @@ internal static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static Dictionary<Location, List<TerminalLocation>> GetLocationToTerminals(Dictionary<Location, List<TerminalLocation>> centerToTerminals)
-    {
-        var locationToTerminals = new Dictionary<Location, List<TerminalLocation>>();
-        foreach (var terminals in centerToTerminals.Values)
-        {
-            foreach (var terminal in terminals)
-            {
-                if (!locationToTerminals.TryGetValue(terminal.Terminal, out var list))
-                {
-                    list = new List<TerminalLocation>(2);
-                    locationToTerminals.Add(terminal.Terminal, list);
-                }
-
-                list.Add(terminal);
-            }
-        }
-
-        return locationToTerminals;
-    }
-
     private static HashSet<Location> GetPumpjackCenters(BlueprintRoot root, int marginX, int marginY)
     {
         var pumpjacks = root
@@ -116,25 +124,29 @@ internal static class InitializeContext
             .Where(e => e.Name == EntityNames.Vanilla.Pumpjack)
             .ToList();
 
-        var deltaX = 0 - pumpjacks.Min(x => x.Position.X) + marginX;
-        var deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + marginY;
         var centers = new HashSet<Location>();
-        foreach (var entity in pumpjacks)
+
+        if (pumpjacks.Count > 0)
         {
-            var x = entity.Position.X + deltaX;
-            var y = entity.Position.Y + deltaY;
-
-            if (IsInteger(x))
+            var deltaX = 0 - pumpjacks.Min(x => x.Position.X) + marginX;
+            var deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + marginY;
+            foreach (var entity in pumpjacks)
             {
-                throw new InvalidDataException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer X value after translation.");
-            }
+                var x = entity.Position.X + deltaX;
+                var y = entity.Position.Y + deltaY;
 
-            if (IsInteger(y))
-            {
-                throw new InvalidDataException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
-            }
+                if (IsInteger(x))
+                {
+                    throw new InvalidDataException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer X value after translation.");
+                }
 
-            centers.Add(new Location(ToInt(x), ToInt(y)));
+                if (IsInteger(y))
+                {
+                    throw new InvalidDataException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
+                }
+
+                centers.Add(new Location(ToInt(x), ToInt(y)));
+            }
         }
 
         return centers;
@@ -154,62 +166,17 @@ internal static class InitializeContext
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.
-        var width = pumpjackCenters.Max(p => p.X) + 1 + marginX;
-        var height = pumpjackCenters.Max(p => p.Y) + 1 + marginY;
+        var width = pumpjackCenters.Select(p => p.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
+        var height = pumpjackCenters.Select(p => p.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
 
         SquareGrid grid = new PipeGrid(width, height);
 
         // Fill the grid with the pumpjacks
         foreach (var center in pumpjackCenters)
         {
-            var centerEntity = new PumpjackCenter();
-            for (var x = -1; x <= 1; x++)
-            {
-                for (var y = -1; y <= 1; y++)
-                {
-                    GridEntity entity = x != 0 || y != 0 ? new PumpjackSide(centerEntity) : centerEntity;
-                    grid.AddEntity(new Location(center.X + x, center.Y + y), entity);
-                }
-            }
+            AddPumpjack(grid, center);
         }
 
         return grid;
-    }
-
-    /// <summary>
-    /// . . . + .
-    /// . j j j +
-    /// . j J j .
-    /// + j j j .
-    /// . + . . .
-    /// </summary>
-    public static readonly IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))> TerminalOffsets = new List<(Direction Direction, (int DeltaX, int DeltaY))>
-    {
-        (Direction.Up, (1, -2)),
-        (Direction.Right, (2, -1)),
-        (Direction.Down, (-1, 2)),
-        (Direction.Left, (-2, 1)),
-    };
-
-    private static Dictionary<Location, List<TerminalLocation>> GetCenterToTerminals(IReadOnlySet<Location> centers, SquareGrid grid)
-    {
-        var centerToTerminals = new Dictionary<Location, List<TerminalLocation>>();
-        foreach (var center in centers)
-        {
-            var candidateTerminals = new List<TerminalLocation>();
-            foreach ((var direction, var translation) in TerminalOffsets)
-            {
-                var location = center.Translate(translation);
-                var terminal = new TerminalLocation(center, location, direction);
-                if (grid.IsEmpty(location))
-                {
-                    candidateTerminals.Add(terminal);
-                }
-            }
-
-            centerToTerminals.Add(center, candidateTerminals);
-        }
-
-        return centerToTerminals;
     }
 }
