@@ -6,6 +6,15 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class ParseBlueprint
 {
+    public static List<string> ReadBlueprintFile(string fileName)
+    {
+        return File
+            .ReadAllLines(fileName)
+            .Select(x => x.Trim())
+            .Where(x => x.Length > 0 && !x.StartsWith("#"))
+            .ToList();
+    }
+
     public static BlueprintRoot Execute(string blueprintString)
     {
         if (blueprintString[0] != '0')

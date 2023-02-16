@@ -20,7 +20,7 @@ internal partial class Program
 
     private static void Measure()
     {
-        var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
+        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
         // var blueprintStrings = new[] { blueprintStringsAll[49] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();

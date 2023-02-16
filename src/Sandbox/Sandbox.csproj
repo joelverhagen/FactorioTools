@@ -13,13 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FactorioTools\FactorioTools.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Update="blueprints.txt">
+    <None Include="..\..\test\FactorioTools.Test\OilField\blueprints.txt" Link="blueprints.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FactorioTools\FactorioTools.csproj" />
   </ItemGroup>
 
 </Project>
