@@ -164,7 +164,6 @@ internal static class Helpers
                     }
                     else
                     {
-                        // TODO: perf idea, try caching DoesProviderFit
                         var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
                         if (!fits)
                         {
