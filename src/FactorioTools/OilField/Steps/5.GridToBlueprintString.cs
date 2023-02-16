@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
-using System.Runtime.CompilerServices;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 

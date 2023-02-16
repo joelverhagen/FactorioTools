@@ -81,31 +81,66 @@ internal static class Helpers
         return locationToTerminals;
     }
 
-    public static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
+    public static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered(
+        Context context,
+        List<ProviderRecipient> recipients,
+        bool removeUnused)
+    {
+        return GetCandidateToCovered<BeaconCenter>(
+            context,
+            recipients,
+            context.Options.BeaconWidth,
+            context.Options.BeaconHeight,
+            context.Options.BeaconSupplyWidth,
+            context.Options.BeaconSupplyHeight,
+            removeUnused,
+            includePumpjacks: true,
+            includeBeacons: false);
+    }
+
+    public static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered(
+        Context context,
+        List<ProviderRecipient> recipients,
+        bool removeUnused)
+    {
+        return GetCandidateToCovered<ElectricPoleCenter>(
+            context,
+            recipients,
+            context.Options.ElectricPoleWidth,
+            context.Options.ElectricPoleHeight,
+            context.Options.ElectricPoleSupplyWidth,
+            context.Options.ElectricPoleSupplyHeight,
+            removeUnused,
+            includePumpjacks: true,
+            includeBeacons: true);
+    }
+
+    private static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
         Context context,
         List<ProviderRecipient> recipients,
         int providerWidth,
         int providerHeight,
         int supplyWidth,
-        int supplyHeight)
+        int supplyHeight,
+        bool removeUnused,
+        bool includePumpjacks,
+        bool includeBeacons)
         where TProvider : GridEntity
     {
         var candidateToCovered = new Dictionary<Location, BitArray>();
         var coveredEntities = new BitArray(recipients.Count);
-        var providers = new Dictionary<Location, TProvider>();
 
-        /*
-        providerWidth = 1;
-        providerHeight = 1;
-        supplyWidth = 7;
-        supplyHeight = 7;
-        */
+        var providers = context
+            .Grid
+            .EntityToLocation
+            .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
+            .Where(p => p.Entity is not null)
+            .ToDictionary(p => p.Location, p => p.Entity!);
+        var unusedProviders = new HashSet<Location>(providers.Keys);
 
         for (int i = 0; i < recipients.Count; i++)
         {
             var entity = recipients[i];
-
-            // entity = new PoweredEntity(new Location(3, 3), 4, 4);
 
             var minX = Math.Max((providerWidth - 1) / 2, entity.Center.X - ((entity.Width - 1) / 2) - (supplyWidth / 2));
             var minY = Math.Max((providerHeight - 1) / 2, entity.Center.Y - ((entity.Height - 1) / 2) - (supplyHeight / 2));
@@ -119,20 +154,17 @@ internal static class Helpers
                 for (var y = minY; y <= maxY; y++)
                 {
                     var candidate = new Location(x, y);
-                    var existing = context.Grid[candidate];
-                    if (existing is not null)
+                    if (context.Grid[candidate] is not null)
                     {
-                        if (existing is TProvider provider)
+                        if (providers.TryGetValue(candidate, out var existing))
                         {
+                            unusedProviders.Remove(candidate);
                             coveredEntities[i] = true;
-                            if (!providers.ContainsKey(candidate))
-                            {
-                                providers.Add(candidate, provider);
-                            }
                         }
                     }
                     else
                     {
+                        // TODO: perf idea, try caching DoesProviderFit
                         var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
                         if (!fits)
                         {
@@ -154,13 +186,101 @@ internal static class Helpers
             }
         }
 
-        if (context.Options.ValidateSolution)
+        if (removeUnused && unusedProviders.Count > 0)
         {
-            var pairs = context.Grid.EntityToLocation.Where(p => p.Key is TProvider).ToList();
-            if (!pairs.Select(p => p.Key).ToHashSet().SetEquals(providers.Values)
-                || !pairs.Select(p => p.Value).ToHashSet().SetEquals(providers.Keys))
+#if USE_SHARED_INSTANCES
+            var coveredCenters = context.SharedInstances.LocationSetA;
+#else
+            var coveredCenters = new HashSet<Location>();
+#endif
+
+            try
             {
-                throw new InvalidOperationException("The providers found matching recipient entities do not match all providers on the grid.");
+                foreach (var center in unusedProviders)
+                {
+                    var entityMinX = center.X - ((providerWidth - 1) / 2);
+                    var entityMinY = center.Y - ((providerHeight - 1) / 2);
+                    var entityMaxX = center.X + (providerWidth / 2);
+                    var entityMaxY = center.Y + (providerHeight / 2);
+
+                    // Expand the loop bounds beyond the entity bounds so we can removed candidates that are not longer valid with
+                    // the newly added provider, i.e. they would overlap with what was just added.
+                    var minX = Math.Max((providerWidth - 1) / 2, entityMinX - (providerWidth / 2));
+                    var minY = Math.Max((providerHeight - 1) / 2, entityMinY - (providerHeight / 2));
+                    var maxX = Math.Min(context.Grid.Width - (providerWidth / 2) - 1, entityMaxX + ((providerWidth - 1) / 2));
+                    var maxY = Math.Min(context.Grid.Height - (providerHeight / 2) - 1, entityMaxY + ((providerHeight - 1) / 2));
+
+                    for (var x = minX; x <= maxX; x++)
+                    {
+                        for (var y = minY; y <= maxY; y++)
+                        {
+                            var candidate = new Location(x, y);
+
+                            if (x >= entityMinX && x <= entityMaxX && y >= entityMinY && y <= entityMaxY)
+                            {
+                                context.Grid.RemoveEntity(candidate);
+                            }
+                            else
+                            {
+                                AddCoveredCenters(
+                                    coveredCenters,
+                                    context.Grid,
+                                    candidate,
+                                    providerWidth,
+                                    providerHeight,
+                                    supplyWidth,
+                                    supplyHeight,
+                                    includePumpjacks,
+                                    includeBeacons);
+
+                                if (!candidateToCovered.TryGetValue(candidate, out var covered))
+                                {
+                                    covered = new BitArray(recipients.Count);
+                                    candidateToCovered.Add(candidate, covered);
+                                }
+
+                                for (var i = 0; i < recipients.Count; i++)
+                                {
+                                    if (coveredCenters.Contains(recipients[i].Center))
+                                    {
+                                        covered[i] = true;
+                                    }
+                                }
+
+                                coveredCenters.Clear();
+                            }
+                        }
+                    }
+
+                    providers.Remove(center);
+                }
+            }
+            finally
+            {
+#if USE_SHARED_INSTANCES
+                coveredCenters.Clear();
+#endif
+            }
+        }
+
+        if (providers.Count > 0 || unusedProviders.Count > 0)
+        {
+            // Remove candidates that only cover recipients that are already covered.
+            var toRemove = new List<Location>();
+            foreach ((var candidate, var covered) in candidateToCovered)
+            {
+                var subset = new BitArray(covered);
+                subset.Not();
+                subset.Or(coveredEntities);
+                if (subset.All(true))
+                {
+                    toRemove.Add(candidate);
+                }
+            }
+
+            for (var i = 0; i < toRemove.Count; i++)
+            {
+                candidateToCovered.Remove(toRemove[i]);
             }
         }
 
@@ -198,48 +318,70 @@ internal static class Helpers
     {
         var poleCenterToCoveredCenters = new Dictionary<Location, HashSet<Location>>();
 
-        const int minPoweredEntityWidth = 3;
-        const int minPoweredEntityHeight = 3;
-
         foreach (var center in providerCenters)
         {
             var coveredCenters = new HashSet<Location>();
-
-            var minX = Math.Max(minPoweredEntityWidth - 1, center.X - (supplyWidth / 2) + ((providerWidth - 1) % 2));
-            var minY = Math.Max(minPoweredEntityHeight - 1, center.Y - (supplyHeight / 2) + ((providerHeight - 1) % 2));
-            var maxX = Math.Min(grid.Width - minPoweredEntityWidth + 1, center.X + (supplyWidth / 2));
-            var maxY = Math.Min(grid.Height - minPoweredEntityHeight + 1, center.Y + (supplyHeight / 2));
-
-            for (var x = minX; x <= maxX; x++)
-            {
-                for (var y = minY; y <= maxY; y++)
-                {
-                    var location = new Location(x, y);
-
-                    var entity = grid[location];
-                    if (includePumpjacks && entity is PumpjackCenter)
-                    {
-                        coveredCenters.Add(location);
-                    }
-                    else if (includePumpjacks && entity is PumpjackSide pumpjackSide)
-                    {
-                        coveredCenters.Add(grid.EntityToLocation[pumpjackSide.Center]);
-                    }
-                    else if (includeBeacons && entity is BeaconCenter)
-                    {
-                        coveredCenters.Add(location);
-                    }
-                    else if (includeBeacons && entity is BeaconSide beaconSide)
-                    {
-                        coveredCenters.Add(grid.EntityToLocation[beaconSide.Center]);
-                    }
-                }
-            }
+            AddCoveredCenters(
+                coveredCenters,
+                grid,
+                center,
+                providerWidth,
+                providerHeight,
+                supplyWidth,
+                supplyHeight,
+                includePumpjacks,
+                includeBeacons);
 
             poleCenterToCoveredCenters.Add(center, coveredCenters);
         }
 
         return poleCenterToCoveredCenters;
+    }
+
+    private static void AddCoveredCenters(
+        HashSet<Location> coveredCenters,
+        SquareGrid grid,
+        Location center,
+        int providerWidth,
+        int providerHeight,
+        int supplyWidth,
+        int supplyHeight,
+        bool includePumpjacks,
+        bool includeBeacons)
+    {
+        const int minPoweredEntityWidth = 3;
+        const int minPoweredEntityHeight = 3;
+
+        var minX = Math.Max(minPoweredEntityWidth - 1, center.X - (supplyWidth / 2) + ((providerWidth - 1) % 2));
+        var minY = Math.Max(minPoweredEntityHeight - 1, center.Y - (supplyHeight / 2) + ((providerHeight - 1) % 2));
+        var maxX = Math.Min(grid.Width - minPoweredEntityWidth + 1, center.X + (supplyWidth / 2));
+        var maxY = Math.Min(grid.Height - minPoweredEntityHeight + 1, center.Y + (supplyHeight / 2));
+
+        for (var x = minX; x <= maxX; x++)
+        {
+            for (var y = minY; y <= maxY; y++)
+            {
+                var location = new Location(x, y);
+
+                var entity = grid[location];
+                if (includePumpjacks && entity is PumpjackCenter)
+                {
+                    coveredCenters.Add(location);
+                }
+                else if (includePumpjacks && entity is PumpjackSide pumpjackSide)
+                {
+                    coveredCenters.Add(grid.EntityToLocation[pumpjackSide.Center]);
+                }
+                else if (includeBeacons && entity is BeaconCenter)
+                {
+                    coveredCenters.Add(location);
+                }
+                else if (includeBeacons && entity is BeaconSide beaconSide)
+                {
+                    coveredCenters.Add(grid.EntityToLocation[beaconSide.Center]);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -297,7 +439,7 @@ internal static class Helpers
             providerHeight,
             candidateToCovered);
 
-        if (coveredEntities.CountTrue() == recipients.Count)
+        if (coveredEntities.All(true))
         {
             return;
         }
@@ -517,6 +659,32 @@ internal static class Helpers
         }
 
         return count;
+    }
+
+    public static bool All(this BitArray array, bool val)
+    {
+        for (var i = 0; i < array.Length; i++)
+        {
+            if (array[i] != val)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static bool Any(this BitArray array, bool val)
+    {
+        for (var i = 0; i < array.Length; i++)
+        {
+            if (array[i] == val)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static bool AreLocationsCollinear(List<Location> locations)

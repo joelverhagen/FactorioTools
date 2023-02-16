@@ -1,11 +1,11 @@
-using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 public class HelpersTest
 {
-    public class GetProviderCenterToCoveredCentersTest
+    public class GetProviderCenterToCoveredCentersTest : Facts
     {
         [Fact]
         public void SmallElectricPole()
@@ -23,7 +23,7 @@ public class HelpersTest
             AddBeacon(context, new Location(7, 13));
             AddBeacon(context, new Location(9, 8));
 
-            var providerCenterToCoveredCenters = Helpers.GetProviderCenterToCoveredCenters(
+            var providerCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
                 context.Grid,
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
@@ -60,7 +60,7 @@ public class HelpersTest
             AddBeacon(context, new Location(9, 12));
             AddBeacon(context, new Location(9, 7));
 
-            var providerCenterToCoveredCenters = Helpers.GetProviderCenterToCoveredCenters(
+            var providerCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
                 context.Grid,
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
@@ -108,7 +108,7 @@ public class HelpersTest
             AddBeacon(context, new Location(6, 17));
             AddBeacon(context, new Location(9, 9));
 
-            var providerCenterToCoveredCenters = Helpers.GetProviderCenterToCoveredCenters(
+            var providerCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
                 context.Grid,
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
@@ -155,7 +155,7 @@ public class HelpersTest
             AddBeacon(context, new Location(13, 12));
             AddBeacon(context, new Location(14, 9));
 
-            var providerCenterToCoveredCenters = Helpers.GetProviderCenterToCoveredCenters(
+            var providerCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
                 context.Grid,
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
@@ -198,7 +198,7 @@ public class HelpersTest
             AddPumpjack(context, new Location(6, 8));
             AddPumpjack(context, new Location(9, 7));
 
-            var providerCenterToCoveredCenters = Helpers.GetProviderCenterToCoveredCenters(
+            var providerCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
                 context.Grid,
                 context.Options.BeaconWidth,
                 context.Options.BeaconHeight,
@@ -226,12 +226,121 @@ public class HelpersTest
             Assert.Contains(new Location(6, 8), coveredCenters);
             Assert.Contains(new Location(9, 7), coveredCenters);
         }
+    }
 
-        private static ElectricPoleCenter AddElectricPole(Context context, Location center)
+    public class GetElectricPoleCandidateToCovered : Facts
+    {
+        [Fact]
+        public void SmallElectricPole_RemoveUnused()
+        {
+            var context = InitializeContext.GetEmpty(Options.ForSmallElectricPole, width: 20, height: 7);
+            AddElectricPole(context, new Location(1, 3));
+            AddElectricPole(context, new Location(5, 3));
+            AddElectricPole(context, new Location(8, 3));
+            var pumpjacks = new[] { new Location(3, 2), new Location(13, 2) }
+                .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
+                .ToList();
+            foreach (var pumpjack in pumpjacks)
+            {
+                AddPumpjack(context, pumpjack.Center);
+            }
+
+            (var candidateToCovered, var coveredEntities, var providers) = GetElectricPoleCandidateToCovered(
+                context,
+                pumpjacks,
+                removeUnused: true);
+
+            Assert.IsType<ElectricPoleCenter>(context.Grid[new Location(1, 3)]);
+            Assert.IsType<ElectricPoleCenter>(context.Grid[new Location(5, 3)]);
+            Assert.True(context.Grid.IsEmpty(new Location(8, 3)));
+
+            Assert.Equal(2, providers.Count);
+            Assert.Contains(new Location(1, 3), providers.Keys);
+            Assert.Contains(new Location(5, 3), providers.Keys);
+
+            Assert.Equal(2, coveredEntities.Count);
+            Assert.True(coveredEntities[0]);
+            Assert.False(coveredEntities[1]);
+
+            // columns to the left and right of the pumpjack
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(10, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 10
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(11, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 11
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(15, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 15
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(16, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 16
+
+            // columns broken up by the pumpjack itself
+            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(12, y))), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 12
+            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(13, y))), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 13
+            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(14, y))), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 14
+
+            Assert.Equal(33, candidateToCovered.Count);
+
+            Assert.All(candidateToCovered.Values, c => Assert.Equal(2, c.Count));
+            Assert.All(candidateToCovered.Values, c => Assert.False(c[0]));
+            Assert.All(candidateToCovered.Values, c => Assert.True(c[1]));
+        }
+
+        [Fact]
+        public void Substation_RemoveUnused()
+        {
+            var context = InitializeContext.GetEmpty(Options.ForSubstation, width: 16, height: 16);
+            AddElectricPole(context, new Location(10, 12));
+            AddElectricPole(context, new Location(12, 10));
+            AddElectricPole(context, new Location(12, 12));
+            var pumpjacks = new[] { new Location(2, 2),}
+                .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
+                .ToList();
+            foreach (var pumpjack in pumpjacks)
+            {
+                AddPumpjack(context, pumpjack.Center);
+            }
+
+            (var candidateToCovered, var coveredEntities, var providers) = GetElectricPoleCandidateToCovered(
+                context,
+                pumpjacks,
+                removeUnused: true);
+            
+            // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+
+            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.True(e is PumpjackSide || e is PumpjackCenter));
+            Assert.Empty(providers);
+
+            // These are positions that should become candidates after unused substations are removed.
+            Assert.Contains(new Location(9, 11), candidateToCovered.Keys);
+            Assert.Contains(new Location(10, 11), candidateToCovered.Keys);
+            Assert.Contains(new Location(11, 9), candidateToCovered.Keys);
+            Assert.Contains(new Location(11, 10), candidateToCovered.Keys);
+            Assert.Contains(new Location(11, 11), candidateToCovered.Keys);
+
+            Assert.Equal(128, candidateToCovered.Count);
+            Assert.All(candidateToCovered.Values, c => Assert.Single(c));
+            Assert.All(candidateToCovered.Values, c => Assert.True(c[0]));
+
+            // columns blocked at the top by the pumpjack itself
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(0, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 0
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(1, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 1
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(2, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 2
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(3, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 3
+
+            // columns not blocked by the pumpjack
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(4, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 4
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(5, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 5
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(6, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 6
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(7, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 7
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(8, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 8
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(9, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 9
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(10, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 10
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(11, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 11
+        }
+    }
+
+    public class Facts
+    {
+        internal static ElectricPoleCenter AddElectricPole(Context context, Location center)
         {
             var entity = new ElectricPoleCenter();
 
-            Helpers.AddProvider(
+            AddProvider(
                 context.Grid,
                 center,
                 entity,
@@ -242,11 +351,11 @@ public class HelpersTest
             return entity;
         }
 
-        private static BeaconCenter AddBeacon(Context context, Location center)
+        internal static BeaconCenter AddBeacon(Context context, Location center)
         {
             var entity = new BeaconCenter();
 
-            Helpers.AddProvider(
+            AddProvider(
                 context.Grid,
                 center,
                 entity,
@@ -257,16 +366,16 @@ public class HelpersTest
             return entity;
         }
 
-        private static PumpjackCenter AddPumpjack(Context context, Location center)
+        internal static PumpjackCenter AddPumpjack(Context context, Location center)
         {
             var entity = Helpers.AddPumpjack(context.Grid, center);
 
-            context.CenterToTerminals = Helpers.GetCenterToTerminals(context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct()));
-            context.LocationToTerminals = Helpers.GetLocationToTerminals(context.CenterToTerminals);
+            context.CenterToTerminals = GetCenterToTerminals(context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct()));
+            context.LocationToTerminals = GetLocationToTerminals(context.CenterToTerminals);
 
             foreach (var terminals in context.CenterToTerminals.Values.ToList())
             {
-                Helpers.EliminateOtherTerminals(context, terminals.First());
+                EliminateOtherTerminals(context, terminals.First());
             }
 
             return entity;

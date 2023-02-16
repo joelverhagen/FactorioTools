@@ -51,7 +51,7 @@ internal static class Planner
             {
                 if (addElectricPolesFirst)
                 {
-                    Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+                    // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
                     throw new InvalidOperationException("No valid placement for the electric poles could be found.");
                 }
                 else

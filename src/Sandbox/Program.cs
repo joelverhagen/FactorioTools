@@ -22,11 +22,12 @@ internal partial class Program
     {
         var blueprintStringsAll = File.ReadAllLines(DataPath).Select(x => x.Trim()).Where(x => x.Length > 0 && !x.StartsWith("#")).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[34] };
+        // var blueprintStrings = new[] { blueprintStringsAll[49] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
         var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
+        // var optionsAll = new[] { Options.ForSmallElectricPole };
         // var optionsAll = new[] { Options.ForBigElectricPole };
         var outputs = new List<string>();
 
@@ -47,8 +48,8 @@ internal partial class Program
                 // options.ElectricPoleHeight = 3;
                 // options.ElectricPoleSupplyWidth = 9;
                 // options.ElectricPoleSupplyHeight = 9;
-                options.AddBeacons = false;
-                options.UseUndergroundPipes = false;
+                options.AddBeacons = true;
+                options.UseUndergroundPipes = true;
                 options.ValidateSolution = true;
 
                 var context = Planner.Execute(options, inputBlueprint);

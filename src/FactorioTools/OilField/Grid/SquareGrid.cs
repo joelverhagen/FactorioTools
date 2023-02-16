@@ -63,6 +63,7 @@ internal abstract class SquareGrid
         {
             _grid[id.X, id.Y] = null;
             _entityToLocation.Remove(entity);
+            entity.Unlink();
         }
     }
 

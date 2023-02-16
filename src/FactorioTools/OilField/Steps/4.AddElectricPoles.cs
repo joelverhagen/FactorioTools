@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Linq;
 using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
@@ -154,7 +153,7 @@ internal static class AddElectricPoles
             if (ArePolesConnectedWithout(electricPoles, centerEntity))
             {
                 electricPoles.Remove(center);
-                RemoveElectricPole(context, center, centerEntity);
+                RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
 
                 foreach (var coveredCenter in poleCenterToCoveredCenters[center])
                 {
@@ -171,12 +170,6 @@ internal static class AddElectricPoles
 
             removeCandidates.Remove(center);
         }
-    }
-
-    private static void RemoveElectricPole(Context context, Location center, ElectricPoleCenter centerEntity)
-    {
-        centerEntity.ClearNeighbors();
-        RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
     }
 
     private static (Dictionary<Location, HashSet<Location>> PoleCenterToCoveredCenters, Dictionary<Location, HashSet<Location>> CoveredCenterToPoleCenters) GetPoleCoverage(
@@ -277,11 +270,15 @@ internal static class AddElectricPoles
 
         while (true)
         {
+            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+
             (var poweredEntities, var hasBeacons) = GetPoweredEntities(context);
             (var electricPoles, var electricPoleList, var coveredEntities) = AddElectricPolesAroundEntities(
                 context,
                 poweredEntities,
                 entitiesToPowerFirst);
+
+            // Visualizer.Show(context.Grid, poweredEntities.Where((e, i) => !coveredEntities[i]).Select(e => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(e.Center.X, e.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
             if (retryStrategy == RetryStrategy.None || electricPoles is not null)
             {
@@ -295,7 +292,7 @@ internal static class AddElectricPoles
             for (var i = 0; i < electricPoleList.Count; i++)
             {
                 var center = electricPoleList[i];
-                RemoveElectricPole(context, center, (ElectricPoleCenter)context.Grid[center]!);
+                RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
             }
 
             if (retryStrategy == RetryStrategy.PreferUncoveredEntities)
@@ -376,13 +373,10 @@ internal static class AddElectricPoles
         List<ProviderRecipient> poweredEntities,
         BitArray? entitiesToPowerFirst)
     {
-        (var candidateToCovered, var coveredEntities, var electricPoles) = GetCandidateToCovered<ElectricPoleCenter>(
+        (var candidateToCovered, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
             context,
             poweredEntities,
-            context.Options.ElectricPoleWidth,
-            context.Options.ElectricPoleHeight,
-            context.Options.ElectricPoleSupplyWidth,
-            context.Options.ElectricPoleSupplyHeight);
+            removeUnused: true);
 
         var electricPoleList = electricPoles.Keys.ToList();
 
@@ -394,7 +388,7 @@ internal static class AddElectricPoles
 
         var toRemove = new List<Location>();
 
-        while (coveredEntities.CountTrue() < poweredEntities.Count)
+        while (coveredEntities.Any(false))
         {
             if (candidateToCovered.Count == 0)
             {
@@ -441,6 +435,7 @@ internal static class AddElectricPoles
 
                 if (isSubsetOf)
                 {
+                    // Visualizer.Show(context.Grid, new[] { candidate }.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
                     throw new InvalidOperationException($"Candidate {candidate} should have been eliminated.");
                 }
             }

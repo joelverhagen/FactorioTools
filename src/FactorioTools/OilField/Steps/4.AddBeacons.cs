@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Knapcode.FactorioTools.OilField.Grid;
+﻿using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -8,15 +7,19 @@ internal static class AddBeacons
 {
     public static void Execute(Context context)
     {
-        var poweredEntities = context.CenterToTerminals.Keys.Select(c => new ProviderRecipient(c, Width: 3, Height: 3)).ToList();
+        var poweredEntities = context
+            .CenterToTerminals
+            .Keys
+            .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
+            .ToList();
 
-        (var candidateToCovered, var coveredEntities, var beacons) = GetCandidateToCovered<BeaconCenter>(
-            context,
-            poweredEntities,
-            context.Options.BeaconWidth,
-            context.Options.BeaconHeight,
-            context.Options.BeaconSupplyWidth,
-            context.Options.BeaconSupplyHeight);
+        // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
+        (var candidateToCovered, var coveredEntities, var beacons) = GetBeaconCandidateToCovered(context, poweredEntities, removeUnused: false);
+
+        if (context.Options.ValidateSolution && beacons.Count > 0)
+        {
+            throw new InvalidOperationException("There should not be any existing beacons.");
+        }
 
         var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
 
@@ -36,7 +39,7 @@ internal static class AddBeacons
                 .ThenByDescending(x => candidateToEntityDistance[x])
                 .First();
 
-             var centerEntity = new BeaconCenter();
+            var centerEntity = new BeaconCenter();
 
             AddProvider(
                 context.Grid,

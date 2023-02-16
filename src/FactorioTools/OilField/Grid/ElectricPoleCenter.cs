@@ -23,4 +23,9 @@ internal class ElectricPoleCenter : GridEntity
 
         _neighbors.Clear();
     }
+
+    public override void Unlink()
+    {
+        ClearNeighbors();
+    }
 }
