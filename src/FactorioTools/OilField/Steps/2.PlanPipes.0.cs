@@ -19,33 +19,26 @@ internal static partial class AddPipes
             EliminateStrandedTerminals(context);
         }
 
-        foreach (var strategy in Enum.GetValues<PlanPipesStrategy>())
+        foreach (var strategy in context.Options.PipeStrategies)
         {
-            /*
-            if (strategy != PlanPipesStrategy.ConnectedCenters_DelaunayMst)
-            {
-                continue;
-            }
-            */
-
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 
             switch (strategy)
             {
-                case PlanPipesStrategy.FBE:
+                case PipeStrategy.FBE:
                     {
                         var pipes = ExecuteWithFBE(context);
 
                         // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-                        var optimizedPipes = RotateOptimize.Execute(context, pipes);
+                        var optimizedPipes = context.Options.OptimizePipes ? RotateOptimize.Execute(context, pipes) : pipes;
 
                         // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
                         solutions.Add(new Solution
                         {
-                            Strategies = new HashSet<PlanPipesStrategy> { strategy },
+                            Strategies = new HashSet<PipeStrategy> { strategy },
                             CenterToConnectedCenters = null,
                             CenterToTerminals = context.CenterToTerminals,
                             LocationToTerminals = context.LocationToTerminals,
@@ -54,9 +47,9 @@ internal static partial class AddPipes
                     }
                     break;
 
-                case PlanPipesStrategy.ConnectedCenters_Delaunay:
-                case PlanPipesStrategy.ConnectedCenters_DelaunayMst:
-                case PlanPipesStrategy.ConnectedCenters_FLUTE:
+                case PipeStrategy.ConnectedCenters_Delaunay:
+                case PipeStrategy.ConnectedCenters_DelaunayMst:
+                case PipeStrategy.ConnectedCenters_FLUTE:
                     {
                         Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
                         if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
@@ -69,13 +62,13 @@ internal static partial class AddPipes
 
                         // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-                        var optimizedPipes = RotateOptimize.Execute(context, pipes);
+                        var optimizedPipes = context.Options.OptimizePipes ? RotateOptimize.Execute(context, pipes) : pipes;
 
                         // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
                         solution = new Solution
                         {
-                            Strategies = new HashSet<PlanPipesStrategy> { strategy },
+                            Strategies = new HashSet<PipeStrategy> { strategy },
                             CenterToConnectedCenters = centerToConnectedCenters,
                             CenterToTerminals = context.CenterToTerminals,
                             LocationToTerminals = context.LocationToTerminals,
@@ -118,6 +111,11 @@ internal static partial class AddPipes
                     throw new InvalidOperationException("The pipes are not fully connected.");
                 }
             }
+        }
+
+        if (solutions.Count == 0)
+        {
+            throw new InvalidOperationException("At least one pipe strategy must be used.");
         }
 
         var bestSolution = solutions.MinBy(s => s.Pipes.Count)!;
@@ -175,17 +173,9 @@ internal static partial class AddPipes
         }
     }
 
-    private enum PlanPipesStrategy
-    {
-        FBE,
-        ConnectedCenters_Delaunay,
-        ConnectedCenters_DelaunayMst,
-        ConnectedCenters_FLUTE,
-    }
-
     private class Solution
     {
-        public required HashSet<PlanPipesStrategy> Strategies { get; set; }
+        public required HashSet<PipeStrategy> Strategies { get; set; }
         public required Dictionary<Location, HashSet<Location>>? CenterToConnectedCenters { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }

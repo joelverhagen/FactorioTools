@@ -3,9 +3,9 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class AddBeacons
+internal static partial class AddBeacons
 {
-    public static void Execute(Context context)
+    private static Dictionary<Location, BeaconCenter> AddBeacons_Snug(Context context)
     {
         var poweredEntities = context
             .CenterToTerminals
@@ -33,11 +33,11 @@ internal static class AddBeacons
         {
             var candidate = candidateToCovered
                 .Keys
-                .MinBy(x => (
-                    beacons.Count > 0 ? beacons.Keys.Min(c => c.GetManhattanDistance(x)) : 0,
-                    -candidateToCovered[x].CountTrue(),
-                    -candidateToEntityDistance[x],
-                    candidateToMiddleDistance[x]
+                .MinBy(c => (
+                    beacons.Count > 0 ? beacons.Keys.Min(x => x.GetManhattanDistance(c)) : 0,
+                    -candidateToCovered[c].CountTrue(),
+                    -candidateToEntityDistance[c],
+                    candidateToMiddleDistance[c]
                 ))!;
 
             var centerEntity = new BeaconCenter();
@@ -57,5 +57,7 @@ internal static class AddBeacons
         }
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+
+        return beacons;
     }
 }

@@ -86,6 +86,9 @@ class Options
 
     public bool UseUndergroundPipes { get; set; } = true;
     public bool AddBeacons { get; set; } = true;
+    public bool OptimizePipes { get; set; } = true;
+    public HashSet<PipeStrategy> PipeStrategies { get; set; } = Enum.GetValues<PipeStrategy>().ToHashSet();
+    public HashSet<BeaconStrategy> BeaconStrategies { get; set; } = Enum.GetValues<BeaconStrategy>().ToHashSet();
 
     public string ElectricPoleEntityName { get; set; } = EntityNames.Vanilla.MediumElectricPole;
     public int ElectricPoleSupplyWidth { get; set; } = 7;
@@ -104,11 +107,11 @@ class Options
 
     public Dictionary<string, int> PumpjackModules { get; set; } = new Dictionary<string, int>
     {
-        { ItemNames.Vanilla.EffectivityModule3, 2 },
+        { ItemNames.Vanilla.ProductivityModule3, 2 },
     };
 
     public Dictionary<string, int> BeaconModules { get; set; } = new Dictionary<string, int>
     {
-        { ItemNames.Vanilla.EffectivityModule3, 2 },
+        { ItemNames.Vanilla.SpeedModule3, 2 },
     };
 }

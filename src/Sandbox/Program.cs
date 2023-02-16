@@ -22,7 +22,7 @@ internal partial class Program
     {
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[49] };
+        // var blueprintStrings = new[] { blueprintStringsAll[1] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 

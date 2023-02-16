@@ -9,7 +9,7 @@ internal static partial class AddPipes
 {
     private static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Translations = new[] { (1, 0), (0, 1) };
 
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, PlanPipesStrategy strategy)
+    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
     {
         var centers = context
             .CenterToTerminals
@@ -42,9 +42,9 @@ internal static partial class AddPipes
 
         return strategy switch
         {
-            PlanPipesStrategy.ConnectedCenters_Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
-            PlanPipesStrategy.ConnectedCenters_DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
-            PlanPipesStrategy.ConnectedCenters_FLUTE => GetConnectedPumpjacksWithFLUTE(context),
+            PipeStrategy.ConnectedCenters_Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
+            PipeStrategy.ConnectedCenters_DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
+            PipeStrategy.ConnectedCenters_FLUTE => GetConnectedPumpjacksWithFLUTE(context),
             _ => throw new NotImplementedException(),
         };
     }
