@@ -26,8 +26,9 @@ internal partial class Program
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
-        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
+        // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
         // var optionsAll = new[] { Options.ForSmallElectricPole };
+        var optionsAll = new[] { Options.ForMediumElectricPole };
         // var optionsAll = new[] { Options.ForBigElectricPole };
         var outputs = new List<string>();
 
@@ -50,7 +51,6 @@ internal partial class Program
                 // options.ElectricPoleSupplyHeight = 9;
                 options.AddBeacons = true;
                 options.UseUndergroundPipes = true;
-                options.ValidateSolution = true;
 
                 var context = Planner.Execute(options, inputBlueprint);
 
