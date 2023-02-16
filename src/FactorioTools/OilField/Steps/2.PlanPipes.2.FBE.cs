@@ -76,7 +76,7 @@ internal static partial class AddPipes
             var line = lines
                 .MinBy(ent => (
                     !LineContainsAnAddedPumpjack(addedPumpjacks, ent),
-                    int.MaxValue - (ent.Endpoints.A.GetManhattanDistance(middle) + ent.Endpoints.B.GetManhattanDistance(middle)),
+                    -(ent.Endpoints.A.GetManhattanDistance(middle) + ent.Endpoints.B.GetManhattanDistance(middle)),
                     ent.Connections.Count,
                     ent.AverageDistance
                 ))!;

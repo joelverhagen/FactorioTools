@@ -21,6 +21,10 @@ internal static class AddBeacons
             throw new InvalidOperationException("There should not be any existing beacons.");
         }
 
+        var candidateToMiddleDistance = candidateToCovered.ToDictionary(
+            x => x.Key,
+            x => x.Key.GetEuclideanDistance(context.Grid.Middle));
+
         var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
 
         // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
@@ -29,15 +33,12 @@ internal static class AddBeacons
         {
             var candidate = candidateToCovered
                 .Keys
-                /*
-                .OrderByDescending(x => candidateToCovered[x].CountTrue())
-                .ThenBy(x => beacons.Count > 0 ? beacons.Keys.Min(c => c.GetEuclideanDistance(x)) : 0)
-                .ThenByDescending(x => candidateToEntityDistance[x])
-                */
-                .OrderBy(x => beacons.Count > 0 ? beacons.Keys.Min(c => c.GetManhattanDistance(x)) : 0)
-                .ThenByDescending(x => candidateToCovered[x].CountTrue())
-                .ThenByDescending(x => candidateToEntityDistance[x])
-                .First();
+                .MinBy(x => (
+                    beacons.Count > 0 ? beacons.Keys.Min(c => c.GetManhattanDistance(x)) : 0,
+                    -candidateToCovered[x].CountTrue(),
+                    -candidateToEntityDistance[x],
+                    candidateToMiddleDistance[x]
+                ))!;
 
             var centerEntity = new BeaconCenter();
 

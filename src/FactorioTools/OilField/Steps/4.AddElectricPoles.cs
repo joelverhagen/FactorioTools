@@ -413,8 +413,8 @@ internal static class AddElectricPoles
                     return (Location: pair.Key, Covered: pair.Value, OthersConnected: othersConnected);
                 })
                 .MinBy(x => (
-                    int.MaxValue - (entitiesToPowerFirst is null ? 0 : new BitArray(entitiesToPowerFirst).And(x.Covered).CountTrue()),
-                    int.MaxValue - x.Covered.CountTrue(),
+                    -(entitiesToPowerFirst is null ? 0 : new BitArray(entitiesToPowerFirst).And(x.Covered).CountTrue()),
+                    -x.Covered.CountTrue(),
                     x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue,
                     x.OthersConnected > 0 ? 0 : GetDistanceToClosestElectricPole(electricPoleList, x.Location),
                     candidateToEntityDistance[x.Location],

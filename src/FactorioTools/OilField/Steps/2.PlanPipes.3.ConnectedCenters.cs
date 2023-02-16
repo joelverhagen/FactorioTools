@@ -349,8 +349,8 @@ internal static partial class AddPipes
             })
             .MinBy(t => (
                 t.BestTerminal.Path.Count,
-                int.MaxValue - centerToConnectedCenters[t.Terminal.Center].Count,
-                int.MaxValue - centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count,
+                -centerToConnectedCenters[t.Terminal.Center].Count,
+                -centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count,
                 t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle),
                 t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle)
             ))!;
