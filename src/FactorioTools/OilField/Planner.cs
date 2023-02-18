@@ -29,15 +29,9 @@ internal static class Planner
             }
         }
 
-        var pipes = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
+        AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-
-        if (context.Options.UseUndergroundPipes)
-        {
-            // Substitute long stretches of pipes for underground pipes
-            UseUndergroundPipes.Execute(context, pipes);
-        }
 
         if (context.Options.AddBeacons)
         {

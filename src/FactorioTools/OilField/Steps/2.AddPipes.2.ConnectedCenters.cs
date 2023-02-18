@@ -58,7 +58,7 @@ internal static partial class AddPipes
         var groups = selectedTrunks
             .Select(trunk =>
             {
-                return new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, trunk);
+                return new PumpjackGroup(centerToConnectedCenters, allIncludedCenters, trunk);
             })
             .ToList();
 
@@ -359,7 +359,6 @@ internal static partial class AddPipes
         EliminateOtherTerminals(context, bestConnection.BestTerminal.Terminal);
 
         var group = new PumpjackGroup(
-            context,
             centerToConnectedCenters,
             allIncludedCenters,
             new[] { bestConnection.Terminal.Center, bestConnection.BestTerminal.Terminal.Center },
@@ -514,18 +513,16 @@ internal static partial class AddPipes
 
     private class PumpjackGroup
     {
-        private readonly Context _context;
         private readonly Dictionary<Location, HashSet<Location>> _centerToConnectedCenters;
         private readonly HashSet<Location> _allIncludedCenters;
 
-        public PumpjackGroup(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters, Trunk trunk)
-            : this(context, centerToConnectedCenters, allIncludedCenters, trunk.Centers, MakeStraightLine(trunk.Start, trunk.End))
+        public PumpjackGroup(Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters, Trunk trunk)
+            : this(centerToConnectedCenters, allIncludedCenters, trunk.Centers, MakeStraightLine(trunk.Start, trunk.End))
         {
         }
 
-        public PumpjackGroup(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters, IEnumerable<Location> includedCenters, IEnumerable<Location> pipes)
+        public PumpjackGroup(Dictionary<Location, HashSet<Location>> centerToConnectedCenters, HashSet<Location> allIncludedCenters, IEnumerable<Location> includedCenters, IEnumerable<Location> pipes)
         {
-            _context = context;
             _centerToConnectedCenters = centerToConnectedCenters;
             _allIncludedCenters = allIncludedCenters;
 

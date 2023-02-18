@@ -13,7 +13,7 @@ internal static class RotateOptimize
     public static int QueuePoolCount;
 #endif
 
-    internal static HashSet<Location> Execute(Context parentContext, HashSet<Location> pipes)
+    internal static void Execute(Context parentContext, HashSet<Location> pipes)
     {
         var context = new ChildContext(parentContext, pipes);
 
@@ -57,8 +57,6 @@ internal static class RotateOptimize
 
             modified = changedTerminal || shortenedPath;
         }
-
-        return context.Pipes;
     }
 
     private static bool UseBestTerminal(ChildContext context, TerminalLocation originalTerminal)

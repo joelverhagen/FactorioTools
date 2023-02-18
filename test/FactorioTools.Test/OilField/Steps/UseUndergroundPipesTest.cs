@@ -17,7 +17,7 @@ public class UseUndergroundPipesTest
             var context = GetContext(pipes);
             var originalPipes = new HashSet<Location>(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.All(originalPipes, p => Assert.IsType<Pipe>(context.Grid[p]));
             Assert.True(originalPipes.SetEquals(pipes));
@@ -39,7 +39,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2, context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsType<UndergroundPipe>(e));
@@ -60,7 +60,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2 + (length - 11), context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -91,7 +91,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(4, context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -118,7 +118,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(4 + (length - 22), context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -148,7 +148,7 @@ public class UseUndergroundPipesTest
             var context = GetContext(pipes);
             var originalPipes = new HashSet<Location>(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.All(originalPipes, p => Assert.IsType<Pipe>(context.Grid[p]));
             Assert.True(originalPipes.SetEquals(pipes));
@@ -170,7 +170,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2, context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsType<UndergroundPipe>(e));
@@ -191,7 +191,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2 + (length - 11), context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -222,7 +222,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(4, context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -248,7 +248,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(4 + (length - 22), context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -276,7 +276,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 6, maxX: 6, minY: 1, maxY: 11);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(9, context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -304,7 +304,7 @@ public class UseUndergroundPipesTest
             AddPipes(pipes, minX: 11, maxX: 11, minY: 1, maxY: 11);
             var context = GetContext(pipes);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(7, context.Grid.EntityToLocation.Count);
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
@@ -329,7 +329,7 @@ public class UseUndergroundPipesTest
             var context = GetContext(pipes);
             AddPumpjack(context, new Location(7, 2), Direction.Down);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(5, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
 
@@ -351,7 +351,7 @@ public class UseUndergroundPipesTest
             var context = GetContext(pipes);
             AddPumpjack(context, new Location(7, 2), Direction.Left);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(6, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
 
@@ -373,7 +373,7 @@ public class UseUndergroundPipesTest
             var context = GetContext(pipes, width: 10);
             AddPumpjack(context, new Location(7, 2), Direction.Left);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
 
@@ -389,7 +389,7 @@ public class UseUndergroundPipesTest
             var context = GetContext(pipes, height: 5);
             AddPumpjack(context, new Location(2, 2), Direction.Right);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
 
@@ -406,12 +406,22 @@ public class UseUndergroundPipesTest
             AddPumpjack(context, new Location(2, 4), Direction.Right);
             AddPumpjack(context, new Location(10, 2), Direction.Left);
 
-            UseUndergroundPipes.Execute(context, pipes);
+            Run(context, pipes);
 
             Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(4, 3)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(8, 3)]).Direction);
+        }
+
+        private static void Run(Context context, HashSet<Location> pipes)
+        {
+            var undergroundPipes = UseUndergroundPipes.Execute(context, pipes);
+
+            Assert.Equal(0, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.All(undergroundPipes.Keys, p => Assert.Contains(p, pipes));
+
+            AddPipeEntities.Execute(context, pipes, undergroundPipes);
         }
 
         private static void AddPipes(HashSet<Location> pipes, int minX, int maxX, int minY, int maxY)
@@ -437,11 +447,6 @@ public class UseUndergroundPipesTest
             height = height ?? (pipes.Max(l => l.Y) + 2);
 
             var context = InitializeContext.GetEmpty(Options.ForMediumElectricPole, width.Value, height.Value);
-
-            foreach (var pipe in pipes)
-            {
-                context.Grid.AddEntity(pipe, new Pipe());
-            }
 
             return context;
         }

@@ -3,6 +3,12 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
+/// <summary>
+/// This "FBE" implementation is copied from Teoxoy's Factorio Blueprint Editor (FBE).
+/// Source:
+/// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/beacon.ts
+/// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts
+/// </summary>
 internal static partial class AddBeacons
 {
     private static HashSet<Location> AddBeacons_FBE(Context context)

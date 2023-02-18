@@ -9,7 +9,8 @@ internal class UndergroundPipe : Pipe
         Direction = direction;
     }
 
-    public Direction Direction { get; set; }
+    public Direction Direction { get; }
+
     public override string Label => Direction switch
     {
         Direction.Up => "^",

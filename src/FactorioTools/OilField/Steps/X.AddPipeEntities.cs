@@ -1,26 +1,60 @@
-﻿using Knapcode.FactorioTools.OilField.Grid;
+﻿using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static class AddPipeEntities
 {
-    public static void Execute(SquareGrid grid, IReadOnlyDictionary<Location, List<TerminalLocation>> centerToTerminals, HashSet<Location> pipes)
+    public static void Execute(Context context, HashSet<Location> pipes, Dictionary<Location, Direction>? undergroundPipes)
     {
-        var addedTerminals = new HashSet<Location>();
-        foreach (var terminals in centerToTerminals.Values)
+#if USE_SHARED_INSTANCES
+        var addedPipes = context.SharedInstances.LocationSetA;
+#else
+        var addedPipes = new HashSet<Location>();
+#endif
+
+        try
         {
-            foreach (var terminal in terminals)
+
+            if (undergroundPipes is not null)
             {
-                if (addedTerminals.Add(terminal.Terminal))
+                foreach ((var location, var direction) in undergroundPipes)
                 {
-                    grid.AddEntity(terminal.Terminal, new Terminal());
+                    addedPipes.Add(location);
+                    context.Grid.AddEntity(location, new UndergroundPipe(direction));
                 }
             }
-        }
 
-        foreach (var pipe in pipes.Except(addedTerminals))
+            foreach (var terminals in context.CenterToTerminals.Values)
+            {
+                if (terminals.Count != 1)
+                {
+                    throw new InvalidOperationException("Every pumpjack should have a single terminal selected.");
+                }
+
+                for (int i = 0; i < terminals.Count; i++)
+                {
+                    if (addedPipes.Add(terminals[i].Terminal))
+                    {
+                        context.Grid.AddEntity(terminals[i].Terminal, new Terminal());
+                    }
+                }
+            }
+
+            foreach (var pipe in pipes)
+            {
+                if (addedPipes.Add(pipe))
+                {
+                    context.Grid.AddEntity(pipe, new Pipe());
+                }
+            }
+
+        }
+        finally
         {
-            grid.AddEntity(pipe, new Pipe());
+#if USE_SHARED_INSTANCES
+            addedPipes.Clear();
+#endif
         }
     }
 }

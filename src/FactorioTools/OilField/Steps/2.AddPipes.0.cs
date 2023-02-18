@@ -1,4 +1,5 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
+using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 using System.Diagnostics.CodeAnalysis;
 
@@ -6,13 +7,13 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static partial class AddPipes
 {
-    public static HashSet<Location> Execute(Context context, bool eliminateStrandedTerminals)
+    public static void Execute(Context context, bool eliminateStrandedTerminals)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        var solutions = new List<Solution>();
-        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>();
+        var pipesToSolution = new Dictionary<HashSet<Location>, Solution>(LocationSetComparer.Instance);
+        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>(ConnectedCentersComparer.Instance);
 
         if (eliminateStrandedTerminals)
         {
@@ -29,21 +30,7 @@ internal static partial class AddPipes
                 case PipeStrategy.FBE:
                     {
                         var pipes = ExecuteWithFBE(context);
-
-                        // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-                        var optimizedPipes = context.Options.OptimizePipes ? RotateOptimize.Execute(context, pipes) : pipes;
-
-                        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-                        solutions.Add(new Solution
-                        {
-                            Strategies = new HashSet<PipeStrategy> { strategy },
-                            CenterToConnectedCenters = null,
-                            CenterToTerminals = context.CenterToTerminals,
-                            LocationToTerminals = context.LocationToTerminals,
-                            Pipes = optimizedPipes,
-                        });
+                        OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters: null);
                     }
                     break;
 
@@ -59,23 +46,7 @@ internal static partial class AddPipes
                         }
 
                         var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
-
-                        // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-                        var optimizedPipes = context.Options.OptimizePipes ? RotateOptimize.Execute(context, pipes) : pipes;
-
-                        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-                        solution = new Solution
-                        {
-                            Strategies = new HashSet<PipeStrategy> { strategy },
-                            CenterToConnectedCenters = centerToConnectedCenters,
-                            CenterToTerminals = context.CenterToTerminals,
-                            LocationToTerminals = context.LocationToTerminals,
-                            Pipes = optimizedPipes,
-                        };
-
-                        solutions.Add(solution);
+                        solution = OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters);
                         connectedCentersToSolutions.Add(centerToConnectedCenters, solution);
                     }
                     break;
@@ -87,7 +58,7 @@ internal static partial class AddPipes
 
         if (context.Options.ValidateSolution)
         {
-            foreach (var solution in solutions)
+            foreach (var solution in pipesToSolution.Values)
             {
                 foreach (var terminals in solution.CenterToTerminals.Values)
                 {
@@ -113,18 +84,65 @@ internal static partial class AddPipes
             }
         }
 
-        if (solutions.Count == 0)
+        if (pipesToSolution.Count == 0)
         {
             throw new InvalidOperationException("At least one pipe strategy must be used.");
         }
 
-        var bestSolution = solutions.MinBy(s => s.Pipes.Count)!;
+        var bestSolution = pipesToSolution.Values.MinBy(s => s.Pipes.Count)!;
+
         context.CenterToTerminals = bestSolution.CenterToTerminals;
         context.LocationToTerminals = bestSolution.LocationToTerminals;
 
-        AddPipeEntities.Execute(context.Grid, context.CenterToTerminals, bestSolution.Pipes);
+        AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
+    }
 
-        return bestSolution.Pipes;
+    private static Solution OptimizeAndAddSolution(
+        Context context,
+        Dictionary<HashSet<Location>, Solution> pipesToSolutions,
+        PipeStrategy strategy,
+        HashSet<Location> pipes,
+        Dictionary<Location, HashSet<Location>>? centerToConnectedCenters)
+    {
+        if (pipesToSolutions.TryGetValue(pipes, out var solution))
+        {
+            solution.Strategies.Add(strategy);
+            return solution;
+        }
+
+        // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+
+        HashSet<Location> optimizedPipes = pipes;
+        if (context.Options.OptimizePipes)
+        {
+            optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
+
+            RotateOptimize.Execute(context, optimizedPipes);
+        }
+
+        Dictionary<Location, Direction>? undergroundPipes = null;
+        if (context.Options.UseUndergroundPipes)
+        {
+            optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
+
+            undergroundPipes = UseUndergroundPipes.Execute(context, optimizedPipes);
+        }
+
+        // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+
+        solution = new Solution
+        {
+            Strategies = new HashSet<PipeStrategy> { strategy },
+            CenterToConnectedCenters = centerToConnectedCenters,
+            CenterToTerminals = context.CenterToTerminals,
+            LocationToTerminals = context.LocationToTerminals,
+            Pipes = optimizedPipes,
+            UndergroundPipes = undergroundPipes,
+        };
+
+        pipesToSolutions.Add(pipes, solution);
+
+        return solution;
     }
 
     private static void EliminateStrandedTerminals(Context context)
@@ -180,6 +198,48 @@ internal static partial class AddPipes
         public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
         public required HashSet<Location> Pipes { get; set; }
+        public required Dictionary<Location, Direction>? UndergroundPipes { get; set; }
+    }
+
+    private class LocationSetComparer : IEqualityComparer<HashSet<Location>>
+    {
+        public static readonly LocationSetComparer Instance = new LocationSetComparer();
+
+        public bool Equals(HashSet<Location>? x, HashSet<Location>? y)
+        {
+            if (x is null && y is null)
+            {
+                return true;
+            }
+
+            if (x is null)
+            {
+                return false;
+            }
+
+            if (y is null)
+            {
+                return false;
+            }
+
+            if (x.Count != y.Count)
+            {
+                return false;
+            }
+
+            return x.SetEquals(y);
+        }
+
+        public int GetHashCode([DisallowNull] HashSet<Location> obj)
+        {
+            var hashCode = new HashCode();
+            foreach (var x in obj)
+            {
+                hashCode.Add(x);
+            }
+
+            return hashCode.ToHashCode();
+        }
     }
 
     private class ConnectedCentersComparer : IEqualityComparer<Dictionary<Location, HashSet<Location>>>

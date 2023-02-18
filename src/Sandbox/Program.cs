@@ -22,7 +22,7 @@ internal partial class Program
     {
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = new[] { blueprintStringsAll[4] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
@@ -51,6 +51,10 @@ internal partial class Program
                 // options.ElectricPoleSupplyHeight = 9;
                 options.AddBeacons = true;
                 options.UseUndergroundPipes = true;
+                options.OptimizePipes = true;
+                options.ValidateSolution = false;
+                // options.PipeStrategies = new HashSet<PipeStrategy> { PipeStrategy.FBE };
+                // options.BeaconStrategies = new HashSet<BeaconStrategy> { BeaconStrategy.FBE };
 
                 var context = Planner.Execute(options, inputBlueprint);
 
@@ -58,8 +62,8 @@ internal partial class Program
                 var poleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count();
                 var beaconCount = context.Grid.EntityToLocation.Keys.OfType<BeaconCenter>().Count();
 
-                // Console.WriteLine($"{pipeCount} {poleCount}");
-                Console.WriteLine($"{pipeCount}");
+                Console.WriteLine($"{pipeCount},{poleCount},{beaconCount}");
+                // Console.WriteLine($"{pipeCount}");
 
                 pipeSum += pipeCount;
                 poleSum += poleCount;
@@ -73,7 +77,7 @@ internal partial class Program
                 }
             }
 
-            outputs.Add($"{pipeSum * 1.0 / blueprintCount} {poleSum * 1.0 / blueprintCount} {beaconSum * 1.0 / blueprintCount}");
+            outputs.Add($"{pipeSum * 1.0 / blueprintCount},{poleSum * 1.0 / blueprintCount},{beaconSum * 1.0 / blueprintCount}");
             // Console.WriteLine($"{pipeSum * 1.0 / blueprintCount}");
         }
 

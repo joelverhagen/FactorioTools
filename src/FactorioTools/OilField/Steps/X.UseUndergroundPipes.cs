@@ -1,5 +1,4 @@
 ﻿using Knapcode.FactorioTools.OilField.Data;
-using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -17,15 +16,21 @@ internal static class UseUndergroundPipes
     /// </summary>
     private const int MaxUnderground = 11;
 
-    public static void Execute(Context context, HashSet<Location> pipes)
+    public static Dictionary<Location, Direction> Execute(Context context, HashSet<Location> pipes)
     {
-        ConvertInOneDirection(context, pipes, (X: 0, Y: 1));
-        ConvertInOneDirection(context, pipes, (X: 1, Y: 0));
+        // Track underground pipes and their directions
+        var locationToDirection = new Dictionary<Location, Direction>();
+
+        ConvertInOneDirection(context, pipes, locationToDirection, (X: 0, Y: 1));
+        ConvertInOneDirection(context, pipes, locationToDirection, (X: 1, Y: 0));
+
+        return locationToDirection;
     }
 
     private static void ConvertInOneDirection(
         Context context,
-        HashSet<Location> pipesAndTerminals,
+        HashSet<Location> pipes,
+        Dictionary<Location, Direction> locationToDirection,
         (int X, int Y) forward)
     {
         (var forwardDirection, var backwardDirection) = forward switch
@@ -56,15 +61,14 @@ internal static class UseUndergroundPipes
             var right = (X: forward.Y, Y: forward.X);
             var left = (X: right.X * -1, Y: right.Y * -1);
 
-            foreach (var goal in pipesAndTerminals)
+            foreach (var goal in pipes)
             {
-                if ((context.Grid.IsEntityType<Pipe>(goal.Translate(forward)) || context.Grid.IsEntityType<Pipe>(goal.Translate(backward)))
-                    && !context.Grid.IsEntityType<Pipe>(goal.Translate(right))
-                    && !context.Grid.IsEntityType<Pipe>(goal.Translate(left)))
+                if ((pipes.Contains(goal.Translate(forward)) || pipes.Contains(goal.Translate(backward)))
+                    && !pipes.Contains(goal.Translate(right))
+                    && !pipes.Contains(goal.Translate(left)))
                 {
-                    if (context.Grid.IsEntityType<Terminal>(goal))
+                    if (context.LocationToTerminals.TryGetValue(goal, out var terminals))
                     {
-                        var terminals = context.LocationToTerminals[goal];
                         if (terminals.Count > 1)
                         {
                             continue;
@@ -101,12 +105,12 @@ internal static class UseUndergroundPipes
                     continue;
                 }
 
-                AddRunAndClear(context.Grid, forwardDirection, backwardDirection, currentRun);
+                AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun);
 
                 currentRun.Add(current);
             }
 
-            AddRunAndClear(context.Grid, forwardDirection, backwardDirection, currentRun);
+            AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun);
         }
         finally
         {
@@ -116,41 +120,25 @@ internal static class UseUndergroundPipes
         }
     }
 
-    private static void AddRunAndClear(SquareGrid grid, Direction forwardDirection, Direction backwardDirection, List<Location> currentRun)
+    private static void AddRunAndClear(
+        HashSet<Location> pipes,
+        Dictionary<Location, Direction> locationToDirection,
+        Direction forwardDirection,
+        Direction backwardDirection,
+        List<Location> currentRun)
     {
         if (currentRun.Count >= MinUnderground)
         {
             // Convert pipes to underground pipes
-            for (var j = 0; j < currentRun.Count; j++)
-            {
-                var l = currentRun[j];
-                grid.RemoveEntity(l);
-                if (j == 0)
-                {
-                    grid.AddEntity(l, new UndergroundPipe(backwardDirection));
-                }
+            locationToDirection.Add(currentRun[0], backwardDirection);
+            locationToDirection.Add(currentRun[currentRun.Count - 1], forwardDirection);
 
-                if (j == currentRun.Count - 1)
-                {
-                    grid.AddEntity(l, new UndergroundPipe(forwardDirection));
-                }
+            for (var j = 1; j < currentRun.Count - 1; j++)
+            {
+                pipes.Remove(currentRun[j]);
             }
         }
 
         currentRun.Clear();
-    }
-
-    public static Direction GetTerminalDirection(Location center, Location terminal)
-    {
-        var deltaX = terminal.X - center.X;
-        var deltaY = terminal.Y - center.Y;
-        return (deltaX, deltaY) switch
-        {
-            (1, -2) => Direction.Up,
-            (2, -1) => Direction.Right,
-            (-2, 1) => Direction.Left,
-            (-1, 2) => Direction.Down,
-            _ => throw new NotImplementedException(),
-        };
     }
 }
