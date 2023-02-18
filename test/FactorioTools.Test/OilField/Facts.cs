@@ -48,8 +48,8 @@ public class Facts
 
         foreach ((var otherCenter, var terminals) in context.CenterToTerminals.ToList())
         {
-            var selectedDirection = center == otherCenter ? direction : previousCenterToTerminals[otherCenter].First().Direction;
-            var selectedTerminal = terminals.First(t => !selectedDirection.HasValue || selectedDirection.Value == t.Direction);
+            var selectedDirection = center == otherCenter ? direction.GetValueOrDefault() : previousCenterToTerminals[otherCenter].First().Direction;
+            var selectedTerminal = terminals.OrderByDescending(t => t.Direction == selectedDirection).First();
             EliminateOtherTerminals(context, selectedTerminal);
 
             if (context.Grid[selectedTerminal.Terminal] is Pipe)

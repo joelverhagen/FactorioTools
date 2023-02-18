@@ -19,17 +19,12 @@ internal static class UseUndergroundPipes
 
     public static void Execute(Context context, HashSet<Location> pipes)
     {
-        var terminalToCenters = context.CenterToTerminals
-            .GroupBy(x => x.Value.Single().Terminal, x => x.Key)
-            .ToDictionary(g => g.Key, g => g.ToHashSet());
-
-        ConvertInOneDirection(context, terminalToCenters, pipes, (X: 0, Y: 1));
-        ConvertInOneDirection(context, terminalToCenters, pipes, (X: 1, Y: 0));
+        ConvertInOneDirection(context, pipes, (X: 0, Y: 1));
+        ConvertInOneDirection(context, pipes, (X: 1, Y: 0));
     }
 
     private static void ConvertInOneDirection(
         Context context,
-        Dictionary<Location, HashSet<Location>> terminalToCenters,
         HashSet<Location> pipesAndTerminals,
         (int X, int Y) forward)
     {
@@ -69,14 +64,13 @@ internal static class UseUndergroundPipes
                 {
                     if (context.Grid.IsEntityType<Terminal>(goal))
                     {
-                        var centers = terminalToCenters[goal];
-                        if (centers.Count > 1)
+                        var terminals = context.LocationToTerminals[goal];
+                        if (terminals.Count > 1)
                         {
                             continue;
                         }
 
-                        var center = centers.Single();
-                        var direction = GetTerminalDirection(center, goal);
+                        var direction = terminals.Single().Direction;
                         if (direction != forwardDirection && direction != backwardDirection)
                         {
                             continue;
