@@ -87,6 +87,11 @@ internal static class UseUndergroundPipes
                 }
             }
 
+            if (candidates.Count == 0)
+            {
+                return;
+            }
+
             var sorted = sort(candidates).ToList();
             var currentRun = new List<Location> { sorted[0] };
             for (var i = 1; i < sorted.Count; i++)

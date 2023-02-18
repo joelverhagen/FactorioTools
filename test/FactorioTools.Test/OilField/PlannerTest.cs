@@ -4,70 +4,57 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class PlannerTest
 {
-    [Theory]
-    [MemberData(nameof(BlueprintsAndOptions))]
-    public void PlannerOnAllBlueprintsAndOptions(int blueprintIndex, string electricPole, bool addBeacons, bool useUndergroundPipes)
+    public class Execute : Facts
     {
-        var options = ElectricPoleToOptions[electricPole]();
-        options.AddBeacons = addBeacons;
-        options.UseUndergroundPipes = useUndergroundPipes;
-        options.ValidateSolution = true;
-
-        var blueprintString = BlueprintStrings[blueprintIndex];
-        var blueprint = ParseBlueprint.Execute(blueprintString);
-
-        // Act
-        Planner.Execute(options, blueprint);
-    }
-
-    private static IReadOnlyDictionary<string, Func<Options>> ElectricPoleToOptions { get; } = new[]
-    {
-        () => Options.ForSmallElectricPole,
-        () => Options.ForMediumElectricPole,
-        () => Options.ForBigElectricPole,
-        () => Options.ForSubstation,
-    }.ToDictionary(o => o().ElectricPoleEntityName, o => o);
-
-    private static string DataFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
-    private static IReadOnlyList<string> BlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(DataFilePath);
-
-    public static TheoryData<int, string, bool, bool> BlueprintsAndOptions
-    {
-        get
+        [Theory]
+        [MemberData(nameof(BlueprintsAndOptions))]
+        public void PlannerOnAllBlueprintsAndOptions(int blueprintIndex, string electricPole, bool addBeacons, bool useUndergroundPipes)
         {
-            var theoryData = new TheoryData<int, string, bool, bool>();
+            var options = ElectricPoleToOptions[electricPole]();
+            options.AddBeacons = addBeacons;
+            options.UseUndergroundPipes = useUndergroundPipes;
+            options.ValidateSolution = true;
 
-            foreach (var blueprintIndex in Enumerable.Range(0, BlueprintStrings.Count))
+            var blueprintString = BlueprintStrings[blueprintIndex];
+            var blueprint = ParseBlueprint.Execute(blueprintString);
+
+            // Act
+            Planner.Execute(options, blueprint);
+        }
+
+        private static IReadOnlyDictionary<string, Func<Options>> ElectricPoleToOptions { get; } = new[]
+        {
+            () => Options.ForSmallElectricPole,
+            () => Options.ForMediumElectricPole,
+            () => Options.ForBigElectricPole,
+            () => Options.ForSubstation,
+        }.ToDictionary(o => o().ElectricPoleEntityName, o => o);
+
+        private static string DataFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
+        private static IReadOnlyList<string> BlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(DataFilePath);
+
+        public static TheoryData<int, string, bool, bool> BlueprintsAndOptions
+        {
+            get
             {
-                foreach (var electricPole in ElectricPoleToOptions.Keys)
+                var theoryData = new TheoryData<int, string, bool, bool>();
+
+                foreach (var blueprintIndex in Enumerable.Range(0, BlueprintStrings.Count))
                 {
-                    foreach (var addBeacons in new[] { false, true })
+                    foreach (var electricPole in ElectricPoleToOptions.Keys)
                     {
-                        foreach (var useUndergroundPipes in new[] { false, true })
+                        foreach (var addBeacons in new[] { false, true })
                         {
-                            theoryData.Add(blueprintIndex, electricPole, addBeacons, useUndergroundPipes);
+                            foreach (var useUndergroundPipes in new[] { false, true })
+                            {
+                                theoryData.Add(blueprintIndex, electricPole, addBeacons, useUndergroundPipes);
+                            }
                         }
                     }
                 }
+
+                return theoryData;
             }
-
-            return theoryData;
         }
-    }
-
-    private static string GetRepositoryRoot()
-    {
-        var current = Directory.GetCurrentDirectory();
-        while (current != null)
-        {
-            if (Directory.EnumerateFiles(current, "FactorioTools.sln").Any())
-            {
-                return current;
-            }
-
-            current = Path.GetDirectoryName(current);
-        }
-
-        throw new InvalidOperationException($"Could not find the repository root when starting at {Directory.GetCurrentDirectory()}.");
     }
 }

@@ -13,6 +13,11 @@ internal static class Visualizer
 {
     private const int CellSize = 64;
 
+    public static void Show(SquareGrid grid)
+    {
+        Show(grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+    }
+
     public static void Show(SquareGrid grid, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
     {
         var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Knapcode.FactorioTools.OilField.png");

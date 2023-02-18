@@ -49,7 +49,8 @@ internal static class Helpers
             {
                 var location = center.Translate(translation);
                 var terminal = new TerminalLocation(center, location, direction);
-                if (grid.IsEmpty(location))
+                var existing = grid[location];
+                if (existing is null || existing is Pipe)
                 {
                     candidateTerminals.Add(terminal);
                 }
