@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Knapcode.FactorioTools.OilField.Data;
+﻿using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
-using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
