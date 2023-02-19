@@ -11,20 +11,143 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 internal static partial class AddBeacons
 {
+    private const int MinAffectedEntities = 1;
+
     private static List<Location> AddBeacons_FBE(Context context, HashSet<Location> pipes)
     {
-        const int beaconSize = 3;
-        const int beaconEffectRadius = 3;
-        const int minAffectedEntities = 1;
-
         if (context.Options.BeaconWidth != context.Options.BeaconHeight
             || context.Options.BeaconSupplyWidth != context.Options.BeaconSupplyHeight
-            || context.Options.BeaconWidth != beaconSize
-            || context.Options.BeaconSupplyWidth != beaconEffectRadius * 2 + beaconSize)
+            || context.Options.BeaconWidth % 2 != 1
+            || context.Options.BeaconSupplyWidth != context.Options.BeaconWidth * 3)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("The beacon must be a square, have an odd number width and height, and have a supply area that is 3 times the width.");
         }
 
+        var entityAreas = GetEntityAreas(context, pipes);
+        var occupiedPositions = GetOccupiedPositions(entityAreas);
+
+        // Visualizer.Show(context.Grid, occupiedPositions.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+
+        // GENERATE VALID BEACON POSITIONS
+        var validBeaconPositions = GetValidBeaconPositions(context, occupiedPositions);
+
+        // Visualizer.Show(context.Grid, grid.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+
+        // GENERATE POSSIBLE BEACON AREAS
+        var possibleBeaconAreas = GetPossibleBeaconAreas(context, validBeaconPositions);
+        var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
+        var pointToEntityArea = GetPointToEntityArea(entityAreas);
+
+        // GENERATE POSSIBLE BEACONS
+        var possibleBeacons = GetPossibleBeacons(
+            context,
+            possibleBeaconAreas,
+            pointToBeaconCount,
+            pointToEntityArea);
+
+        possibleBeacons = SortPossibleBeacons(possibleBeacons);
+
+        var pointToBeacons = GetPointsToBeacons(possibleBeacons);
+
+        // GENERATE BEACONS
+        return GetBeacons(possibleBeacons, pointToBeacons);
+    }
+
+    private static List<Location> GetBeacons(List<BeaconCandidate> possibleBeacons, Dictionary<Location, List<BeaconCandidate>> pointToBeacons)
+    {
+        var beacons = new List<Location>();
+        var collided = new HashSet<BeaconCandidate>();
+        while (possibleBeacons.Count > 0)
+        {
+            var beacon = possibleBeacons[possibleBeacons.Count - 1];
+            possibleBeacons.RemoveAt(possibleBeacons.Count - 1);
+
+            if (collided.Contains(beacon))
+            {
+                continue;
+            }
+
+            beacons.Add(beacon.Mid);
+            collided.UnionWith(beacon.CollisionArea.SelectMany(p => pointToBeacons[p]));
+        }
+
+        return beacons;
+    }
+
+    private static List<BeaconCandidate> SortPossibleBeacons(List<BeaconCandidate> possibleBeacons)
+    {
+        possibleBeacons = possibleBeacons
+            .OrderByDescending(b => b.EffectsGiven)
+            .ThenBy(b => b.EffectsGiven == 1 ? -b.AvgDistToEntities : b.NrOfOverlaps)
+            .ToList();
+        possibleBeacons.Reverse();
+        return possibleBeacons;
+    }
+
+    private static int GetBeaconEffectRadius(Context context)
+    {
+        return (context.Options.BeaconSupplyWidth - context.Options.BeaconWidth) / 2;
+    }
+
+    private static List<BeaconCandidate> GetPossibleBeacons(
+        Context context,
+        List<Location[]> possibleBeaconAreas,
+        Dictionary<Location, int> pointToBeaconCount,
+        Dictionary<Location, Area[]> pointToEntityArea)
+    {
+        var beaconEffectRadius = GetBeaconEffectRadius(context);
+        var middleIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
+        var possibleBeacons = new List<BeaconCandidate>(possibleBeaconAreas.Count);
+        for (var i = 0; i < possibleBeaconAreas.Count; i++)
+        {
+            var collisionArea = possibleBeaconAreas[i];
+            var mid = collisionArea[middleIndex];
+
+            var d = context.Options.BeaconWidth + beaconEffectRadius * 2;
+            var d2 = d * d;
+
+            var effectsGiven = new HashSet<Area[]>();
+            for (var j = 0; j < d2; j++)
+            {
+                var location = new Location(
+                    x: mid.X + ((j % d) - (d / 2)),
+                    y: mid.Y + ((j / d) - (d / 2)));
+
+                if (pointToEntityArea.TryGetValue(location, out var area))
+                {
+                    effectsGiven.Add(area);
+                }
+            }
+
+            if (effectsGiven.Count < MinAffectedEntities)
+            {
+                continue;
+            }
+
+            var avgDistToEntities = effectsGiven.Average(p => p[middleIndex].Location.GetManhattanDistance(mid));
+            var nrOfOverlaps = collisionArea.Sum(p => pointToBeaconCount[p]);
+
+            possibleBeacons.Add(new BeaconCandidate(
+                mid,
+                collisionArea,
+                effectsGiven.Count,
+                avgDistToEntities,
+                nrOfOverlaps));
+        }
+
+        return possibleBeacons;
+    }
+
+    private static HashSet<Location> GetOccupiedPositions(List<Area[]> entityAreas)
+    {
+        return entityAreas
+            .SelectMany(a => a)
+            .Select(a => a.Location)
+            .ToHashSet();
+    }
+
+    private static List<Area[]> GetEntityAreas(Context context, HashSet<Location> pipes)
+    {
         GridEntity pipe = new Pipe();
         var entityAreas = context
             .Grid
@@ -82,157 +205,130 @@ internal static partial class AddBeacons
             .Where(a => a is not null)
             .Select(a => a!)
             .ToList();
+        return entityAreas;
+    }
 
-        var occupiedPositions = entityAreas.SelectMany(a => a).Select(a => a.Location).ToHashSet();
-
-        // Visualizer.Show(context.Grid, occupiedPositions.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-        // GENERATE VALID BEACON POSITIONS
-        var validBeaconPositions = context
-            .CenterToTerminals
-            .Keys
-            .SelectMany(center =>
+    private static HashSet<Location> GetValidBeaconPositions(Context context, HashSet<Location> occupiedPositions)
+    {
+        var validBeaconPositions = new HashSet<Location>();
+        var beaconEffectRadius = GetBeaconEffectRadius(context);
+        var searchSize = PumpjackWidth + context.Options.BeaconWidth * 2 + (beaconEffectRadius - 1) * 2;
+        var searchSize2 = searchSize * searchSize;
+        foreach (var center in context.CenterToTerminals.Keys)
+        {
+            for (var i = 0; i < searchSize2; i++)
             {
-                var searchSize = PumpjackWidth + beaconSize * 2 + (beaconEffectRadius - 1) * 2;
-                return Enumerable
-                    .Range(0, searchSize * searchSize)
-                    .Select(i => new Location(
-                        x: center.X + ((i % searchSize) - (searchSize / 2)),
-                        y: center.Y + ((i / searchSize) - (searchSize / 2))));
-            })
-            .ToHashSet();
+                validBeaconPositions.Add(new Location(
+                    x: center.X + ((i % searchSize) - (searchSize / 2)),
+                    y: center.Y + ((i / searchSize) - (searchSize / 2))));
+            }
+        }
+
         validBeaconPositions.ExceptWith(occupiedPositions);
+        return validBeaconPositions;
+    }
 
-        var grid = new HashSet<Location>(validBeaconPositions);
-
-        // Visualizer.Show(context.Grid, grid.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-
-        // GENERATE POSSIBLE BEACON AREAS
-        var possibleBeaconAreas = validBeaconPositions
-            .Select(p =>
+    private static List<Location[]> GetPossibleBeaconAreas(Context context, HashSet<Location> validBeaconPositions)
+    {
+        var beaconArea = context.Options.BeaconWidth * context.Options.BeaconHeight;
+        var possibleBeaconAreas = new List<Location[]>();
+        foreach (var position in validBeaconPositions)
+        {
+            var allContains = true;
+            var area = new Location[beaconArea];
+            for (var i = 0; allContains && i < beaconArea; i++)
             {
-                return Enumerable
-                    .Range(0, beaconSize * beaconSize)
-                    .Select(i => new Location(
-                        x: p.X + (i % beaconSize),
-                        y: p.Y + (i / beaconSize)))
-                    .Where(p => grid.Contains(p))
-                    .ToList();
-            })
-            .Where(arr => arr.Count == beaconSize * beaconSize)
-            .ToList();
+                var location = new Location(
+                    x: position.X + (i % context.Options.BeaconWidth),
+                    y: position.Y + (i / context.Options.BeaconWidth));
 
-        var pointToBeaconCount = possibleBeaconAreas
-            .SelectMany(arr => arr)
-            .Aggregate(new Dictionary<Location, int>(), (map, p) =>
-            {
-                if (!map.TryGetValue(p, out var count))
+                if (validBeaconPositions.Contains(location))
                 {
-                    map.Add(p, 1);
+                    area[i] = location;
                 }
                 else
                 {
-                    map[p] = count + 1;
+                    allContains = false;
                 }
-
-                return map;
-            });
-
-        var pointToEntityArea = entityAreas
-            .Where(area => area.All(p => p.Effect))
-            .Aggregate(new Dictionary<Location, Area[]>(), (map, area) =>
-            {
-                foreach (var p in area)
-                {
-                    map.Add(p.Location, area);
-                }
-
-                return map;
-            });
-
-        // GENERATE POSSIBLE BEACONS
-        var possibleBeacons = possibleBeaconAreas
-            .Select(collisionArea =>
-            {
-                var mid = collisionArea[4];
-
-                var d = beaconSize + beaconEffectRadius * 2;
-                var effectsGiven = Enumerable
-                    .Range(0, d * d)
-                    .Select(i => new Location(
-                        x: mid.X + ((i % d) - (d / 2)),
-                        y: mid.Y + ((i / d) - (d / 2))))
-                    .Aggregate(new List<Area[]>(), (acc, p) =>
-                    {
-                        if (pointToEntityArea.TryGetValue(p, out var area))
-                        {
-                            if (!acc.Contains(area))
-                            {
-                                acc.Add(area);
-                            }
-                        }
-
-                        return acc;
-                    });
-
-                var avgDistToEntities = effectsGiven.Select(p => p[4].Location).DefaultIfEmpty(mid).Average(p => p.GetManhattanDistance(mid));
-                var nrOfOverlaps = collisionArea.Sum(p => pointToBeaconCount[p]);
-
-                return new BeaconCandidate(
-                    mid,
-                    collisionArea,
-                    effectsGiven.Count,
-                    avgDistToEntities,
-                    nrOfOverlaps);
-            })
-            .Where(c => c.EffectsGiven >= minAffectedEntities)
-            .ToList();
-
-        var pointToBeacons = possibleBeacons.Aggregate(new Dictionary<Location, List<BeaconCandidate>>(), (map, b) =>
-        {
-            foreach (var p in b.CollisionArea)
-            {
-                if (!map.TryGetValue(p, out var c))
-                {
-                    c = new List<BeaconCandidate>();
-                    map.Add(p, c);
-                }
-
-                c.Add(b);
             }
 
-            return map;
-        });
-
-        // GENERATE BEACONS
-        var beacons = new List<BeaconCandidate>();
-        while (possibleBeacons.Count > 0)
-        {
-            possibleBeacons
-                .Sort((a, b) =>
-                {
-                    if (a.EffectsGiven == 1 || b.EffectsGiven == 1)
-                    {
-                        return b.AvgDistToEntities.CompareTo(a.AvgDistToEntities);
-                    }
-
-                    return a.NrOfOverlaps.CompareTo(b.NrOfOverlaps);
-                });
-
-            possibleBeacons.Sort((a, b) => b.EffectsGiven.CompareTo(a.EffectsGiven));
-
-            var beacon = possibleBeacons[0];
-            possibleBeacons.RemoveAt(0);
-            beacons.Add(beacon);
-
-            var toRemove = beacon.CollisionArea.SelectMany(p => pointToBeacons[p]).ToHashSet();
-            possibleBeacons = possibleBeacons.Where(b => !toRemove.Contains(b)).ToList();
+            if (allContains)
+            {
+                possibleBeaconAreas.Add(area);
+            }
         }
 
-        return beacons.Select(b => b.Mid).ToList();
+        return possibleBeaconAreas;
+    }
+
+    private static Dictionary<Location, int> GetPointToBeaconCount(List<Location[]> possibleBeaconAreas)
+    {
+        var pointToBeaconCount = new Dictionary<Location, int>();
+        for (var i = 0; i < possibleBeaconAreas.Count; i++)
+        {
+            var areas = possibleBeaconAreas[i];
+            for (var j = 0; j < areas.Length; j++)
+            {
+                var point = areas[j];
+                if (!pointToBeaconCount.TryGetValue(point, out var sum))
+                {
+                    pointToBeaconCount.Add(point, 1);
+                }
+                else
+                {
+                    pointToBeaconCount[point] = sum + 1;
+                }
+            }
+        }
+
+        return pointToBeaconCount;
+    }
+
+    private static Dictionary<Location, Area[]> GetPointToEntityArea(List<Area[]> entityAreas)
+    {
+        var pointToEntityArea = new Dictionary<Location, Area[]>();
+        for (var i = 0; i < entityAreas.Count; i++)
+        {
+            var area = entityAreas[i];
+            if (!area[0].Effect)
+            {
+                continue;
+            }
+
+            for (var j = 0; j < area.Length; j++)
+            {
+                pointToEntityArea.Add(area[j].Location, area);
+            }
+        }
+
+        return pointToEntityArea;
+    }
+
+    private static Dictionary<Location, List<BeaconCandidate>> GetPointsToBeacons(List<BeaconCandidate> possibleBeacons)
+    {
+        var pointToBeacons = new Dictionary<Location, List<BeaconCandidate>>();
+        for (var i = 0; i < possibleBeacons.Count; i++)
+        {
+            var beacon = possibleBeacons[i];
+            for (var j = 0; j < beacon.CollisionArea.Length; j++)
+            {
+                var point = beacon.CollisionArea[j];
+                if (!pointToBeacons.TryGetValue(point, out var candidates))
+                {
+                    candidates = new List<BeaconCandidate> { beacon };
+                    pointToBeacons.Add(point, candidates);
+                }
+                else
+                {
+                    candidates.Add(beacon);
+                }
+            }
+        }
+
+        return pointToBeacons;
     }
 
     private record Area(Location Location, bool Effect);
 
-    private record BeaconCandidate(Location Mid, List<Location> CollisionArea, int EffectsGiven, double AvgDistToEntities, int NrOfOverlaps);
+    private record BeaconCandidate(Location Mid, Location[] CollisionArea, int EffectsGiven, double AvgDistToEntities, int NrOfOverlaps);
 }
