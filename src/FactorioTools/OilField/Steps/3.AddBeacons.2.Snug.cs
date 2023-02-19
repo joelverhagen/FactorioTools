@@ -66,11 +66,6 @@ internal static partial class AddBeacons
                     var candidate = scopedCandidates[scopedCandidates.Count - 1];
                     scopedCandidates.RemoveAt(scopedCandidates.Count - 1);
 
-                    if (candidate == new Location(28, 44)
-                        || candidate == new Location(40, 16))
-                    {
-                    }
-
                     var centerEntity = new BeaconCenter();
 
                     AddProvider(
