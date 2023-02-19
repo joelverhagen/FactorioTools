@@ -34,7 +34,7 @@ internal static partial class AddBeacons
             AddBeaconsToGrid(context, fbe);
         }
 
-        Visualizer.Show(context.Grid);
+        // Visualizer.Show(context.Grid);
     }
 
     private static void RemoveBeaconsFromGrid(Context context, IEnumerable<Location> centers)
