@@ -33,6 +33,8 @@ internal static partial class AddBeacons
             RemoveBeaconsFromGrid(context, snug.Keys);
             AddBeaconsToGrid(context, fbe);
         }
+
+        // Visualizer.Show(context.Grid);
     }
 
     private static void RemoveBeaconsFromGrid(Context context, IEnumerable<Location> centers)

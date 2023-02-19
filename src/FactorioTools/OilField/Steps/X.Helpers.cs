@@ -502,6 +502,43 @@ internal static class Helpers
         }
     }
 
+    public static (
+        int EntityMinX,
+        int EntityMinY,
+        int EntityMaxX,
+        int EntityMaxY,
+        int OverlapMinX,
+        int OverlapMinY,
+        int OverlapMaxX,
+        int OverlapMaxY
+    ) GetProviderBounds(
+        SquareGrid grid,
+        Location center,
+        int providerWidth,
+        int providerHeight)
+    {
+        var entityMinX = center.X - ((providerWidth - 1) / 2);
+        var entityMinY = center.Y - ((providerHeight - 1) / 2);
+        var entityMaxX = center.X + (providerWidth / 2);
+        var entityMaxY = center.Y + (providerHeight / 2);
+
+        var overlapMinX = Math.Max((providerWidth - 1) / 2, entityMinX - (providerWidth / 2));
+        var overlapMinY = Math.Max((providerHeight - 1) / 2, entityMinY - (providerHeight / 2));
+        var overlapMaxX = Math.Min(grid.Width - (providerWidth / 2) - 1, entityMaxX + ((providerWidth - 1) / 2));
+        var overlapMaxY = Math.Min(grid.Height - (providerHeight / 2) - 1, entityMaxY + ((providerHeight - 1) / 2));
+
+        return (
+            entityMinX,
+            entityMinY,
+            entityMaxX,
+            entityMaxY,
+            overlapMinX,
+            overlapMinY,
+            overlapMaxX,
+            overlapMaxY
+        );
+    }
+
     public static void AddProvider<TCenter, TSide>(
         SquareGrid grid,
         Location center,
@@ -513,24 +550,23 @@ internal static class Helpers
         where TCenter : GridEntity
         where TSide : GridEntity
     {
-        var entityMinX = center.X - ((providerWidth - 1) / 2);
-        var entityMinY = center.Y - ((providerHeight - 1) / 2);
-        var entityMaxX = center.X + (providerWidth / 2);
-        var entityMaxY = center.Y + (providerHeight / 2);
+        var (
+            entityMinX,
+            entityMinY,
+            entityMaxX,
+            entityMaxY,
+            overlapMinX,
+            overlapMinY,
+            overlapMaxX,
+            overlapMaxY
+        ) = GetProviderBounds(grid, center, providerWidth, providerHeight);
 
-        // Expand the loop bounds beyond the entity bounds so we can removed candidates that are not longer valid with
-        // the newly added provider, i.e. they would overlap with what was just added.
-        var minX = Math.Max((providerWidth - 1) / 2, entityMinX - (providerWidth / 2));
-        var minY = Math.Max((providerHeight - 1) / 2, entityMinY - (providerHeight / 2));
-        var maxX = Math.Min(grid.Width - (providerWidth / 2) - 1, entityMaxX + ((providerWidth - 1) / 2));
-        var maxY = Math.Min(grid.Height - (providerHeight / 2) - 1, entityMaxY + ((providerHeight - 1) / 2));
-
-        for (var x = minX; x <= maxX; x++)
+        for (var x = overlapMinX; x <= overlapMaxX; x++)
         {
-            for (var y = minY; y <= maxY; y++)
+            for (var y = overlapMinY; y <= overlapMaxY; y++)
             {
                 var location = new Location(x, y);
-                candidateToCovered?.Remove(location);
+                candidateToCovered.Remove(location);
 
                 if (x >= entityMinX && x <= entityMaxX
                     && y >= entityMinY && y <= entityMaxY)
