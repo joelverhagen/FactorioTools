@@ -540,7 +540,31 @@ internal static class Helpers
         );
     }
 
-    public static void AddProvider<TCenter, TSide>(
+    public static void RemoveCandidates(
+        SquareGrid grid,
+        Location center,
+        int providerWidth,
+        int providerHeight,
+        Dictionary<Location, CountedBitArray> candidateToCovered)
+    {
+        var (_, _, _, _,
+            overlapMinX,
+            overlapMinY,
+            overlapMaxX,
+            overlapMaxY
+        ) = GetProviderBounds(grid, center, providerWidth, providerHeight);
+
+        for (var x = overlapMinX; x <= overlapMaxX; x++)
+        {
+            for (var y = overlapMinY; y <= overlapMaxY; y++)
+            {
+                var location = new Location(x, y);
+                candidateToCovered.Remove(location);
+            }
+        }
+    }
+
+    private static void AddProvider<TCenter, TSide>(
         SquareGrid grid,
         Location center,
         TCenter centerEntity,

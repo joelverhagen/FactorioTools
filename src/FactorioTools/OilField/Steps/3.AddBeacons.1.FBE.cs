@@ -11,7 +11,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 internal static partial class AddBeacons
 {
-    private static HashSet<Location> AddBeacons_FBE(Context context)
+    private static List<Location> AddBeacons_FBE(Context context)
     {
         const int beaconSize = 3;
         const int beaconEffectRadius = 3;
@@ -228,7 +228,7 @@ internal static partial class AddBeacons
             possibleBeacons = possibleBeacons.Where(b => !toRemove.Contains(b)).ToList();
         }
 
-        return beacons.Select(b => b.Mid).ToHashSet();
+        return beacons.Select(b => b.Mid).ToList();
     }
 
     private record Area(Location Location, bool Effect);

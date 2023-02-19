@@ -7,47 +7,32 @@ internal static partial class AddBeacons
 {
     public static void Execute(Context context)
     {
-        HashSet<Location>? fbe = null;
-        if (context.Options.BeaconStrategies.Contains(BeaconStrategy.FBE))
+        var solutions = new List<Solution>(context.Options.BeaconStrategies.Count);
+
+        foreach (var strategy in context.Options.BeaconStrategies)
         {
-            fbe = AddBeacons_FBE(context);
+            var beacons = strategy switch
+            {
+                BeaconStrategy.FBE => AddBeacons_FBE(context),
+                BeaconStrategy.Snug => AddBeacons_Snug(context),
+                _ => throw new NotImplementedException(),
+            };
+
+            solutions.Add(new Solution(strategy, beacons));
         }
 
-        Dictionary<Location, BeaconCenter>? snug = null;
-        if (context.Options.BeaconStrategies.Contains(BeaconStrategy.Snug))
-        {
-            snug = AddBeacons_Snug(context);
-        }
-
-        if (fbe is null && snug is null)
+        if (solutions.Count == 0)
         {
             throw new InvalidOperationException("At least one beacon strategy must be used.");
         }
 
-        if (snug is null)
-        {
-            AddBeaconsToGrid(context, fbe!);
-        }
-        else if (fbe is not null && fbe.Count > snug.Count)
-        {
-            RemoveBeaconsFromGrid(context, snug.Keys);
-            AddBeaconsToGrid(context, fbe);
-        }
+        var bestSolution = solutions.MaxBy(s => s.Beacons.Count)!;
+        AddBeaconsToGrid(context, bestSolution.Beacons);
 
         // Visualizer.Show(context.Grid);
     }
 
-    private static void RemoveBeaconsFromGrid(Context context, IEnumerable<Location> centers)
-    {
-        foreach (var center in centers)
-        {
-            RemoveProvider(
-                context.Grid,
-                center,
-                context.Options.BeaconWidth,
-                context.Options.BeaconHeight);
-        }
-    }
+    private record Solution(BeaconStrategy Strategy, List<Location> Beacons);
 
     private static void AddBeaconsToGrid(Context context, IEnumerable<Location> centers)
     {

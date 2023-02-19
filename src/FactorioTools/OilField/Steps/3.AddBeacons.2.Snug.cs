@@ -1,11 +1,12 @@
-﻿using Knapcode.FactorioTools.OilField.Grid;
+﻿using System.Net.WebSockets;
+using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static partial class AddBeacons
 {
-    private static Dictionary<Location, BeaconCenter> AddBeacons_Snug(Context context)
+    private static List<Location> AddBeacons_Snug(Context context)
     {
         var poweredEntities = context
             .CenterToTerminals
@@ -14,9 +15,9 @@ internal static partial class AddBeacons
             .ToList();
 
         // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
-        (var candidateToCovered, var coveredEntities, var beacons) = GetBeaconCandidateToCovered(context, poweredEntities, removeUnused: false);
+        (var candidateToCovered, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(context, poweredEntities, removeUnused: false);
 
-        if (context.Options.ValidateSolution && beacons.Count > 0)
+        if (context.Options.ValidateSolution && existingBeacons.Count > 0)
         {
             throw new InvalidOperationException("There should not be any existing beacons.");
         }
@@ -30,7 +31,6 @@ internal static partial class AddBeacons
         // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         var sorter = new SnugCandidateSorter(
-            beacons,
             candidateToCovered,
             candidateToEntityDistance,
             candidateToMiddleDistance);
@@ -43,6 +43,8 @@ internal static partial class AddBeacons
         var scopedCandidatesSet = new HashSet<Location>();
 #endif
 
+        var beacons = new List<Location>();
+
         try
         {
             while (candidateToCovered.Count > 0)
@@ -50,7 +52,7 @@ internal static partial class AddBeacons
                 var startingCandidate = candidateToCovered
                     .Keys
                     .MinBy(c => (
-                        beacons.Count > 0 ? beacons.Keys.Min(x => x.GetManhattanDistance(c)) : 0,
+                        beacons.Count > 0 ? beacons.Min(x => x.GetManhattanDistance(c)) : 0,
                         -candidateToCovered[c].TrueCount,
                         -candidateToEntityDistance[c],
                         candidateToMiddleDistance[c]
@@ -71,18 +73,14 @@ internal static partial class AddBeacons
                         continue;
                     }
 
-                    var centerEntity = new BeaconCenter();
-
-                    AddProvider(
+                    RemoveCandidates(
                         context.Grid,
                         candidate,
-                        centerEntity,
-                        c => new BeaconSide(c),
                         context.Options.BeaconWidth,
                         context.Options.BeaconHeight,
                         candidateToCovered);
 
-                    beacons.Add(candidate, centerEntity);
+                    beacons.Add(candidate);
 
                     AddNeighborsAndSort(
                         context,
@@ -198,18 +196,15 @@ internal static partial class AddBeacons
 
     public class SnugCandidateSorter : IComparer<Location>
     {
-        internal readonly Dictionary<Location, BeaconCenter> _beacons;
         internal readonly Dictionary<Location, CountedBitArray> _candidateToCovered;
         internal readonly Dictionary<Location, double> _candidateToEntityDistance;
         internal readonly Dictionary<Location, double> _candidateToMiddleDistance;
 
         public SnugCandidateSorter(
-            Dictionary<Location, BeaconCenter> beacons,
             Dictionary<Location, CountedBitArray> candidateToCovered,
             Dictionary<Location, double> candidateToEntityDistance,
             Dictionary<Location, double> candidateToMiddleDistance)
         {
-            _beacons = beacons;
             _candidateToCovered = candidateToCovered;
             _candidateToEntityDistance = candidateToEntityDistance;
             _candidateToMiddleDistance = candidateToMiddleDistance;
@@ -218,19 +213,6 @@ internal static partial class AddBeacons
         public int Compare(Location x, Location y)
         {
             int xi, yi, c;
-
-            /*
-            if (_beacons.Count > 0)
-            {
-                xi = _beacons.Keys.Min(c => c.GetManhattanDistance(x));
-                yi = _beacons.Keys.Min(c => c.GetManhattanDistance(y));
-                c = yi.CompareTo(xi);
-                if (c != 0)
-                {
-                    return c;
-                }
-            }
-            */
 
             xi = _candidateToCovered[x].TrueCount;
             yi = _candidateToCovered[y].TrueCount;
