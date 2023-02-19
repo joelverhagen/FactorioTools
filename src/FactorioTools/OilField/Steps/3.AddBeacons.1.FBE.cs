@@ -11,7 +11,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 internal static partial class AddBeacons
 {
-    private static List<Location> AddBeacons_FBE(Context context)
+    private static List<Location> AddBeacons_FBE(Context context, HashSet<Location> pipes)
     {
         const int beaconSize = 3;
         const int beaconEffectRadius = 3;
@@ -25,9 +25,11 @@ internal static partial class AddBeacons
             throw new NotImplementedException();
         }
 
+        GridEntity pipe = new Pipe();
         var entityAreas = context
             .Grid
             .EntityToLocation
+            .Concat(pipes.Select(p => KeyValuePair.Create(pipe, p)))
             .Select(pair =>
             {
                 int width;
@@ -87,17 +89,16 @@ internal static partial class AddBeacons
 
         // GENERATE VALID BEACON POSITIONS
         var validBeaconPositions = context
-            .Grid
-            .EntityToLocation
-            .Where(pair => pair.Key is PumpjackCenter)
-            .SelectMany(pair =>
+            .CenterToTerminals
+            .Keys
+            .SelectMany(center =>
             {
                 var searchSize = PumpjackWidth + beaconSize * 2 + (beaconEffectRadius - 1) * 2;
                 return Enumerable
                     .Range(0, searchSize * searchSize)
                     .Select(i => new Location(
-                        x: pair.Value.X + ((i % searchSize) - (searchSize / 2)),
-                        y: pair.Value.Y + ((i / searchSize) - (searchSize / 2))));
+                        x: center.X + ((i % searchSize) - (searchSize / 2)),
+                        y: center.Y + ((i / searchSize) - (searchSize / 2))));
             })
             .ToHashSet();
         validBeaconPositions.ExceptWith(occupiedPositions);

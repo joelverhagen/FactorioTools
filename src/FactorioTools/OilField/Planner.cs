@@ -33,11 +33,6 @@ internal static class Planner
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        if (context.Options.AddBeacons)
-        {
-            AddBeacons.Execute(context);
-        }
-
         if (!addElectricPolesFirst || context.Options.AddBeacons)
         {
             poles = AddElectricPoles.Execute(context, avoidTerminals: false, retryWithUncovered: addElectricPolesFirst);

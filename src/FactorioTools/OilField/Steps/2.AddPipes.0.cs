@@ -2,6 +2,7 @@
 using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 using System.Diagnostics.CodeAnalysis;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -61,12 +62,16 @@ internal static partial class AddPipes
             throw new InvalidOperationException("At least one pipe strategy must be used.");
         }
 
-        var bestSolution = pipesToSolution.Values.MinBy(s => s.Pipes.Count)!;
+        var bestSolution = pipesToSolution.Values.MaxBy(s => (s.Beacons?.Count, -s.Pipes.Count))!;
 
         context.CenterToTerminals = bestSolution.CenterToTerminals;
         context.LocationToTerminals = bestSolution.LocationToTerminals;
 
         AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
+        if (bestSolution.Beacons is not null)
+        {
+            AddBeaconsToGrid(context, bestSolution.Beacons);
+        }
     }
 
     private static Solution OptimizeAndAddSolution(
@@ -125,6 +130,13 @@ internal static partial class AddPipes
             undergroundPipes = UseUndergroundPipes.Execute(context, optimizedPipes);
         }
 
+        // TODO: perf idea, cache beacons per pipes
+        List<Location>? beacons = null;
+        if (context.Options.AddBeacons)
+        {
+            beacons = AddBeacons.Execute(context, optimizedPipes);
+        }
+
         // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         solution = new Solution
@@ -135,6 +147,7 @@ internal static partial class AddPipes
             LocationToTerminals = context.LocationToTerminals,
             Pipes = optimizedPipes,
             UndergroundPipes = undergroundPipes,
+            Beacons = beacons,
         };
 
         pipesToSolutions.Add(pipes, solution);
@@ -188,6 +201,20 @@ internal static partial class AddPipes
         }
     }
 
+    private static void AddBeaconsToGrid(Context context, IEnumerable<Location> centers)
+    {
+        foreach (var center in centers)
+        {
+            AddProvider(
+                context.Grid,
+                center,
+                new BeaconCenter(),
+                c => new BeaconSide(c),
+                context.Options.BeaconWidth,
+                context.Options.BeaconHeight);
+        }
+    }
+
     private class Solution
     {
         public required HashSet<PipeStrategy> Strategies { get; set; }
@@ -196,6 +223,7 @@ internal static partial class AddPipes
         public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
         public required HashSet<Location> Pipes { get; set; }
         public required Dictionary<Location, Direction>? UndergroundPipes { get; set; }
+        public List<Location>? Beacons { get; set; }
     }
 
     private class LocationSetComparer : IEqualityComparer<HashSet<Location>>

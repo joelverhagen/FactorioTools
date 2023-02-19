@@ -559,7 +559,7 @@ internal static class AddElectricPoles
             while (candidates.Count > 0)
             {
                 var candidate = candidates.Dequeue();
-                if (DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
+                if (DoesProviderFit(context.Grid, occupiedLocations: null, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
                     && IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate))
                 {
                     selectedPoint = candidate;

@@ -83,11 +83,13 @@ internal static class Helpers
 
     public static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered(
         Context context,
+        HashSet<Location> occupiedLocations,
         List<ProviderRecipient> recipients,
         bool removeUnused)
     {
         return GetCandidateToCovered<BeaconCenter>(
             context,
+            occupiedLocations,
             recipients,
             context.Options.BeaconWidth,
             context.Options.BeaconHeight,
@@ -105,6 +107,7 @@ internal static class Helpers
     {
         return GetCandidateToCovered<ElectricPoleCenter>(
             context,
+            occupiedLocations: null,
             recipients,
             context.Options.ElectricPoleWidth,
             context.Options.ElectricPoleHeight,
@@ -117,6 +120,7 @@ internal static class Helpers
 
     private static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
         Context context,
+        HashSet<Location>? occupiedLocations,
         List<ProviderRecipient> recipients,
         int providerWidth,
         int providerHeight,
@@ -164,7 +168,7 @@ internal static class Helpers
                     }
                     else
                     {
-                        var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
+                        var fits = DoesProviderFit(context.Grid, occupiedLocations, providerWidth, providerHeight, candidate);
                         if (!fits)
                         {
                             continue;
@@ -388,7 +392,12 @@ internal static class Helpers
     /// <summary>
     /// Checks if the provider fits at the provided center location. This does NOT account for grid bounds.
     /// </summary>
-    public static bool DoesProviderFit(SquareGrid grid, int providerWidth, int providerHeight, Location center)
+    public static bool DoesProviderFit(
+        SquareGrid grid,
+        HashSet<Location>? occupiedLocations,
+        int providerWidth,
+        int providerHeight,
+        Location center)
     {
         var minX = center.X - ((providerWidth - 1) / 2);
         var maxX = center.X + (providerWidth / 2);
@@ -399,7 +408,8 @@ internal static class Helpers
         {
             for (var y = minY; y <= maxY; y++)
             {
-                if (!grid.IsEmpty(new Location(x, y)))
+                var location = new Location(x, y);
+                if (!grid.IsEmpty(location) || (occupiedLocations is not null && occupiedLocations.Contains(location)))
                 {
                     return false;
                 }
