@@ -56,34 +56,6 @@ internal static partial class AddPipes
             }
         }
 
-        if (context.Options.ValidateSolution)
-        {
-            foreach (var solution in pipesToSolution.Values)
-            {
-                foreach (var terminals in solution.CenterToTerminals.Values)
-                {
-                    if (terminals.Count != 1)
-                    {
-                        throw new InvalidOperationException("A pumpjack has more than one terminal.");
-                    }
-                }
-
-                var goals = solution.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
-                var clone = new ExistingPipeGrid(context.Grid, solution.Pipes);
-                var start = goals.First();
-                goals.Remove(start);
-                var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
-                var reachedGoals = result.ReachedGoals;
-                reachedGoals.Add(start);
-                var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
-                if (unreachedGoals.Count > 0)
-                {
-                    // Visualizer.Show(context.Grid, solution.Pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                    throw new InvalidOperationException("The pipes are not fully connected.");
-                }
-            }
-        }
-
         if (pipesToSolution.Count == 0)
         {
             throw new InvalidOperationException("At least one pipe strategy must be used.");
@@ -118,6 +90,31 @@ internal static partial class AddPipes
             optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
 
             RotateOptimize.Execute(context, optimizedPipes);
+        }
+
+        if (context.Options.ValidateSolution)
+        {
+            foreach (var terminals in context.CenterToTerminals.Values)
+            {
+                if (terminals.Count != 1)
+                {
+                    throw new InvalidOperationException("A pumpjack has more than one terminal.");
+                }
+            }
+
+            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
+            var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
+            var start = goals.First();
+            goals.Remove(start);
+            var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
+            var reachedGoals = result.ReachedGoals;
+            reachedGoals.Add(start);
+            var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
+            if (unreachedGoals.Count > 0)
+            {
+                // Visualizer.Show(context.Grid, solution.Pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                throw new InvalidOperationException("The pipes are not fully connected.");
+            }
         }
 
         Dictionary<Location, Direction>? undergroundPipes = null;
