@@ -21,8 +21,8 @@ internal partial class Program
     private static void Measure()
     {
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
-        var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[42] };
+        // var blueprintStrings = blueprintStringsAll;
+        var blueprintStrings = new[] { blueprintStringsAll[42] };
         // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
 
