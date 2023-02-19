@@ -15,6 +15,8 @@ internal static partial class AddPipes
 
         var pipesToSolution = new Dictionary<HashSet<Location>, Solution>(LocationSetComparer.Instance);
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>(ConnectedCentersComparer.Instance);
+        var optimizePipePlans = new Dictionary<HashSet<Location>, (HashSet<Location> OptimizedPipes, Dictionary<Location, Direction>? UndergroundPipes)>(LocationSetComparer.Instance);
+        var beaconPlans = new Dictionary<HashSet<Location>, List<Location>>(LocationSetComparer.Instance);
 
         if (eliminateStrandedTerminals)
         {
@@ -31,7 +33,7 @@ internal static partial class AddPipes
                 case PipeStrategy.FBE:
                     {
                         var pipes = ExecuteWithFBE(context);
-                        OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters: null);
+                        OptimizeAndAddSolution(context, pipesToSolution, optimizePipePlans, beaconPlans, strategy, pipes, centerToConnectedCenters: null);
                     }
                     break;
 
@@ -47,7 +49,7 @@ internal static partial class AddPipes
                         }
 
                         var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
-                        solution = OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters);
+                        solution = OptimizeAndAddSolution(context, pipesToSolution, optimizePipePlans, beaconPlans, strategy, pipes, centerToConnectedCenters);
                         connectedCentersToSolutions.Add(centerToConnectedCenters, solution);
                     }
                     break;
@@ -77,6 +79,8 @@ internal static partial class AddPipes
     private static Solution OptimizeAndAddSolution(
         Context context,
         Dictionary<HashSet<Location>, Solution> pipesToSolutions,
+        Dictionary<HashSet<Location>, (HashSet<Location> OptimizedPipes, Dictionary<Location, Direction>? UndergroundPipes)> optimizePipePlans,
+        Dictionary<HashSet<Location>, List<Location>> beaconPlans,
         PipeStrategy strategy,
         HashSet<Location> pipes,
         Dictionary<Location, HashSet<Location>>? centerToConnectedCenters)
@@ -89,52 +93,70 @@ internal static partial class AddPipes
 
         // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        HashSet<Location> optimizedPipes = pipes;
-        if (context.Options.OptimizePipes)
-        {
-            optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
-
-            RotateOptimize.Execute(context, optimizedPipes);
-        }
-
-        if (context.Options.ValidateSolution)
-        {
-            foreach (var terminals in context.CenterToTerminals.Values)
-            {
-                if (terminals.Count != 1)
-                {
-                    throw new InvalidOperationException("A pumpjack has more than one terminal.");
-                }
-            }
-
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
-            var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
-            var start = goals.First();
-            goals.Remove(start);
-            var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
-            var reachedGoals = result.ReachedGoals;
-            reachedGoals.Add(start);
-            var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
-            if (unreachedGoals.Count > 0)
-            {
-                // Visualizer.Show(context.Grid, solution.Pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                throw new InvalidOperationException("The pipes are not fully connected.");
-            }
-        }
-
+        var optimizedPipes = pipes;
         Dictionary<Location, Direction>? undergroundPipes = null;
-        if (context.Options.UseUndergroundPipes)
-        {
-            optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
 
-            undergroundPipes = UseUndergroundPipes.Execute(context, optimizedPipes);
+        if ((context.Options.OptimizePipes || context.Options.UseUndergroundPipes))
+        {
+            if (optimizePipePlans.TryGetValue(pipes, out var plan))
+            {
+                optimizedPipes = plan.OptimizedPipes;
+                undergroundPipes = plan.UndergroundPipes;
+            }
+            else
+            {
+                if (context.Options.OptimizePipes)
+                {
+                    optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
+
+                    RotateOptimize.Execute(context, optimizedPipes);
+                }
+
+                if (context.Options.ValidateSolution)
+                {
+                    foreach (var terminals in context.CenterToTerminals.Values)
+                    {
+                        if (terminals.Count != 1)
+                        {
+                            throw new InvalidOperationException("A pumpjack has more than one terminal.");
+                        }
+                    }
+
+                    var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
+                    var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
+                    var start = goals.First();
+                    goals.Remove(start);
+                    var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
+                    var reachedGoals = result.ReachedGoals;
+                    reachedGoals.Add(start);
+                    var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
+                    if (unreachedGoals.Count > 0)
+                    {
+                        // Visualizer.Show(context.Grid, solution.Pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                        throw new InvalidOperationException("The pipes are not fully connected.");
+                    }
+                }
+
+                if (context.Options.UseUndergroundPipes)
+                {
+                    optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
+
+                    undergroundPipes = UseUndergroundPipes.Execute(context, optimizedPipes);
+                }
+
+                optimizePipePlans.Add(pipes, (optimizedPipes, undergroundPipes));
+            }
         }
 
         // TODO: perf idea, cache beacons per pipes
         List<Location>? beacons = null;
         if (context.Options.AddBeacons)
         {
-            beacons = AddBeacons.Execute(context, optimizedPipes);
+            if (!beaconPlans.TryGetValue(optimizedPipes, out beacons))
+            {
+                beacons = AddBeacons.Execute(context, optimizedPipes);
+                beaconPlans.Add(optimizedPipes, beacons);
+            }
         }
 
         // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
