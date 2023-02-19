@@ -313,7 +313,7 @@ public class HelpersTest
             Assert.Contains(new Location(11, 11), candidateToCovered.Keys);
 
             Assert.Equal(128, candidateToCovered.Count);
-            Assert.All(candidateToCovered.Values, c => Assert.Single(c));
+            Assert.All(candidateToCovered.Values, c => Assert.Equal(1, c.Count));
             Assert.All(candidateToCovered.Values, c => Assert.True(c[0]));
 
             // columns blocked at the top by the pumpjack itself

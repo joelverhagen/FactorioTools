@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Knapcode.FactorioTools.OilField.Data;
+﻿using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -82,7 +81,7 @@ internal static class Helpers
         return locationToTerminals;
     }
 
-    public static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered(
+    public static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered(
         Context context,
         List<ProviderRecipient> recipients,
         bool removeUnused)
@@ -99,7 +98,7 @@ internal static class Helpers
             includeBeacons: false);
     }
 
-    public static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered(
+    public static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered(
         Context context,
         List<ProviderRecipient> recipients,
         bool removeUnused)
@@ -116,7 +115,7 @@ internal static class Helpers
             includeBeacons: true);
     }
 
-    private static (Dictionary<Location, BitArray> CandidateToCovered, BitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
+    private static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
         Context context,
         List<ProviderRecipient> recipients,
         int providerWidth,
@@ -128,8 +127,8 @@ internal static class Helpers
         bool includeBeacons)
         where TProvider : GridEntity
     {
-        var candidateToCovered = new Dictionary<Location, BitArray>();
-        var coveredEntities = new BitArray(recipients.Count);
+        var candidateToCovered = new Dictionary<Location, CountedBitArray>();
+        var coveredEntities = new CountedBitArray(recipients.Count);
 
         var providers = context
             .Grid
@@ -173,7 +172,7 @@ internal static class Helpers
 
                         if (!candidateToCovered.TryGetValue(candidate, out var covered))
                         {
-                            covered = new BitArray(recipients.Count);
+                            covered = new CountedBitArray(recipients.Count);
                             covered[i] = true;
                             candidateToCovered.Add(candidate, covered);
                         }
@@ -235,7 +234,7 @@ internal static class Helpers
 
                                 if (!candidateToCovered.TryGetValue(candidate, out var covered))
                                 {
-                                    covered = new BitArray(recipients.Count);
+                                    covered = new CountedBitArray(recipients.Count);
                                     candidateToCovered.Add(candidate, covered);
                                 }
 
@@ -269,7 +268,7 @@ internal static class Helpers
             var toRemove = new List<Location>();
             foreach ((var candidate, var covered) in candidateToCovered)
             {
-                var subset = new BitArray(covered);
+                var subset = new CountedBitArray(covered);
                 subset.Not();
                 subset.Or(coveredEntities);
                 if (subset.All(true))
@@ -287,7 +286,9 @@ internal static class Helpers
         return (candidateToCovered, coveredEntities, providers);
     }
 
-    public static Dictionary<Location, double> GetCandidateToEntityDistance(List<ProviderRecipient> poweredEntities, Dictionary<Location, BitArray> candidateToCovered)
+    public static Dictionary<Location, double> GetCandidateToEntityDistance(
+        List<ProviderRecipient> poweredEntities,
+        Dictionary<Location, CountedBitArray> candidateToCovered)
     {
         return candidateToCovered.ToDictionary(
             x => x.Key,
@@ -422,8 +423,8 @@ internal static class Helpers
         int providerWidth,
         int providerHeight,
         List<ProviderRecipient> recipients,
-        BitArray coveredEntities,
-        Dictionary<Location, BitArray> candidateToCovered,
+        CountedBitArray coveredEntities,
+        Dictionary<Location, CountedBitArray> candidateToCovered,
         Dictionary<Location, double> candidateToEntityDistance)
         where TCenter : GridEntity
         where TSide : GridEntity
@@ -457,7 +458,7 @@ internal static class Helpers
             foreach ((var otherCandidate, var otherCovered) in candidateToCovered)
             {
                 var modified = false;
-                var otherCoveredCount = otherCovered.CountTrue();
+                var otherCoveredCount = otherCovered.TrueCount;
                 for (var i = 0; i < recipients.Count && otherCoveredCount > 0; i++)
                 {
                     if (coveredEntities[i] && otherCovered[i])
@@ -546,7 +547,7 @@ internal static class Helpers
         Func<TCenter, TSide> getNewSide,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, BitArray> candidateToCovered)
+        Dictionary<Location, CountedBitArray> candidateToCovered)
         where TCenter : GridEntity
         where TSide : GridEntity
     {
@@ -681,46 +682,6 @@ internal static class Helpers
 
             current = next;
         }
-    }
-
-    public static int CountTrue(this BitArray array)
-    {
-        var count = 0;
-        for (var i = 0; i < array.Length; i++)
-        {
-            if (array[i])
-            {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    public static bool All(this BitArray array, bool val)
-    {
-        for (var i = 0; i < array.Length; i++)
-        {
-            if (array[i] != val)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public static bool Any(this BitArray array, bool val)
-    {
-        for (var i = 0; i < array.Length; i++)
-        {
-            if (array[i] == val)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public static bool AreLocationsCollinear(List<Location> locations)

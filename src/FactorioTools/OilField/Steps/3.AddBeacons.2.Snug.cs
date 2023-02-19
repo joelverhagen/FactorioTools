@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Knapcode.FactorioTools.OilField.Grid;
+﻿using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -52,7 +51,7 @@ internal static partial class AddBeacons
                     .Keys
                     .MinBy(c => (
                         beacons.Count > 0 ? beacons.Keys.Min(x => x.GetManhattanDistance(c)) : 0,
-                        -candidateToCovered[c].CountTrue(),
+                        -candidateToCovered[c].TrueCount,
                         -candidateToEntityDistance[c],
                         candidateToMiddleDistance[c]
                     ))!;
@@ -119,7 +118,7 @@ internal static partial class AddBeacons
 
     private static void AddNeighborsAndSort(
         Context context,
-        Dictionary<Location, BitArray> candidateToCovered,
+        Dictionary<Location, CountedBitArray> candidateToCovered,
         List<Location> scopedCandidates,
         HashSet<Location> scopedCandidatesSet,
         SnugCandidateSorter sorter,
@@ -193,7 +192,7 @@ internal static partial class AddBeacons
         }
 
         var lookup = scopedCandidates.ToDictionary(c => c, c => (
-                    -sorter._candidateToCovered[c].CountTrue(),
+                    -sorter._candidateToCovered[c].TrueCount,
                     -sorter._candidateToEntityDistance[c],
                     sorter._candidateToMiddleDistance[c]
                 )).OrderByDescending(p => p.Value).ToList();
@@ -206,13 +205,13 @@ internal static partial class AddBeacons
     public class SnugCandidateSorter : IComparer<Location>
     {
         internal readonly Dictionary<Location, BeaconCenter> _beacons;
-        internal readonly Dictionary<Location, BitArray> _candidateToCovered;
+        internal readonly Dictionary<Location, CountedBitArray> _candidateToCovered;
         internal readonly Dictionary<Location, double> _candidateToEntityDistance;
         internal readonly Dictionary<Location, double> _candidateToMiddleDistance;
 
         public SnugCandidateSorter(
             Dictionary<Location, BeaconCenter> beacons,
-            Dictionary<Location, BitArray> candidateToCovered,
+            Dictionary<Location, CountedBitArray> candidateToCovered,
             Dictionary<Location, double> candidateToEntityDistance,
             Dictionary<Location, double> candidateToMiddleDistance)
         {
@@ -239,8 +238,8 @@ internal static partial class AddBeacons
             }
             */
 
-            xi = _candidateToCovered[x].CountTrue();
-            yi = _candidateToCovered[y].CountTrue();
+            xi = _candidateToCovered[x].TrueCount;
+            yi = _candidateToCovered[y].TrueCount;
             c = xi.CompareTo(yi);
             if (c != 0)
             {

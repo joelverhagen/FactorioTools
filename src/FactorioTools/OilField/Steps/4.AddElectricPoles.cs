@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Knapcode.FactorioTools.OilField.Algorithms;
+﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -266,7 +265,7 @@ internal static class AddElectricPoles
         bool retryWithUncovered)
     {
         var retryStrategy = retryWithUncovered ? RetryStrategy.PreferUncoveredEntities : RetryStrategy.None;
-        BitArray? entitiesToPowerFirst = null;
+        CountedBitArray? entitiesToPowerFirst = null;
 
         while (true)
         {
@@ -326,7 +325,7 @@ internal static class AddElectricPoles
                 }
                 else
                 {
-                    entitiesToPowerFirst = new BitArray(poweredEntities.Count);
+                    entitiesToPowerFirst = new CountedBitArray(poweredEntities.Count);
                     for (var i = 0; centersToPowerFirst.Count > 0 && i < poweredEntities.Count; i++)
                     {
                         if (centersToPowerFirst.Remove(poweredEntities[i].Center))
@@ -368,10 +367,10 @@ internal static class AddElectricPoles
     }
 
 
-    private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<Location> ElectricPoleList, BitArray CoveredEntities) AddElectricPolesAroundEntities(
+    private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<Location> ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
         Context context,
         List<ProviderRecipient> poweredEntities,
-        BitArray? entitiesToPowerFirst)
+        CountedBitArray? entitiesToPowerFirst)
     {
         (var candidateToCovered, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
             context,
@@ -413,8 +412,8 @@ internal static class AddElectricPoles
                     return (Location: pair.Key, Covered: pair.Value, OthersConnected: othersConnected);
                 })
                 .MinBy(x => (
-                    -(entitiesToPowerFirst is null ? 0 : new BitArray(entitiesToPowerFirst).And(x.Covered).CountTrue()),
-                    -x.Covered.CountTrue(),
+                    -(entitiesToPowerFirst is null ? 0 : new CountedBitArray(entitiesToPowerFirst).And(x.Covered).TrueCount),
+                    -x.Covered.TrueCount,
                     x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue,
                     x.OthersConnected > 0 ? 0 : GetDistanceToClosestElectricPole(electricPoleList, x.Location),
                     candidateToEntityDistance[x.Location],
