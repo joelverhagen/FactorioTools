@@ -67,7 +67,7 @@ internal static partial class AddBeacons
                 continue;
             }
 
-            beacons.Add(beacon.Mid);
+            beacons.Add(beacon.Center);
             collided.UnionWith(beacon.CollisionArea.SelectMany(p => pointToBeacons[p]));
         }
 
@@ -78,7 +78,7 @@ internal static partial class AddBeacons
     {
         possibleBeacons = possibleBeacons
             .OrderByDescending(b => b.EffectsGiven)
-            .ThenBy(b => b.EffectsGiven == 1 ? -b.AvgDistToEntities : b.NrOfOverlaps)
+            .ThenBy(b => b.EffectsGiven == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps)
             .ToList();
         possibleBeacons.Reverse();
         return possibleBeacons;
@@ -96,12 +96,12 @@ internal static partial class AddBeacons
         Dictionary<Location, Area[]> pointToEntityArea)
     {
         var beaconEffectRadius = GetBeaconEffectRadius(context);
-        var middleIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
+        var centerIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
         var possibleBeacons = new List<BeaconCandidate>(possibleBeaconAreas.Count);
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
         {
             var collisionArea = possibleBeaconAreas[i];
-            var mid = collisionArea[middleIndex];
+            var center = collisionArea[centerIndex];
 
             var d = context.Options.BeaconWidth + beaconEffectRadius * 2;
             var d2 = d * d;
@@ -110,8 +110,8 @@ internal static partial class AddBeacons
             for (var j = 0; j < d2; j++)
             {
                 var location = new Location(
-                    x: mid.X + ((j % d) - (d / 2)),
-                    y: mid.Y + ((j / d) - (d / 2)));
+                    x: center.X + ((j % d) - (d / 2)),
+                    y: center.Y + ((j / d) - (d / 2)));
 
                 if (pointToEntityArea.TryGetValue(location, out var area))
                 {
@@ -124,11 +124,11 @@ internal static partial class AddBeacons
                 continue;
             }
 
-            var avgDistToEntities = effectsGiven.Average(p => p[middleIndex].Location.GetManhattanDistance(mid));
+            var avgDistToEntities = effectsGiven.Average(p => p[centerIndex].Location.GetManhattanDistance(center));
             var nrOfOverlaps = collisionArea.Sum(p => pointToBeaconCount[p]);
 
             possibleBeacons.Add(new BeaconCandidate(
-                mid,
+                center,
                 collisionArea,
                 effectsGiven.Count,
                 avgDistToEntities,
@@ -330,5 +330,5 @@ internal static partial class AddBeacons
 
     private record Area(Location Location, bool Effect);
 
-    private record BeaconCandidate(Location Mid, Location[] CollisionArea, int EffectsGiven, double AvgDistToEntities, int NrOfOverlaps);
+    private record BeaconCandidate(Location Center, Location[] CollisionArea, int EffectsGiven, double AverageDistanceToEntities, int NumberOfOverlaps);
 }
