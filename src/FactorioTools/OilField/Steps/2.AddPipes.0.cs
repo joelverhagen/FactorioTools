@@ -68,9 +68,11 @@ internal static partial class AddPipes
         context.LocationToTerminals = bestSolution.LocationToTerminals;
 
         AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
+
         if (bestSolution.Beacons is not null)
         {
-            AddBeaconsToGrid(context, bestSolution.Beacons);
+            // Visualizer.Show(context.Grid, bestSolution.Beacons.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            AddBeaconsToGrid(context.Grid, context.Options, bestSolution.Beacons);
         }
     }
 
@@ -81,7 +83,8 @@ internal static partial class AddPipes
         HashSet<Location> pipes,
         Dictionary<Location, HashSet<Location>>? centerToConnectedCenters)
     {
-        if (pipesToSolutions.TryGetValue(pipes, out var solution))
+        Solution? solution;
+        if (pipesToSolutions.TryGetValue(pipes, out solution))
         {
             solution.Strategies.Add(strategy);
             return solution;
@@ -89,14 +92,66 @@ internal static partial class AddPipes
 
         // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
+        var originalCenterToTerminals = context.CenterToTerminals;
+        var originalLocationToTerminals = context.LocationToTerminals;
+
         HashSet<Location> optimizedPipes = pipes;
         if (context.Options.OptimizePipes)
         {
-            optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
-
+            context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+            context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+            optimizedPipes = new HashSet<Location>(pipes);
             RotateOptimize.Execute(context, optimizedPipes);
         }
 
+        if (pipes.SetEquals(optimizedPipes))
+        {
+            optimizedPipes = context.Options.UseUndergroundPipes ? new HashSet<Location>(pipes) : pipes;
+            solution = GetSolution(context, strategy, centerToConnectedCenters, optimizedPipes);
+        }
+        else
+        {
+            var solutionA = GetSolution(context, strategy, centerToConnectedCenters, optimizedPipes);
+
+            context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+            context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+            var pipesB = context.Options.UseUndergroundPipes ? new HashSet<Location>(pipes) : pipes;
+            var solutionB = GetSolution(context, strategy, centerToConnectedCenters, pipesB);
+
+            if (context.Options.AddBeacons)
+            {
+                var c = solutionA.Beacons!.Count.CompareTo(solutionB.Beacons!.Count);
+                if (c > 0)
+                {
+                    solution = solutionA;
+                }
+                else if (c < 0)
+                {
+                    solution = solutionB;
+                }
+                else
+                {
+                    solution = solutionA.Pipes.Count <= solutionB.Pipes.Count ? solutionA : solutionB;
+                }
+            }
+            else
+            {
+                solution = solutionA.Pipes.Count <= solutionB.Pipes.Count ? solutionA : solutionB;
+            }
+        }
+
+        pipesToSolutions.Add(pipes, solution);
+
+        return solution;
+    }
+
+    private static Solution GetSolution(
+        Context context,
+        PipeStrategy strategy,
+        Dictionary<Location, HashSet<Location>>? centerToConnectedCenters,
+        HashSet<Location> optimizedPipes)
+    {
+        Solution? solution;
         if (context.Options.ValidateSolution)
         {
             foreach (var terminals in context.CenterToTerminals.Values)
@@ -117,7 +172,7 @@ internal static partial class AddPipes
             var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
             if (unreachedGoals.Count > 0)
             {
-                // Visualizer.Show(context.Grid, solution.Pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
                 throw new InvalidOperationException("The pipes are not fully connected.");
             }
         }
@@ -125,16 +180,23 @@ internal static partial class AddPipes
         Dictionary<Location, Direction>? undergroundPipes = null;
         if (context.Options.UseUndergroundPipes)
         {
-            optimizedPipes = pipes == optimizedPipes ? new HashSet<Location>(pipes) : optimizedPipes;
-
             undergroundPipes = UseUndergroundPipes.Execute(context, optimizedPipes);
         }
 
-        // TODO: perf idea, cache beacons per pipes
         List<Location>? beacons = null;
         if (context.Options.AddBeacons)
         {
             beacons = AddBeacons.Execute(context, optimizedPipes);
+        }
+
+        if (context.Options.ValidateSolution)
+        {
+            var clone = new PipeGrid(context.Grid);
+            AddPipeEntities.Execute(clone, context.SharedInstances, context.CenterToTerminals, optimizedPipes, undergroundPipes);
+            if (beacons is not null)
+            {
+                AddBeaconsToGrid(clone, context.Options, beacons);
+            }
         }
 
         // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
@@ -149,8 +211,6 @@ internal static partial class AddPipes
             UndergroundPipes = undergroundPipes,
             Beacons = beacons,
         };
-
-        pipesToSolutions.Add(pipes, solution);
 
         return solution;
     }
@@ -201,17 +261,17 @@ internal static partial class AddPipes
         }
     }
 
-    private static void AddBeaconsToGrid(Context context, IEnumerable<Location> centers)
+    private static void AddBeaconsToGrid(SquareGrid grid, Options options, IEnumerable<Location> centers)
     {
         foreach (var center in centers)
         {
             AddProvider(
-                context.Grid,
+                grid,
                 center,
                 new BeaconCenter(),
                 c => new BeaconSide(c),
-                context.Options.BeaconWidth,
-                context.Options.BeaconHeight);
+                options.BeaconWidth,
+                options.BeaconHeight);
         }
     }
 

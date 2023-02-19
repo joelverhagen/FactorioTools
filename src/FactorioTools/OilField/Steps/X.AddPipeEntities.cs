@@ -7,8 +7,23 @@ internal static class AddPipeEntities
 {
     public static void Execute(Context context, HashSet<Location> pipes, Dictionary<Location, Direction>? undergroundPipes)
     {
+        Execute(
+            context.Grid,
+            context.SharedInstances,
+            context.CenterToTerminals,
+            pipes,
+            undergroundPipes);
+    }
+
+    public static void Execute(
+        SquareGrid grid,
+        SharedInstances sharedInstances,
+        Dictionary<Location, List<TerminalLocation>> centerToTerminals,
+        HashSet<Location> pipes,
+        Dictionary<Location, Direction>? undergroundPipes)
+    {
 #if USE_SHARED_INSTANCES
-        var addedPipes = context.SharedInstances.LocationSetA;
+        var addedPipes = sharedInstances.LocationSetA;
 #else
         var addedPipes = new HashSet<Location>();
 #endif
@@ -21,11 +36,11 @@ internal static class AddPipeEntities
                 foreach ((var location, var direction) in undergroundPipes)
                 {
                     addedPipes.Add(location);
-                    context.Grid.AddEntity(location, new UndergroundPipe(direction));
+                    grid.AddEntity(location, new UndergroundPipe(direction));
                 }
             }
 
-            foreach (var terminals in context.CenterToTerminals.Values)
+            foreach (var terminals in centerToTerminals.Values)
             {
                 if (terminals.Count != 1)
                 {
@@ -36,7 +51,7 @@ internal static class AddPipeEntities
                 {
                     if (addedPipes.Add(terminals[i].Terminal))
                     {
-                        context.Grid.AddEntity(terminals[i].Terminal, new Terminal());
+                        grid.AddEntity(terminals[i].Terminal, new Terminal());
                     }
                 }
             }
@@ -45,7 +60,7 @@ internal static class AddPipeEntities
             {
                 if (addedPipes.Add(pipe))
                 {
-                    context.Grid.AddEntity(pipe, new Pipe());
+                    grid.AddEntity(pipe, new Pipe());
                 }
             }
 
