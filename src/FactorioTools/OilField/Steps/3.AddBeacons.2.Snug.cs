@@ -186,12 +186,6 @@ internal static partial class AddBeacons
             }
         }
 
-        var lookup = scopedCandidates.ToDictionary(c => c, c => (
-                    -sorter._candidateToCovered[c].TrueCount,
-                    -sorter._candidateToEntityDistance[c],
-                    sorter._candidateToMiddleDistance[c]
-                )).OrderByDescending(p => p.Value).ToList();
-
         // Sort the candidates. We have to sort the whole list because the sort order of existing items in the scoped
         // candidates list may have also changed. Sort of any candidate can change when a beacon is added to the grid.
         scopedCandidates.Sort(sorter);
