@@ -66,6 +66,11 @@ internal static partial class AddBeacons
                     var candidate = scopedCandidates[scopedCandidates.Count - 1];
                     scopedCandidates.RemoveAt(scopedCandidates.Count - 1);
 
+                    if (!candidateToCovered.ContainsKey(candidate))
+                    {
+                        continue;
+                    }
+
                     var centerEntity = new BeaconCenter();
 
                     AddProvider(
@@ -130,9 +135,6 @@ internal static partial class AddBeacons
         var minY = Math.Max((context.Options.BeaconHeight - 1) / 2, overlapMinY - 1);
         var maxX = Math.Min(context.Grid.Width - (context.Options.BeaconWidth / 2) - 1, overlapMaxX + 1);
         var maxY = Math.Min(context.Grid.Height - (context.Options.BeaconHeight / 2) - 1, overlapMaxY + 1);
-
-        // remove inelligable candidates
-        scopedCandidates.RemoveAll(c => !candidateToCovered.ContainsKey(c));
 
         var initialCount = scopedCandidates.Count;
 
