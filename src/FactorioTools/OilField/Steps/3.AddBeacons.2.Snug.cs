@@ -29,6 +29,12 @@ internal static partial class AddBeacons
 
         // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
+        var sorter = new SnugCandidateSorter(
+            beacons,
+            candidateToCovered,
+            candidateToEntityDistance,
+            candidateToMiddleDistance);
+
 #if USE_SHARED_INSTANCES
         var scopedCandidates = context.SharedInstances.LocationListA;
         var scopedCandidatesSet = context.SharedInstances.LocationSetA;
@@ -36,12 +42,6 @@ internal static partial class AddBeacons
         var scopedCandidates = new List<Location>();
         var scopedCandidatesSet = new HashSet<Location>();
 #endif
-
-        var sorter = new SnugCandidateSorter(
-            beacons,
-            candidateToCovered,
-            candidateToEntityDistance,
-            candidateToMiddleDistance);
 
         try
         {
@@ -134,6 +134,8 @@ internal static partial class AddBeacons
         // remove inelligable candidates
         scopedCandidates.RemoveAll(c => !candidateToCovered.ContainsKey(c));
 
+        var initialCount = scopedCandidates.Count;
+
         // top bound of the neighbor rectangle
         if (overlapMinY - 1 == minY)
         {
@@ -186,9 +188,10 @@ internal static partial class AddBeacons
             }
         }
 
-        // Sort the candidates. We have to sort the whole list because the sort order of existing items in the scoped
-        // candidates list may have also changed. Sort of any candidate can change when a beacon is added to the grid.
-        scopedCandidates.Sort(sorter);
+        if (initialCount < scopedCandidates.Count)
+        {
+            scopedCandidates.Sort(initialCount, scopedCandidates.Count - initialCount, sorter);
+        }
     }
 
     public class SnugCandidateSorter : IComparer<Location>
