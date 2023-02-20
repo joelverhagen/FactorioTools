@@ -1,4 +1,5 @@
-﻿using Knapcode.FactorioTools.OilField.Algorithms;
+﻿using System.Reflection.Metadata.Ecma335;
+using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -344,13 +345,13 @@ internal static class AddElectricPoles
             return new ElectricPoleCandidateInfo(covered);
         }
     }
-
+    
     private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<Location> ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
         Context context,
         List<ProviderRecipient> poweredEntities,
         CountedBitArray? entitiesToPowerFirst)
     {
-        (var candidateToInfo, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
+        (var allCandidateToInfo, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
             context,
             poweredEntities,
             CandidateFactory.Instance,
@@ -358,23 +359,75 @@ internal static class AddElectricPoles
 
         var electricPoleList = electricPoles.Keys.ToList();
 
-        PopulateCandidateToInfo(context, candidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
+        PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
-        var sorter = entitiesToPowerFirst is null ? CandidateComparer.Instance : CandidateComparerWithPriority.Instance;
+        var allSubsets = new Queue<Queue<Dictionary<Location, ElectricPoleCandidateInfo>>>();
 
-        var toRemove = new List<Location>();
+        IComparer<ElectricPoleCandidateInfo> sorter;
+        if (entitiesToPowerFirst is null)
+        {
+            sorter = CandidateComparerForSameCoveredCount.Instance;
+        }
+        else
+        {
+            sorter = CandidateComparerForSamePriorityPowered.Instance;
+            EnqueueCandidateSubsets(
+                allSubsets,
+                allCandidateToInfo
+                    .GroupBy(p => p.Value.PriorityPowered)
+                    .OrderByDescending(g => g.Key)
+                    .Select(g => g.ToDictionary(p => p.Key, p => p.Value)));
+        }
+
+        EnqueueCandidateSubsets(
+            allSubsets,
+            allCandidateToInfo
+                .GroupBy(p => p.Value.Covered.TrueCount)
+                .OrderByDescending(g => g.Key)
+                .Select(g => g.ToDictionary(p => p.Key, p => p.Value)));
+
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
+        Dictionary<Location, ElectricPoleCandidateInfo>? candidateToInfo = null;
 
         while (coveredEntities.Any(false))
         {
-            if (candidateToInfo.Count == 0)
+            if (candidateToInfo is null)
             {
-                // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
-                // existing pipe placement eliminates all electric pole options).
-                return (null, electricPoleList, coveredEntities);
+                if (allSubsets.Count == 0)
+                {
+                    // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
+                    // existing pipe placement eliminates all electric pole options).
+                    return (null, electricPoleList, coveredEntities);
+                }
+
+                var subsets = allSubsets.Peek();
+                if (subsets.Count == 0)
+                {
+                    allSubsets.Dequeue();
+                    continue;
+                }
+
+                candidateToInfo = subsets.Peek();
+                if (candidateToInfo.Count == 0)
+                {
+                    candidateToInfo = null;
+                    subsets.Dequeue();
+                    continue;
+                }
             }
 
             (var candidate, var candidateInfo) = candidateToInfo.MinBy(x => x.Value, sorter)!;
+            candidateToInfo.Remove(candidate);
+
+            if (!allCandidateToInfo.ContainsKey(candidate))
+            {
+                if (candidateToInfo.Count == 0)
+                {
+                    candidateToInfo = null;
+                }
+
+                continue;
+            }
 
             if (context.Options.ValidateSolution)
             {
@@ -407,14 +460,20 @@ internal static class AddElectricPoles
                 context.Options.ElectricPoleHeight,
                 poweredEntities,
                 coveredEntities,
-                candidateToInfo);
+                allCandidateToInfo);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
             electricPoles.Add(candidate, centerEntity);
             electricPoleList.Add(candidate);
 
-            UpdateCandidateInfo(context, candidateToInfo, roundedReach, candidate);
+            UpdateCandidateInfo(context, allCandidateToInfo, roundedReach, candidate);
+
+            if (candidateToInfo.Count == 0)
+            {
+                candidateToInfo = null;
+                continue;
+            }
 
             /*
             var test = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
@@ -443,6 +502,19 @@ internal static class AddElectricPoles
         return (electricPoles, electricPoleList, coveredEntities);
     }
 
+    private static void EnqueueCandidateSubsets(
+        Queue<Queue<Dictionary<Location, ElectricPoleCandidateInfo>>> allSubsets,
+        IEnumerable<Dictionary<Location, ElectricPoleCandidateInfo>> subsets)
+    {
+        var queue = new Queue<Dictionary<Location, ElectricPoleCandidateInfo>>();
+        foreach (var subset in subsets)
+        {
+            queue.Enqueue(subset);
+        }
+
+        allSubsets.Enqueue(queue);
+    }
+
     private class ElectricPoleCandidateInfo : CandidateInfo
     {
         public ElectricPoleCandidateInfo(CountedBitArray covered) : base(covered)
@@ -467,6 +539,10 @@ internal static class AddElectricPoles
             if (entitiesToPowerFirst is not null)
             {
                 info.PriorityPowered = new CountedBitArray(entitiesToPowerFirst).And(info.Covered).TrueCount;
+                if (info.PriorityPowered > 0)
+                {
+
+                }
             }
 
             var othersConnected = 0;
@@ -493,9 +569,9 @@ internal static class AddElectricPoles
         }
     }
 
-    private class CandidateComparer : IComparer<ElectricPoleCandidateInfo>
+    private class CandidateComparerForSameCoveredCount : IComparer<ElectricPoleCandidateInfo>
     {
-        public static IComparer<ElectricPoleCandidateInfo> Instance { get; } = new CandidateComparer();
+        public static CandidateComparerForSameCoveredCount Instance { get; } = new CandidateComparerForSameCoveredCount();
 
         public int Compare(ElectricPoleCandidateInfo? x, ElectricPoleCandidateInfo? y)
         {
@@ -506,15 +582,9 @@ internal static class AddElectricPoles
             ElectricPoleCandidateInfo x,
             ElectricPoleCandidateInfo y)
         {
-            var c = y.Covered.TrueCount.CompareTo(x.Covered.TrueCount);
-            if (c != 0)
-            {
-                return c;
-            }
-
             var xi = x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue;
             var yi = y.OthersConnected > 0 ? y.OthersConnected : int.MaxValue;
-            c = xi.CompareTo(yi);
+            var c = xi.CompareTo(yi);
             if (c != 0)
             {
                 return c;
@@ -538,19 +608,19 @@ internal static class AddElectricPoles
         }
     }
 
-    private class CandidateComparerWithPriority : IComparer<ElectricPoleCandidateInfo>
+    private class CandidateComparerForSamePriorityPowered : IComparer<ElectricPoleCandidateInfo>
     {
-        public static IComparer<ElectricPoleCandidateInfo> Instance { get; } = new CandidateComparerWithPriority();
+        public static CandidateComparerForSamePriorityPowered Instance { get; } = new CandidateComparerForSamePriorityPowered();
 
         public int Compare(ElectricPoleCandidateInfo? x, ElectricPoleCandidateInfo? y)
         {
-            var c = y!.PriorityPowered.CompareTo(x!.PriorityPowered);
+            var c = y!.Covered.TrueCount.CompareTo(x!.Covered.TrueCount);
             if (c != 0)
             {
                 return c;
             }
 
-            return CandidateComparer.CompareWithoutPriorityPowered(x, y);
+            return CandidateComparerForSameCoveredCount.CompareWithoutPriorityPowered(x, y);
         }
     }
 
