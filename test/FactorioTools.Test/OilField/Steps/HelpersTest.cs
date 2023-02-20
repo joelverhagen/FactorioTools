@@ -245,9 +245,10 @@ public class HelpersTest
                 AddPumpjack(context, pumpjack.Center);
             }
 
-            (var candidateToCovered, var coveredEntities, var providers) = GetElectricPoleCandidateToCovered(
+            (var candidateToInfo, var coveredEntities, var providers) = GetElectricPoleCandidateToCovered(
                 context,
                 pumpjacks,
+                new CandidateFactory(),
                 removeUnused: true);
 
             Assert.IsType<ElectricPoleCenter>(context.Grid[new Location(1, 3)]);
@@ -263,21 +264,21 @@ public class HelpersTest
             Assert.False(coveredEntities[1]);
 
             // columns to the left and right of the pumpjack
-            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(10, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 10
-            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(11, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 11
-            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(15, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 15
-            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(16, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 16
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(10, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 10
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(11, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 11
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(15, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 15
+            Assert.All(Enumerable.Range(0, 6).Select(y => new Location(16, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 16
 
             // columns broken up by the pumpjack itself
-            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(12, y))), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 12
-            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(13, y))), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 13
-            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(14, y))), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 14
+            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(12, y))), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 12
+            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(13, y))), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 13
+            Assert.All(new[] { new Location(12, 0) }.Concat(Enumerable.Range(4, 2).Select(y => new Location(14, y))), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 14
 
-            Assert.Equal(33, candidateToCovered.Count);
+            Assert.Equal(33, candidateToInfo.Count);
 
-            Assert.All(candidateToCovered.Values, c => Assert.Equal(2, c.Count));
-            Assert.All(candidateToCovered.Values, c => Assert.False(c[0]));
-            Assert.All(candidateToCovered.Values, c => Assert.True(c[1]));
+            Assert.All(candidateToInfo.Values, c => Assert.Equal(2, c.Covered.Count));
+            Assert.All(candidateToInfo.Values, c => Assert.False(c.Covered[0]));
+            Assert.All(candidateToInfo.Values, c => Assert.True(c.Covered[1]));
         }
 
         [Fact]
@@ -295,9 +296,10 @@ public class HelpersTest
                 AddPumpjack(context, pumpjack.Center);
             }
 
-            (var candidateToCovered, var coveredEntities, var providers) = GetElectricPoleCandidateToCovered(
+            (var candidateToInfo, var coveredEntities, var providers) = GetElectricPoleCandidateToCovered(
                 context,
                 pumpjacks,
+                new CandidateFactory(),
                 removeUnused: true);
             
             // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
@@ -306,31 +308,39 @@ public class HelpersTest
             Assert.Empty(providers);
 
             // These are positions that should become candidates after unused substations are removed.
-            Assert.Contains(new Location(9, 11), candidateToCovered.Keys);
-            Assert.Contains(new Location(10, 11), candidateToCovered.Keys);
-            Assert.Contains(new Location(11, 9), candidateToCovered.Keys);
-            Assert.Contains(new Location(11, 10), candidateToCovered.Keys);
-            Assert.Contains(new Location(11, 11), candidateToCovered.Keys);
+            Assert.Contains(new Location(9, 11), candidateToInfo.Keys);
+            Assert.Contains(new Location(10, 11), candidateToInfo.Keys);
+            Assert.Contains(new Location(11, 9), candidateToInfo.Keys);
+            Assert.Contains(new Location(11, 10), candidateToInfo.Keys);
+            Assert.Contains(new Location(11, 11), candidateToInfo.Keys);
 
-            Assert.Equal(128, candidateToCovered.Count);
-            Assert.All(candidateToCovered.Values, c => Assert.Equal(1, c.Count));
-            Assert.All(candidateToCovered.Values, c => Assert.True(c[0]));
+            Assert.Equal(128, candidateToInfo.Count);
+            Assert.All(candidateToInfo.Values, c => Assert.Equal(1, c.Covered.Count));
+            Assert.All(candidateToInfo.Values, c => Assert.True(c.Covered[0]));
 
             // columns blocked at the top by the pumpjack itself
-            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(0, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 0
-            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(1, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 1
-            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(2, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 2
-            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(3, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 3
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(0, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 0
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(1, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 1
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(2, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 2
+            Assert.All(Enumerable.Range(4, 8).Select(y => new Location(3, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 3
 
             // columns not blocked by the pumpjack
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(4, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 4
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(5, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 5
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(6, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 6
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(7, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 7
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(8, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 8
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(9, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 9
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(10, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 10
-            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(11, y)), l => Assert.Contains(l, candidateToCovered.Keys)); // x = 11
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(4, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 4
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(5, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 5
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(6, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 6
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(7, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 7
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(8, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 8
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(9, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 9
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(10, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 10
+            Assert.All(Enumerable.Range(0, 12).Select(y => new Location(11, y)), l => Assert.Contains(l, candidateToInfo.Keys)); // x = 11
+        }
+
+        private class CandidateFactory : ICandidateFactory<CandidateInfo>
+        {
+            public CandidateInfo Create(CountedBitArray covered)
+            {
+                return new CandidateInfo(covered);
+            }
         }
     }
 }

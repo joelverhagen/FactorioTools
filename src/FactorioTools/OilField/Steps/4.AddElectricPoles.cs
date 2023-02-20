@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using System.Text;
-using Knapcode.FactorioTools.OilField.Algorithms;
-using Knapcode.FactorioTools.OilField.Data;
+﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -338,20 +335,30 @@ internal static class AddElectricPoles
         }
     }
 
+    private class CandidateFactory : ICandidateFactory<ElectricPoleCandidateInfo>
+    {
+        public static CandidateFactory Instance { get; } = new CandidateFactory();
+
+        public ElectricPoleCandidateInfo Create(CountedBitArray covered)
+        {
+            return new ElectricPoleCandidateInfo(covered);
+        }
+    }
 
     private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<Location> ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
         Context context,
         List<ProviderRecipient> poweredEntities,
         CountedBitArray? entitiesToPowerFirst)
     {
-        (var candidateToCovered, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
+        (var candidateToInfo, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
             context,
             poweredEntities,
+            CandidateFactory.Instance,
             removeUnused: true);
 
         var electricPoleList = electricPoles.Keys.ToList();
 
-        var candidateToInfo = GetCandidateToInfo(context, candidateToCovered, entitiesToPowerFirst, poweredEntities, electricPoleList);
+        PopulateCandidateToInfo(context, candidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
         var sorter = entitiesToPowerFirst is null ? CandidateComparer.Instance : CandidateComparerWithPriority.Instance;
 
@@ -448,22 +455,18 @@ internal static class AddElectricPoles
         public int MiddleDistance;
     }
 
-    private static Dictionary<Location, ElectricPoleCandidateInfo> GetCandidateToInfo(
+    private static void PopulateCandidateToInfo(
         Context context,
-        Dictionary<Location, CountedBitArray> candidateToCovered,
+        Dictionary<Location, ElectricPoleCandidateInfo> candidateToInfo,
         CountedBitArray? entitiesToPowerFirst,
         List<ProviderRecipient> poweredEntities,
         List<Location> electricPoleList)
     {
-        var candidateToInfo = new Dictionary<Location, ElectricPoleCandidateInfo>(candidateToCovered.Count);
-
-        foreach ((var candidate, var covered) in candidateToCovered)
+        foreach ((var candidate, var info) in candidateToInfo)
         {
-            var info = new ElectricPoleCandidateInfo(covered);
-
             if (entitiesToPowerFirst is not null)
             {
-                info.PriorityPowered = new CountedBitArray(entitiesToPowerFirst).And(covered).TrueCount;
+                info.PriorityPowered = new CountedBitArray(entitiesToPowerFirst).And(info.Covered).TrueCount;
             }
 
             var othersConnected = 0;
@@ -485,13 +488,9 @@ internal static class AddElectricPoles
             info.OthersConnected = othersConnected;
             info.PoleDistance = min;
 
-            info.EntityDistance = GetEntityDistance(poweredEntities, candidate, covered);
+            info.EntityDistance = GetEntityDistance(poweredEntities, candidate, info.Covered);
             info.MiddleDistance = candidate.GetEuclideanDistanceSquared(context.Grid.Middle);
-
-            candidateToInfo.Add(candidate, info);
         }
-
-        return candidateToInfo;
     }
 
     private class CandidateComparer : IComparer<ElectricPoleCandidateInfo>

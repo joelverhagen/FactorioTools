@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using DelaunatorSharp;
 using Knapcode.FluteSharp;
 using Knapcode.FactorioTools.OilField.Grid;
 
@@ -175,7 +174,7 @@ internal static partial class AddPipes
             .Except(terminalPoints)
             .ToList();
 
-        var edges = new HashSet<IEdge>();
+        var edges = new HashSet<DelaunatorSharp.IEdge>();
 
         for (int i = 0; i < fluteTree.Branch.Length; i++)
         {
@@ -184,7 +183,7 @@ internal static partial class AddPipes
             while (true)
             {
                 var next = fluteTree.Branch[current.N];
-                var edge = new Edge(e: 0, new Point(current.X, current.Y), new Point(next.X, next.Y));
+                var edge = new DelaunatorSharp.Edge(e: 0, new DelaunatorSharp.Point(current.X, current.Y), new DelaunatorSharp.Point(next.X, next.Y));
                 edges.Add(edge);
 
                 if (current.N == next.N)
@@ -196,7 +195,7 @@ internal static partial class AddPipes
             }
         }
 
-        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (IPoint)new Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
     }
 #endif
 }

@@ -81,14 +81,17 @@ internal static class Helpers
         return locationToTerminals;
     }
 
-    public static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered(
+    public static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
+        ICandidateFactory<TInfo> candidateFactory,
         bool removeUnused)
+        where TInfo : CandidateInfo
     {
-        return GetCandidateToCovered<BeaconCenter>(
+        return GetCandidateToCovered<BeaconCenter, TInfo>(
             context,
             recipients,
+            candidateFactory,
             context.Options.BeaconWidth,
             context.Options.BeaconHeight,
             context.Options.BeaconSupplyWidth,
@@ -98,14 +101,17 @@ internal static class Helpers
             includeBeacons: false);
     }
 
-    public static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered(
+    public static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
+        ICandidateFactory<TInfo> candidateFactory,
         bool removeUnused)
+        where TInfo : CandidateInfo
     {
-        return GetCandidateToCovered<ElectricPoleCenter>(
+        return GetCandidateToCovered<ElectricPoleCenter, TInfo>(
             context,
             recipients,
+            candidateFactory,
             context.Options.ElectricPoleWidth,
             context.Options.ElectricPoleHeight,
             context.Options.ElectricPoleSupplyWidth,
@@ -115,9 +121,15 @@ internal static class Helpers
             includeBeacons: true);
     }
 
-    private static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
+    public interface ICandidateFactory<TInfo> where TInfo : CandidateInfo
+    {
+        TInfo Create(CountedBitArray covered);
+    }
+
+    private static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
+        ICandidateFactory<TInfo> candidateFactory,
         int providerWidth,
         int providerHeight,
         int supplyWidth,
@@ -126,8 +138,9 @@ internal static class Helpers
         bool includePumpjacks,
         bool includeBeacons)
         where TProvider : GridEntity
+        where TInfo : CandidateInfo
     {
-        var candidateToCovered = new Dictionary<Location, CountedBitArray>();
+        var candidateToInfo = new Dictionary<Location, TInfo>();
         var coveredEntities = new CountedBitArray(recipients.Count);
 
         var providers = context
@@ -170,15 +183,16 @@ internal static class Helpers
                             continue;
                         }
 
-                        if (!candidateToCovered.TryGetValue(candidate, out var covered))
+                        if (!candidateToInfo.TryGetValue(candidate, out var info))
                         {
-                            covered = new CountedBitArray(recipients.Count);
+                            var covered = new CountedBitArray(recipients.Count);
                             covered[i] = true;
-                            candidateToCovered.Add(candidate, covered);
+                            info = candidateFactory.Create(covered);
+                            candidateToInfo.Add(candidate, info);
                         }
                         else
                         {
-                            covered[i] = true;
+                            info.Covered[i] = true;
                         }
                     }
                 }
@@ -232,17 +246,18 @@ internal static class Helpers
                                     includePumpjacks,
                                     includeBeacons);
 
-                                if (!candidateToCovered.TryGetValue(candidate, out var covered))
+                                if (!candidateToInfo.TryGetValue(candidate, out var info))
                                 {
-                                    covered = new CountedBitArray(recipients.Count);
-                                    candidateToCovered.Add(candidate, covered);
+                                    var covered = new CountedBitArray(recipients.Count);
+                                    info = candidateFactory.Create(covered);
+                                    candidateToInfo.Add(candidate, info);
                                 }
 
                                 for (var i = 0; i < recipients.Count; i++)
                                 {
                                     if (coveredCenters.Contains(recipients[i].Center))
                                     {
-                                        covered[i] = true;
+                                        info.Covered[i] = true;
                                     }
                                 }
 
@@ -266,9 +281,9 @@ internal static class Helpers
         {
             // Remove candidates that only cover recipients that are already covered.
             var toRemove = new List<Location>();
-            foreach ((var candidate, var covered) in candidateToCovered)
+            foreach ((var candidate, var info) in candidateToInfo)
             {
-                var subset = new CountedBitArray(covered);
+                var subset = new CountedBitArray(info.Covered);
                 subset.Not();
                 subset.Or(coveredEntities);
                 if (subset.All(true))
@@ -279,11 +294,11 @@ internal static class Helpers
 
             for (var i = 0; i < toRemove.Count; i++)
             {
-                candidateToCovered.Remove(toRemove[i]);
+                candidateToInfo.Remove(toRemove[i]);
             }
         }
 
-        return (candidateToCovered, coveredEntities, providers);
+        return (candidateToInfo, coveredEntities, providers);
     }
 
     public static Dictionary<Location, HashSet<Location>> GetProviderCenterToCoveredCenters(

@@ -1,6 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Knapcode.FactorioTools.OilField.Grid;
-using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+﻿using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -15,9 +13,10 @@ internal static partial class AddBeacons
             .ToList();
 
         // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
-        (var candidateToCovered2, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(
+        (var candidateToInfo, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(
             context,
             poweredEntities,
+            CandidateFactory.Instance,
             removeUnused: false);
 
         if (context.Options.ValidateSolution && existingBeacons.Count > 0)
@@ -25,7 +24,7 @@ internal static partial class AddBeacons
             throw new InvalidOperationException("There should not be any existing beacons.");
         }
 
-        var candidateToInfo = GetCandidateToInfo(context, candidateToCovered2, poweredEntities);
+        PopulateCandidateToInfo(context, candidateToInfo, poweredEntities);
 
         // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -107,22 +106,26 @@ internal static partial class AddBeacons
         return beacons;
     }
 
-    private static Dictionary<Location, BeaconCandidateInfo> GetCandidateToInfo(
+    private class CandidateFactory : ICandidateFactory<BeaconCandidateInfo>
+    {
+        public static CandidateFactory Instance { get; } = new CandidateFactory();
+
+        public BeaconCandidateInfo Create(CountedBitArray covered)
+        {
+            return new BeaconCandidateInfo(covered);
+        }
+    }
+
+    private static void PopulateCandidateToInfo(
         Context context,
-        Dictionary<Location, CountedBitArray> candidateToCovered,
+        Dictionary<Location, BeaconCandidateInfo> candidateToInfo,
         List<ProviderRecipient> poweredEntities)
     {
-        var candidateToInfo = new Dictionary<Location, BeaconCandidateInfo>(candidateToCovered.Count);
-        foreach ((var candidate, var covered) in candidateToCovered)
+        foreach ((var candidate, var info) in candidateToInfo)
         {
-            var info = new BeaconCandidateInfo(covered);
-            info.EntityDistance = GetEntityDistance(poweredEntities, candidate, covered);
+            info.EntityDistance = GetEntityDistance(poweredEntities, candidate, info.Covered);
             info.MiddleDistance = candidate.GetEuclideanDistanceSquared(context.Grid.Middle);
-
-            candidateToInfo.Add(candidate, info);
         }
-
-        return candidateToInfo;
     }
 
     private class BeaconCandidateInfo : CandidateInfo
