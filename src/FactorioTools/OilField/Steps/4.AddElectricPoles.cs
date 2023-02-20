@@ -348,13 +348,11 @@ internal static class AddElectricPoles
 
         var electricPoleList = electricPoles.Keys.ToList();
 
-        var candidateToMiddleDistanceSquared = candidateToCovered.ToDictionary(
-            x => x.Key,
-            x => x.Key.GetEuclideanDistanceSquared(context.Grid.Middle));
-
-        var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
+        var candidateToPriorityPowered = GetCandidateToPriorityPowered(entitiesToPowerFirst, candidateToCovered);
         var candidateToOthersConnected = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
         var candidateToPoleDistanceSquared = GetCandidateToPoleDistanceSquared(candidateToCovered, electricPoleList);
+        var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
+        var candidateToMiddleDistanceSquared = GetCandidateToMiddleDistanceSquared(context, candidateToCovered);
 
         var toRemove = new List<Location>();
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
@@ -373,7 +371,7 @@ internal static class AddElectricPoles
                 {
                     var othersConnected = candidateToOthersConnected[pair.Key];
                     return (
-                        -(entitiesToPowerFirst is null ? 0 : new CountedBitArray(entitiesToPowerFirst).And(pair.Value).TrueCount),
+                        -(candidateToPriorityPowered is null ? 0 : candidateToPriorityPowered[pair.Key]),
                         -pair.Value.TrueCount,
                         othersConnected > 0 ? othersConnected : int.MaxValue,
                         othersConnected > 0 ? 0 : candidateToPoleDistanceSquared[pair.Key],
@@ -416,7 +414,8 @@ internal static class AddElectricPoles
                 candidateToCovered,
                 candidateToEntityDistance,
                 candidateToOthersConnected,
-                candidateToPoleDistanceSquared);
+                candidateToPoleDistanceSquared,
+                candidateToPriorityPowered);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -455,6 +454,59 @@ internal static class AddElectricPoles
         }
 
         return (electricPoles, electricPoleList, coveredEntities);
+    }
+
+    private static Dictionary<Location, int>? GetCandidateToPriorityPowered(CountedBitArray? entitiesToPowerFirst, Dictionary<Location, CountedBitArray> candidateToCovered)
+    {
+        Dictionary<Location, int>? candidateToPriorityPowered = null;
+        if (entitiesToPowerFirst is not null)
+        {
+            candidateToPriorityPowered = new Dictionary<Location, int>(candidateToCovered.Count);
+            foreach ((var candidate, var covered) in candidateToCovered)
+            {
+                var priorityPowered = new CountedBitArray(entitiesToPowerFirst).And(covered).TrueCount;
+                candidateToPriorityPowered.Add(candidate, priorityPowered);
+            }
+        }
+
+        return candidateToPriorityPowered;
+    }
+
+    private static Dictionary<Location, int> GetCandidateToMiddleDistanceSquared(Context context, Dictionary<Location, CountedBitArray> candidateToCovered)
+    {
+        return candidateToCovered.ToDictionary(
+                    x => x.Key,
+                    x => x.Key.GetEuclideanDistanceSquared(context.Grid.Middle));
+    }
+
+    private class CandidateComparer : IComparer<KeyValuePair<Location, CountedBitArray>>
+    {
+        private readonly CountedBitArray? entitiesToPowerFirst;
+        private readonly bool hasEntitiesToPowerFirst;
+        private readonly Dictionary<Location, int> candidateToOthersConnected;
+        private readonly Dictionary<Location, int> candidateToPoleDistanceSquared;
+        private readonly Dictionary<Location, double> candidateToEntityDistance;
+        private readonly Dictionary<Location, int> candidateToMiddleDistanceSquared;
+
+        public CandidateComparer(
+            CountedBitArray? entitiesToPowerFirst,
+            Dictionary<Location, int> candidateToOthersConnected,
+            Dictionary<Location, int> candidateToPoleDistanceSquared,
+            Dictionary<Location, double> candidateToEntityDistance,
+            Dictionary<Location, int> candidateToMiddleDistanceSquared)
+        {
+            this.entitiesToPowerFirst = entitiesToPowerFirst;
+            this.hasEntitiesToPowerFirst = entitiesToPowerFirst is not null;
+            this.candidateToOthersConnected = candidateToOthersConnected;
+            this.candidateToPoleDistanceSquared = candidateToPoleDistanceSquared;
+            this.candidateToEntityDistance = candidateToEntityDistance;
+            this.candidateToMiddleDistanceSquared = candidateToMiddleDistanceSquared;
+        }
+
+        public int Compare(KeyValuePair<Location, CountedBitArray> x, KeyValuePair<Location, CountedBitArray> y)
+        {
+            return 0;
+        }
     }
 
     private static Dictionary<Location, int> GetCandidateToPoleDistanceSquared(Dictionary<Location, CountedBitArray> candidateToCovered, List<Location> electricPoleList)

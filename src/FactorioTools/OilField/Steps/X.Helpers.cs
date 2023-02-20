@@ -427,7 +427,8 @@ internal static class Helpers
         Dictionary<Location, CountedBitArray> candidateToCovered,
         Dictionary<Location, double> candidateToEntityDistance,
         Dictionary<Location, int> cleanupA,
-        Dictionary<Location, int> cleanupB)
+        Dictionary<Location, int> cleanupB,
+        Dictionary<Location, int>? cleanupC)
         where TCenter : GridEntity
         where TSide : GridEntity
     {
@@ -477,6 +478,7 @@ internal static class Helpers
                     candidateToEntityDistance.Remove(otherCandidate);
                     cleanupA.Remove(otherCandidate);
                     cleanupB.Remove(otherCandidate);
+                    cleanupC?.Remove(otherCandidate);
                 }
                 else if (modified)
                 {
