@@ -286,27 +286,6 @@ internal static class Helpers
         return (candidateToCovered, coveredEntities, providers);
     }
 
-    public static Dictionary<Location, double> GetCandidateToEntityDistance(
-        List<ProviderRecipient> poweredEntities,
-        Dictionary<Location, CountedBitArray> candidateToCovered)
-    {
-        return candidateToCovered.ToDictionary(
-            x => x.Key,
-            x =>
-            {
-                double sum = 0;
-                for (var i = 0; i < poweredEntities.Count; i++)
-                {
-                    if (x.Value[i])
-                    {
-                        sum += x.Key.GetEuclideanDistance(poweredEntities[i].Center);
-                    }
-                }
-
-                return sum;
-            });
-    }
-
     public static Dictionary<Location, HashSet<Location>> GetProviderCenterToCoveredCenters(
         SquareGrid grid,
         int providerWidth,
@@ -414,7 +393,21 @@ internal static class Helpers
         return true;
     }
 
-    public static void AddProviderAndUpdateCandidateState<TCenter, TSide>(
+    public static double GetEntityDistance(List<ProviderRecipient> poweredEntities, Location candidate, CountedBitArray covered)
+    {
+        double sum = 0;
+        for (var i = 0; i < poweredEntities.Count; i++)
+        {
+            if (covered[i])
+            {
+                sum += candidate.GetEuclideanDistance(poweredEntities[i].Center);
+            }
+        }
+
+        return sum;
+    }
+
+    public static void AddProviderAndUpdateCandidateState<TCenter, TSide, TInfo>(
         SquareGrid grid,
         SharedInstances sharedInstances,
         Location center,
@@ -425,12 +418,10 @@ internal static class Helpers
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
         Dictionary<Location, CountedBitArray> candidateToCovered,
-        Dictionary<Location, double> candidateToEntityDistance,
-        Dictionary<Location, int> cleanupA,
-        Dictionary<Location, int> cleanupB,
-        Dictionary<Location, int>? cleanupC)
+        Dictionary<Location, TInfo> candidateToInfo)
         where TCenter : GridEntity
         where TSide : GridEntity
+        where TInfo : ICandidateInfo
     {
         coveredEntities.Or(candidateToCovered[center]);
 
@@ -475,10 +466,7 @@ internal static class Helpers
                 if (otherCoveredCount == 0)
                 {
                     toRemove.Add(otherCandidate);
-                    candidateToEntityDistance.Remove(otherCandidate);
-                    cleanupA.Remove(otherCandidate);
-                    cleanupB.Remove(otherCandidate);
-                    cleanupC?.Remove(otherCandidate);
+                    candidateToInfo.Remove(otherCandidate);
                 }
                 else if (modified)
                 {
@@ -487,7 +475,8 @@ internal static class Helpers
                     {
                         entityDistance += otherCandidate.GetEuclideanDistance(recipients[i].Center);
                     }
-                    candidateToEntityDistance[otherCandidate] = entityDistance;
+
+                    candidateToInfo[otherCandidate].SetEntityDistance(entityDistance);
                 }
             }
 
@@ -507,6 +496,11 @@ internal static class Helpers
             toRemove.Clear();
 #endif
         }
+    }
+
+    public interface ICandidateInfo
+    {
+        void SetEntityDistance(double entityDistance);
     }
 
     public static (

@@ -1,4 +1,5 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
+using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -348,12 +349,7 @@ internal static class AddElectricPoles
 
         var electricPoleList = electricPoles.Keys.ToList();
 
-        var candidateToPriorityPowered = GetCandidateToPriorityPowered(entitiesToPowerFirst, candidateToCovered);
-        var candidateToOthersConnected = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
-        var candidateToPoleDistanceSquared = GetCandidateToPoleDistanceSquared(candidateToCovered, electricPoleList);
-        var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
-        var candidateToMiddleDistanceSquared = GetCandidateToMiddleDistanceSquared(context, candidateToCovered);
-
+        var candidateToInfo = GetCandidateToInfo(context, candidateToCovered, entitiesToPowerFirst, poweredEntities, electricPoleList);
         var toRemove = new List<Location>();
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
 
@@ -369,14 +365,14 @@ internal static class AddElectricPoles
             var candidate = candidateToCovered
                 .MinBy(pair =>
                 {
-                    var othersConnected = candidateToOthersConnected[pair.Key];
+                    var info = candidateToInfo[pair.Key];
                     return (
-                        -(candidateToPriorityPowered is null ? 0 : candidateToPriorityPowered[pair.Key]),
+                        -info.PriorityPowered,
                         -pair.Value.TrueCount,
-                        othersConnected > 0 ? othersConnected : int.MaxValue,
-                        othersConnected > 0 ? 0 : candidateToPoleDistanceSquared[pair.Key],
-                        candidateToEntityDistance[pair.Key],
-                        candidateToMiddleDistanceSquared[pair.Key]
+                        info.OthersConnected > 0 ? info.OthersConnected : int.MaxValue,
+                        info.OthersConnected > 0 ? 0 : info.PoleDistance,
+                        info.EntityDistance,
+                        info.MiddleDistance
                     );
                 })!.Key;
 
@@ -412,22 +408,14 @@ internal static class AddElectricPoles
                 poweredEntities,
                 coveredEntities,
                 candidateToCovered,
-                candidateToEntityDistance,
-                candidateToOthersConnected,
-                candidateToPoleDistanceSquared,
-                candidateToPriorityPowered);
+                candidateToInfo);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
             electricPoles.Add(candidate, centerEntity);
             electricPoleList.Add(candidate);
 
-            UpdateLookupState(
-                context,
-                candidateToOthersConnected,
-                candidateToPoleDistanceSquared,
-                roundedReach,
-                candidate);
+            UpdateCandidateInfo(context, candidateToInfo, roundedReach, candidate);
 
             /*
             var test = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
@@ -456,27 +444,64 @@ internal static class AddElectricPoles
         return (electricPoles, electricPoleList, coveredEntities);
     }
 
-    private static Dictionary<Location, int>? GetCandidateToPriorityPowered(CountedBitArray? entitiesToPowerFirst, Dictionary<Location, CountedBitArray> candidateToCovered)
+    private class CandidateInfo : ICandidateInfo
     {
-        Dictionary<Location, int>? candidateToPriorityPowered = null;
-        if (entitiesToPowerFirst is not null)
-        {
-            candidateToPriorityPowered = new Dictionary<Location, int>(candidateToCovered.Count);
-            foreach ((var candidate, var covered) in candidateToCovered)
-            {
-                var priorityPowered = new CountedBitArray(entitiesToPowerFirst).And(covered).TrueCount;
-                candidateToPriorityPowered.Add(candidate, priorityPowered);
-            }
-        }
+        public int PriorityPowered;
+        public int OthersConnected;
+        public int PoleDistance;
+        public double EntityDistance;
+        public int MiddleDistance;
 
-        return candidateToPriorityPowered;
+        public void SetEntityDistance(double entityDistance)
+        {
+            EntityDistance = entityDistance;
+        }
     }
 
-    private static Dictionary<Location, int> GetCandidateToMiddleDistanceSquared(Context context, Dictionary<Location, CountedBitArray> candidateToCovered)
+    private static Dictionary<Location, CandidateInfo> GetCandidateToInfo(
+        Context context,
+        Dictionary<Location, CountedBitArray> candidateToCovered,
+        CountedBitArray? entitiesToPowerFirst,
+        List<ProviderRecipient> poweredEntities,
+        List<Location> electricPoleList)
     {
-        return candidateToCovered.ToDictionary(
-                    x => x.Key,
-                    x => x.Key.GetEuclideanDistanceSquared(context.Grid.Middle));
+        var candidateToInfo = new Dictionary<Location, CandidateInfo>(candidateToCovered.Count);
+
+        foreach ((var candidate, var covered) in candidateToCovered)
+        {
+            var info = new CandidateInfo();
+
+            if (entitiesToPowerFirst is not null)
+            {
+                info.PriorityPowered = new CountedBitArray(entitiesToPowerFirst).And(covered).TrueCount;
+            }
+
+            var othersConnected = 0;
+            var min = int.MaxValue;
+            for (var i = 0; i < electricPoleList.Count; i++)
+            {
+                if (AreElectricPolesConnected(candidate, electricPoleList[i], context.Options))
+                {
+                    othersConnected++;
+                }
+
+                var val = electricPoleList[i].GetEuclideanDistanceSquared(candidate);
+                if (val < min)
+                {
+                    min = val;
+                }
+            }
+
+            info.OthersConnected = othersConnected;
+            info.PoleDistance = min;
+
+            info.EntityDistance = GetEntityDistance(poweredEntities, candidate, covered);
+            info.MiddleDistance = candidate.GetEuclideanDistanceSquared(context.Grid.Middle);
+
+            candidateToInfo.Add(candidate, info);
+        }
+
+        return candidateToInfo;
     }
 
     private class CandidateComparer : IComparer<KeyValuePair<Location, CountedBitArray>>
@@ -509,31 +534,9 @@ internal static class AddElectricPoles
         }
     }
 
-    private static Dictionary<Location, int> GetCandidateToPoleDistanceSquared(Dictionary<Location, CountedBitArray> candidateToCovered, List<Location> electricPoleList)
-    {
-        var candidateToPoleDistance = new Dictionary<Location, int>(candidateToCovered.Count);
-        foreach (var candidate in candidateToCovered.Keys)
-        {
-            var min = int.MaxValue;
-            for (int i = 0; i < electricPoleList.Count; i++)
-            {
-                var val = electricPoleList[i].GetEuclideanDistanceSquared(candidate);
-                if (val < min)
-                {
-                    min = val;
-                }
-            }
-
-            candidateToPoleDistance.Add(candidate, min);
-        }
-
-        return candidateToPoleDistance;
-    }
-
-    private static void UpdateLookupState(
+    private static void UpdateCandidateInfo(
         Context context,
-        Dictionary<Location, int> candidateToOthersConnected,
-        Dictionary<Location, int> candidateToPoleDistanceSquared,
+        Dictionary<Location, CandidateInfo> candidateToInfo,
         int roundedReach,
         Location candidate)
     {
@@ -549,43 +552,20 @@ internal static class AddElectricPoles
                 var other = new Location(x, y);
                 var distanceSquared = GetElectricPoleDistanceSquared(candidate, other, context.Options);
 
-                if (candidateToPoleDistanceSquared.TryGetValue(other, out var minDistanceSquared))
+                if (candidateToInfo.TryGetValue(other, out var info))
                 {
                     if (distanceSquared <= context.Options.ElectricPoleWireReachSquared)
                     {
-                        candidateToOthersConnected[other]++;
+                        info.OthersConnected++;
                     }
 
-                    if (distanceSquared < minDistanceSquared)
+                    if (distanceSquared < info.PoleDistance)
                     {
-                        candidateToPoleDistanceSquared[other] = distanceSquared;
+                        info.PoleDistance = distanceSquared;
                     }
                 }
             }
         }
-    }
-
-    private static Dictionary<Location, int> GetCandidateToOthersConnected(
-        Context context,
-        Dictionary<Location, CountedBitArray> candidateToCovered,
-        List<Location> electricPoleList)
-    {
-        var candidateToOthersConnected = new Dictionary<Location, int>(candidateToCovered.Count);
-        foreach (var candidate in candidateToCovered.Keys)
-        {
-            var othersConnected = 0;
-            for (var i = 0; i < electricPoleList.Count; i++)
-            {
-                if (AreElectricPolesConnected(candidate, electricPoleList[i], context.Options))
-                {
-                    othersConnected++;
-                }
-            }
-
-            candidateToOthersConnected.Add(candidate, othersConnected);
-        }
-
-        return candidateToOthersConnected;
     }
 
     private static ElectricPoleCenter AddElectricPole(
