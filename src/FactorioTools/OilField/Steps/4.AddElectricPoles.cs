@@ -219,15 +219,15 @@ internal static class AddElectricPoles
 
     public static bool AreElectricPolesConnected(Location a, Location b, Options options)
     {
-        return GetElectricPoleDistance(a, b, options) <= options.ElectricPoleWireReach;
+        return GetElectricPoleDistanceSquared(a, b, options) <= options.ElectricPoleWireReachSquared;
     }
 
-    private static double GetElectricPoleDistance(Location a, Location b, Options options)
+    private static double GetElectricPoleDistanceSquared(Location a, Location b, Options options)
     {
         var offsetX = (options.ElectricPoleWidth - 1) / 2;
         var offsetY = (options.ElectricPoleHeight - 1) / 2;
 
-        return b.GetEuclideanDistance(a.X + offsetX, a.Y + offsetY);
+        return b.GetEuclideanDistanceSquared(a.X + offsetX, a.Y + offsetY);
     }
 
     private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<ProviderRecipient> PoweredEntities) AddElectricPolesAroundEntities(
@@ -485,18 +485,18 @@ internal static class AddElectricPoles
                     Endpoints = e,
                     GroupA = groups.Single(g => g.Contains(e.A)),
                     GroupB = groups.Single(g => g.Contains(e.B)),
-                    Distance = GetElectricPoleDistance(e.A, e.B, context.Options),
+                    DistanceSquared = GetElectricPoleDistanceSquared(e.A, e.B, context.Options),
                 })
                 .Where(c => c.GroupA != c.GroupB)
-                .Where(c => c.Distance > context.Options.ElectricPoleWireReach)
-                .MinBy(c => c.Distance);
+                .Where(c => c.DistanceSquared > context.Options.ElectricPoleWireReachSquared)
+                .MinBy(c => c.DistanceSquared);
 
             if (closest is null)
             {
                 throw new NotImplementedException();
             }
 
-            AddSinglePoleForConnection(context, electricPoles, groups, closest.Distance, closest.Endpoints);
+            AddSinglePoleForConnection(context, electricPoles, groups, Math.Sqrt(closest.DistanceSquared), closest.Endpoints);
         }
     }
 
