@@ -36,12 +36,16 @@
 
     public double GetEuclideanDistance(Location other)
     {
-        return Math.Sqrt(Math.Pow(X - other.X, 2) + Math.Pow(Y - other.Y, 2));
+        var deltaX = X - other.X;
+        var deltaY = Y - other.Y;
+        return Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
     }
 
     public double GetEuclideanDistance(double bX, double bY)
     {
-        return Math.Sqrt(Math.Pow(X - bX, 2) + Math.Pow(Y - bY, 2));
+        var deltaX = X - bX;
+        var deltaY = Y - bY;
+        return Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
     }
 
     public Location Translate(int deltaX, int deltaY)
