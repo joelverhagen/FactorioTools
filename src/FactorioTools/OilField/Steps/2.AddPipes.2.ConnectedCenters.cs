@@ -102,18 +102,18 @@ internal static partial class AddPipes
                                     {
                                         Terminal = terminal,
                                         Path = path,
-                                        ChildCentroidDistance = group.GetChildCentroidDistance(includedCenter, terminal.Terminal),
+                                        ChildCentroidDistanceSquared = group.GetChildCentroidDistanceSquared(includedCenter, terminal.Terminal),
                                     };
                                 })
-                                .MinBy(t => (t.Path.Count, t.ChildCentroidDistance))!;
+                                .MinBy(t => (t.Path.Count, t.ChildCentroidDistanceSquared))!;
 
                             return new { BestTerminal = bestTerminal, Center = center };
                         })
-                        .MinBy(t => (t.BestTerminal.Path.Count, t.BestTerminal.ChildCentroidDistance))!;
+                        .MinBy(t => (t.BestTerminal.Path.Count, t.BestTerminal.ChildCentroidDistanceSquared))!;
 
                     return new { BestCenter = bestCenter, Group = group };
                 })
-                .MinBy(t => (t.BestCenter.BestTerminal.Path.Count, t.BestCenter.BestTerminal.ChildCentroidDistance))!;
+                .MinBy(t => (t.BestCenter.BestTerminal.Path.Count, t.BestCenter.BestTerminal.ChildCentroidDistanceSquared))!;
 
             var group = bestGroup.Group;
             var center = bestGroup.BestCenter.Center;
@@ -167,17 +167,17 @@ internal static partial class AddPipes
             }
 
             var adjacentPipesV = 0;
-            double centroidDistanceV = 0;
+            double centroidDistanceSquaredV = 0;
 
             var adjacentPipesH = 0;
-            double centroidDistanceH = 0;
+            double centroidDistanceSquaredH = 0;
 
             var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
 
 #if USE_SHARED_INSTANCES
-            var locationToCentroidDistance = context.SharedInstances.LocationToDouble;
+            var locationToCentroidDistanceSquared = context.SharedInstances.LocationToDouble;
 #else
-        var locationToCentroidDistance = new Dictionary<Location, double>(sizeEstimate);
+            var locationToCentroidDistanceSquared = new Dictionary<Location, double>(sizeEstimate);
 #endif
 
             try
@@ -192,7 +192,7 @@ internal static partial class AddPipes
                             adjacentPipesV++;
                         }
 
-                        centroidDistanceV += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
+                        centroidDistanceSquaredV += GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location);
                     }
 
                     if (i < aStarResultH.Path.Count)
@@ -203,14 +203,14 @@ internal static partial class AddPipes
                             adjacentPipesH++;
                         }
 
-                        centroidDistanceH += GetCentroidDistance(groupCentroidX, groupCentroidY, locationToCentroidDistance, location);
+                        centroidDistanceSquaredH += GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location);
                     }
                 }
             }
             finally
             {
 #if USE_SHARED_INSTANCES
-                locationToCentroidDistance.Clear();
+                locationToCentroidDistanceSquared.Clear();
 #endif
             }
 
@@ -222,7 +222,7 @@ internal static partial class AddPipes
             {
                 return aStarResultH.Path.ToList();
             }
-            else if (centroidDistanceV < centroidDistanceH)
+            else if (centroidDistanceSquaredV < centroidDistanceSquaredH)
             {
                 return aStarResultV.Path.ToList();
             }
@@ -240,19 +240,19 @@ internal static partial class AddPipes
         }
     }
 
-    private static double GetCentroidDistance(
+    private static double GetCentroidDistanceSquared(
         double groupCentroidX,
         double groupCentroidY,
-        Dictionary<Location, double> locationToCentroidDistance,
+        Dictionary<Location, double> locationToCentroidDistanceSquared,
         Location location)
     {
-        if (!locationToCentroidDistance.TryGetValue(location, out var centroidDistance))
+        if (!locationToCentroidDistanceSquared.TryGetValue(location, out var centroidDistanceSquared))
         {
-            centroidDistance = location.GetEuclideanDistance(groupCentroidX, groupCentroidY);
-            locationToCentroidDistance.Add(location, centroidDistance);
+            centroidDistanceSquared = location.GetEuclideanDistanceSquared(groupCentroidX, groupCentroidY);
+            locationToCentroidDistanceSquared.Add(location, centroidDistanceSquared);
         }
 
-        return centroidDistance;
+        return centroidDistanceSquared;
     }
 
     private static List<Trunk> FindTrunks(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
@@ -542,7 +542,7 @@ internal static partial class AddPipes
         public Dictionary<Location, HashSet<Location>> IncludedCenterToChildCenters { get; }
         public HashSet<Location> Pipes { get; }
 
-        public double GetChildCentroidDistance(Location includedCenter, Location terminalCandidate)
+        public double GetChildCentroidDistanceSquared(Location includedCenter, Location terminalCandidate)
         {
             var sumX = 0;
             var sumY = 0;
@@ -557,7 +557,7 @@ internal static partial class AddPipes
             var centroidX = (double)sumX / count;
             var centroidY = (double)sumY / count;
 
-            return terminalCandidate.GetEuclideanDistance(centroidX, centroidY);
+            return terminalCandidate.GetEuclideanDistanceSquared(centroidX, centroidY);
         }
 
         public void ConnectPumpjack(Location center, IEnumerable<Location> path)
