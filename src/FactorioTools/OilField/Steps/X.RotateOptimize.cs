@@ -1,5 +1,8 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
+#if USE_OBJECT_POOLING
+using Microsoft.Extensions.ObjectPool;
+#endif
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -332,16 +335,16 @@ internal static class RotateOptimize
 
     private static Queue<Location> GetQueue(ChildContext context)
     {
+#if DEBUG && USE_OBJECT_POOLING
+        Interlocked.Increment(ref QueuePoolCount);
+#endif
+
 #if USE_OBJECT_POOLING
         return QueuePool.Get();
 #elif USE_SHARED_INSTANCES
         return context.ParentContext.SharedInstances.LocationQueue;
 #else
         return new Queue<Location>();
-#endif
-
-#if DEBUG && USE_OBJECT_POOLING
-        Interlocked.Increment(ref QueuePoolCount);
 #endif
     }
 

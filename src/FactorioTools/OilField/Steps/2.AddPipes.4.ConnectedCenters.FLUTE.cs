@@ -166,6 +166,7 @@ internal static partial class AddPipes
         return InitializeFLUTE.FLUTE!.Execute(terminalPoints);
     }
 
+#if DEBUG
     private static void VisualizeFLUTE(Context context, List<System.Drawing.Point> terminalPoints, Tree fluteTree)
     {
         var steinerPoints = fluteTree
@@ -197,4 +198,5 @@ internal static partial class AddPipes
 
         Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (IPoint)new Point(x.X, x.Y)), edges);
     }
+#endif
 }

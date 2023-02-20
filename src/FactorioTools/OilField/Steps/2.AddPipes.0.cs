@@ -172,7 +172,7 @@ internal static partial class AddPipes
             var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
             if (unreachedGoals.Count > 0)
             {
-                Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
                 throw new InvalidOperationException("The pipes are not fully connected.");
             }
         }

@@ -1,6 +1,10 @@
 ﻿using System.Numerics;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+#if USE_OBJECT_POOLING
+using System.Buffers;
+using Microsoft.Extensions.ObjectPool;
+#endif
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
