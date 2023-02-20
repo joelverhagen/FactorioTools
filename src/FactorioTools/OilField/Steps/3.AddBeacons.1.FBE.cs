@@ -96,7 +96,8 @@ internal static partial class AddBeacons
         Dictionary<Location, int> pointToBeaconCount,
         Dictionary<Location, Area[]> pointToEntityArea)
     {
-        var beaconEffectRadius = GetBeaconEffectRadius(context);
+        (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) = GetBounds(pointToEntityArea.Keys);
+
         var centerIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
         var possibleBeacons = new List<BeaconCandidate>(possibleBeaconAreas.Count);
         var effectsGiven = new HashSet<Area[]>();
@@ -105,18 +106,20 @@ internal static partial class AddBeacons
             var collisionArea = possibleBeaconAreas[i];
             var center = collisionArea[centerIndex];
 
-            var d = context.Options.BeaconWidth + beaconEffectRadius * 2;
-            var d2 = d * d;
+            var minX = Math.Max(entityMinX, center.X - (context.Options.BeaconSupplyWidth / 2));
+            var minY = Math.Max(entityMinY, center.Y - (context.Options.BeaconSupplyHeight / 2));
+            var maxX = Math.Min(entityMaxX, center.X + (context.Options.BeaconSupplyWidth / 2));
+            var maxY = Math.Min(entityMaxY, center.Y + (context.Options.BeaconSupplyHeight / 2));
 
-            for (var j = 0; j < d2; j++)
+            for (var x = minX; x <= maxX; x++)
             {
-                var location = new Location(
-                    x: center.X + ((j % d) - (d / 2)),
-                    y: center.Y + ((j / d) - (d / 2)));
-
-                if (pointToEntityArea.TryGetValue(location, out var area))
+                for (var y = minY; y <= maxY; y++)
                 {
-                    effectsGiven.Add(area);
+                    var location = new Location(x, y);
+                    if (pointToEntityArea.TryGetValue(location, out var area))
+                    {
+                        effectsGiven.Add(area);
+                    }
                 }
             }
 
@@ -150,6 +153,38 @@ internal static partial class AddBeacons
         }
 
         return possibleBeacons;
+    }
+
+    private static (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) GetBounds(IReadOnlyCollection<Location> locations)
+    {
+        var entityMinX = int.MaxValue;
+        var entityMinY = int.MaxValue;
+        var entityMaxX = int.MinValue;
+        var entityMaxY = int.MinValue;
+
+        foreach (var location in locations)
+        {
+            if (location.X < entityMinX)
+            {
+                entityMinX = location.X;
+            }
+
+            if (location.Y < entityMinY)
+            {
+                entityMinY = location.Y;
+            }
+
+            if (location.X > entityMaxX)
+            {
+                entityMaxX = location.X;
+            }
+            if (location.Y > entityMaxY)
+            {
+                entityMaxY = location.Y;
+            }
+        }
+
+        return (entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
     private static HashSet<Location> GetOccupiedPositions(List<Area[]> entityAreas)
