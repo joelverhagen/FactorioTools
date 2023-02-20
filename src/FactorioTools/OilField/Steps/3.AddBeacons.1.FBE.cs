@@ -126,15 +126,26 @@ internal static partial class AddBeacons
                 continue;
             }
 
-            var avgDistToEntities = effectsGiven.Average(p => p[centerIndex].Location.GetManhattanDistance(center));
-            var nrOfOverlaps = collisionArea.Sum(p => pointToBeaconCount[p]);
+            var sumDistance = 0;
+            foreach (var p in effectsGiven)
+            {
+                sumDistance += p[centerIndex].Location.GetManhattanDistance(center);
+            }
+
+            var averageDistanceToEntities = ((double)sumDistance) / effectsGiven.Count;
+
+            var numberOfOverlaps = 0;
+            for (var j = 0; j < collisionArea.Length; j++)
+            {
+                numberOfOverlaps += pointToBeaconCount[collisionArea[j]];
+            }
 
             possibleBeacons.Add(new BeaconCandidate(
                 center,
                 collisionArea,
                 effectsGiven.Count,
-                avgDistToEntities,
-                nrOfOverlaps));
+                averageDistanceToEntities,
+                numberOfOverlaps));
             effectsGiven.Clear();
         }
 
