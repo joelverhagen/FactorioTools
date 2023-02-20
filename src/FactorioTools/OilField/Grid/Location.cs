@@ -58,6 +58,13 @@
         return Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
     }
 
+    public int GetEuclideanDistanceSquared(int bX, int bY)
+    {
+        var deltaX = X - bX;
+        var deltaY = Y - bY;
+        return (deltaX * deltaX) + (deltaY * deltaY);
+    }
+
     public double GetEuclideanDistanceSquared(double bX, double bY)
     {
         var deltaX = X - bX;

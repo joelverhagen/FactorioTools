@@ -414,11 +414,6 @@ internal static class Helpers
         return true;
     }
 
-    /// <summary>
-    /// Add a new provider to the grid at the specified location and update the state of
-    /// <paramref name="coveredEntities"/>, <paramref name="candidateToCovered"/>, and
-    /// <paramref name="candidateToEntityDistance"/> based on the latest state of <paramref name="coveredEntities"/>.
-    /// </summary>
     public static void AddProviderAndUpdateCandidateState<TCenter, TSide>(
         SquareGrid grid,
         SharedInstances sharedInstances,
@@ -431,7 +426,8 @@ internal static class Helpers
         CountedBitArray coveredEntities,
         Dictionary<Location, CountedBitArray> candidateToCovered,
         Dictionary<Location, double> candidateToEntityDistance,
-        Dictionary<Location, int> candidateToOthersConnected)
+        Dictionary<Location, int> cleanupA,
+        Dictionary<Location, int> cleanupB)
         where TCenter : GridEntity
         where TSide : GridEntity
     {
@@ -479,7 +475,8 @@ internal static class Helpers
                 {
                     toRemove.Add(otherCandidate);
                     candidateToEntityDistance.Remove(otherCandidate);
-                    candidateToOthersConnected.Remove(otherCandidate);
+                    cleanupA.Remove(otherCandidate);
+                    cleanupB.Remove(otherCandidate);
                 }
                 else if (modified)
                 {

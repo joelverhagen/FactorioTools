@@ -221,7 +221,7 @@ internal static class AddElectricPoles
         return GetElectricPoleDistanceSquared(a, b, options) <= options.ElectricPoleWireReachSquared;
     }
 
-    private static double GetElectricPoleDistanceSquared(Location a, Location b, Options options)
+    private static int GetElectricPoleDistanceSquared(Location a, Location b, Options options)
     {
         var offsetX = (options.ElectricPoleWidth - 1) / 2;
         var offsetY = (options.ElectricPoleHeight - 1) / 2;
@@ -354,6 +354,7 @@ internal static class AddElectricPoles
 
         var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
         var candidateToOthersConnected = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
+        var candidateToPoleDistanceSquared = GetCandidateToPoleDistanceSquared(candidateToCovered, electricPoleList);
 
         var toRemove = new List<Location>();
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
@@ -375,7 +376,7 @@ internal static class AddElectricPoles
                         -(entitiesToPowerFirst is null ? 0 : new CountedBitArray(entitiesToPowerFirst).And(pair.Value).TrueCount),
                         -pair.Value.TrueCount,
                         othersConnected > 0 ? othersConnected : int.MaxValue,
-                        othersConnected > 0 ? 0 : GetDistanceSquaredToClosestElectricPole(electricPoleList, pair.Key),
+                        othersConnected > 0 ? 0 : candidateToPoleDistanceSquared[pair.Key],
                         candidateToEntityDistance[pair.Key],
                         candidateToMiddleDistanceSquared[pair.Key]
                     );
@@ -414,14 +415,20 @@ internal static class AddElectricPoles
                 coveredEntities,
                 candidateToCovered,
                 candidateToEntityDistance,
-                candidateToOthersConnected);
+                candidateToOthersConnected,
+                candidateToPoleDistanceSquared);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
             electricPoles.Add(candidate, centerEntity);
             electricPoleList.Add(candidate);
 
-            UpdateCandidateToOthersConnected(context, candidateToOthersConnected, roundedReach, candidate);
+            UpdateLookupState(
+                context,
+                candidateToOthersConnected,
+                candidateToPoleDistanceSquared,
+                roundedReach,
+                candidate);
 
             /*
             var test = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
@@ -450,7 +457,33 @@ internal static class AddElectricPoles
         return (electricPoles, electricPoleList, coveredEntities);
     }
 
-    private static void UpdateCandidateToOthersConnected(Context context, Dictionary<Location, int> candidateToOthersConnected, int roundedReach, Location candidate)
+    private static Dictionary<Location, int> GetCandidateToPoleDistanceSquared(Dictionary<Location, CountedBitArray> candidateToCovered, List<Location> electricPoleList)
+    {
+        var candidateToPoleDistance = new Dictionary<Location, int>(candidateToCovered.Count);
+        foreach (var candidate in candidateToCovered.Keys)
+        {
+            var min = int.MaxValue;
+            for (int i = 0; i < electricPoleList.Count; i++)
+            {
+                var val = electricPoleList[i].GetEuclideanDistanceSquared(candidate);
+                if (val < min)
+                {
+                    min = val;
+                }
+            }
+
+            candidateToPoleDistance.Add(candidate, min);
+        }
+
+        return candidateToPoleDistance;
+    }
+
+    private static void UpdateLookupState(
+        Context context,
+        Dictionary<Location, int> candidateToOthersConnected,
+        Dictionary<Location, int> candidateToPoleDistanceSquared,
+        int roundedReach,
+        Location candidate)
     {
         var minX = candidate.X - roundedReach;
         var maxX = candidate.X + roundedReach;
@@ -462,14 +495,19 @@ internal static class AddElectricPoles
             for (var y = minY; y <= maxY; y++)
             {
                 var other = new Location(x, y);
-                if (!AreElectricPolesConnected(candidate, other, context.Options))
-                {
-                    continue;
-                }
+                var distanceSquared = GetElectricPoleDistanceSquared(candidate, other, context.Options);
 
-                if (candidateToOthersConnected.TryGetValue(other, out var othersConnected))
+                if (candidateToPoleDistanceSquared.TryGetValue(other, out var minDistanceSquared))
                 {
-                    candidateToOthersConnected[other] = othersConnected + 1;
+                    if (distanceSquared <= context.Options.ElectricPoleWireReachSquared)
+                    {
+                        candidateToOthersConnected[other]++;
+                    }
+
+                    if (distanceSquared < minDistanceSquared)
+                    {
+                        candidateToPoleDistanceSquared[other] = distanceSquared;
+                    }
                 }
             }
         }
@@ -496,22 +534,6 @@ internal static class AddElectricPoles
         }
 
         return candidateToOthersConnected;
-    }
-
-    private static double GetDistanceSquaredToClosestElectricPole(List<Location> providerCenters, Location location)
-    {
-        var min = int.MaxValue;
-
-        for (int i = 0; i < providerCenters.Count; i++)
-        {
-            var val = providerCenters[i].GetEuclideanDistanceSquared(location);
-            if (val < min)
-            {
-                min = val;
-            }
-        }
-
-        return min;
     }
 
     private static ElectricPoleCenter AddElectricPole(
