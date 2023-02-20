@@ -430,8 +430,6 @@ internal static class AddElectricPoles
                 continue;
             }
 
-            Console.WriteLine("adding " + candidate);
-
             if (context.Options.ValidateSolution)
             {
                 var covered = candidateInfo.Covered;

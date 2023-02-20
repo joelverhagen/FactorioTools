@@ -439,6 +439,8 @@ internal static class Helpers
         where TSide : GridEntity
         where TInfo : CandidateInfo
     {
+        Console.WriteLine("adding " + center);
+
         coveredEntities.Or(centerInfo.Covered);
 
         AddProvider(
@@ -466,8 +468,13 @@ internal static class Helpers
         {
             // Remove the covered entities from the candidate data, so that the next candidates are discounted
             // by the entities that no longer need to be covered.
+            // TODO: perf: add a mapping from covered to candidate and use that instead of enumerating all
             foreach ((var otherCandidate, var otherInfo) in candidateToInfo)
             {
+                if (otherCandidate == new Location(40, 46))
+                {
+
+                }
                 var modified = false;
                 var otherCoveredCount = otherInfo.Covered.TrueCount;
                 for (var i = 0; i < recipients.Count && otherCoveredCount > 0; i++)
