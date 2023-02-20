@@ -103,7 +103,7 @@ class Options
     public int BeaconWidth { get; set; } = 3;
     public int BeaconHeight { get; set; } = 3;
 
-    public bool ValidateSolution { get; set; }
+    public bool ValidateSolution { get; set; } = false;
 
     public Dictionary<string, int> PumpjackModules { get; set; } = new Dictionary<string, int>
     {
