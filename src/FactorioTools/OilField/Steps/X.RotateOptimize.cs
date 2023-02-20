@@ -203,8 +203,10 @@ internal static class RotateOptimize
     {
 #if USE_SHARED_INSTANCES
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
+        var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
 #else
         var originalPath = new List<Location>();
+        var connectionPoints = new HashSet<Location>(context.Pipes.Count);
 #endif
         exploredPaths.AddPath(originalGoal, originalPath);
         for (var i = 1; i < originalPath.Count; i++)
@@ -218,7 +220,7 @@ internal static class RotateOptimize
         Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
         */
 
-        var connectionPoints = ExplorePipes(context, originalGoal);
+        ExplorePipes(context, originalGoal, connectionPoints);
 
 #if USE_SHARED_INSTANCES
         var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
@@ -250,19 +252,20 @@ internal static class RotateOptimize
         finally
         {
 #if USE_SHARED_INSTANCES
-            context.ParentContext.SharedInstances.LocationListA.Clear();
-            context.ParentContext.SharedInstances.LocationListB.Clear();
+            originalPath.Clear();
+            result.Path.Clear();
+            connectionPoints.Clear();
 #endif
         }
     }
 
-    private static HashSet<Location> ExplorePipes(ChildContext context, Location start)
+    private static void ExplorePipes(ChildContext context, Location start, HashSet<Location> pipes)
     {
         var toExplore = GetQueue(context);
         try
         {
             toExplore.Enqueue(start);
-            var pipes = new HashSet<Location>(context.Pipes.Count) { start };
+            pipes.Add(start);
 
             Span<Location> neighbors = stackalloc Location[4];
 
@@ -279,8 +282,6 @@ internal static class RotateOptimize
                     }
                 }
             }
-
-            return pipes;
         }
         finally
         {
