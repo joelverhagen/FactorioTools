@@ -34,9 +34,36 @@ public class Benchmark
     }
 
     [Benchmark]
+    public void SmallElectricPole_Beacon_Underground()
+    {
+        var options = Options.ForSmallElectricPole;
+        options.AddBeacons = true;
+        options.UseUndergroundPipes = true;
+        Planner.Execute(options, Blueprint);
+    }
+
+    [Benchmark]
     public void MediumElectricPole_Beacon_Underground()
     {
         var options = Options.ForMediumElectricPole;
+        options.AddBeacons = true;
+        options.UseUndergroundPipes = true;
+        Planner.Execute(options, Blueprint);
+    }
+
+    [Benchmark]
+    public void BigElectricPole_Beacon_Underground()
+    {
+        var options = Options.ForBigElectricPole;
+        options.AddBeacons = true;
+        options.UseUndergroundPipes = true;
+        Planner.Execute(options, Blueprint);
+    }
+
+    [Benchmark]
+    public void Substation_Beacon_Underground()
+    {
+        var options = Options.ForSubstation;
         options.AddBeacons = true;
         options.UseUndergroundPipes = true;
         Planner.Execute(options, Blueprint);
