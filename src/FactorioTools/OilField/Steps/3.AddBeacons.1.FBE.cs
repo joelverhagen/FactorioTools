@@ -8,6 +8,9 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// Source:
 /// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/beacon.ts
 /// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts
+/// 
+/// It has been modified with some performance improvements (some are .NET specific) and some quality improvements which
+/// yield better results. Most notably, the beacon candidate sorting only happens once.
 /// </summary>
 internal static partial class AddBeacons
 {
