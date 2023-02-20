@@ -3,15 +3,15 @@
 internal static class Prims
 {
     public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(
-        SharedInstances sharedInstances,
+        Context context,
         Dictionary<Location, Dictionary<Location, int>> graph,
         Location firstNode,
         bool digraph)
     {
 #if USE_SHARED_INSTANCES
-        var visited = sharedInstances.LocationSetA;
+        var visited = context.SharedInstances.BitGridA;
 #else
-        var visited = new HashSet<Location>();
+        var visited = new BitGrid(context.Grid.Width, context.Grid.Height);
 #endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
         var mst = new Dictionary<Location, HashSet<Location>>();

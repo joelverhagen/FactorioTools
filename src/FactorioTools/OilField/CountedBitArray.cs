@@ -35,14 +35,20 @@ internal class CountedBitArray
 
     public int TrueCount { get; private set; }
 
-    public bool All(bool val)
+    public bool All(bool value)
     {
-        return val ? TrueCount == _array.Count : TrueCount == 0;
+        return value ? TrueCount == _array.Count : TrueCount == 0;
     }
 
-    public bool Any(bool val)
+    public bool Any(bool value)
     {
-        return val ? TrueCount > 0 : TrueCount < _array.Count;
+        return value ? TrueCount > 0 : TrueCount < _array.Count;
+    }
+
+    public void SetAll(bool value)
+    {
+        _array.SetAll(value);
+        TrueCount = value ? _array.Length : 0;
     }
 
     internal CountedBitArray And(CountedBitArray value)

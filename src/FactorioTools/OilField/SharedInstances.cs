@@ -13,7 +13,7 @@ internal class SharedInstances
     public required List<Location> LocationListA;
     public required List<Location> LocationListB;
     public required HashSet<Location> LocationSetA;
-    public required HashSet<Location> LocationSetB;
+    public required BitGrid BitGridA;
 
     public T[] GetArray<T>(ref T[] array, int length) where T : struct
     {

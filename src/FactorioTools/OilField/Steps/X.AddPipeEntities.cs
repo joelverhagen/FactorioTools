@@ -23,7 +23,7 @@ internal static class AddPipeEntities
         Dictionary<Location, Direction>? undergroundPipes)
     {
 #if USE_SHARED_INSTANCES
-        var addedPipes = sharedInstances.LocationSetA;
+        var addedPipes = sharedInstances.BitGridA;
 #else
         var addedPipes = new HashSet<Location>();
 #endif

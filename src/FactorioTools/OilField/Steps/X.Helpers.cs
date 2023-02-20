@@ -202,9 +202,9 @@ internal static class Helpers
         if (removeUnused && unusedProviders.Count > 0)
         {
 #if USE_SHARED_INSTANCES
-            var coveredCenters = context.SharedInstances.LocationSetA;
+            var coveredCenters = context.SharedInstances.BitGridA;
 #else
-            var coveredCenters = new HashSet<Location>();
+            var coveredCenters = new BitGrid(context.Grid.Width, context.Grid.Height);
 #endif
 
             try
@@ -334,7 +334,7 @@ internal static class Helpers
     }
 
     private static void AddCoveredCenters(
-        HashSet<Location> coveredCenters,
+        ICollection<Location> coveredCenters,
         SquareGrid grid,
         Location center,
         int providerWidth,
@@ -503,10 +503,10 @@ internal static class Helpers
 
 #if USE_SHARED_INSTANCES
         var toRemove = sharedInstances.LocationListA;
-        var updated = sharedInstances.LocationSetA;
+        var updated = sharedInstances.BitGridA;
 #else
         var toRemove = new List<Location>();
-        var updated = new HashSet<Location>();
+        var updated = new BitGrid(grid.Width, grid.Height);
 #endif
 
         try

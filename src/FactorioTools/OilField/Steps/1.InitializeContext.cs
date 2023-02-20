@@ -83,7 +83,7 @@ internal static class InitializeContext
                 LocationListA = new List<Location>(),
                 LocationListB = new List<Location>(),
                 LocationSetA = centers,
-                LocationSetB = new HashSet<Location>(),
+                BitGridA = new BitGrid(grid.Width, grid.Height),
 #endif
             },
         };

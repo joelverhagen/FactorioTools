@@ -13,11 +13,11 @@ internal static class Dijkstras
 #if USE_SHARED_INSTANCES
         var priorityQueue = sharedInstances.LocationPriorityQueue;
         var costSoFar = sharedInstances.LocationToDouble;
-        var inQueue = sharedInstances.LocationSetB;
+        var inQueue = sharedInstances.BitGridA;
 #else
         var priorityQueue = new PriorityQueue<Location, double>();
         var costSoFar = new Dictionary<Location, double>();
-        var inQueue = new HashSet<Location>();
+        var inQueue = new BitGrid(grid.Width, grid.Height);
 #endif
 
         var reachedGoals = new HashSet<Location>();

@@ -45,7 +45,7 @@ internal static partial class AddPipes
         }
 
         var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistanceSquared);
-        var mst = Prims.GetMinimumSpanningTree(context.SharedInstances, dlGraph, closestToMiddle, digraph: false);
+        var mst = Prims.GetMinimumSpanningTree(context, dlGraph, closestToMiddle, digraph: false);
 
         return mst;
     }

@@ -726,7 +726,7 @@ internal static class AddElectricPoles
 
 #if USE_SHARED_INSTANCES
         var candidates = context.SharedInstances.LocationQueue;
-        var attempted = context.SharedInstances.LocationSetA;
+        var attempted = context.SharedInstances.BitGridA;
 #else
         var candidates = new Queue<Location>();
         var attempted = new HashSet<Location>();
