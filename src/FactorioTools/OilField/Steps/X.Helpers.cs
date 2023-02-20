@@ -465,6 +465,7 @@ internal static class Helpers
         int providerHeight,
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
+        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates,
         Dictionary<Location, TInfo> candidateToInfo,
         Dictionary<Location, TInfo> scopedCandidateToInfo,
         SortedBatches<TInfo> coveredCountBatches)
@@ -473,6 +474,15 @@ internal static class Helpers
         where TInfo : CandidateInfo
     {
         // Console.WriteLine("adding " + center);
+
+        var newlyCovered = new CountedBitArray(coveredEntities);
+        newlyCovered.Not();
+        newlyCovered.And(centerInfo.Covered);
+
+        if (newlyCovered.TrueCount == 0)
+        {
+            throw new NotImplementedException("At least one recipient should should have been newly covered.");
+        }
 
         coveredEntities.Or(centerInfo.Covered);
 
@@ -493,64 +503,81 @@ internal static class Helpers
 
 #if USE_SHARED_INSTANCES
         var toRemove = sharedInstances.LocationListA;
+        var updated = sharedInstances.LocationSetA;
 #else
         var toRemove = new List<Location>();
+        var updated = new HashSet<Location>();
 #endif
 
         try
         {
             // Remove the covered entities from the candidate data, so that the next candidates are discounted
             // by the entities that no longer need to be covered.
-            // TODO: perf: add a mapping from covered to candidate and use that instead of enumerating all
-            foreach ((var otherCandidate, var otherInfo) in candidateToInfo)
+            for (var i = 0; i < recipients.Count; i++)
             {
-                var modified = false;
-                var oldCoveredCount = otherInfo.Covered.TrueCount;
-                for (var i = 0; i < recipients.Count && otherInfo.Covered.TrueCount > 0; i++)
+                if (!newlyCovered[i])
                 {
-                    if (coveredEntities[i] && otherInfo.Covered[i])
+                    continue;
+                }
+
+                foreach ((var otherCandidate, var otherInfo) in coveredToCandidates[i])
+                {
+                    if (!updated.Add(otherCandidate))
                     {
-                        otherInfo.Covered[i] = false;
-                        modified = true;
+                        continue;
+                    }
+
+                    var modified = false;
+                    var oldCoveredCount = otherInfo.Covered.TrueCount;
+                    for (var j = 0; j < recipients.Count && otherInfo.Covered.TrueCount > 0; j++)
+                    {
+                        if (coveredEntities[j] && otherInfo.Covered[j])
+                        {
+                            otherInfo.Covered[j] = false;
+                            coveredToCandidates[j].Remove(otherCandidate);
+                            modified = true;
+                        }
+                    }
+
+                    if (otherInfo.Covered.TrueCount == 0)
+                    {
+                        toRemove.Add(otherCandidate);
+                        coveredCountBatches.RemoveCandidate(otherCandidate, oldCoveredCount);
+                    }
+                    else if (modified)
+                    {
+                        coveredCountBatches.MoveCandidate(otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount);
+
+                        double entityDistance = 0;
+                        for (var j = 0; j < recipients.Count; j++)
+                        {
+                            entityDistance += otherCandidate.GetEuclideanDistance(recipients[j].Center);
+                        }
+
+                        otherInfo.EntityDistance = entityDistance;
                     }
                 }
 
-                if (otherInfo.Covered.TrueCount == 0)
+                if (toRemove.Count > 0)
                 {
-                    toRemove.Add(otherCandidate);
-                    coveredCountBatches.RemoveCandidate(otherCandidate, oldCoveredCount);
-                }
-                else if (modified)
-                {
-                    coveredCountBatches.MoveCandidate(otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount);
-
-                    double entityDistance = 0;
-                    for (var i = 0; i < recipients.Count; i++)
+                    for (var j = 0; j < toRemove.Count; j++)
                     {
-                        entityDistance += otherCandidate.GetEuclideanDistance(recipients[i].Center);
+                        if (candidateToInfo.Remove(toRemove[j]))
+                        {
+                            scopedCandidateToInfo.Remove(toRemove[j]);
+                        }
                     }
 
-                    otherInfo.EntityDistance = entityDistance;
+                    toRemove.Clear();
                 }
             }
 
-            if (toRemove.Count > 0)
-            {
-                for (var i = 0; i < toRemove.Count; i++)
-                {
-                    if (candidateToInfo.Remove(toRemove[i]))
-                    {
-                        scopedCandidateToInfo.Remove(toRemove[i]);
-                    }
-                }
-
-                toRemove.Clear();
-            }
         }
         finally
         {
 #if USE_SHARED_INSTANCES
             toRemove.Clear();
+            updated.Clear();
 #endif
         }
     }

@@ -360,6 +360,21 @@ internal static class AddElectricPoles
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
+        var coveredToCandidates = new Dictionary<int, Dictionary<Location, ElectricPoleCandidateInfo>>(coveredEntities.Count);
+        for (var i = 0; i < coveredEntities.Count; i++)
+        {
+            var candidates = new Dictionary<Location, ElectricPoleCandidateInfo>();
+            foreach ((var candidate, var info) in allCandidateToInfo)
+            {
+                if (info.Covered[i])
+                {
+                    candidates.Add(candidate, info);
+                }
+            }
+
+            coveredToCandidates.Add(i, candidates);
+        }
+
         var allSubsets = new Queue<SortedBatches<ElectricPoleCandidateInfo>>();
 
         IComparer<ElectricPoleCandidateInfo> sorter;
@@ -462,6 +477,7 @@ internal static class AddElectricPoles
                 context.Options.ElectricPoleHeight,
                 poweredEntities,
                 coveredEntities,
+                coveredToCandidates,
                 allCandidateToInfo,
                 candidateToInfo,
                 coveredCountBatches);
