@@ -26,7 +26,10 @@
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(X, Y);
+        var hash = 23;
+        hash = hash * 31 + X;
+        hash = hash * 31 + Y;
+        return hash;
     }
 
     public int GetManhattanDistance(Location other)
