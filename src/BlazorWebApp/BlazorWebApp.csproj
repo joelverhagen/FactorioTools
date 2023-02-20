@@ -7,7 +7,7 @@
     <RunAOTCompilation>true</RunAOTCompilation>
     <!--
     <WasmEmitSymbolMap>true</WasmEmitSymbolMap>
-    <WasmNativeStrip>falsed</WasmNativeStrip>
+    <WasmNativeStrip>false</WasmNativeStrip>
     -->
   </PropertyGroup>
 
