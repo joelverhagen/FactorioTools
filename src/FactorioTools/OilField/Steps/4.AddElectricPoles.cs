@@ -1,4 +1,5 @@
-﻿using Knapcode.FactorioTools.OilField.Algorithms;
+﻿using System.Text;
+using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
@@ -350,6 +351,11 @@ internal static class AddElectricPoles
         var electricPoleList = electricPoles.Keys.ToList();
 
         var candidateToInfo = GetCandidateToInfo(context, candidateToCovered, entitiesToPowerFirst, poweredEntities, electricPoleList);
+
+        IComparer<KeyValuePair<Location, CountedBitArray>> sorter = entitiesToPowerFirst is null ?
+            new CandidateComparer(candidateToInfo)
+            : new CandidateComparerWithPriority(candidateToInfo);
+
         var toRemove = new List<Location>();
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
 
@@ -362,19 +368,7 @@ internal static class AddElectricPoles
                 return (null, electricPoleList, coveredEntities);
             }
 
-            var candidate = candidateToCovered
-                .MinBy(pair =>
-                {
-                    var info = candidateToInfo[pair.Key];
-                    return (
-                        -info.PriorityPowered,
-                        -pair.Value.TrueCount,
-                        info.OthersConnected > 0 ? info.OthersConnected : int.MaxValue,
-                        info.OthersConnected > 0 ? 0 : info.PoleDistance,
-                        info.EntityDistance,
-                        info.MiddleDistance
-                    );
-                })!.Key;
+            var candidate = candidateToCovered.MinBy(x => x, sorter)!.Key;
 
             if (context.Options.ValidateSolution)
             {
@@ -506,31 +500,84 @@ internal static class AddElectricPoles
 
     private class CandidateComparer : IComparer<KeyValuePair<Location, CountedBitArray>>
     {
-        private readonly CountedBitArray? entitiesToPowerFirst;
-        private readonly bool hasEntitiesToPowerFirst;
-        private readonly Dictionary<Location, int> candidateToOthersConnected;
-        private readonly Dictionary<Location, int> candidateToPoleDistanceSquared;
-        private readonly Dictionary<Location, double> candidateToEntityDistance;
-        private readonly Dictionary<Location, int> candidateToMiddleDistanceSquared;
+        private readonly Dictionary<Location, CandidateInfo> _candidateToInfo;
 
-        public CandidateComparer(
-            CountedBitArray? entitiesToPowerFirst,
-            Dictionary<Location, int> candidateToOthersConnected,
-            Dictionary<Location, int> candidateToPoleDistanceSquared,
-            Dictionary<Location, double> candidateToEntityDistance,
-            Dictionary<Location, int> candidateToMiddleDistanceSquared)
+        public CandidateComparer(Dictionary<Location, CandidateInfo> candidateToInfo)
         {
-            this.entitiesToPowerFirst = entitiesToPowerFirst;
-            this.hasEntitiesToPowerFirst = entitiesToPowerFirst is not null;
-            this.candidateToOthersConnected = candidateToOthersConnected;
-            this.candidateToPoleDistanceSquared = candidateToPoleDistanceSquared;
-            this.candidateToEntityDistance = candidateToEntityDistance;
-            this.candidateToMiddleDistanceSquared = candidateToMiddleDistanceSquared;
+            _candidateToInfo = candidateToInfo;
         }
 
         public int Compare(KeyValuePair<Location, CountedBitArray> x, KeyValuePair<Location, CountedBitArray> y)
         {
-            return 0;
+            return Compare(x, y, _candidateToInfo, xInfo: null, yInfo: null);
+        }
+
+        public static int Compare(
+            KeyValuePair<Location, CountedBitArray> x,
+            KeyValuePair<Location, CountedBitArray> y,
+            Dictionary<Location, CandidateInfo> candidateToInfo,
+            CandidateInfo? xInfo,
+            CandidateInfo? yInfo)
+        {
+            var c = y.Value.TrueCount.CompareTo(x.Value.TrueCount);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            if (xInfo is null || yInfo is null)
+            {
+                xInfo = candidateToInfo[x.Key];
+                yInfo = candidateToInfo[y.Key];
+            }
+
+            var xi = xInfo.OthersConnected > 0 ? xInfo.OthersConnected : int.MaxValue;
+            var yi = yInfo.OthersConnected > 0 ? yInfo.OthersConnected : int.MaxValue;
+            c = xi.CompareTo(yi);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            xi = xInfo.OthersConnected > 0 ? 0 : xInfo.PoleDistance;
+            yi = yInfo.OthersConnected > 0 ? 0 : yInfo.PoleDistance;
+            c = xi.CompareTo(yi);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            c = xInfo.EntityDistance.CompareTo(yInfo.EntityDistance);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return xInfo.MiddleDistance.CompareTo(yInfo.MiddleDistance);
+        }
+    }
+
+    private class CandidateComparerWithPriority : IComparer<KeyValuePair<Location, CountedBitArray>>
+    {
+        private readonly Dictionary<Location, CandidateInfo> _candidateToInfo;
+
+        public CandidateComparerWithPriority(Dictionary<Location, CandidateInfo> candidateToInfo)
+        {
+            _candidateToInfo = candidateToInfo;
+        }
+
+        public int Compare(KeyValuePair<Location, CountedBitArray> x, KeyValuePair<Location, CountedBitArray> y)
+        {
+            var xInfo = _candidateToInfo[x.Key];
+            var yInfo = _candidateToInfo[y.Key];
+
+            var c = yInfo.PriorityPowered.CompareTo(xInfo.PriorityPowered);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return CandidateComparer.Compare(x, y, _candidateToInfo, xInfo, yInfo);
         }
     }
 
