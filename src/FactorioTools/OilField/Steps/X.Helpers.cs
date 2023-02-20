@@ -422,6 +422,38 @@ internal static class Helpers
         return sum;
     }
 
+    public class SortedBatches<TInfo>
+    {
+        private readonly bool _ascending;
+
+        public SortedBatches(IEnumerable<KeyValuePair<int, Dictionary<Location, TInfo>>> pairs, bool ascending)
+        {
+            _ascending = ascending;
+            Queue = new PriorityQueue<Dictionary<Location, TInfo>, int>();
+            Lookup = new Dictionary<int, Dictionary<Location, TInfo>>();
+
+            foreach ((var key, var candidateToInfo) in pairs)
+            {
+                Queue.Enqueue(candidateToInfo, _ascending ? key : -key);
+                Lookup.Add(key, candidateToInfo);
+            }
+        }
+
+        public PriorityQueue<Dictionary<Location, TInfo>, int> Queue { get; }
+        public Dictionary<int, Dictionary<Location, TInfo>> Lookup { get; }
+
+        public void RemoveCandidate(Location location, int oldKey)
+        {
+            Lookup[oldKey].Remove(location);
+        }
+
+        public void MoveCandidate(Location location, TInfo info, int oldKey, int newKey)
+        {
+            Lookup[oldKey].Remove(location);
+            Lookup[newKey].Add(location, info);
+        }
+    }
+
     public static void AddProviderAndUpdateCandidateState<TCenter, TSide, TInfo>(
         SquareGrid grid,
         SharedInstances sharedInstances,
@@ -434,12 +466,13 @@ internal static class Helpers
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
         Dictionary<Location, TInfo> candidateToInfo,
-        Dictionary<Location, TInfo> scopedCandidateToInfo)
+        Dictionary<Location, TInfo> scopedCandidateToInfo,
+        SortedBatches<TInfo> coveredCountBatches)
         where TCenter : GridEntity
         where TSide : GridEntity
         where TInfo : CandidateInfo
     {
-        Console.WriteLine("adding " + center);
+        // Console.WriteLine("adding " + center);
 
         coveredEntities.Or(centerInfo.Covered);
 
@@ -471,28 +504,26 @@ internal static class Helpers
             // TODO: perf: add a mapping from covered to candidate and use that instead of enumerating all
             foreach ((var otherCandidate, var otherInfo) in candidateToInfo)
             {
-                if (otherCandidate == new Location(40, 46))
-                {
-
-                }
                 var modified = false;
-                var otherCoveredCount = otherInfo.Covered.TrueCount;
-                for (var i = 0; i < recipients.Count && otherCoveredCount > 0; i++)
+                var oldCoveredCount = otherInfo.Covered.TrueCount;
+                for (var i = 0; i < recipients.Count && otherInfo.Covered.TrueCount > 0; i++)
                 {
                     if (coveredEntities[i] && otherInfo.Covered[i])
                     {
                         otherInfo.Covered[i] = false;
                         modified = true;
-                        otherCoveredCount--;
                     }
                 }
 
-                if (otherCoveredCount == 0)
+                if (otherInfo.Covered.TrueCount == 0)
                 {
                     toRemove.Add(otherCandidate);
+                    coveredCountBatches.RemoveCandidate(otherCandidate, oldCoveredCount);
                 }
                 else if (modified)
                 {
+                    coveredCountBatches.MoveCandidate(otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount);
+
                     double entityDistance = 0;
                     for (var i = 0; i < recipients.Count; i++)
                     {

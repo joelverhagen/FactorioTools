@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Knapcode.FactorioTools.OilField.Algorithms;
+﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -361,7 +360,7 @@ internal static class AddElectricPoles
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
-        var allSubsets = new Queue<Queue<Dictionary<Location, ElectricPoleCandidateInfo>>>();
+        var allSubsets = new Queue<SortedBatches<ElectricPoleCandidateInfo>>();
 
         IComparer<ElectricPoleCandidateInfo> sorter;
         if (entitiesToPowerFirst is null)
@@ -371,20 +370,20 @@ internal static class AddElectricPoles
         else
         {
             sorter = CandidateComparerForSamePriorityPowered.Instance;
-            EnqueueCandidateSubsets(
-                allSubsets,
+            allSubsets.Enqueue(new SortedBatches<ElectricPoleCandidateInfo>(
                 allCandidateToInfo
                     .GroupBy(p => p.Value.PriorityPowered)
-                    .OrderByDescending(g => g.Key)
-                    .Select(g => g.ToDictionary(p => p.Key, p => p.Value)));
+                    .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(p => p.Key, p => p.Value))),
+                ascending: false));
         }
 
-        EnqueueCandidateSubsets(
-            allSubsets,
+        var coveredCountBatches = new SortedBatches<ElectricPoleCandidateInfo>(
             allCandidateToInfo
                 .GroupBy(p => p.Value.Covered.TrueCount)
-                .OrderByDescending(g => g.Key)
-                .Select(g => g.ToDictionary(p => p.Key, p => p.Value)));
+                .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(p => p.Key, p => p.Value))),
+            ascending: false);
+
+        allSubsets.Enqueue(coveredCountBatches);
 
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
         Dictionary<Location, ElectricPoleCandidateInfo>? candidateToInfo = null;
@@ -401,17 +400,18 @@ internal static class AddElectricPoles
                 }
 
                 var subsets = allSubsets.Peek();
-                if (subsets.Count == 0)
+                if (subsets.Queue.Count == 0
+                    || (allSubsets.Count > 1 && subsets.Queue.Count == 1))
                 {
                     allSubsets.Dequeue();
                     continue;
                 }
 
-                candidateToInfo = subsets.Peek();
+                candidateToInfo = subsets.Queue.Peek();
                 if (candidateToInfo.Count == 0)
                 {
                     candidateToInfo = null;
-                    subsets.Dequeue();
+                    subsets.Queue.Dequeue();
                     continue;
                 }
             }
@@ -463,7 +463,8 @@ internal static class AddElectricPoles
                 poweredEntities,
                 coveredEntities,
                 allCandidateToInfo,
-                candidateToInfo);
+                candidateToInfo,
+                coveredCountBatches);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -503,19 +504,6 @@ internal static class AddElectricPoles
         }
 
         return (electricPoles, electricPoleList, coveredEntities);
-    }
-
-    private static void EnqueueCandidateSubsets(
-        Queue<Queue<Dictionary<Location, ElectricPoleCandidateInfo>>> allSubsets,
-        IEnumerable<Dictionary<Location, ElectricPoleCandidateInfo>> subsets)
-    {
-        var queue = new Queue<Dictionary<Location, ElectricPoleCandidateInfo>>();
-        foreach (var subset in subsets)
-        {
-            queue.Enqueue(subset);
-        }
-
-        allSubsets.Enqueue(queue);
     }
 
     private class ElectricPoleCandidateInfo : CandidateInfo
