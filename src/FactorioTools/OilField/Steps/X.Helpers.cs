@@ -430,7 +430,8 @@ internal static class Helpers
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
         Dictionary<Location, CountedBitArray> candidateToCovered,
-        Dictionary<Location, double> candidateToEntityDistance)
+        Dictionary<Location, double> candidateToEntityDistance,
+        Dictionary<Location, int> candidateToOthersConnected)
         where TCenter : GridEntity
         where TSide : GridEntity
     {
@@ -478,6 +479,7 @@ internal static class Helpers
                 {
                     toRemove.Add(otherCandidate);
                     candidateToEntityDistance.Remove(otherCandidate);
+                    candidateToOthersConnected.Remove(otherCandidate);
                 }
                 else if (modified)
                 {
