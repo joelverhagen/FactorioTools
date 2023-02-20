@@ -3,7 +3,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-public class UseUndergroundPipesTest
+public class PlanUndergroundPipesTest
 {
     public class Execute : Facts
     {
@@ -416,7 +416,7 @@ public class UseUndergroundPipesTest
 
         private static void Run(Context context, HashSet<Location> pipes)
         {
-            var undergroundPipes = UseUndergroundPipes.Execute(context, pipes);
+            var undergroundPipes = PlanUndergroundPipes.Execute(context, pipes);
 
             Assert.Equal(0, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
             Assert.All(undergroundPipes.Keys, p => Assert.Contains(p, pipes));

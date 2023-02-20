@@ -21,10 +21,10 @@ internal partial class Program
     private static void Measure()
     {
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
-        var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[42] };
-        // var blueprintStrings = blueprintStringsAll.Take(20).ToArray();
-        // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 20).ToArray();
+        // var blueprintStrings = blueprintStringsAll;
+        // var blueprintStrings = new[] { blueprintStringsAll[12] };
+        // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
+        var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 50).ToArray();
 
         // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
         // var optionsAll = new[] { Options.ForSmallElectricPole };
@@ -50,7 +50,7 @@ internal partial class Program
                 // options.ElectricPoleSupplyWidth = 9;
                 // options.ElectricPoleSupplyHeight = 9;
                 options.AddBeacons = true;
-                options.UseUndergroundPipes = true;
+                options.UseUndergroundPipes = options.AddBeacons;
                 options.OptimizePipes = true;
                 options.ValidateSolution = false;
                 // options.BeaconStrategies.Remove(BeaconStrategy.FBE);

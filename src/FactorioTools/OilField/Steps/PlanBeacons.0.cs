@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static partial class AddBeacons
+internal static partial class PlanBeacons
 {
     public static List<Location> Execute(Context context, HashSet<Location> pipes)
     {

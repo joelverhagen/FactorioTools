@@ -180,13 +180,13 @@ internal static partial class AddPipes
         Dictionary<Location, Direction>? undergroundPipes = null;
         if (context.Options.UseUndergroundPipes)
         {
-            undergroundPipes = UseUndergroundPipes.Execute(context, optimizedPipes);
+            undergroundPipes = PlanUndergroundPipes.Execute(context, optimizedPipes);
         }
 
         List<Location>? beacons = null;
         if (context.Options.AddBeacons)
         {
-            beacons = AddBeacons.Execute(context, optimizedPipes);
+            beacons = PlanBeacons.Execute(context, optimizedPipes);
         }
 
         if (context.Options.ValidateSolution)
