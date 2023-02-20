@@ -4,7 +4,7 @@ internal static class Prims
 {
     public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(
         SharedInstances sharedInstances,
-        Dictionary<Location, Dictionary<Location, double>> graph,
+        Dictionary<Location, Dictionary<Location, int>> graph,
         Location firstNode,
         bool digraph)
     {
@@ -13,7 +13,7 @@ internal static class Prims
 #else
         var visited = new HashSet<Location>();
 #endif
-        var priority = new PriorityQueue<(Location NodeA, Location NodeB), double>();
+        var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
         var mst = new Dictionary<Location, HashSet<Location>>();
 
         try

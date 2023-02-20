@@ -351,8 +351,8 @@ internal static partial class AddPipes
                 t.BestTerminal.Path.Count,
                 -centerToConnectedCenters[t.Terminal.Center].Count,
                 -centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count,
-                t.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle),
-                t.BestTerminal.Terminal.Terminal.GetEuclideanDistance(context.Grid.Middle)
+                t.Terminal.Terminal.GetEuclideanDistanceSquared(context.Grid.Middle),
+                t.BestTerminal.Terminal.Terminal.GetEuclideanDistanceSquared(context.Grid.Middle)
             ))!;
 
         EliminateOtherTerminals(context, bestConnection.Terminal);

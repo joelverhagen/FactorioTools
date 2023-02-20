@@ -93,7 +93,22 @@ class Options
     public string ElectricPoleEntityName { get; set; } = EntityNames.Vanilla.MediumElectricPole;
     public int ElectricPoleSupplyWidth { get; set; } = 7;
     public int ElectricPoleSupplyHeight { get; set; } = 7;
-    public double ElectricPoleWireReach { get; set; } = 9;
+
+    private const double DefaultElectricPoleWireReach = 9;
+    private double _electricPoleWireReach = DefaultElectricPoleWireReach;
+
+    public double ElectricPoleWireReach
+    {
+        get => _electricPoleWireReach;
+        set
+        {
+            _electricPoleWireReach = value;
+            ElectricPoleWireReachSquared = value * value;
+        }
+    }
+
+    public double ElectricPoleWireReachSquared { get; private set; } = DefaultElectricPoleWireReach * DefaultElectricPoleWireReach;
+
     public int ElectricPoleWidth { get; set; } = 1;
     public int ElectricPoleHeight { get; set; } = 1;
 

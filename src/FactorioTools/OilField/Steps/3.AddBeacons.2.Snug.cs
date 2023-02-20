@@ -24,9 +24,9 @@ internal static partial class AddBeacons
             throw new InvalidOperationException("There should not be any existing beacons.");
         }
 
-        var candidateToMiddleDistance = candidateToCovered.ToDictionary(
+        var candidateToMiddleDistanceSquared = candidateToCovered.ToDictionary(
             x => x.Key,
-            x => x.Key.GetEuclideanDistance(context.Grid.Middle));
+            x => x.Key.GetEuclideanDistanceSquared(context.Grid.Middle));
 
         var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
 
@@ -35,7 +35,7 @@ internal static partial class AddBeacons
         var sorter = new SnugCandidateSorter(
             candidateToCovered,
             candidateToEntityDistance,
-            candidateToMiddleDistance);
+            candidateToMiddleDistanceSquared);
 
 #if USE_SHARED_INSTANCES
         var scopedCandidates = context.SharedInstances.LocationListA;
@@ -57,7 +57,7 @@ internal static partial class AddBeacons
                         beacons.Count > 0 ? beacons.Min(x => x.GetManhattanDistance(c)) : 0,
                         -candidateToCovered[c].TrueCount,
                         -candidateToEntityDistance[c],
-                        candidateToMiddleDistance[c]
+                        candidateToMiddleDistanceSquared[c]
                     ))!;
 
                 scopedCandidates.Clear();
@@ -200,16 +200,16 @@ internal static partial class AddBeacons
     {
         internal readonly Dictionary<Location, CountedBitArray> _candidateToCovered;
         internal readonly Dictionary<Location, double> _candidateToEntityDistance;
-        internal readonly Dictionary<Location, double> _candidateToMiddleDistance;
+        internal readonly Dictionary<Location, int> _candidateToMiddleDistanceSquared;
 
         public SnugCandidateSorter(
             Dictionary<Location, CountedBitArray> candidateToCovered,
             Dictionary<Location, double> candidateToEntityDistance,
-            Dictionary<Location, double> candidateToMiddleDistance)
+            Dictionary<Location, int> candidateToMiddleDistanceSquared)
         {
             _candidateToCovered = candidateToCovered;
             _candidateToEntityDistance = candidateToEntityDistance;
-            _candidateToMiddleDistance = candidateToMiddleDistance;
+            _candidateToMiddleDistanceSquared = candidateToMiddleDistanceSquared;
         }
 
         public int Compare(Location x, Location y)
@@ -232,8 +232,8 @@ internal static partial class AddBeacons
                 return c;
             }
 
-            xd = _candidateToMiddleDistance[x];
-            yd = _candidateToMiddleDistance[y];
+            xd = _candidateToMiddleDistanceSquared[x];
+            yd = _candidateToMiddleDistanceSquared[y];
             return yd.CompareTo(xd);
         }
     }

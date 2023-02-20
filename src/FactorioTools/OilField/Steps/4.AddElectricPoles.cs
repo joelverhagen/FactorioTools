@@ -104,36 +104,6 @@ internal static class AddElectricPoles
         return (poweredEntities, hasBeacons);
     }
 
-    private static void PruneNeighbors(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
-    {
-        var graph = new Dictionary<Location, Dictionary<Location, double>>();
-        foreach ((var location, var center) in electricPoles)
-        {
-            var neighbors = new Dictionary<Location, double>();
-            foreach (var neighbor in center.Neighbors)
-            {
-                var neighborLocation = context.Grid.EntityToLocation[neighbor];
-                neighbors.Add(neighborLocation, GetElectricPoleDistance(location, neighborLocation, context.Options));
-            }
-
-            graph.Add(location, neighbors);
-        }
-
-        var firstNode = graph.Keys.MinBy(context.Grid.Middle.GetEuclideanDistance)!;
-        var mst = Prims.GetMinimumSpanningTree(context.SharedInstances, graph, firstNode, digraph: false);
-
-        foreach ((var location, var neighbors) in mst)
-        {
-            var center = electricPoles[location];
-            center.ClearNeighbors();
-            foreach (var neighbor in neighbors)
-            {
-                var neighborCenter = electricPoles[neighbor];
-                center.AddNeighbor(neighborCenter);
-            }
-        }
-    }
-
     private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
         (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetPoleCoverage(context, poweredEntities, electricPoles.Keys);
@@ -379,9 +349,9 @@ internal static class AddElectricPoles
 
         var electricPoleList = electricPoles.Keys.ToList();
 
-        var candidateToMiddleDistance = candidateToCovered.ToDictionary(
+        var candidateToMiddleDistanceSquared = candidateToCovered.ToDictionary(
             x => x.Key,
-            x => x.Key.GetEuclideanDistance(context.Grid.Middle));
+            x => x.Key.GetEuclideanDistanceSquared(context.Grid.Middle));
 
         var candidateToEntityDistance = GetCandidateToEntityDistance(poweredEntities, candidateToCovered);
 
@@ -402,8 +372,8 @@ internal static class AddElectricPoles
                     var othersConnected = 0;
                     for (var i = 0; i < electricPoleList.Count; i++)
                     {
-                        var distance = pair.Key.GetEuclideanDistance(electricPoleList[i]);
-                        if (distance <= context.Options.ElectricPoleWireReach)
+                        var distance = pair.Key.GetEuclideanDistanceSquared(electricPoleList[i]);
+                        if (distance <= context.Options.ElectricPoleWireReachSquared)
                         {
                             othersConnected++;
                         }
@@ -415,9 +385,9 @@ internal static class AddElectricPoles
                     -(entitiesToPowerFirst is null ? 0 : new CountedBitArray(entitiesToPowerFirst).And(x.Covered).TrueCount),
                     -x.Covered.TrueCount,
                     x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue,
-                    x.OthersConnected > 0 ? 0 : GetDistanceToClosestElectricPole(electricPoleList, x.Location),
+                    x.OthersConnected > 0 ? 0 : GetDistanceSquaredToClosestElectricPole(electricPoleList, x.Location),
                     candidateToEntityDistance[x.Location],
-                    candidateToMiddleDistance[x.Location]
+                    candidateToMiddleDistanceSquared[x.Location]
                 ))!.Location;
 
             if (context.Options.ValidateSolution)
@@ -466,13 +436,13 @@ internal static class AddElectricPoles
         return (electricPoles, electricPoleList, coveredEntities);
     }
 
-    private static double GetDistanceToClosestElectricPole(List<Location> providerCenters, Location location)
+    private static double GetDistanceSquaredToClosestElectricPole(List<Location> providerCenters, Location location)
     {
-        var min = double.MaxValue;
+        var min = int.MaxValue;
 
         for (int i = 0; i < providerCenters.Count; i++)
         {
-            var val = providerCenters[i].GetEuclideanDistance(location);
+            var val = providerCenters[i].GetEuclideanDistanceSquared(location);
             if (val < min)
             {
                 min = val;

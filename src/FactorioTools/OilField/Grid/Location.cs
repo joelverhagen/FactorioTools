@@ -41,11 +41,25 @@
         return Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
     }
 
+    public int GetEuclideanDistanceSquared(Location other)
+    {
+        var deltaX = X - other.X;
+        var deltaY = Y - other.Y;
+        return (deltaX * deltaX) + (deltaY * deltaY);
+    }
+
     public double GetEuclideanDistance(double bX, double bY)
     {
         var deltaX = X - bX;
         var deltaY = Y - bY;
         return Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
+    }
+
+    public double GetEuclideanDistanceSquared(double bX, double bY)
+    {
+        var deltaX = X - bX;
+        var deltaY = Y - bY;
+        return (deltaX * deltaX) + (deltaY * deltaY);
     }
 
     public Location Translate(int deltaX, int deltaY)
