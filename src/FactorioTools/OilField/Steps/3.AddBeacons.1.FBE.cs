@@ -23,27 +23,25 @@ internal static partial class AddBeacons
             throw new NotImplementedException("The beacon must be a square, have an odd number width and height, and have a supply area that is 3 times the width.");
         }
 
-        var entityAreas = GetEntityAreas(context, pipes);
-        var occupiedPositions = GetOccupiedPositions(entityAreas);
+        var grid = new LocationInfo[context.Grid.Width, context.Grid.Height];
+
+        AddEntityAreas(context, grid, pipes);
 
         // Visualizer.Show(context.Grid, occupiedPositions.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         // GENERATE VALID BEACON POSITIONS
-        var validBeaconPositions = GetValidBeaconPositions(context, occupiedPositions);
+        var validBeaconPositions = AddValidBeaconPositions(context, grid);
 
         // Visualizer.Show(context.Grid, grid.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         // GENERATE POSSIBLE BEACON AREAS
-        var possibleBeaconAreas = GetPossibleBeaconAreas(context, validBeaconPositions);
-        var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
-        var pointToEntityArea = GetPointToEntityArea(entityAreas);
+        var possibleBeaconAreas = GetPossibleBeaconAreas(context, grid, validBeaconPositions);
 
         // GENERATE POSSIBLE BEACONS
         var possibleBeacons = GetPossibleBeacons(
             context,
-            possibleBeaconAreas,
-            pointToBeaconCount,
-            pointToEntityArea);
+            grid,
+            possibleBeaconAreas);
 
         possibleBeacons = SortPossibleBeacons(possibleBeacons);
 
@@ -91,9 +89,8 @@ internal static partial class AddBeacons
 
     private static List<BeaconCandidate> GetPossibleBeacons(
         Context context,
-        List<Location[]> possibleBeaconAreas,
-        Dictionary<Location, int> pointToBeaconCount,
-        Dictionary<Location, Area[]> pointToEntityArea)
+        LocationInfo[,] grid,
+        List<Location[]> possibleBeaconAreas)
     {
         var beaconEffectRadius = GetBeaconEffectRadius(context);
         var centerIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
@@ -109,11 +106,11 @@ internal static partial class AddBeacons
             var effectsGiven = new HashSet<Area[]>();
             for (var j = 0; j < d2; j++)
             {
-                var location = new Location(
-                    x: center.X + ((j % d) - (d / 2)),
-                    y: center.Y + ((j / d) - (d / 2)));
+                var x = center.X + ((j % d) - (d / 2));
+                var y = center.Y + ((j / d) - (d / 2));
+                var area = grid[x, y]?.EntityArea;
 
-                if (pointToEntityArea.TryGetValue(location, out var area))
+                if (area is not null)
                 {
                     effectsGiven.Add(area);
                 }
@@ -125,7 +122,7 @@ internal static partial class AddBeacons
             }
 
             var avgDistToEntities = effectsGiven.Average(p => p[centerIndex].Location.GetManhattanDistance(center));
-            var nrOfOverlaps = collisionArea.Sum(p => pointToBeaconCount[p]);
+            var nrOfOverlaps = collisionArea.Sum(p => grid[p.X, p.Y].BeaconCount);
 
             possibleBeacons.Add(new BeaconCandidate(
                 center,
@@ -138,77 +135,64 @@ internal static partial class AddBeacons
         return possibleBeacons;
     }
 
-    private static HashSet<Location> GetOccupiedPositions(List<Area[]> entityAreas)
+    private static void AddEntityAreas(Context context, LocationInfo[,] grid, HashSet<Location> pipes)
     {
-        return entityAreas
-            .SelectMany(a => a)
-            .Select(a => a.Location)
-            .ToHashSet();
-    }
+        foreach (var pipe in pipes)
+        {
+            grid[pipe.X, pipe.Y] = new LocationInfo { Occupied = true };
+        }
 
-    private static List<Area[]> GetEntityAreas(Context context, HashSet<Location> pipes)
-    {
-        GridEntity pipe = new Pipe();
-        var entityAreas = context
-            .Grid
-            .EntityToLocation
-            .Concat(pipes.Select(p => KeyValuePair.Create(pipe, p)))
-            .Select(pair =>
+        foreach ((var entity, var location) in context.Grid.EntityToLocation)
+        {
+            int width;
+            int height;
+            bool effect;
+
+            switch (entity)
             {
-                int width;
-                int height;
-                bool effect;
+                case ElectricPoleCenter:
+                    width = context.Options.ElectricPoleWidth;
+                    height = context.Options.ElectricPoleHeight;
+                    effect = false;
+                    break;
+                case PumpjackCenter:
+                    width = PumpjackWidth;
+                    height = PumpjackHeight;
+                    effect = true;
+                    break;
+                case Pipe:
+                case BeaconCenter:
+                case BeaconSide:
+                case ElectricPoleSide:
+                case PumpjackSide:
+                    continue;
+                default:
+                    throw new NotImplementedException();
+            }
 
-                switch (pair.Key)
+            var minX = location.X - ((width - 1) / 2);
+            var maxX = location.X + (width / 2);
+            var minY = location.Y - ((height - 1) / 2);
+            var maxY = location.Y + (height / 2);
+
+            var area = new Area[width * height];
+            var i = 0;
+            for (var x = minX; x <= maxX; x++)
+            {
+                for (var y = minY; y <= maxY; y++)
                 {
-                    case Pipe:
-                        width = 1;
-                        height = 1;
-                        effect = false;
-                        break;
-                    case ElectricPoleCenter:
-                        width = context.Options.ElectricPoleWidth;
-                        height = context.Options.ElectricPoleHeight;
-                        effect = false;
-                        break;
-                    case PumpjackCenter:
-                        width = PumpjackWidth;
-                        height = PumpjackHeight;
-                        effect = true;
-                        break;
-                    case BeaconCenter:
-                    case BeaconSide:
-                    case ElectricPoleSide:
-                    case PumpjackSide:
-                        return null;
-                    default:
-                        throw new NotImplementedException();
-                }
-
-                var minX = pair.Value.X - ((width - 1) / 2);
-                var maxX = pair.Value.X + (width / 2);
-                var minY = pair.Value.Y - ((height - 1) / 2);
-                var maxY = pair.Value.Y + (height / 2);
-
-                var area = new Area[width * height];
-                var i = 0;
-                for (var x = minX; x <= maxX; x++)
-                {
-                    for (var y = minY; y <= maxY; y++)
+                    area[i++] = new Area(new Location(x, y), effect);
+                    grid[x, y] = new LocationInfo
                     {
-                        area[i++] = new Area(new Location(x, y), effect);
-                    }
+                        Occupied = true,
+                        EntityArea = effect ? area : null,
+                    };
                 }
-
-                return area;
-            })
-            .Where(a => a is not null)
-            .Select(a => a!)
-            .ToList();
-        return entityAreas;
+            }
+        }
     }
 
-    private static HashSet<Location> GetValidBeaconPositions(Context context, HashSet<Location> occupiedPositions)
+    private static HashSet<Location> AddValidBeaconPositions(Context context, LocationInfo[,] grid)
     {
         var validBeaconPositions = new HashSet<Location>();
         var beaconEffectRadius = GetBeaconEffectRadius(context);
@@ -218,17 +202,25 @@ internal static partial class AddBeacons
         {
             for (var i = 0; i < searchSize2; i++)
             {
-                validBeaconPositions.Add(new Location(
+                var location = new Location(
                     x: center.X + ((i % searchSize) - (searchSize / 2)),
-                    y: center.Y + ((i / searchSize) - (searchSize / 2))));
+                    y: center.Y + ((i / searchSize) - (searchSize / 2)));
+
+                if (grid[location.X, location.Y] is null)
+                {
+                    validBeaconPositions.Add(location);
+                    grid[location.X, location.Y] = new LocationInfo
+                    {
+                        ValidBeaconPosition = true,
+                    };
+                }
             }
         }
 
-        validBeaconPositions.ExceptWith(occupiedPositions);
         return validBeaconPositions;
     }
 
-    private static List<Location[]> GetPossibleBeaconAreas(Context context, HashSet<Location> validBeaconPositions)
+    private static List<Location[]> GetPossibleBeaconAreas(Context context, LocationInfo[,] grid, HashSet<Location> validBeaconPositions)
     {
         var beaconArea = context.Options.BeaconWidth * context.Options.BeaconHeight;
         var possibleBeaconAreas = new List<Location[]>();
@@ -242,8 +234,11 @@ internal static partial class AddBeacons
                     x: position.X + (i % context.Options.BeaconWidth),
                     y: position.Y + (i / context.Options.BeaconWidth));
 
-                if (validBeaconPositions.Contains(location))
+                var existingInfo = grid[location.X, location.Y];
+
+                if (existingInfo is not null && existingInfo.ValidBeaconPosition)
                 {
+                    existingInfo.BeaconCount++;
                     area[i] = location;
                 }
                 else
@@ -261,7 +256,7 @@ internal static partial class AddBeacons
         return possibleBeaconAreas;
     }
 
-    private static Dictionary<Location, int> GetPointToBeaconCount(List<Location[]> possibleBeaconAreas)
+    private static Dictionary<Location, int> GetPointToBeaconCount(List<Location[]> possibleBeaconAreas, LocationInfo[,] grid)
     {
         var pointToBeaconCount = new Dictionary<Location, int>();
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
@@ -282,26 +277,6 @@ internal static partial class AddBeacons
         }
 
         return pointToBeaconCount;
-    }
-
-    private static Dictionary<Location, Area[]> GetPointToEntityArea(List<Area[]> entityAreas)
-    {
-        var pointToEntityArea = new Dictionary<Location, Area[]>();
-        for (var i = 0; i < entityAreas.Count; i++)
-        {
-            var area = entityAreas[i];
-            if (!area[0].Effect)
-            {
-                continue;
-            }
-
-            for (var j = 0; j < area.Length; j++)
-            {
-                pointToEntityArea.Add(area[j].Location, area);
-            }
-        }
-
-        return pointToEntityArea;
     }
 
     private static Dictionary<Location, List<BeaconCandidate>> GetPointsToBeacons(List<BeaconCandidate> possibleBeacons)
@@ -326,6 +301,15 @@ internal static partial class AddBeacons
         }
 
         return pointToBeacons;
+    }
+
+    private class LocationInfo
+    {
+        public bool Occupied { get; set; }
+        public bool ValidBeaconPosition { get; set; }
+        public int BeaconCount { get; set; }
+        public Area[]? EntityArea { get; set; }
+        public List<BeaconCandidate>? Beacons { get; set; }
     }
 
     private record Area(Location Location, bool Effect);
