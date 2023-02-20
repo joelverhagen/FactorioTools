@@ -1,10 +1,11 @@
-﻿using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+﻿using Knapcode.FactorioTools.OilField.Grid;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 internal static partial class AddBeacons
 {
-    private static List<Location> AddBeacons_Snug(Context context, HashSet<Location> pipes)
+    private static List<Location> AddBeacons_Snug(Context context)
     {
         var poweredEntities = context
             .CenterToTerminals
@@ -15,7 +16,6 @@ internal static partial class AddBeacons
         // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
         (var candidateToCovered, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(
             context,
-            pipes,
             poweredEntities,
             removeUnused: false);
 

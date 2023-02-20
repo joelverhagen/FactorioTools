@@ -83,13 +83,11 @@ internal static class Helpers
 
     public static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered(
         Context context,
-        HashSet<Location> occupiedLocations,
         List<ProviderRecipient> recipients,
         bool removeUnused)
     {
         return GetCandidateToCovered<BeaconCenter>(
             context,
-            occupiedLocations,
             recipients,
             context.Options.BeaconWidth,
             context.Options.BeaconHeight,
@@ -107,7 +105,6 @@ internal static class Helpers
     {
         return GetCandidateToCovered<ElectricPoleCenter>(
             context,
-            occupiedLocations: null,
             recipients,
             context.Options.ElectricPoleWidth,
             context.Options.ElectricPoleHeight,
@@ -120,7 +117,6 @@ internal static class Helpers
 
     private static (Dictionary<Location, CountedBitArray> CandidateToCovered, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider>(
         Context context,
-        HashSet<Location>? occupiedLocations,
         List<ProviderRecipient> recipients,
         int providerWidth,
         int providerHeight,
@@ -168,7 +164,7 @@ internal static class Helpers
                     }
                     else
                     {
-                        var fits = DoesProviderFit(context.Grid, occupiedLocations, providerWidth, providerHeight, candidate);
+                        var fits = DoesProviderFit(context.Grid, providerWidth, providerHeight, candidate);
                         if (!fits)
                         {
                             continue;
@@ -394,7 +390,6 @@ internal static class Helpers
     /// </summary>
     public static bool DoesProviderFit(
         SquareGrid grid,
-        HashSet<Location>? occupiedLocations,
         int providerWidth,
         int providerHeight,
         Location center)
@@ -409,7 +404,7 @@ internal static class Helpers
             for (var y = minY; y <= maxY; y++)
             {
                 var location = new Location(x, y);
-                if (!grid.IsEmpty(location) || (occupiedLocations is not null && occupiedLocations.Contains(location)))
+                if (!grid.IsEmpty(location))
                 {
                     return false;
                 }

@@ -16,7 +16,7 @@ internal static partial class AddBeacons
 {
     private const int MinAffectedEntities = 1;
 
-    private static List<Location> AddBeacons_FBE(Context context, HashSet<Location> pipes)
+    private static List<Location> AddBeacons_FBE(Context context)
     {
         if (context.Options.BeaconWidth != context.Options.BeaconHeight
             || context.Options.BeaconSupplyWidth != context.Options.BeaconSupplyHeight
@@ -26,7 +26,7 @@ internal static partial class AddBeacons
             throw new NotImplementedException("The beacon must be a square, have an odd number width and height, and have a supply area that is 3 times the width.");
         }
 
-        var entityAreas = GetEntityAreas(context, pipes);
+        var entityAreas = GetEntityAreas(context);
         var occupiedPositions = GetOccupiedPositions(entityAreas);
 
         // Visualizer.Show(context.Grid, occupiedPositions.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
@@ -195,13 +195,12 @@ internal static partial class AddBeacons
             .ToHashSet();
     }
 
-    private static List<Area[]> GetEntityAreas(Context context, HashSet<Location> pipes)
+    private static List<Area[]> GetEntityAreas(Context context)
     {
         GridEntity pipe = new Pipe();
         var entityAreas = context
             .Grid
             .EntityToLocation
-            .Concat(pipes.Select(p => KeyValuePair.Create(pipe, p)))
             .Select(pair =>
             {
                 int width;
@@ -210,7 +209,7 @@ internal static partial class AddBeacons
 
                 switch (pair.Key)
                 {
-                    case Pipe:
+                    case TemporaryEntity:
                         width = 1;
                         height = 1;
                         effect = false;

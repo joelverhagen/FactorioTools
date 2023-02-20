@@ -27,12 +27,11 @@ internal static class AddElectricPoles
                 {
                     if (temporaryTerminals.Add(terminal))
                     {
-                        context.Grid.AddEntity(terminal, new Terminal());
+                        context.Grid.AddEntity(terminal, new TemporaryEntity());
                     }
                 }
-            }
+            }   
         }
-
 
         // Visualizer.Show(context.Grid, poweredEntities.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.Center.X, c.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -529,7 +528,7 @@ internal static class AddElectricPoles
             while (candidates.Count > 0)
             {
                 var candidate = candidates.Dequeue();
-                if (DoesProviderFit(context.Grid, occupiedLocations: null, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
+                if (DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate)
                     && IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate))
                 {
                     selectedPoint = candidate;
