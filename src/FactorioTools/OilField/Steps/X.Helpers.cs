@@ -426,18 +426,19 @@ internal static class Helpers
         SquareGrid grid,
         SharedInstances sharedInstances,
         Location center,
+        TInfo centerInfo,
         TCenter centerEntity,
         Func<TCenter, TSide> getNewSide,
         int providerWidth,
         int providerHeight,
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
-        Dictionary<Location, TInfo> candidateToInfo)
+        Dictionary<Location, TInfo> candidateToInfo,
+        Dictionary<Location, TInfo> scopedCandidateToInfo)
         where TCenter : GridEntity
         where TSide : GridEntity
         where TInfo : CandidateInfo
     {
-        var centerInfo = candidateToInfo[center];
         coveredEntities.Or(centerInfo.Covered);
 
         AddProvider(
@@ -447,7 +448,8 @@ internal static class Helpers
             getNewSide,
             providerWidth,
             providerHeight,
-            candidateToInfo);
+            candidateToInfo,
+            scopedCandidateToInfo);
 
         if (coveredEntities.All(true))
         {
@@ -498,7 +500,10 @@ internal static class Helpers
             {
                 for (var i = 0; i < toRemove.Count; i++)
                 {
-                    candidateToInfo.Remove(toRemove[i]);
+                    if (candidateToInfo.Remove(toRemove[i]))
+                    {
+                        scopedCandidateToInfo.Remove(toRemove[i]);
+                    }
                 }
 
                 toRemove.Clear();
@@ -592,7 +597,8 @@ internal static class Helpers
         Func<TCenter, TSide> getNewSide,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo)
+        Dictionary<Location, TInfo> candidateToInfo,
+        Dictionary<Location, TInfo> scopedCandidateToInfo)
         where TCenter : GridEntity
         where TSide : GridEntity
         where TInfo : CandidateInfo
@@ -613,7 +619,10 @@ internal static class Helpers
             for (var y = overlapMinY; y <= overlapMaxY; y++)
             {
                 var location = new Location(x, y);
-                candidateToInfo.Remove(location);
+                if (candidateToInfo.Remove(location))
+                {
+                    scopedCandidateToInfo.Remove(location);
+                }
 
                 if (x >= entityMinX && x <= entityMaxX
                     && y >= entityMinY && y <= entityMaxY)

@@ -417,10 +417,11 @@ internal static class AddElectricPoles
             }
 
             (var candidate, var candidateInfo) = candidateToInfo.MinBy(x => x.Value, sorter)!;
-            candidateToInfo.Remove(candidate);
 
             if (!allCandidateToInfo.ContainsKey(candidate))
             {
+                candidateToInfo.Remove(candidate);
+
                 if (candidateToInfo.Count == 0)
                 {
                     candidateToInfo = null;
@@ -428,6 +429,8 @@ internal static class AddElectricPoles
 
                 continue;
             }
+
+            Console.WriteLine("adding " + candidate);
 
             if (context.Options.ValidateSolution)
             {
@@ -454,13 +457,15 @@ internal static class AddElectricPoles
                 context.Grid,
                 context.SharedInstances,
                 candidate,
+                candidateInfo,
                 centerEntity,
                 c => new ElectricPoleSide(c),
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
                 poweredEntities,
                 coveredEntities,
-                allCandidateToInfo);
+                allCandidateToInfo,
+                candidateToInfo);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
