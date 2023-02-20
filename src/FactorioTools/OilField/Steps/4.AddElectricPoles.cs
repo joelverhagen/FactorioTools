@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Data;
 using Knapcode.FactorioTools.OilField.Grid;
@@ -352,27 +353,25 @@ internal static class AddElectricPoles
 
         var candidateToInfo = GetCandidateToInfo(context, candidateToCovered, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
-        IComparer<KeyValuePair<Location, CountedBitArray>> sorter = entitiesToPowerFirst is null ?
-            new CandidateComparer(candidateToInfo)
-            : new CandidateComparerWithPriority(candidateToInfo);
+        var sorter = entitiesToPowerFirst is null ? CandidateComparer.Instance : CandidateComparerWithPriority.Instance;
 
         var toRemove = new List<Location>();
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
 
         while (coveredEntities.Any(false))
         {
-            if (candidateToCovered.Count == 0)
+            if (candidateToInfo.Count == 0)
             {
                 // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
                 // existing pipe placement eliminates all electric pole options).
                 return (null, electricPoleList, coveredEntities);
             }
 
-            var candidate = candidateToCovered.MinBy(x => x, sorter)!.Key;
+            (var candidate, var candidateInfo) = candidateToInfo.MinBy(x => x.Value, sorter)!;
 
             if (context.Options.ValidateSolution)
             {
-                var covered = candidateToCovered[candidate];
+                var covered = candidateInfo.Covered;
                 var isSubsetOf = true;
                 for (var i = 0; i < poweredEntities.Count && isSubsetOf; i++)
                 {
@@ -401,7 +400,6 @@ internal static class AddElectricPoles
                 context.Options.ElectricPoleHeight,
                 poweredEntities,
                 coveredEntities,
-                candidateToCovered,
                 candidateToInfo);
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
@@ -438,32 +436,30 @@ internal static class AddElectricPoles
         return (electricPoles, electricPoleList, coveredEntities);
     }
 
-    private class CandidateInfo : ICandidateInfo
+    private class ElectricPoleCandidateInfo : CandidateInfo
     {
+        public ElectricPoleCandidateInfo(CountedBitArray covered) : base(covered)
+        {
+        }
+
         public int PriorityPowered;
         public int OthersConnected;
         public int PoleDistance;
-        public double EntityDistance;
         public int MiddleDistance;
-
-        public void SetEntityDistance(double entityDistance)
-        {
-            EntityDistance = entityDistance;
-        }
     }
 
-    private static Dictionary<Location, CandidateInfo> GetCandidateToInfo(
+    private static Dictionary<Location, ElectricPoleCandidateInfo> GetCandidateToInfo(
         Context context,
         Dictionary<Location, CountedBitArray> candidateToCovered,
         CountedBitArray? entitiesToPowerFirst,
         List<ProviderRecipient> poweredEntities,
         List<Location> electricPoleList)
     {
-        var candidateToInfo = new Dictionary<Location, CandidateInfo>(candidateToCovered.Count);
+        var candidateToInfo = new Dictionary<Location, ElectricPoleCandidateInfo>(candidateToCovered.Count);
 
         foreach ((var candidate, var covered) in candidateToCovered)
         {
-            var info = new CandidateInfo();
+            var info = new ElectricPoleCandidateInfo(covered);
 
             if (entitiesToPowerFirst is not null)
             {
@@ -498,92 +494,70 @@ internal static class AddElectricPoles
         return candidateToInfo;
     }
 
-    private class CandidateComparer : IComparer<KeyValuePair<Location, CountedBitArray>>
+    private class CandidateComparer : IComparer<ElectricPoleCandidateInfo>
     {
-        private readonly Dictionary<Location, CandidateInfo> _candidateToInfo;
+        public static IComparer<ElectricPoleCandidateInfo> Instance { get; } = new CandidateComparer();
 
-        public CandidateComparer(Dictionary<Location, CandidateInfo> candidateToInfo)
+        public int Compare(ElectricPoleCandidateInfo? x, ElectricPoleCandidateInfo? y)
         {
-            _candidateToInfo = candidateToInfo;
+            return CompareWithoutPriorityPowered(x!, y!);
         }
 
-        public int Compare(KeyValuePair<Location, CountedBitArray> x, KeyValuePair<Location, CountedBitArray> y)
+        public static int CompareWithoutPriorityPowered(
+            ElectricPoleCandidateInfo x,
+            ElectricPoleCandidateInfo y)
         {
-            return Compare(x, y, _candidateToInfo, xInfo: null, yInfo: null);
-        }
-
-        public static int Compare(
-            KeyValuePair<Location, CountedBitArray> x,
-            KeyValuePair<Location, CountedBitArray> y,
-            Dictionary<Location, CandidateInfo> candidateToInfo,
-            CandidateInfo? xInfo,
-            CandidateInfo? yInfo)
-        {
-            var c = y.Value.TrueCount.CompareTo(x.Value.TrueCount);
+            var c = y.Covered.TrueCount.CompareTo(x.Covered.TrueCount);
             if (c != 0)
             {
                 return c;
             }
 
-            if (xInfo is null || yInfo is null)
-            {
-                xInfo = candidateToInfo[x.Key];
-                yInfo = candidateToInfo[y.Key];
-            }
-
-            var xi = xInfo.OthersConnected > 0 ? xInfo.OthersConnected : int.MaxValue;
-            var yi = yInfo.OthersConnected > 0 ? yInfo.OthersConnected : int.MaxValue;
+            var xi = x.OthersConnected > 0 ? x.OthersConnected : int.MaxValue;
+            var yi = y.OthersConnected > 0 ? y.OthersConnected : int.MaxValue;
             c = xi.CompareTo(yi);
             if (c != 0)
             {
                 return c;
             }
 
-            xi = xInfo.OthersConnected > 0 ? 0 : xInfo.PoleDistance;
-            yi = yInfo.OthersConnected > 0 ? 0 : yInfo.PoleDistance;
+            xi = x.OthersConnected > 0 ? 0 : x.PoleDistance;
+            yi = y.OthersConnected > 0 ? 0 : y.PoleDistance;
             c = xi.CompareTo(yi);
             if (c != 0)
             {
                 return c;
             }
 
-            c = xInfo.EntityDistance.CompareTo(yInfo.EntityDistance);
+            c = x.EntityDistance.CompareTo(y.EntityDistance);
             if (c != 0)
             {
                 return c;
             }
 
-            return xInfo.MiddleDistance.CompareTo(yInfo.MiddleDistance);
+            return x.MiddleDistance.CompareTo(y.MiddleDistance);
         }
     }
 
-    private class CandidateComparerWithPriority : IComparer<KeyValuePair<Location, CountedBitArray>>
+    private class CandidateComparerWithPriority : IComparer<ElectricPoleCandidateInfo>
     {
-        private readonly Dictionary<Location, CandidateInfo> _candidateToInfo;
+        public static IComparer<ElectricPoleCandidateInfo> Instance { get; } = new CandidateComparerWithPriority();
 
-        public CandidateComparerWithPriority(Dictionary<Location, CandidateInfo> candidateToInfo)
+        public int Compare(ElectricPoleCandidateInfo? x, ElectricPoleCandidateInfo? y)
         {
-            _candidateToInfo = candidateToInfo;
-        }
-
-        public int Compare(KeyValuePair<Location, CountedBitArray> x, KeyValuePair<Location, CountedBitArray> y)
-        {
-            var xInfo = _candidateToInfo[x.Key];
-            var yInfo = _candidateToInfo[y.Key];
-
-            var c = yInfo.PriorityPowered.CompareTo(xInfo.PriorityPowered);
+            var c = y!.PriorityPowered.CompareTo(x!.PriorityPowered);
             if (c != 0)
             {
                 return c;
             }
 
-            return CandidateComparer.Compare(x, y, _candidateToInfo, xInfo, yInfo);
+            return CandidateComparer.CompareWithoutPriorityPowered(x, y);
         }
     }
 
     private static void UpdateCandidateInfo(
         Context context,
-        Dictionary<Location, CandidateInfo> candidateToInfo,
+        Dictionary<Location, ElectricPoleCandidateInfo> candidateToInfo,
         int roundedReach,
         Location candidate)
     {

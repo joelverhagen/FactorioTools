@@ -417,13 +417,13 @@ internal static class Helpers
         int providerHeight,
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
-        Dictionary<Location, CountedBitArray> candidateToCovered,
         Dictionary<Location, TInfo> candidateToInfo)
         where TCenter : GridEntity
         where TSide : GridEntity
-        where TInfo : ICandidateInfo
+        where TInfo : CandidateInfo
     {
-        coveredEntities.Or(candidateToCovered[center]);
+        var centerInfo = candidateToInfo[center];
+        coveredEntities.Or(centerInfo.Covered);
 
         AddProvider(
             grid,
@@ -432,7 +432,7 @@ internal static class Helpers
             getNewSide,
             providerWidth,
             providerHeight,
-            candidateToCovered);
+            candidateToInfo);
 
         if (coveredEntities.All(true))
         {
@@ -449,15 +449,15 @@ internal static class Helpers
         {
             // Remove the covered entities from the candidate data, so that the next candidates are discounted
             // by the entities that no longer need to be covered.
-            foreach ((var otherCandidate, var otherCovered) in candidateToCovered)
+            foreach ((var otherCandidate, var otherInfo) in candidateToInfo)
             {
                 var modified = false;
-                var otherCoveredCount = otherCovered.TrueCount;
+                var otherCoveredCount = otherInfo.Covered.TrueCount;
                 for (var i = 0; i < recipients.Count && otherCoveredCount > 0; i++)
                 {
-                    if (coveredEntities[i] && otherCovered[i])
+                    if (coveredEntities[i] && otherInfo.Covered[i])
                     {
-                        otherCovered[i] = false;
+                        otherInfo.Covered[i] = false;
                         modified = true;
                         otherCoveredCount--;
                     }
@@ -466,7 +466,6 @@ internal static class Helpers
                 if (otherCoveredCount == 0)
                 {
                     toRemove.Add(otherCandidate);
-                    candidateToInfo.Remove(otherCandidate);
                 }
                 else if (modified)
                 {
@@ -476,7 +475,7 @@ internal static class Helpers
                         entityDistance += otherCandidate.GetEuclideanDistance(recipients[i].Center);
                     }
 
-                    candidateToInfo[otherCandidate].SetEntityDistance(entityDistance);
+                    otherInfo.EntityDistance = entityDistance;
                 }
             }
 
@@ -484,7 +483,7 @@ internal static class Helpers
             {
                 for (var i = 0; i < toRemove.Count; i++)
                 {
-                    candidateToCovered.Remove(toRemove[i]);
+                    candidateToInfo.Remove(toRemove[i]);
                 }
 
                 toRemove.Clear();
@@ -498,9 +497,15 @@ internal static class Helpers
         }
     }
 
-    public interface ICandidateInfo
+    public class CandidateInfo
     {
-        void SetEntityDistance(double entityDistance);
+        public CandidateInfo(CountedBitArray covered)
+        {
+            Covered = covered;
+        }
+
+        public CountedBitArray Covered;
+        public double EntityDistance;
     }
 
     public static (
@@ -540,12 +545,13 @@ internal static class Helpers
         );
     }
 
-    public static void RemoveCandidates(
+    public static void RemoveCandidates<TInfo>(
         SquareGrid grid,
         Location center,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, CountedBitArray> candidateToCovered)
+        Dictionary<Location, TInfo> candidateToInfo)
+        where TInfo : CandidateInfo
     {
         var (_, _, _, _,
             overlapMinX,
@@ -559,21 +565,22 @@ internal static class Helpers
             for (var y = overlapMinY; y <= overlapMaxY; y++)
             {
                 var location = new Location(x, y);
-                candidateToCovered.Remove(location);
+                candidateToInfo.Remove(location);
             }
         }
     }
 
-    private static void AddProvider<TCenter, TSide>(
+    private static void AddProvider<TCenter, TSide, TInfo>(
         SquareGrid grid,
         Location center,
         TCenter centerEntity,
         Func<TCenter, TSide> getNewSide,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, CountedBitArray> candidateToCovered)
+        Dictionary<Location, TInfo> candidateToInfo)
         where TCenter : GridEntity
         where TSide : GridEntity
+        where TInfo : CandidateInfo
     {
         var (
             entityMinX,
@@ -591,7 +598,7 @@ internal static class Helpers
             for (var y = overlapMinY; y <= overlapMaxY; y++)
             {
                 var location = new Location(x, y);
-                candidateToCovered.Remove(location);
+                candidateToInfo.Remove(location);
 
                 if (x >= entityMinX && x <= entityMaxX
                     && y >= entityMinY && y <= entityMaxY)

@@ -15,7 +15,7 @@ internal static partial class AddBeacons
             .ToList();
 
         // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
-        (var candidateToCovered, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(
+        (var candidateToCovered2, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(
             context,
             poweredEntities,
             removeUnused: false);
@@ -25,49 +25,43 @@ internal static partial class AddBeacons
             throw new InvalidOperationException("There should not be any existing beacons.");
         }
 
-        var candidateToInfo = GetCandidateToInfo(context, candidateToCovered, poweredEntities);
+        var candidateToInfo = GetCandidateToInfo(context, candidateToCovered2, poweredEntities);
 
         // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        var sorter = new SnugCandidateSorter(candidateToCovered, candidateToInfo);
+        var sorter = new SnugCandidateSorter();
 
-#if USE_SHARED_INSTANCES
-        var scopedCandidates = context.SharedInstances.LocationListA;
-        var scopedCandidatesSet = context.SharedInstances.LocationSetA;
-#else
-        var scopedCandidates = new List<Location>();
-        var scopedCandidatesSet = new HashSet<Location>();
-#endif
+        var scopedCandidates = new List<KeyValuePair<Location, BeaconCandidateInfo>>();
+        var scopedCandidatesSet = new Dictionary<Location, BeaconCandidateInfo>();
 
         var beacons = new List<Location>();
 
         try
         {
-            while (candidateToCovered.Count > 0)
+            while (candidateToInfo.Count > 0)
             {
-                var startingCandidate = candidateToCovered
+                var pair = candidateToInfo
                     .MinBy(pair =>
                     {
-                        var info = candidateToInfo[pair.Key];
                         return (
                             beacons.Count > 0 ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
-                            -pair.Value.TrueCount,
-                            -info.EntityDistance,
-                            info.MiddleDistance
+                            -pair.Value.Covered.TrueCount,
+                            -pair.Value.EntityDistance,
+                            pair.Value.MiddleDistance
                         );
-                    })!.Key;
+                    })!;
 
                 scopedCandidates.Clear();
-                scopedCandidates.Add(startingCandidate);
+                scopedCandidates.Add(pair);
                 scopedCandidatesSet.Clear();
-                scopedCandidatesSet.Add(startingCandidate);
+                scopedCandidatesSet.Add(pair.Key, pair.Value);
 
                 while (scopedCandidates.Count > 0)
                 {
-                    var candidate = scopedCandidates[scopedCandidates.Count - 1];
+                    (var candidate, var info) = scopedCandidates[scopedCandidates.Count - 1];
                     scopedCandidates.RemoveAt(scopedCandidates.Count - 1);
 
-                    if (!candidateToCovered.ContainsKey(candidate))
+                    if (!candidateToInfo.ContainsKey(candidate))
                     {
                         continue;
                     }
@@ -77,13 +71,13 @@ internal static partial class AddBeacons
                         candidate,
                         context.Options.BeaconWidth,
                         context.Options.BeaconHeight,
-                        candidateToCovered);
+                        candidateToInfo);
 
                     beacons.Add(candidate);
 
                     AddNeighborsAndSort(
                         context,
-                        candidateToCovered,
+                        candidateToInfo,
                         scopedCandidates,
                         scopedCandidatesSet,
                         sorter,
@@ -113,15 +107,15 @@ internal static partial class AddBeacons
         return beacons;
     }
 
-    private static Dictionary<Location, CandidateInfo> GetCandidateToInfo(
+    private static Dictionary<Location, BeaconCandidateInfo> GetCandidateToInfo(
         Context context,
         Dictionary<Location, CountedBitArray> candidateToCovered,
         List<ProviderRecipient> poweredEntities)
     {
-        var candidateToInfo = new Dictionary<Location, CandidateInfo>(candidateToCovered.Count);
+        var candidateToInfo = new Dictionary<Location, BeaconCandidateInfo>(candidateToCovered.Count);
         foreach ((var candidate, var covered) in candidateToCovered)
         {
-            var info = new CandidateInfo();
+            var info = new BeaconCandidateInfo(covered);
             info.EntityDistance = GetEntityDistance(poweredEntities, candidate, covered);
             info.MiddleDistance = candidate.GetEuclideanDistanceSquared(context.Grid.Middle);
 
@@ -131,22 +125,20 @@ internal static partial class AddBeacons
         return candidateToInfo;
     }
 
-    private class CandidateInfo : ICandidateInfo
+    private class BeaconCandidateInfo : CandidateInfo
     {
-        public double EntityDistance;
-        public int MiddleDistance;
-
-        public void SetEntityDistance(double entityDistance)
+        public BeaconCandidateInfo(CountedBitArray covered) : base(covered)
         {
-            EntityDistance = entityDistance;
         }
+
+        public int MiddleDistance;
     }
 
     private static void AddNeighborsAndSort(
         Context context,
-        Dictionary<Location, CountedBitArray> candidateToCovered,
-        List<Location> scopedCandidates,
-        HashSet<Location> scopedCandidatesSet,
+        Dictionary<Location, BeaconCandidateInfo> candidateToInfo,
+        List<KeyValuePair<Location, BeaconCandidateInfo>> scopedCandidates,
+        Dictionary<Location, BeaconCandidateInfo> scopedCandidatesSet,
         SnugCandidateSorter sorter,
         Location candidate)
     {
@@ -170,9 +162,9 @@ internal static partial class AddBeacons
             for (var x = minX; x <= maxX; x++)
             {
                 var location = new Location(x, minY);
-                if (candidateToCovered.ContainsKey(location) && scopedCandidatesSet.Add(location))
+                if (candidateToInfo.TryGetValue(location, out var info) && scopedCandidatesSet.TryAdd(location, info))
                 {
-                    scopedCandidates.Add(location);
+                    scopedCandidates.Add(KeyValuePair.Create(location, info));
                 }
             }
         }
@@ -183,9 +175,9 @@ internal static partial class AddBeacons
             for (var x = minX; x <= maxX; x++)
             {
                 var location = new Location(x, maxY);
-                if (candidateToCovered.ContainsKey(location) && scopedCandidatesSet.Add(location))
+                if (candidateToInfo.TryGetValue(location, out var info) && scopedCandidatesSet.TryAdd(location, info))
                 {
-                    scopedCandidates.Add(location);
+                    scopedCandidates.Add(KeyValuePair.Create(location, info));
                 }
             }
         }
@@ -196,9 +188,9 @@ internal static partial class AddBeacons
             for (var y = minY + 1; y <= maxY - 1; y++)
             {
                 var location = new Location(minX, y);
-                if (candidateToCovered.ContainsKey(location) && scopedCandidatesSet.Add(location))
+                if (candidateToInfo.TryGetValue(location, out var info) && scopedCandidatesSet.TryAdd(location, info))
                 {
-                    scopedCandidates.Add(location);
+                    scopedCandidates.Add(KeyValuePair.Create(location, info));
                 }
             }
         }
@@ -209,9 +201,9 @@ internal static partial class AddBeacons
             for (var y = minY + 1; y <= maxY - 1; y++)
             {
                 var location = new Location(maxX, y);
-                if (candidateToCovered.ContainsKey(location) && scopedCandidatesSet.Add(location))
+                if (candidateToInfo.TryGetValue(location, out var info) && scopedCandidatesSet.TryAdd(location, info))
                 {
-                    scopedCandidates.Add(location);
+                    scopedCandidates.Add(KeyValuePair.Create(location, info));
                 }
             }
         }
@@ -222,41 +214,25 @@ internal static partial class AddBeacons
         }
     }
 
-    private class SnugCandidateSorter : IComparer<Location>
+    private class SnugCandidateSorter : IComparer<KeyValuePair<Location, BeaconCandidateInfo>>
     {
-        internal readonly Dictionary<Location, CountedBitArray> _candidateToCovered;
-        internal readonly Dictionary<Location, CandidateInfo> _candidateToInfo;
+        public static SnugCandidateSorter Instance { get; } = new SnugCandidateSorter();
 
-        public SnugCandidateSorter(
-            Dictionary<Location, CountedBitArray> candidateToCovered,
-            Dictionary<Location, CandidateInfo> candidateToInfo)
+        public int Compare(KeyValuePair<Location, BeaconCandidateInfo> x, KeyValuePair<Location, BeaconCandidateInfo> y)
         {
-            _candidateToCovered = candidateToCovered;
-            _candidateToInfo = candidateToInfo;
-        }
-
-        public int Compare(Location x, Location y)
-        {
-            int xi, yi, c;
-
-            xi = _candidateToCovered[x].TrueCount;
-            yi = _candidateToCovered[y].TrueCount;
-            c = xi.CompareTo(yi);
+            var c = x.Value.Covered.TrueCount.CompareTo(y.Value.Covered.TrueCount);
             if (c != 0)
             {
                 return c;
             }
 
-            var xInfo = _candidateToInfo[x];
-            var yInfo = _candidateToInfo[y];
-
-            c = xInfo.EntityDistance.CompareTo(yInfo.EntityDistance);
+            c = x.Value.EntityDistance.CompareTo(y.Value.EntityDistance);
             if (c != 0)
             {
                 return c;
             }
 
-            return yInfo.MiddleDistance.CompareTo(xInfo.MiddleDistance);
+            return y.Value.MiddleDistance.CompareTo(x.Value.MiddleDistance);
         }
     }
 }
