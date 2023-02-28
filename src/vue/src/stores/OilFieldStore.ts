@@ -2,17 +2,21 @@ import { defineStore } from 'pinia'
 
 export const useOilFieldStore = defineStore('OilFieldStore', {
   state: () => ({
-    showAdvancedOptions: true,
+    showAdvancedOptions: false,
     inputBlueprint: '',
     pumpjackModule: 'productivity-module-3',
+    pumpjackModuleIsCustom: false,
     addBeacons: true,
     beaconModule: 'speed-module-3',
+    beaconModuleIsCustom: false,
+    beaconModuleSlots: 2,
     beaconEntityName: 'beacon',
     beaconSupplyWidth: 9,
     beaconSupplyHeight: 9,
     beaconWidth: 3,
     beaconHeight: 3,
     electricPoleEntityName: 'medium-electric-pole',
+    electricPoleIsCustom: false,
     electricPoleWidth: 1,
     electricPoleHeight: 1,
     electricPoleSupplyWidth: 7,

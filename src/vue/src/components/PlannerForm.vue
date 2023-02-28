@@ -1,5 +1,5 @@
 <template>
-  <fieldset class="border p-3 mb-3">
+  <fieldset class="border p-3 mb-3 rounded">
     <legend>Planner options</legend>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="use-underground-pipes" v-model="useUndergroundPipes">
@@ -13,7 +13,7 @@
       <input type="checkbox" class="form-check-input" id="validate-solution" v-model="validateSolution">
       <label class="form-check-label" for="validate-solution">Validate solution</label>
     </div>
-    <fieldset class="border p-3 mt-3">
+    <fieldset class="border p-3 mt-3 rounded">
       <legend>Pipe strategies</legend>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-fbe" v-model="pipeStrategyFbe">
@@ -40,7 +40,7 @@
             href="https://home.engineering.iastate.edu/~cnchu/flute.html">FLUTE</a></label>
       </div>
     </fieldset>
-    <fieldset class="border p-3 mt-3">
+    <fieldset class="border p-3 mt-3 rounded">
       <legend>Beacon strategies</legend>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="beacons-fbe" v-model="beaconStrategyFbe">

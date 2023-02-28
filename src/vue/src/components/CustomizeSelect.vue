@@ -1,9 +1,8 @@
 <template>
   <div class="row">
-    <div :class="[showAdvancedOptions ? 'col-lg-6' : '']">
+    <div :class="showAdvancedOptions ? 'col-lg-6' : ''">
       <label :for="idPrefix + '-select'" class="form-label">{{ label }}</label>
-      <select class="form-select" :id="idPrefix + '-select'" v-model="selectValue" ref="selectEl"
-        @change="onSelectChange" required>
+      <select class="form-select" :id="idPrefix + '-select'" v-model="selectValue" ref="selectEl" required>
         <slot></slot>
         <option value="custom" v-show="showAdvancedOptions">Custom</option>
       </select>
@@ -32,6 +31,10 @@ export default {
       type: String,
       default: ''
     },
+    defaultIsCustom: {
+      type: Boolean,
+      required: true
+    },
     customLabel: {
       type: String,
       required: true
@@ -44,33 +47,38 @@ export default {
       }
     }
   },
+  mounted() {
+    const options = this.getSelectEl().options;
+    for (let i = 0; i < options.length - 1; i++) {
+      this.allowedValues.push(options[i].value)
+    }
+  },
   watch: {
     showAdvancedOptions: function (newVal: boolean) {
       if (!newVal && this.selectValue == 'custom') {
-        this.selectValue = this.defaultValue
-        this.customValue = this.defaultValue
+        this.selectValue = this.allowedValues.includes(this.defaultValue) ? this.defaultValue : this.allowedValues[0]
       }
+    },
+    defaultValue: function (newVal: string) {
+      if (newVal != this.customValue) {
+        this.selectValue = newVal
+      }
+    },
+    selectValue: function (newVal: string) {
+      const isCustom = this.selectValue == 'custom';
+      this.$emit('update:isCustom', isCustom)
+      this.customValue = isCustom ? '' : newVal
     },
     customValue: function (newVal: string) {
       this.$emit('update:modelValue', newVal)
-      this.$emit('update:isCustom', this.selectValue == 'custom')
     }
   },
   data() {
-    console.log("defaultValue: " + this.defaultValue)
     return {
-      mapping: new Map<string, string>(),
-      selectValue: this.defaultValue,
-      customValue: ''
+      allowedValues: new Array<string>(),
+      selectValue: this.defaultIsCustom ? 'custom' : this.defaultValue,
+      customValue: this.defaultValue,
     }
-  },
-  mounted() {
-    this.mapping.clear()
-    const options = this.getSelectEl().options;
-    for (let i = 0; i < options.length; i++) {
-      this.mapping.set(options[i].value, options[i].textContent ?? "")
-    }
-    // this.customValue = this.selectValue
   },
   methods: {
     customize() {
@@ -80,19 +88,11 @@ export default {
       }
       this.focusCustom()
     },
-    getCustomEl(): HTMLInputElement {
-      return this.$refs.customEl as HTMLInputElement
-    },
     getSelectEl(): HTMLSelectElement {
       return this.$refs.selectEl as HTMLSelectElement
     },
-    onSelectChange(event: Event) {
-      const target = event.target as HTMLSelectElement;
-      if (target.value != 'custom') {
-        this.customValue = target.value;
-      } else {
-        this.customValue = '';
-      }
+    getCustomEl(): HTMLInputElement {
+      return this.$refs.customEl as HTMLInputElement
     },
     focusCustom() {
       this.$nextTick(() => this.getCustomEl().focus())

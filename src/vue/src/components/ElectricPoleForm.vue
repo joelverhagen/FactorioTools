@@ -1,9 +1,9 @@
 <template>
-  <fieldset class="border p-3 mb-3">
+  <fieldset class="border p-3 mb-3 rounded">
     <legend>Electric poles</legend>
-    <CustomizeSelect custom-label="Entity" label="Entity" id-prefix="electric-pole"
-      :show-advanced-options="showAdvancedOptions" :default-value="electricPoleEntityName" v-model="electricPoleEntityName"
-      v-model:isCustom="isCustom">
+    <CustomizeSelect custom-label="Entity" label="Entity" idPrefix="electric-pole"
+      :showAdvancedOptions="showAdvancedOptions" :defaultValue="electricPoleEntityName"
+      :defaultIsCustom="electricPoleIsCustom" v-model="electricPoleEntityName" v-model:isCustom="electricPoleIsCustom">
       <option value="small-electric-pole">Small electric pole</option>
       <option value="medium-electric-pole">Medium electric pole</option>
       <option value="big-electric-pole">Big electric pole</option>
@@ -13,17 +13,17 @@
       <div class="col-lg-4 mt-3">
         <label class="form-label" for="electric-pole-wire-reach">Wire reach</label>
         <input type="text" pattern="\d+(\.\d+)" min="1" max="99" class="form-control" id="electric-pole-wire-reach"
-          v-model="electricPoleWireReach" :disabled="!isCustom" required>
+          v-model="electricPoleWireReach" :disabled="!electricPoleIsCustom" required>
       </div>
       <div class="col-lg-4 mt-3">
         <p class="form-label">Entity size (<label for="electric-pole-width">width</label> x <label
             for="electric-pole-height">height</label>)</p>
         <div class="input-group">
           <input type="number" min="0" max="9" class="form-control" id="electric-pole-width" v-model="electricPoleWidth"
-            :disabled="!isCustom" required>
+            :disabled="!electricPoleIsCustom" required>
           <span class="input-group-text">x</span>
           <input type="number" min="1" max="9" class="form-control" id="electric-pole-height" v-model="electricPoleHeight"
-            :disabled="!isCustom" required>
+            :disabled="!electricPoleIsCustom" required>
         </div>
       </div>
       <div class="col-lg-4 mt-3">
@@ -31,10 +31,10 @@
             for="electric-pole-supply-height">height</label>)</p>
         <div class="input-group">
           <input type="number" min="1" max="99" class="form-control" id="electric-pole-supply-width"
-            v-model="electricPoleSupplyWidth" :disabled="!isCustom" required>
+            v-model="electricPoleSupplyWidth" :disabled="!electricPoleIsCustom" required>
           <span class="input-group-text">x</span>
           <input type="number" min="1" max="99" class="form-control" id="electric-pole-supply-height"
-            v-model="electricPoleSupplyHeight" :disabled="!isCustom" required>
+            v-model="electricPoleSupplyHeight" :disabled="!electricPoleIsCustom" required>
         </div>
       </div>
     </div>
@@ -55,17 +55,15 @@ export default {
     }
   },
   data() {
-    const storeData = pick(
+    return pick(
       storeToRefs(useOilFieldStore()),
       'electricPoleEntityName',
+      'electricPoleIsCustom',
       'electricPoleWidth',
       'electricPoleHeight',
       'electricPoleSupplyWidth',
       'electricPoleSupplyHeight',
       'electricPoleWireReach');
-    return Object.assign({}, storeData, {
-      isCustom: false
-    });
   },
   watch: {
     electricPoleEntityName: function (newVal: string) {

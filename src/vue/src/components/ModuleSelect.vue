@@ -1,6 +1,7 @@
 <template>
-  <CustomizeSelect custom-label="Module" :label="label" :show-advanced-options="showAdvancedOptions"
-    :default-value="defaultValue" @update:modelValue="newVal => $emit('update:modelValue', newVal)">
+  <CustomizeSelect :defaultIsCustom="isCustom" @update:isCustom="newVal => $emit('update:isCustom', newVal)"
+    customLabel="Module" :label="label" :showAdvancedOptions="showAdvancedOptions" :defaultValue="defaultValue"
+    @update:modelValue="newVal => $emit('update:modelValue', newVal)">
     <option value="">None</option>
     <option value="efficiency-module">Efficiency module</option>
     <option value="efficiency-module-2">Efficiency module 2</option>
@@ -32,6 +33,10 @@ export default {
     },
     defaultValue: {
       type: String
+    },
+    isCustom: {
+      type: Boolean,
+      required: true
     }
   },
   components: { CustomizeSelect }

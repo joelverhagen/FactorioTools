@@ -6,7 +6,7 @@
     <div class="mb-3">
       <button type="button" class="btn btn-secondary btn-sm" @click="toggleAdvancedOptions">
         Show {{ showAdvancedOptions ? "simple" : "advanced" }} options
-      </button> 
+      </button>
       <button type="button" class="btn btn-warning btn-sm ms-1" @click="reset">
         Reset
       </button>

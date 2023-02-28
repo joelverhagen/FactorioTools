@@ -1,8 +1,9 @@
 <template>
-  <fieldset class="border p-3 mb-3">
+  <fieldset class="border p-3 mb-3 rounded">
     <legend>Pumpjacks</legend>
-    <ModuleSelect label="Pumpjack module" :show-advanced-options="showAdvancedOptions" show-productivity-modules
-      :default-value="pumpjackModule" v-model="pumpjackModule" />
+    <ModuleSelect label="Module" :showAdvancedOptions="showAdvancedOptions" showProductivityModules
+      :defaultValue="pumpjackModule" :defaultIsCustom="pumpjackModuleIsCustom" v-model="pumpjackModule"
+      v-model:isCustom="pumpjackModuleIsCustom" />
   </fieldset>
 </template>
   
@@ -20,7 +21,7 @@ export default {
     }
   },
   data() {
-    return pick(storeToRefs(useOilFieldStore()), 'pumpjackModule');
+    return pick(storeToRefs(useOilFieldStore()), 'pumpjackModule', 'pumpjackModuleIsCustom');
   },
   components: { ModuleSelect }
 }

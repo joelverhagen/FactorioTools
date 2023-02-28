@@ -1,19 +1,24 @@
 <template>
-  <fieldset class="border p-3 mb-3">
+  <fieldset class="border p-3 mb-3 rounded">
     <legend>Beacons</legend>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="add-beacons" v-model="addBeacons">
       <label class="form-check-label" for="add-beacons">Add beacons</label>
     </div>
-    <ModuleSelect label="Beacon module" :show-advanced-options="showAdvancedOptions" :default-value="beaconModule"
-      v-if="addBeacons" class="mt-3" v-model="beaconModule" />
+    <ModuleSelect v-if="addBeacons" class="mt-3" label="Module" :showAdvancedOptions="showAdvancedOptions"
+      :defaultValue="beaconModule" :defaultIsCustom="beaconModuleIsCustom" v-model="beaconModule"
+      v-model:isCustom="beaconModuleIsCustom" :showProductivityModules="isCustom" />
     <div class="row" v-show="showAdvancedOptions && addBeacons">
-      <div class="col-lg-4 mt-3">
+      <div class="col-lg-3 mt-3">
         <label for="beacon-entity-name" class="form-label">Entity internal name (<a href="#"
             @click.prevent="reset">reset</a>)</label>
         <input type="text" class="form-control" id="beacon-entity-name" v-model="beaconEntityName">
       </div>
-      <div class="col-lg-4 mt-3">
+      <div class="col-lg-3 mt-3">
+        <label for="beacon-module-slots" class="form-label">Module slots</label>
+        <input type="number" min="1" max="99" class="form-control" id="beacon-module-slots" v-model="beaconModuleSlots" required>
+      </div>
+      <div class="col-lg-3 mt-3">
         <p class="form-label">Entity size (<label for="beacon-width">width</label> x <label
             for="beacon-height">height</label>)</p>
         <div class="input-group">
@@ -22,7 +27,7 @@
           <input type="number" min="1" max="9" class="form-control" id="beacon-height" v-model="beaconHeight" required>
         </div>
       </div>
-      <div class="col-lg-4 mt-3">
+      <div class="col-lg-3 mt-3">
         <p class="form-label">Supply area (<label for="beacon-supply-width">width</label> x <label
             for="beacon-supply-height">height</label>)</p>
         <div class="input-group">
@@ -55,6 +60,8 @@ export default {
       storeToRefs(useOilFieldStore()),
       'addBeacons',
       'beaconModule',
+      'beaconModuleIsCustom',
+      'beaconModuleSlots',
       'beaconEntityName',
       'beaconSupplyWidth',
       'beaconSupplyHeight',
@@ -71,9 +78,15 @@ export default {
       }
     }
   },
+  computed: {
+    isCustom() {
+      return this.beaconEntityName != 'beacon'
+    }
+  },
   methods: {
     reset() {
       this.beaconEntityName = 'beacon'
+      this.beaconModuleSlots = 2
       this.beaconWidth = 3;
       this.beaconHeight = 3;
       this.beaconSupplyWidth = 9;
