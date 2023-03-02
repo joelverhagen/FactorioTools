@@ -1,6 +1,3 @@
-<script setup lang="ts">
-</script>
-
 <template>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
@@ -21,8 +18,8 @@
     <div class="container">
       <p class="text-muted py-3">
         Site by <a href="https://joelverhagen.com/">Joel Verhagen</a>,
-        version XXX (commit),
-        last build on YYYY-MM-DD.
+        version {{ gitVersion }} (<a :href="`https://github.com/joelverhagen/FactorioTools/tree/${gitCommit}`">{{ gitCommit }}</a>),
+        last build on {{ buildDate }}.
         Visit the <a href="https://github.com/joelverhagen/FactorioTools">GitHub repository</a>.
       </p>
     </div>
@@ -34,3 +31,9 @@ html {
   height: 100%;
 }
 </style>
+
+<script setup lang="ts">
+const buildDate = __BUILD_DATE__;
+const gitCommit = __GIT_COMMIT__;
+const gitVersion = __GIT_VERSION__;
+</script>
