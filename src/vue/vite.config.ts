@@ -11,6 +11,13 @@ if (version == `${shortVersion}-0-g${commit}`) {
   version = shortVersion
 }
 
+const basePath = (process.env.BASE_PATH || '').trim().replace(/\/+$/g, '') + '/'
+console.log('Build-type config:')
+console.log('  __BASE_PATH__: ' + basePath);
+console.log('  __BUILD_DATE__: ' + buildDate);
+console.log('  __GIT_COMMIT__: ' + commit);
+console.log('  __GIT_VERSION__: ' + version);
+
 // https://vitejs.dev/config/
 export default defineConfig({
   resolve: {
@@ -20,9 +27,10 @@ export default defineConfig({
   },
   plugins: [vue()],
   define: {
+    __BASE_PATH__: JSON.stringify(basePath),
     __BUILD_DATE__: JSON.stringify(buildDate),
     __GIT_COMMIT__: JSON.stringify(commit),
     __GIT_VERSION__: JSON.stringify(version)
   },
-  base: "./"
+  base: basePath
 })

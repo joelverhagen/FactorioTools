@@ -15,11 +15,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      redirect: '/oil-field'
+      path: __BASE_PATH__,
+      redirect: `${__BASE_PATH__}oil-field`
     },
     {
-      path: '/oil-field',
+      path: `${__BASE_PATH__}oil-field`,
       component: OilField,
       meta: { title: 'Oil field generator' },
       beforeEnter(to) {
@@ -27,7 +27,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/:catchAll(.*)',
+      path: `${__BASE_PATH__}:catchAll(.*)`,
       component: NotFound
     }
   ],

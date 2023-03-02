@@ -40,6 +40,8 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: ${{ env.BUILD_PATH }}
+        env:
+          BASE_PATH: '${{ steps.pages.outputs.base_path }}'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
