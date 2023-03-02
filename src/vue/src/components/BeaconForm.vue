@@ -12,11 +12,12 @@
       <div class="col-lg-3 mt-3">
         <label for="beacon-entity-name" class="form-label">Entity internal name (<a href="#"
             @click.prevent="reset">reset</a>)</label>
-        <input type="text" class="form-control" id="beacon-entity-name" v-model="beaconEntityName">
+        <input type="text" class="form-control" id="beacon-entity-name" v-model="beaconEntityName" autocomplete="off">
       </div>
       <div class="col-lg-3 mt-3">
         <label for="beacon-module-slots" class="form-label">Module slots</label>
-        <input type="number" min="1" max="99" class="form-control" id="beacon-module-slots" v-model="beaconModuleSlots" required>
+        <input type="number" min="1" max="99" class="form-control" id="beacon-module-slots" v-model="beaconModuleSlots"
+          required>
       </div>
       <div class="col-lg-3 mt-3">
         <p class="form-label">Entity size (<label for="beacon-width">width</label> x <label
@@ -45,7 +46,7 @@
 <script lang="ts">
 import { storeToRefs } from 'pinia';
 import { pick } from '../lib/helpers';
-import { useOilFieldStore } from '../stores/OilFieldStore';
+import { getDefaults, useOilFieldStore } from '../stores/OilFieldStore';
 import ModuleSelect from './ModuleSelect.vue';
 
 export default {
@@ -68,9 +69,6 @@ export default {
       'beaconWidth',
       'beaconHeight');
   },
-  mounted() {
-    this.reset()
-  },
   watch: {
     showAdvancedOptions: function (newVal: boolean) {
       if (!newVal) {
@@ -85,12 +83,13 @@ export default {
   },
   methods: {
     reset() {
-      this.beaconEntityName = 'beacon'
-      this.beaconModuleSlots = 2
-      this.beaconWidth = 3;
-      this.beaconHeight = 3;
-      this.beaconSupplyWidth = 9;
-      this.beaconSupplyHeight = 9;
+      const defaults = getDefaults()
+      this.beaconEntityName = defaults.beaconEntityName
+      this.beaconModuleSlots = defaults.beaconModuleSlots
+      this.beaconWidth = defaults.beaconWidth
+      this.beaconHeight = defaults.beaconHeight
+      this.beaconSupplyWidth = defaults.beaconSupplyWidth
+      this.beaconSupplyHeight = defaults.beaconSupplyHeight
     }
   },
   components: { ModuleSelect }

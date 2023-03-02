@@ -7,7 +7,7 @@
       <router-link class="navbar-brand" to="/">Factorio Tools</router-link>
       <div class="navbar-collapse">
         <div class="navbar-nav">
-          <router-link class="nav-link active" aria-current="page" to="/oil-field">Oil field</router-link>
+          <router-link class="nav-link active" aria-current="page" to="/oil-field">Oil field planner</router-link>
         </div>
       </div>
     </div>
@@ -29,4 +29,8 @@
   </footer>
 </template>
 
-<style scoped></style>
+<style>
+html {
+  height: 100%;
+}
+</style>

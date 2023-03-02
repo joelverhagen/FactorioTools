@@ -11,7 +11,7 @@
       <label :for="idPrefix + '-custom'" class="form-label">{{ customLabel }} internal name (<a href="#" role="button"
           @click.prevent="customize">customize</a>)</label>
       <input type="text" class="form-control" :id="idPrefix + '-custom'" ref="customEl"
-        :disabled="selectValue != 'custom'" v-model="customValue" required>
+        :disabled="selectValue != 'custom'" v-model="customValue" required autocomplete="off">
     </div>
   </div>
 </template>

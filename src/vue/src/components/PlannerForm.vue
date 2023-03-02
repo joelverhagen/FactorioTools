@@ -60,7 +60,7 @@
 <script lang="ts">
 import { storeToRefs } from 'pinia';
 import { pick } from '../lib/helpers';
-import { useOilFieldStore } from '../stores/OilFieldStore';
+import { getDefaults, useOilFieldStore } from '../stores/OilFieldStore';
 
 export default {
   props: {
@@ -81,6 +81,27 @@ export default {
       'pipeStrategyConnectedCentersFlute',
       'beaconStrategyFbe',
       'beaconStrategySnug');
+  },
+  watch: {
+    showAdvancedOptions: function (newVal: boolean) {
+      if (!newVal) {
+        this.reset()
+      }
+    }
+  },
+  methods: {
+    reset() {
+      const defaults = getDefaults()
+      this.useUndergroundPipes = defaults.useUndergroundPipes
+      this.optimizePipes = defaults.optimizePipes
+      this.validateSolution = defaults.validateSolution
+      this.pipeStrategyFbe = this.pipeStrategyFbe
+      this.pipeStrategyConnectedCentersDelaunay = this.pipeStrategyConnectedCentersDelaunay
+      this.pipeStrategyConnectedCentersDelaunayMst = this.pipeStrategyConnectedCentersDelaunayMst
+      this.pipeStrategyConnectedCentersFlute = this.pipeStrategyConnectedCentersFlute
+      this.beaconStrategyFbe = this.beaconStrategyFbe
+      this.beaconStrategySnug = this.beaconStrategySnug
+    }
   }
 }
 </script>

@@ -13,7 +13,7 @@
       <div class="col-lg-4 mt-3">
         <label class="form-label" for="electric-pole-wire-reach">Wire reach</label>
         <input type="text" pattern="\d+(\.\d+)" min="1" max="99" class="form-control" id="electric-pole-wire-reach"
-          v-model="electricPoleWireReach" :disabled="!electricPoleIsCustom" required>
+          v-model="electricPoleWireReach" :disabled="!electricPoleIsCustom" required autocomplete="off">
       </div>
       <div class="col-lg-4 mt-3">
         <p class="form-label">Entity size (<label for="electric-pole-width">width</label> x <label
@@ -44,7 +44,7 @@
 <script lang="ts">
 import { storeToRefs } from 'pinia';
 import { pick } from '../lib/helpers';
-import { useOilFieldStore } from '../stores/OilFieldStore';
+import { getDefaults, useOilFieldStore } from '../stores/OilFieldStore';
 import CustomizeSelect from './CustomizeSelect.vue';
 
 export default {
@@ -66,36 +66,54 @@ export default {
       'electricPoleWireReach');
   },
   watch: {
+    showAdvancedOptions: function (newVal: boolean) {
+      if (!newVal) {
+        this.reset()
+      }
+    },
     electricPoleEntityName: function (newVal: string) {
-      switch (newVal) {
+      this.setKnownElectricPole(newVal)
+    }
+  },
+  methods: {
+    reset() {
+      if (!this.setKnownElectricPole(this.electricPoleEntityName)) {
+        const defaults = getDefaults()
+        this.electricPoleEntityName = defaults.electricPoleEntityName
+      }
+    },
+    setKnownElectricPole(electricPoleEntityName: string) {
+      switch (electricPoleEntityName) {
         case 'small-electric-pole':
           this.electricPoleWidth = 1
           this.electricPoleHeight = 1
           this.electricPoleSupplyWidth = 5
           this.electricPoleSupplyHeight = 5
           this.electricPoleWireReach = 7.5
-          break
+          return true
         case 'medium-electric-pole':
           this.electricPoleWidth = 1
           this.electricPoleHeight = 1
           this.electricPoleSupplyWidth = 7
           this.electricPoleSupplyHeight = 7
           this.electricPoleWireReach = 9
-          break
+          return true
         case 'big-electric-pole':
           this.electricPoleWidth = 2
           this.electricPoleHeight = 2
           this.electricPoleSupplyWidth = 4
           this.electricPoleSupplyHeight = 4
           this.electricPoleWireReach = 30
-          break
+          return true
         case 'substation':
           this.electricPoleWidth = 2
           this.electricPoleHeight = 2
           this.electricPoleSupplyWidth = 18
           this.electricPoleSupplyHeight = 18
           this.electricPoleWireReach = 18
-          break
+          return true
+        default:
+          return false
       }
     }
   },
