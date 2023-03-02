@@ -5,13 +5,13 @@ namespace Knapcode.FactorioTools.OilField.Data;
 internal class Entity
 {
     [JsonPropertyName("entity_number")]
-    public required int EntityNumber { get; set; }
+    public int EntityNumber { get; set; }
 
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     [JsonPropertyName("position")]
-    public required Position Position { get; set; }
+    public Position Position { get; set; } = null!;
 
     [JsonPropertyName("direction")]
     public Direction? Direction { get; set; }

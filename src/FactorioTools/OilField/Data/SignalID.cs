@@ -5,8 +5,8 @@ namespace Knapcode.FactorioTools.OilField.Data;
 internal class SignalID
 {
     [JsonPropertyName("name")]
-    public required string Name { get; set; }
+    public string Name { get; set; } = null!;
 
     [JsonPropertyName("type")]
-    public required string Type { get; set; }
+    public string Type { get; set; } = null!;
 }

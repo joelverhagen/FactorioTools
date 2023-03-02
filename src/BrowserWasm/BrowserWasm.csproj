@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <WasmMainJSPath>main.js</WasmMainJSPath>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
+    <EventSourceSupport>false</EventSourceSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <UseNativeHttpHandler>true</UseNativeHttpHandler>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <RootNamespace>Knapcode.FactorioTools.BrowserWasm</RootNamespace>
+    <AssemblyName>Knapcode.FactorioTools.BrowserWasm</AssemblyName>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\FactorioTools\FactorioTools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <WasmExtraFilesToDeploy Include="index.html" />
+    <WasmExtraFilesToDeploy Include="main.js" />
+  </ItemGroup>
+</Project>

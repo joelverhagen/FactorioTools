@@ -5,14 +5,14 @@ namespace Knapcode.FactorioTools.OilField.Data;
 internal class Blueprint
 {
     [JsonPropertyName("icons")]
-    public required Icon[] Icons { get; set; }
+    public Icon[] Icons { get; set; } = null!;
 
     [JsonPropertyName("entities")]
-    public required Entity[] Entities { get; set; }
+    public Entity[] Entities { get; set; } = null!;
 
     [JsonPropertyName("item")]
-    public required string Item { get; set; }
+    public string Item { get; set; } = null!;
 
     [JsonPropertyName("version")]
-    public required long Version { get; set; }
+    public long Version { get; set; }
 }

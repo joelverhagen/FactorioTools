@@ -5,5 +5,5 @@ namespace Knapcode.FactorioTools.OilField.Data;
 internal class BlueprintRoot
 {
     [JsonPropertyName("blueprint")]
-    public required Blueprint Blueprint { get; set; }
+    public Blueprint Blueprint { get; set; } = null!;
 }

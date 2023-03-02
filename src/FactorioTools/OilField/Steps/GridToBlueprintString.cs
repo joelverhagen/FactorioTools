@@ -173,10 +173,7 @@ internal static class GridToBlueprintString
 
     public static string SerializeBlueprint(BlueprintRoot root)
     {
-        var json = JsonSerializer.Serialize(root, new JsonSerializerOptions
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        });
+        var json = JsonSerializer.Serialize(root, typeof(BlueprintRoot), BlueprintSerializationContext.Default);
 
         var bytes = Encoding.UTF8.GetBytes(json);
         using var outputStream = new MemoryStream();

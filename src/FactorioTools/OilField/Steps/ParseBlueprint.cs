@@ -25,13 +25,12 @@ internal static class ParseBlueprint
         var bytes = Convert.FromBase64String(blueprintString.Substring(1)); // skip the version byte
         using var inputStream = new MemoryStream(bytes);
         using var zlibStream = new ZLibStream(inputStream, CompressionMode.Decompress);
-        using var streamReader = new StreamReader(zlibStream);
-        var json = streamReader.ReadToEnd();
 
-        var root = JsonSerializer.Deserialize<BlueprintRoot>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-        });
+        var context = BlueprintSerializationContext.Default;
+        var root = JsonSerializer.Deserialize(
+            zlibStream,
+            typeof(BlueprintRoot),
+            context) as BlueprintRoot;
 
         if (root == null)
         {
