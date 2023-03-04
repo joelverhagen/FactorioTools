@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Knapcode.FactorioTools.OilField.Data;
 
-[JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Serialization)]
+[JsonSourceGenerationOptions]
 [JsonSerializable(typeof(BlueprintRoot))]
 internal partial class BlueprintSerializationContext : JsonSerializerContext
 {
