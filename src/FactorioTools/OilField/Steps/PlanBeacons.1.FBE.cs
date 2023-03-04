@@ -16,7 +16,7 @@ internal static partial class PlanBeacons
 {
     private const int MinAffectedEntities = 1;
 
-    private static List<Location> AddBeacons_FBE(Context context)
+    private static List<Location> AddBeacons_FBE(Context context, BeaconStrategy strategy)
     {
         if (context.Options.BeaconWidth != context.Options.BeaconHeight
             || context.Options.BeaconSupplyWidth != context.Options.BeaconSupplyHeight
@@ -39,30 +39,38 @@ internal static partial class PlanBeacons
         // GENERATE POSSIBLE BEACON AREAS
         var possibleBeaconAreas = GetPossibleBeaconAreas(context, validBeaconPositions);
         var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
-        var effectEntityArea = GetEffectEntityArea(entityAreas);
-        var pointToEntityArea = GetPointToEntityArea(effectEntityArea);
+        var effectEntityAreas = GetEffectEntityArea(entityAreas);
+        var pointToEntityArea = GetPointToEntityArea(effectEntityAreas);
 
         // GENERATE POSSIBLE BEACONS
         var possibleBeacons = GetPossibleBeacons(
             context,
-            effectEntityArea,
+            effectEntityAreas,
             possibleBeaconAreas,
             pointToBeaconCount,
             pointToEntityArea);
 
-        possibleBeacons = SortPossibleBeacons(possibleBeacons);
+        if (strategy == BeaconStrategy.FBE)
+        {
+            possibleBeacons = SortPossibleBeacons(possibleBeacons);
+        }
 
         // GENERATE BEACONS
-        return GetBeacons(context, effectEntityArea, possibleBeacons);
+        return GetBeacons(context, strategy, effectEntityAreas, possibleBeacons);
     }
 
-    private static List<Location> GetBeacons(Context context, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
+    private static List<Location> GetBeacons(Context context, BeaconStrategy strategy, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
     {
         var beacons = new List<Location>();
         var collisionArea = new HashSet<Location>();
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
         {
+            if (strategy == BeaconStrategy.FBE_Original)
+            {
+                SortPossibleBeaconsOriginal(possibleBeacons);
+            }
+
             var beacon = possibleBeacons[possibleBeacons.Count - 1];
             possibleBeacons.RemoveAt(possibleBeacons.Count - 1);
 
@@ -104,6 +112,24 @@ internal static partial class PlanBeacons
             .ToList();
         possibleBeacons.Reverse();
         return possibleBeacons;
+    }
+
+    private static void SortPossibleBeaconsOriginal(List<BeaconCandidate> possibleBeacons)
+    {
+        possibleBeacons
+            .Sort((a, b) =>
+            {
+                if (a.EffectsGivenCount == 1 || b.EffectsGivenCount == 1)
+                {
+                    return b.AverageDistanceToEntities.CompareTo(a.AverageDistanceToEntities);
+                }
+
+                return a.NumberOfOverlaps.CompareTo(b.NumberOfOverlaps);
+            });
+
+        possibleBeacons.Sort((a, b) => b.EffectsGivenCount.CompareTo(a.EffectsGivenCount));
+
+        // possibleBeacons.Reverse();
     }
 
     private static int GetBeaconEffectRadius(Context context)

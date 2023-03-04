@@ -2,6 +2,7 @@
 
 public enum BeaconStrategy
 {
+    FBE_Original,
     FBE,
     Snug,
 }

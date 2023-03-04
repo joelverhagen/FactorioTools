@@ -84,12 +84,23 @@ class Options
         }
     }
 
+    private readonly static List<PipeStrategy> DefaultPipeStrategies = Enum
+        .GetValues<PipeStrategy>()
+        .Order()
+        .ToList();
+
+    private readonly static List<BeaconStrategy> DefaultBeaconStrategies = Enum
+        .GetValues<BeaconStrategy>()
+        .Except(new[] { BeaconStrategy.FBE_Original })
+        .Order()
+        .ToList();
+
     public bool UseUndergroundPipes { get; set; } = true;
     public bool AddBeacons { get; set; } = true;
     public bool OptimizePipes { get; set; } = true;
     public bool OverlapBeacons { get; set; } = true;
-    public HashSet<PipeStrategy> PipeStrategies { get; set; } = Enum.GetValues<PipeStrategy>().ToHashSet();
-    public HashSet<BeaconStrategy> BeaconStrategies { get; set; } = Enum.GetValues<BeaconStrategy>().ToHashSet();
+    public List<PipeStrategy> PipeStrategies { get; set; } = new List<PipeStrategy>(DefaultPipeStrategies);
+    public List<BeaconStrategy> BeaconStrategies { get; set; } = new List<BeaconStrategy>(DefaultBeaconStrategies);
 
     public string ElectricPoleEntityName { get; set; } = EntityNames.Vanilla.MediumElectricPole;
     public int ElectricPoleSupplyWidth { get; set; } = 7;

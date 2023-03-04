@@ -18,7 +18,8 @@ internal static partial class PlanBeacons
         {
             var beacons = strategy switch
             {
-                BeaconStrategy.FBE => AddBeacons_FBE(context),
+                BeaconStrategy.FBE_Original => AddBeacons_FBE(context, strategy),
+                BeaconStrategy.FBE => AddBeacons_FBE(context, strategy),
                 BeaconStrategy.Snug => AddBeacons_Snug(context),
                 _ => throw new NotImplementedException(),
             };
