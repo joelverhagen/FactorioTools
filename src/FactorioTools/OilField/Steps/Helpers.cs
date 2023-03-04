@@ -454,13 +454,11 @@ internal static class Helpers
         }
     }
 
-    public static void AddProviderAndUpdateCandidateState<TCenter, TSide, TInfo>(
+    public static void AddProviderAndUpdateCandidateState<TInfo>(
         SquareGrid grid,
         SharedInstances sharedInstances,
         Location center,
         TInfo centerInfo,
-        TCenter centerEntity,
-        Func<TCenter, TSide> getNewSide,
         int providerWidth,
         int providerHeight,
         List<ProviderRecipient> recipients,
@@ -469,8 +467,6 @@ internal static class Helpers
         Dictionary<Location, TInfo> candidateToInfo,
         Dictionary<Location, TInfo> scopedCandidateToInfo,
         SortedBatches<TInfo> coveredCountBatches)
-        where TCenter : GridEntity
-        where TSide : GridEntity
         where TInfo : CandidateInfo
     {
         // Console.WriteLine("adding " + center);
@@ -486,11 +482,9 @@ internal static class Helpers
 
         coveredEntities.Or(centerInfo.Covered);
 
-        AddProvider(
+        RemoveOverlappingCandidates(
             grid,
             center,
-            centerEntity,
-            getNewSide,
             providerWidth,
             providerHeight,
             candidateToInfo,
@@ -630,12 +624,13 @@ internal static class Helpers
         );
     }
 
-    public static void RemoveCandidates<TInfo>(
+    public static void RemoveOverlappingCandidates<TInfo>(
         SquareGrid grid,
         Location center,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo)
+        Dictionary<Location, TInfo> candidateToInfo,
+        Dictionary<Location, TInfo>? scopedCandidateToInfo)
         where TInfo : CandidateInfo
     {
         var (_, _, _, _,
@@ -650,49 +645,9 @@ internal static class Helpers
             for (var y = overlapMinY; y <= overlapMaxY; y++)
             {
                 var location = new Location(x, y);
-                candidateToInfo.Remove(location);
-            }
-        }
-    }
-
-    private static void AddProvider<TCenter, TSide, TInfo>(
-        SquareGrid grid,
-        Location center,
-        TCenter centerEntity,
-        Func<TCenter, TSide> getNewSide,
-        int providerWidth,
-        int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo,
-        Dictionary<Location, TInfo> scopedCandidateToInfo)
-        where TCenter : GridEntity
-        where TSide : GridEntity
-        where TInfo : CandidateInfo
-    {
-        var (
-            entityMinX,
-            entityMinY,
-            entityMaxX,
-            entityMaxY,
-            overlapMinX,
-            overlapMinY,
-            overlapMaxX,
-            overlapMaxY
-        ) = GetProviderBounds(grid, center, providerWidth, providerHeight);
-
-        for (var x = overlapMinX; x <= overlapMaxX; x++)
-        {
-            for (var y = overlapMinY; y <= overlapMaxY; y++)
-            {
-                var location = new Location(x, y);
                 if (candidateToInfo.Remove(location))
                 {
-                    scopedCandidateToInfo.Remove(location);
-                }
-
-                if (x >= entityMinX && x <= entityMaxX
-                    && y >= entityMinY && y <= entityMaxY)
-                {
-                    grid.AddEntity(location, location == center ? centerEntity : getNewSide(centerEntity));
+                    scopedCandidateToInfo?.Remove(location);
                 }
             }
         }

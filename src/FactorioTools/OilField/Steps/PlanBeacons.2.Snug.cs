@@ -65,12 +65,13 @@ internal static partial class PlanBeacons
                         continue;
                     }
 
-                    RemoveCandidates(
+                    RemoveOverlappingCandidates(
                         context.Grid,
                         candidate,
                         context.Options.BeaconWidth,
                         context.Options.BeaconHeight,
-                        candidateToInfo);
+                        candidateToInfo,
+                        scopedCandidateToInfo: null);
 
                     beacons.Add(candidate);
 

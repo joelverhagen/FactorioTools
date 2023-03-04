@@ -35,10 +35,26 @@ internal static class AddElectricPoles
 
         // Visualizer.Show(context.Grid, poweredEntities.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.Center.X, c.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        (var electricPoles, var poweredEntities) = AddElectricPolesAroundEntities(context, retryWithUncovered);
-        if (electricPoles is null)
+        (var electricPoleList, var poweredEntities) = AddElectricPolesAroundEntities(context, retryWithUncovered);
+        if (electricPoleList is null)
         {
             return null;
+        }
+
+        var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
+        for (var i = 0; i < electricPoleList.Count; i++)
+        {
+            var center = electricPoleList[i];
+            var centerEntity = context.Grid[center] as ElectricPoleCenter;
+            if (centerEntity is null)
+            {
+                AddElectricPole(context, electricPoles, center);
+            }
+            else
+            {
+                ConnectExistingElectricPoles(context, electricPoles, center, centerEntity);
+                electricPoles.Add(center, centerEntity);
+            }
         }
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
@@ -229,7 +245,7 @@ internal static class AddElectricPoles
         return b.GetEuclideanDistanceSquared(a.X + offsetX, a.Y + offsetY);
     }
 
-    private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<ProviderRecipient> PoweredEntities) AddElectricPolesAroundEntities(
+    private static (List<Location>? ElectricPoleList, List<ProviderRecipient> PoweredEntities) AddElectricPolesAroundEntities(
         Context context,
         bool retryWithUncovered)
     {
@@ -241,27 +257,21 @@ internal static class AddElectricPoles
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
             (var poweredEntities, var hasBeacons) = GetPoweredEntities(context);
-            (var electricPoles, var electricPoleList, var coveredEntities) = AddElectricPolesAroundEntities(
+            (var electricPoleList, var coveredEntities) = AddElectricPolesAroundEntities(
                 context,
                 poweredEntities,
                 entitiesToPowerFirst);
 
             // Visualizer.Show(context.Grid, poweredEntities.Where((e, i) => !coveredEntities[i]).Select(e => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(e.Center.X, e.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-            if (retryStrategy == RetryStrategy.None || electricPoles is not null)
+            if (retryStrategy == RetryStrategy.None || electricPoleList is not null)
             {
-                return (electricPoles, poweredEntities);
+                return (electricPoleList, poweredEntities);
             }
 
             // Visualizer.Show(context.Grid, poweredEntities.Where((e, i) => !coveredEntities[i]).Select(e => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(e.Center.X, e.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
             // Console.WriteLine("Applying retry strategy " + retryStrategy);
-
-            for (var i = 0; i < electricPoleList.Count; i++)
-            {
-                var center = electricPoleList[i];
-                RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
-            }
 
             if (retryStrategy == RetryStrategy.PreferUncoveredEntities)
             {
@@ -345,18 +355,18 @@ internal static class AddElectricPoles
         }
     }
     
-    private static (Dictionary<Location, ElectricPoleCenter>? ElectricPoles, List<Location> ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
+    private static (List<Location>? ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
         Context context,
         List<ProviderRecipient> poweredEntities,
         CountedBitArray? entitiesToPowerFirst)
     {
-        (var allCandidateToInfo, var coveredEntities, var electricPoles) = GetElectricPoleCandidateToCovered(
+        (var allCandidateToInfo, var coveredEntities, var electricPoles2) = GetElectricPoleCandidateToCovered(
             context,
             poweredEntities,
             CandidateFactory.Instance,
             removeUnused: true);
 
-        var electricPoleList = electricPoles.Keys.ToList();
+        var electricPoleList = electricPoles2.Keys.ToList();
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
@@ -409,9 +419,9 @@ internal static class AddElectricPoles
             {
                 if (allSubsets.Count == 0)
                 {
-                    // There are not candidates or the candidates do not fit. No solution exists given the current grid (e.g.
+                    // There are no more candidates or the candidates do not fit. No solution exists given the current grid (e.g.
                     // existing pipe placement eliminates all electric pole options).
-                    return (null, electricPoleList, coveredEntities);
+                    return (null, coveredEntities);
                 }
 
                 var subsets = allSubsets.Peek();
@@ -464,15 +474,11 @@ internal static class AddElectricPoles
                 }
             }
 
-            var centerEntity = new ElectricPoleCenter();
-
             AddProviderAndUpdateCandidateState(
                 context.Grid,
                 context.SharedInstances,
                 candidate,
                 candidateInfo,
-                centerEntity,
-                c => new ElectricPoleSide(c),
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
                 poweredEntities,
@@ -484,7 +490,6 @@ internal static class AddElectricPoles
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-            electricPoles.Add(candidate, centerEntity);
             electricPoleList.Add(candidate);
 
             UpdateCandidateInfo(context, allCandidateToInfo, roundedReach, candidate);
@@ -514,12 +519,7 @@ internal static class AddElectricPoles
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
         }
 
-        foreach ((var center, var centerEntity) in electricPoles)
-        {
-            ConnectExistingElectricPoles(context, electricPoles, center, centerEntity);
-        }
-
-        return (electricPoles, electricPoleList, coveredEntities);
+        return (electricPoleList, coveredEntities);
     }
 
     private class ElectricPoleCandidateInfo : CandidateInfo
