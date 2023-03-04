@@ -333,6 +333,14 @@ internal static class Helpers
         return poleCenterToCoveredCenters;
     }
 
+    public static Dictionary<Location, HashSet<Location>> GetCoveredCenterToProvderCenters(Dictionary<Location, HashSet<Location>> providerCenterToCoveredCenters)
+    {
+        return providerCenterToCoveredCenters
+            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, RecipientCenter: c)))
+            .GroupBy(p => p.RecipientCenter, p => p.PoleCenter)
+            .ToDictionary(g => g.Key, g => g.ToHashSet());
+    }
+
     private static void AddCoveredCenters(
         HashSet<Location> coveredCenters,
         SquareGrid grid,
@@ -454,7 +462,89 @@ internal static class Helpers
         }
     }
 
-    public static void AddProviderAndUpdateCandidateState<TInfo>(
+    public static void AddProviderAndPreventMultipleProviders<TInfo>(
+        SquareGrid grid,
+        SharedInstances sharedInstances,
+        Location center,
+        TInfo centerInfo,
+        int providerWidth,
+        int providerHeight,
+        List<ProviderRecipient> recipients,
+        CountedBitArray coveredEntities,
+        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates,
+        Dictionary<Location, TInfo> candidateToInfo)
+        where TInfo : CandidateInfo
+    {
+        // Console.WriteLine("adding " + center);
+
+        var newlyCovered = new CountedBitArray(coveredEntities);
+        newlyCovered.Not();
+        newlyCovered.And(centerInfo.Covered);
+
+        if (newlyCovered.TrueCount == 0)
+        {
+            throw new NotImplementedException("At least one recipient should should have been newly covered.");
+        }
+
+        coveredEntities.Or(centerInfo.Covered);
+
+        RemoveOverlappingCandidates(
+            grid,
+            center,
+            providerWidth,
+            providerHeight,
+            candidateToInfo,
+            coveredToCandidates);
+
+#if USE_SHARED_INSTANCES
+        var toRemove = sharedInstances.LocationListA;
+        var updated = sharedInstances.LocationSetA;
+#else
+        var toRemove = new List<Location>();
+        var updated = new HashSet<Location>();
+#endif
+
+        try
+        {
+            for (var i = 0; i < recipients.Count; i++)
+            {
+                if (!newlyCovered[i])
+                {
+                    continue;
+                }
+
+                foreach ((var otherCandidate, var otherInfo) in coveredToCandidates[i])
+                {
+                    if (!updated.Add(otherCandidate))
+                    {
+                        continue;
+                    }
+
+                    toRemove.Add(otherCandidate);
+                }
+
+                if (toRemove.Count > 0)
+                {
+                    for (var j = 0; j < toRemove.Count; j++)
+                    {
+                        candidateToInfo.Remove(toRemove[j]);
+                    }
+
+                    toRemove.Clear();
+                }
+            }
+
+        }
+        finally
+        {
+#if USE_SHARED_INSTANCES
+            toRemove.Clear();
+            updated.Clear();
+#endif
+        }
+    }
+
+    public static void AddProviderAndAllowMultipleProviders<TInfo>(
         SquareGrid grid,
         SharedInstances sharedInstances,
         Location center,
@@ -488,7 +578,8 @@ internal static class Helpers
             providerWidth,
             providerHeight,
             candidateToInfo,
-            scopedCandidateToInfo);
+            scopedCandidateToInfo,
+            coveredToCandidates);
 
         if (coveredEntities.All(true))
         {
@@ -587,16 +678,35 @@ internal static class Helpers
         public double EntityDistance;
     }
 
+    public static Dictionary<int, Dictionary<Location, TInfo>> GetCoveredToCandidates<TInfo>(
+        Dictionary<Location, TInfo> allCandidateToInfo,
+        CountedBitArray coveredEntities)
+        where TInfo : CandidateInfo
+    {
+        var coveredToCandidates = new Dictionary<int, Dictionary<Location, TInfo>>(coveredEntities.Count);
+        for (var i = 0; i < coveredEntities.Count; i++)
+        {
+            var candidates = new Dictionary<Location, TInfo>();
+            foreach ((var candidate, var info) in allCandidateToInfo)
+            {
+                if (info.Covered[i])
+                {
+                    candidates.Add(candidate, info);
+                }
+            }
+
+            coveredToCandidates.Add(i, candidates);
+        }
+
+        return coveredToCandidates;
+    }
+
     public static (
-        int EntityMinX,
-        int EntityMinY,
-        int EntityMaxX,
-        int EntityMaxY,
         int OverlapMinX,
         int OverlapMinY,
         int OverlapMaxX,
         int OverlapMaxY
-    ) GetProviderBounds(
+    ) GetProviderOverlapBounds(
         SquareGrid grid,
         Location center,
         int providerWidth,
@@ -613,10 +723,6 @@ internal static class Helpers
         var overlapMaxY = Math.Min(grid.Height - (providerHeight / 2) - 1, entityMaxY + ((providerHeight - 1) / 2));
 
         return (
-            entityMinX,
-            entityMinY,
-            entityMaxX,
-            entityMaxY,
             overlapMinX,
             overlapMinY,
             overlapMaxX,
@@ -629,25 +735,102 @@ internal static class Helpers
         Location center,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo,
-        Dictionary<Location, TInfo>? scopedCandidateToInfo)
+        Dictionary<Location, TInfo> candidateToInfo)
         where TInfo : CandidateInfo
     {
-        var (_, _, _, _,
+        var (
             overlapMinX,
             overlapMinY,
             overlapMaxX,
             overlapMaxY
-        ) = GetProviderBounds(grid, center, providerWidth, providerHeight);
+        ) = GetProviderOverlapBounds(grid, center, providerWidth, providerHeight);
 
         for (var x = overlapMinX; x <= overlapMaxX; x++)
         {
             for (var y = overlapMinY; y <= overlapMaxY; y++)
             {
                 var location = new Location(x, y);
-                if (candidateToInfo.Remove(location))
+                candidateToInfo.Remove(location);
+            }
+        }
+    }
+
+    public static void RemoveOverlappingCandidates<TInfo>(
+        SquareGrid grid,
+        Location center,
+        int providerWidth,
+        int providerHeight,
+        Dictionary<Location, TInfo> candidateToInfo,
+        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates)
+        where TInfo : CandidateInfo
+    {
+        var (
+            overlapMinX,
+            overlapMinY,
+            overlapMaxX,
+            overlapMaxY
+        ) = GetProviderOverlapBounds(grid, center, providerWidth, providerHeight);
+
+        for (var x = overlapMinX; x <= overlapMaxX; x++)
+        {
+            for (var y = overlapMinY; y <= overlapMaxY; y++)
+            {
+                var location = new Location(x, y);
+                if (candidateToInfo.TryGetValue(location, out var info))
                 {
-                    scopedCandidateToInfo?.Remove(location);
+                    candidateToInfo.Remove(location);
+                    for (var i = 0; i < info.Covered.Count; i++)
+                    {
+                        if (info.Covered[i])
+                        {
+                            coveredToCandidates[i].Remove(location);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void RemoveOverlappingCandidates<TInfo>(
+        SquareGrid grid,
+        Location center,
+        int providerWidth,
+        int providerHeight,
+        Dictionary<Location, TInfo> candidateToInfo,
+        Dictionary<Location, TInfo> scopedCandidateToInfo,
+        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates)
+        where TInfo : CandidateInfo
+    {
+        var (
+            overlapMinX,
+            overlapMinY,
+            overlapMaxX,
+            overlapMaxY
+        ) = GetProviderOverlapBounds(grid, center, providerWidth, providerHeight);
+
+        for (var x = overlapMinX; x <= overlapMaxX; x++)
+        {
+            for (var y = overlapMinY; y <= overlapMaxY; y++)
+            {
+                var location = new Location(x, y);
+                if (coveredToCandidates is not null)
+                {
+                    if (candidateToInfo.TryGetValue(location, out var info))
+                    {
+                        candidateToInfo.Remove(location);
+                        scopedCandidateToInfo.Remove(location);
+                        for (var i = 0; i < info.Covered.Count; i++)
+                        {
+                            if (info.Covered[i])
+                            {
+                                coveredToCandidates[i].Remove(location);
+                            }
+                        }
+                    }
+                }
+                else if (candidateToInfo.Remove(location))
+                {
+                    scopedCandidateToInfo.Remove(location);
                 }
             }
         }

@@ -8,11 +8,12 @@ public class PlannerTest
     {
         [Theory]
         [MemberData(nameof(BlueprintsAndOptions))]
-        public void PlannerOnAllBlueprintsAndOptions(int blueprintIndex, string electricPole, bool addBeacons, bool useUndergroundPipes)
+        public void PlannerOnAllBlueprintsAndOptions(int blueprintIndex, string electricPole, bool addBeacons, bool overlapBeacons, bool useUndergroundPipes)
         {
             var options = ElectricPoleToOptions[electricPole]();
             options.AddBeacons = addBeacons;
             options.UseUndergroundPipes = useUndergroundPipes;
+            options.OverlapBeacons = overlapBeacons;
             options.ValidateSolution = true;
 
             var blueprintString = BlueprintStrings[blueprintIndex];
@@ -33,11 +34,11 @@ public class PlannerTest
         private static string DataFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
         private static IReadOnlyList<string> BlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(DataFilePath);
 
-        public static TheoryData<int, string, bool, bool> BlueprintsAndOptions
+        public static TheoryData<int, string, bool, bool, bool> BlueprintsAndOptions
         {
             get
             {
-                var theoryData = new TheoryData<int, string, bool, bool>();
+                var theoryData = new TheoryData<int, string, bool, bool, bool>();
 
                 foreach (var blueprintIndex in Enumerable.Range(0, BlueprintStrings.Count))
                 {
@@ -45,9 +46,17 @@ public class PlannerTest
                     {
                         foreach (var addBeacons in new[] { false, true })
                         {
-                            foreach (var useUndergroundPipes in new[] { false, true })
+                            foreach (var overlapBeacons in new[] { false, true })
                             {
-                                theoryData.Add(blueprintIndex, electricPole, addBeacons, useUndergroundPipes);
+                                if (!addBeacons && !overlapBeacons)
+                                {
+                                    continue;
+                                }
+
+                                foreach (var useUndergroundPipes in new[] { false, true })
+                                {
+                                    theoryData.Add(blueprintIndex, electricPole, addBeacons, overlapBeacons, useUndergroundPipes);
+                                }
                             }
                         }
                     }

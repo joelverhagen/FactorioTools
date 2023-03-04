@@ -26,12 +26,18 @@ internal static partial class PlanBeacons
 
         PopulateCandidateToInfo(context, candidateToInfo, poweredEntities);
 
-        // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // Visualizer.Show(context.Grid, candidateToInfo.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         var sorter = new SnugCandidateSorter();
 
         var scopedCandidates = new List<KeyValuePair<Location, BeaconCandidateInfo>>();
         var scopedCandidatesSet = new Dictionary<Location, BeaconCandidateInfo>();
+
+        Dictionary<int, Dictionary<Location, BeaconCandidateInfo>>? coveredToCandidates = null;
+        if (!context.Options.OverlapBeacons)
+        {
+            coveredToCandidates = GetCoveredToCandidates(candidateToInfo, coveredEntities);
+        }
 
         var beacons = new List<Location>();
 
@@ -43,7 +49,7 @@ internal static partial class PlanBeacons
                     .MinBy(pair =>
                     {
                         return (
-                            beacons.Count > 0 ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
+                            beacons.Count > 0 && context.Options.OverlapBeacons ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
                             -pair.Value.Covered.TrueCount,
                             -pair.Value.EntityDistance,
                             pair.Value.MiddleDistance
@@ -65,13 +71,30 @@ internal static partial class PlanBeacons
                         continue;
                     }
 
-                    RemoveOverlappingCandidates(
-                        context.Grid,
-                        candidate,
-                        context.Options.BeaconWidth,
-                        context.Options.BeaconHeight,
-                        candidateToInfo,
-                        scopedCandidateToInfo: null);
+                    if (context.Options.OverlapBeacons)
+                    {
+                        RemoveOverlappingCandidates(
+                            context.Grid,
+                            candidate,
+                            context.Options.BeaconWidth,
+                            context.Options.BeaconHeight,
+                            candidateToInfo);
+                    }
+                    else
+                    {
+                        AddProviderAndPreventMultipleProviders(
+                            context.Grid,
+                            context.SharedInstances,
+                            candidate,
+                            info,
+                            context.Options.BeaconWidth,
+                            context.Options.BeaconHeight,
+                            poweredEntities,
+                            coveredEntities,
+                            coveredToCandidates!,
+                            candidateToInfo);
+                    }
+
 
                     beacons.Add(candidate);
 
@@ -82,11 +105,16 @@ internal static partial class PlanBeacons
                         scopedCandidatesSet,
                         sorter,
                         candidate);
-                    
+
                     /*
+                    var clone = new PipeGrid(context.Grid);
+                    foreach (var beaconCenter in beacons)
+                    {
+                        AddProvider(clone, beaconCenter, new BeaconCenter(), c => new BeaconSide(c), context.Options.BeaconWidth, context.Options.BeaconHeight);
+                    }
                     Visualizer.Show(
-                        context.Grid,
-                        scopedCandidates.Concat(new[] { candidate }).Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)),
+                        clone,
+                        candidateToInfo.Keys.Concat(new[] { candidate }).Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)),
                         Array.Empty<DelaunatorSharp.IEdge>());
                     */
                 }
@@ -146,12 +174,12 @@ internal static partial class PlanBeacons
         SnugCandidateSorter sorter,
         Location candidate)
     {
-        var (_, _, _, _,
+        var (
             overlapMinX,
             overlapMinY,
             overlapMaxX,
             overlapMaxY
-        ) = GetProviderBounds(context.Grid, candidate, context.Options.BeaconWidth, context.Options.BeaconHeight);
+        ) = GetProviderOverlapBounds(context.Grid, candidate, context.Options.BeaconWidth, context.Options.BeaconHeight);
 
         var minX = Math.Max((context.Options.BeaconWidth - 1) / 2, overlapMinX - 1);
         var minY = Math.Max((context.Options.BeaconHeight - 1) / 2, overlapMinY - 1);

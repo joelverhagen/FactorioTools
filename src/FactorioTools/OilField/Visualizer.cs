@@ -53,6 +53,7 @@ internal static class Visualizer
                             ElectricPoleCenter _ => Color.Gold,
                             BeaconSide _ => Color.MediumPurple,
                             BeaconCenter _ => Color.Purple,
+                            TemporaryEntity _ => Color.Pink,
                             _ => throw new NotImplementedException(),
                         };
                     }

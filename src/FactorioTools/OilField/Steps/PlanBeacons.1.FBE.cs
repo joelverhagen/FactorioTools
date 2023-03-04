@@ -39,11 +39,13 @@ internal static partial class PlanBeacons
         // GENERATE POSSIBLE BEACON AREAS
         var possibleBeaconAreas = GetPossibleBeaconAreas(context, validBeaconPositions);
         var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
-        var pointToEntityArea = GetPointToEntityArea(entityAreas);
+        var effectEntityArea = GetEffectEntityArea(entityAreas);
+        var pointToEntityArea = GetPointToEntityArea(effectEntityArea);
 
         // GENERATE POSSIBLE BEACONS
         var possibleBeacons = GetPossibleBeacons(
             context,
+            effectEntityArea,
             possibleBeaconAreas,
             pointToBeaconCount,
             pointToEntityArea);
@@ -51,13 +53,14 @@ internal static partial class PlanBeacons
         possibleBeacons = SortPossibleBeacons(possibleBeacons);
 
         // GENERATE BEACONS
-        return GetBeacons(possibleBeacons);
+        return GetBeacons(context, effectEntityArea, possibleBeacons);
     }
 
-    private static List<Location> GetBeacons(List<BeaconCandidate> possibleBeacons)
+    private static List<Location> GetBeacons(Context context, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
     {
         var beacons = new List<Location>();
         var collisionArea = new HashSet<Location>();
+        var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
         {
             var beacon = possibleBeacons[possibleBeacons.Count - 1];
@@ -66,6 +69,24 @@ internal static partial class PlanBeacons
             if (collisionArea.Overlaps(beacon.CollisionArea))
             {
                 continue;
+            }
+            
+            if (!context.Options.OverlapBeacons)
+            {
+                var overlapping = new CountedBitArray(beacon.EffectsGiven!);
+                overlapping.And(coveredEntityAreas!);
+
+                if (overlapping.TrueCount > 0)
+                {
+                    continue;
+                }
+
+                coveredEntityAreas!.Or(beacon.EffectsGiven!);
+
+                if (coveredEntityAreas.TrueCount == coveredEntityAreas.Count)
+                {
+                    break;
+                }
             }
 
             beacons.Add(beacon.Center);
@@ -78,8 +99,8 @@ internal static partial class PlanBeacons
     private static List<BeaconCandidate> SortPossibleBeacons(List<BeaconCandidate> possibleBeacons)
     {
         possibleBeacons = possibleBeacons
-            .OrderByDescending(b => b.EffectsGiven)
-            .ThenBy(b => b.EffectsGiven == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps)
+            .OrderByDescending(b => b.EffectsGivenCount)
+            .ThenBy(b => b.EffectsGivenCount == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps)
             .ToList();
         possibleBeacons.Reverse();
         return possibleBeacons;
@@ -92,15 +113,16 @@ internal static partial class PlanBeacons
 
     private static List<BeaconCandidate> GetPossibleBeacons(
         Context context,
+        List<Area> effectEntityAreas,
         List<Location[]> possibleBeaconAreas,
         Dictionary<Location, int> pointToBeaconCount,
-        Dictionary<Location, Area[]> pointToEntityArea)
+        Dictionary<Location, Area> pointToEntityArea)
     {
         (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) = GetBounds(pointToEntityArea.Keys);
 
         var centerIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
         var possibleBeacons = new List<BeaconCandidate>(possibleBeaconAreas.Count);
-        var effectsGiven = new HashSet<Area[]>();
+        var effectsGiven = new CountedBitArray(effectEntityAreas.Count);
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
         {
             var collisionArea = possibleBeaconAreas[i];
@@ -118,24 +140,27 @@ internal static partial class PlanBeacons
                     var location = new Location(x, y);
                     if (pointToEntityArea.TryGetValue(location, out var area))
                     {
-                        effectsGiven.Add(area);
+                        effectsGiven[area.Index] = true;
                     }
                 }
             }
 
-            if (effectsGiven.Count < MinAffectedEntities)
+            if (effectsGiven.TrueCount < MinAffectedEntities)
             {
-                effectsGiven.Clear();
+                effectsGiven.SetAll(false);
                 continue;
             }
 
             var sumDistance = 0;
-            foreach (var p in effectsGiven)
+            for (var j = 0; j < effectsGiven.Count; j++)
             {
-                sumDistance += p[centerIndex].Location.GetManhattanDistance(center);
+                if (effectsGiven[j])
+                {
+                    sumDistance += effectEntityAreas[j].Locations[centerIndex].GetManhattanDistance(center);
+                }
             }
 
-            var averageDistanceToEntities = ((double)sumDistance) / effectsGiven.Count;
+            var averageDistanceToEntities = ((double)sumDistance) / effectsGiven.TrueCount;
 
             var numberOfOverlaps = 0;
             for (var j = 0; j < collisionArea.Length; j++)
@@ -146,10 +171,12 @@ internal static partial class PlanBeacons
             possibleBeacons.Add(new BeaconCandidate(
                 center,
                 collisionArea,
-                effectsGiven.Count,
+                effectsGiven.TrueCount,
                 averageDistanceToEntities,
-                numberOfOverlaps));
-            effectsGiven.Clear();
+                numberOfOverlaps,
+                context.Options.OverlapBeacons ? null : new CountedBitArray(effectsGiven)));
+
+            effectsGiven.SetAll(false);
         }
 
         return possibleBeacons;
@@ -187,18 +214,18 @@ internal static partial class PlanBeacons
         return (entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
-    private static HashSet<Location> GetOccupiedPositions(List<Area[]> entityAreas)
+    private static HashSet<Location> GetOccupiedPositions(List<Area> entityAreas)
     {
         return entityAreas
-            .SelectMany(a => a)
-            .Select(a => a.Location)
+            .SelectMany(a => a.Locations)
             .ToHashSet();
     }
 
-    private static List<Area[]> GetEntityAreas(Context context)
+    private static List<Area> GetEntityAreas(Context context)
     {
         GridEntity pipe = new Pipe();
-        var entityAreas = context
+
+        return context
             .Grid
             .EntityToLocation
             .Select(pair =>
@@ -238,22 +265,42 @@ internal static partial class PlanBeacons
                 var minY = pair.Value.Y - ((height - 1) / 2);
                 var maxY = pair.Value.Y + (height / 2);
 
-                var area = new Area[width * height];
+                var area = new Location[width * height];
                 var i = 0;
                 for (var x = minX; x <= maxX; x++)
                 {
                     for (var y = minY; y <= maxY; y++)
                     {
-                        area[i++] = new Area(new Location(x, y), effect);
+                        area[i++] = new Location(x, y);
                     }
                 }
 
-                return area;
+                return new { Locations = area, Effect = effect };
             })
             .Where(a => a is not null)
             .Select(a => a!)
+            .Select((a, i) => new Area(i, a.Effect, a.Locations))
             .ToList();
-        return entityAreas;
+    }
+
+    private static List<Area> GetEffectEntityArea(List<Area> entityAreas)
+    {
+        var effectEntityArea = new List<Area>();
+        for (var i = 0; i < entityAreas.Count; i++)
+        {
+            var area = entityAreas[i];
+            if (area.Effect)
+            {
+                area.Index = effectEntityArea.Count;
+                effectEntityArea.Add(area);
+            }
+            else
+            {
+                area.Index = -1;
+            }
+        }
+
+        return effectEntityArea;
     }
 
     private static HashSet<Location> GetValidBeaconPositions(Context context, HashSet<Location> occupiedPositions)
@@ -332,27 +379,40 @@ internal static partial class PlanBeacons
         return pointToBeaconCount;
     }
 
-    private static Dictionary<Location, Area[]> GetPointToEntityArea(List<Area[]> entityAreas)
+    private static Dictionary<Location, Area> GetPointToEntityArea(List<Area> effectEntityAreas)
     {
-        var pointToEntityArea = new Dictionary<Location, Area[]>();
-        for (var i = 0; i < entityAreas.Count; i++)
+        var pointToEntityArea = new Dictionary<Location, Area>();
+        for (var i = 0; i < effectEntityAreas.Count; i++)
         {
-            var area = entityAreas[i];
-            if (!area[0].Effect)
+            var area = effectEntityAreas[i];
+            for (var j = 0; j < area.Locations.Length; j++)
             {
-                continue;
-            }
-
-            for (var j = 0; j < area.Length; j++)
-            {
-                pointToEntityArea.Add(area[j].Location, area);
+                pointToEntityArea.Add(area.Locations[j], area);
             }
         }
 
         return pointToEntityArea;
     }
 
-    private record Area(Location Location, bool Effect);
+    private class Area
+    {
+        public Area(int index, bool effect, Location[] locations)
+        {
+            Index = index;
+            Effect = effect;
+            Locations = locations;
+        }
 
-    private record BeaconCandidate(Location Center, Location[] CollisionArea, int EffectsGiven, double AverageDistanceToEntities, int NumberOfOverlaps);
+        public int Index { get; set; }
+        public bool Effect { get; }
+        public Location[] Locations { get; }
+    }
+
+    private record BeaconCandidate(
+        Location Center,
+        Location[] CollisionArea,
+        int EffectsGivenCount,
+        double AverageDistanceToEntities,
+        int NumberOfOverlaps,
+        CountedBitArray? EffectsGiven);
 }

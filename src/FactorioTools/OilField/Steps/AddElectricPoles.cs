@@ -171,10 +171,7 @@ internal static class AddElectricPoles
             includePumpjacks: true,
             includeBeacons: true);
 
-        var coveredCenterToPoleCenters = poleCenterToCoveredCenters
-            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, RecipientCenter: c)))
-            .GroupBy(p => p.RecipientCenter, p => p.PoleCenter)
-            .ToDictionary(g => g.Key, g => g.ToHashSet());
+        var coveredCenterToPoleCenters = GetCoveredCenterToProvderCenters(poleCenterToCoveredCenters);
 
         if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
         {
@@ -370,20 +367,7 @@ internal static class AddElectricPoles
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
-        var coveredToCandidates = new Dictionary<int, Dictionary<Location, ElectricPoleCandidateInfo>>(coveredEntities.Count);
-        for (var i = 0; i < coveredEntities.Count; i++)
-        {
-            var candidates = new Dictionary<Location, ElectricPoleCandidateInfo>();
-            foreach ((var candidate, var info) in allCandidateToInfo)
-            {
-                if (info.Covered[i])
-                {
-                    candidates.Add(candidate, info);
-                }
-            }
-
-            coveredToCandidates.Add(i, candidates);
-        }
+        var coveredToCandidates = GetCoveredToCandidates(allCandidateToInfo, coveredEntities);
 
         var allSubsets = new Queue<SortedBatches<ElectricPoleCandidateInfo>>();
 
@@ -474,7 +458,7 @@ internal static class AddElectricPoles
                 }
             }
 
-            AddProviderAndUpdateCandidateState(
+            AddProviderAndAllowMultipleProviders(
                 context.Grid,
                 context.SharedInstances,
                 candidate,

@@ -1,4 +1,5 @@
 ﻿using Knapcode.FactorioTools.OilField.Grid;
+using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -33,6 +34,32 @@ internal static partial class PlanBeacons
         if (solutions.Count == 0)
         {
             throw new InvalidOperationException("At least one beacon strategy must be used.");
+        }
+
+        if (context.Options.ValidateSolution && !context.Options.OverlapBeacons)
+        {
+            foreach (var solution in solutions)
+            {
+                var beaconCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
+                    context.Grid,
+                    context.Options.BeaconWidth,
+                    context.Options.BeaconHeight,
+                    context.Options.BeaconSupplyWidth,
+                    context.Options.BeaconSupplyHeight,
+                    solution.Beacons,
+                    includePumpjacks: true,
+                    includeBeacons: false);
+
+                var coveredCenterToPoleCenters = GetCoveredCenterToProvderCenters(beaconCenterToCoveredCenters);
+
+                foreach ((var pumpjackCenter, var beaconCenters) in coveredCenterToPoleCenters)
+                {
+                    if (beaconCenters.Count > 1)
+                    {
+                        throw new InvalidOperationException("Multiple beacons are providing an effect to a pumpjack.");
+                    }
+                }
+            }
         }
 
         return solutions.MaxBy(s => s.Beacons.Count)!.Beacons;

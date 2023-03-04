@@ -87,6 +87,7 @@ class Options
     public bool UseUndergroundPipes { get; set; } = true;
     public bool AddBeacons { get; set; } = true;
     public bool OptimizePipes { get; set; } = true;
+    public bool OverlapBeacons { get; set; } = true;
     public HashSet<PipeStrategy> PipeStrategies { get; set; } = Enum.GetValues<PipeStrategy>().ToHashSet();
     public HashSet<BeaconStrategy> BeaconStrategies { get; set; } = Enum.GetValues<BeaconStrategy>().ToHashSet();
 
