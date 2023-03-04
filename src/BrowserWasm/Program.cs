@@ -4,7 +4,12 @@ using System.Runtime.InteropServices.JavaScript;
 using Knapcode.FactorioTools.OilField;
 using Knapcode.FactorioTools.OilField.Steps;
 
-Console.WriteLine("Hello, Browser!");
+internal class Program
+{
+    private static void Main(string[] args)
+    {
+    }
+}
 
 public partial class MyClass
 {
@@ -19,7 +24,4 @@ public partial class MyClass
         var outputBlueprintString = GridToBlueprintString.Execute(context, addOffsetCorrection: false);
         return $"Elapsed: {sw.Elapsed}, blueprint: {outputBlueprintString}";
     }
-
-    [JSImport("window.location.href", "main.js")]
-    internal static partial string GetHRef();
 }
