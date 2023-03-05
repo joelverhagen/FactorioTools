@@ -171,7 +171,7 @@ public static class AddElectricPoles
             includePumpjacks: true,
             includeBeacons: true);
 
-        var coveredCenterToPoleCenters = GetCoveredCenterToProvderCenters(poleCenterToCoveredCenters);
+        var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(poleCenterToCoveredCenters);
 
         if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
         {

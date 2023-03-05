@@ -9,7 +9,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField;
 
-internal static class Visualizer
+public static class Visualizer
 {
     private const int CellSize = 64;
 

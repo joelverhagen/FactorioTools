@@ -4,13 +4,21 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 /// <summary>
-/// This "FBE" implementation is copied from Teoxoy's Factorio Blueprint Editor (FBE).
+/// This "FBE" implementation is based on Teoxoy's Factorio Blueprint Editor (FBE).
 /// Source:
 /// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/beacon.ts
 /// - https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts
 /// 
-/// It has been modified with some performance improvements (some are .NET specific) and some quality improvements which
-/// yield better results. Most notably, the beacon candidate sorting only happens once.
+/// It has been modified:
+/// 
+/// - Some performance improvements (some are .NET specific)
+///   - Many .NET specific performance improvemants.
+///   - The beacon candidate sorting only happens once.
+/// - Some quality improvements which yield better and more consistent results.
+///   - Sorting only once
+///   - Sort with a stable tie-breaking criteria (distance from the middle)
+/// - Add support for non-standard beacon sizes
+/// - Add support for non-overlapping beacons (for Space Exploration beacon overlap)
 /// </summary>
 public static partial class PlanBeacons
 {
@@ -18,28 +26,17 @@ public static partial class PlanBeacons
 
     private static List<Location> AddBeacons_FBE(Context context, BeaconStrategy strategy)
     {
-        if (context.Options.BeaconWidth != context.Options.BeaconHeight
-            || context.Options.BeaconSupplyWidth != context.Options.BeaconSupplyHeight
-            || context.Options.BeaconWidth % 2 != 1
-            || context.Options.BeaconSupplyWidth != context.Options.BeaconWidth * 3)
-        {
-            throw new NotImplementedException("The beacon must be a square, have an odd number width and height, and have a supply area that is 3 times the width.");
-        }
-
         var entityAreas = GetEntityAreas(context);
         var occupiedPositions = GetOccupiedPositions(entityAreas);
 
         // Visualizer.Show(context.Grid, occupiedPositions.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        // GENERATE VALID BEACON POSITIONS
-        var validBeaconPositions = GetValidBeaconPositions(context, occupiedPositions);
+        var possibleBeaconAreas = GetPossibleBeaconAreas(context, occupiedPositions);
 
-        // Visualizer.Show(context.Grid, grid.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // Visualizer.Show(context.Grid, possibleBeaconAreas.SelectMany(l => l).Distinct().Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        // GENERATE POSSIBLE BEACON AREAS
-        var possibleBeaconAreas = GetPossibleBeaconAreas(context, validBeaconPositions);
         var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
-        var effectEntityAreas = GetEffectEntityArea(entityAreas);
+        var effectEntityAreas = GetEffectEntityAreas(entityAreas);
         var pointToEntityArea = GetPointToEntityArea(effectEntityAreas);
 
         // GENERATE POSSIBLE BEACONS
@@ -130,12 +127,7 @@ public static partial class PlanBeacons
 
         possibleBeacons.Sort((a, b) => b.EffectsGivenCount.CompareTo(a.EffectsGivenCount));
 
-        // possibleBeacons.Reverse();
-    }
-
-    private static int GetBeaconEffectRadius(Context context)
-    {
-        return (context.Options.BeaconSupplyWidth - context.Options.BeaconWidth) / 2;
+        possibleBeacons.Reverse();
     }
 
     private static List<BeaconCandidate> GetPossibleBeacons(
@@ -147,7 +139,10 @@ public static partial class PlanBeacons
     {
         (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) = GetBounds(pointToEntityArea.Keys);
 
-        var centerIndex = (context.Options.BeaconWidth * context.Options.BeaconHeight) / 2;
+        var centerX = (context.Options.BeaconWidth - 1) / 2;
+        var centerY = (context.Options.BeaconHeight - 1) / 2;
+        var centerIndex = centerY * context.Options.BeaconWidth + centerX;
+
         var possibleBeacons = new List<BeaconCandidate>(possibleBeaconAreas.Count);
         var effectsGiven = new CountedBitArray(effectEntityAreas.Count);
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
@@ -310,7 +305,7 @@ public static partial class PlanBeacons
             .ToList();
     }
 
-    private static List<Area> GetEffectEntityArea(List<Area> entityAreas)
+    private static List<Area> GetEffectEntityAreas(List<Area> entityAreas)
     {
         var effectEntityArea = new List<Area>();
         for (var i = 0; i < entityAreas.Count; i++)
@@ -330,53 +325,78 @@ public static partial class PlanBeacons
         return effectEntityArea;
     }
 
-    private static HashSet<Location> GetValidBeaconPositions(Context context, HashSet<Location> occupiedPositions)
+    private static List<Location[]> GetPossibleBeaconAreas(Context context, HashSet<Location> occupiedPositions)
     {
-        var validBeaconPositions = new HashSet<Location>();
-        var beaconEffectRadius = GetBeaconEffectRadius(context);
-        var searchSize = PumpjackWidth + context.Options.BeaconWidth * 2 + (beaconEffectRadius - 1) * 2;
-        var searchSize2 = searchSize * searchSize;
+        var validBeaconCenters = new HashSet<Location>();
+        var possibleBeaconAreas = new List<Location[]>();
+
+        var gridMinX = (context.Options.BeaconWidth - 1) / 2;
+        var gridMinY = (context.Options.BeaconHeight - 1) / 2;
+        var gridMaxX = context.Grid.Width - (context.Options.BeaconWidth / 2) - 1;
+        var gridMaxY = context.Grid.Height - (context.Options.BeaconHeight / 2) - 1;
+
+        var supplyLeft = ((PumpjackWidth - 1) / 2) + (context.Options.BeaconSupplyWidth / 2);
+        var supplyUp = ((PumpjackHeight - 1) / 2) + (context.Options.BeaconSupplyHeight / 2);
+        var supplyRight = (PumpjackWidth / 2) + ((context.Options.BeaconSupplyWidth - 1) / 2);
+        var supplyDown = (PumpjackHeight / 2) + ((context.Options.BeaconSupplyHeight - 1) / 2);
+
+        var beaconLeft = (context.Options.BeaconWidth - 1) / 2;
+        var beaconUp = (context.Options.BeaconHeight - 1) / 2;
+        var beaconRight = context.Options.BeaconWidth / 2;
+        var beaconDown = context.Options.BeaconHeight / 2;
+
+        var area = new Location[context.Options.BeaconWidth * context.Options.BeaconHeight];
+
         foreach (var center in context.CenterToTerminals.Keys)
         {
-            for (var i = 0; i < searchSize2; i++)
+            if (center == new Location(47, 13))
             {
-                validBeaconPositions.Add(new Location(
-                    x: center.X + ((i % searchSize) - (searchSize / 2)),
-                    y: center.Y + ((i / searchSize) - (searchSize / 2))));
-            }
-        }
-
-        validBeaconPositions.ExceptWith(occupiedPositions);
-        return validBeaconPositions;
-    }
-
-    private static List<Location[]> GetPossibleBeaconAreas(Context context, HashSet<Location> validBeaconPositions)
-    {
-        var beaconArea = context.Options.BeaconWidth * context.Options.BeaconHeight;
-        var possibleBeaconAreas = new List<Location[]>();
-        foreach (var position in validBeaconPositions)
-        {
-            var allContains = true;
-            var area = new Location[beaconArea];
-            for (var i = 0; allContains && i < beaconArea; i++)
-            {
-                var location = new Location(
-                    x: position.X + (i % context.Options.BeaconWidth),
-                    y: position.Y + (i / context.Options.BeaconWidth));
-
-                if (validBeaconPositions.Contains(location))
-                {
-                    area[i] = location;
-                }
-                else
-                {
-                    allContains = false;
-                }
             }
 
-            if (allContains)
+            var supplyMinX = Math.Max(gridMinX, center.X - supplyLeft);
+            var supplyMinY = Math.Max(gridMinY, center.Y - supplyUp);
+            var supplyMaxX = Math.Min(gridMaxX, center.X + supplyRight);
+            var supplyMaxY = Math.Min(gridMaxY, center.Y + supplyDown);
+
+            for (var centerX = supplyMinX; centerX <= supplyMaxX; centerX++)
             {
-                possibleBeaconAreas.Add(area);
+                for (var centerY = supplyMinY; centerY <= supplyMaxY; centerY++)
+                {
+                    var beaconCenter = new Location(centerX, centerY);
+                    if (!validBeaconCenters.Add(beaconCenter))
+                    {
+                        continue;
+                    }
+
+                    var minX = beaconCenter.X - beaconLeft;
+                    var minY = beaconCenter.Y - beaconUp;
+                    var maxX = beaconCenter.X + beaconRight;
+                    var maxY = beaconCenter.Y + beaconDown;
+                    var fits = true;
+
+                    var i = 0;
+                    for (var y = minY; fits && y <= maxY; y++)
+                    {
+                        for (var x = minX; fits && x <= maxX; x++)
+                        {
+                            var location = new Location(x, y);
+                            if (occupiedPositions.Contains(location))
+                            {
+                                fits = false;
+                            }
+                            else
+                            {
+                                area[i++] = location;
+                            }
+                        }
+                    }
+
+                    if (fits)
+                    {
+                        possibleBeaconAreas.Add(area);
+                        area = new Location[context.Options.BeaconWidth * context.Options.BeaconHeight];
+                    }
+                }
             }
         }
 

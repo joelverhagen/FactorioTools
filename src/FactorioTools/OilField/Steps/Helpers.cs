@@ -333,7 +333,7 @@ public static class Helpers
         return poleCenterToCoveredCenters;
     }
 
-    public static Dictionary<Location, HashSet<Location>> GetCoveredCenterToProvderCenters(Dictionary<Location, HashSet<Location>> providerCenterToCoveredCenters)
+    public static Dictionary<Location, HashSet<Location>> GetCoveredCenterToProviderCenters(Dictionary<Location, HashSet<Location>> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
             .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, RecipientCenter: c)))

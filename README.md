@@ -21,13 +21,13 @@ my algorithm based on Dijkstra's.
 
 | Electric pole        | Add beacons | Overlap beacons | Pipe count        | Pole count         | Beacon count      |
 | -------------------- | ----------- | --------------- | ----------------- | ------------------ | ----------------- |
-| small-electric-pole  | True        | True            | 43.51724137931034 | 33.03448275862069  | 79.72413793103448 |
-| medium-electric-pole | True        | True            | 43.51724137931034 | 25.67241379310345  | 79.72413793103448 |
-| substation           | True        | True            | 43.51724137931034 | 7.844827586206897  | 79.72413793103448 |
-| big-electric-pole    | True        | True            | 46.58620689655172 | 34.36206896551724  | 75.75862068965517 |
-| small-electric-pole  | True        | False           | 42.1551724137931  | 14.120689655172415 | 6.396551724137931 |
-| medium-electric-pole | True        | False           | 42.1551724137931  | 11.53448275862069  | 6.396551724137931 |
-| substation           | True        | False           | 42.1551724137931  | 4.413793103448276  | 6.396551724137931 |
+| small-electric-pole  | True        | True            | 43.46551724137931 | 33.206896551724135 | 79.74137931034483 |
+| medium-electric-pole | True        | True            | 43.46551724137931 | 25.93103448275862  | 79.74137931034483 |
+| substation           | True        | True            | 43.46551724137931 | 7.896551724137931  | 79.74137931034483 |
+| big-electric-pole    | True        | True            | 46.51724137931034 | 34.258620689655174 | 75.63793103448276 |
+| small-electric-pole  | True        | False           | 42.1551724137931  | 14.189655172413794 | 6.396551724137931 |
+| medium-electric-pole | True        | False           | 42.1551724137931  | 11.60344827586207  | 6.396551724137931 |
+| substation           | True        | False           | 42.1551724137931  | 4.431034482758621  | 6.396551724137931 |
 | big-electric-pole    | True        | False           | 42.36206896551724 | 11.03448275862069  | 6.413793103448276 |
 | small-electric-pole  | False       | N/A             | 83.93103448275862 | 13.068965517241379 | 0                 |
 | medium-electric-pole | False       | N/A             | 83.93103448275862 | 10.293103448275861 | 0                 |
@@ -39,15 +39,15 @@ my algorithm based on Dijkstra's.
 ``` ini
 BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1265/22H2/2022Update/SunValley2)
 AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
-.NET SDK=7.0.102
-  [Host]     : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
-  DefaultJob : .NET 7.0.2 (7.0.222.60605), X64 RyuJIT AVX2
+.NET SDK=7.0.201
+  [Host]     : .NET 7.0.3 (7.0.323.6910), X64 RyuJIT AVX2
+  DefaultJob : .NET 7.0.3 (7.0.323.6910), X64 RyuJIT AVX2
 ```
 
 | Method                                    |     Mean |    Error |   StdDev |
 | ----------------------------------------- | -------: | -------: | -------: |
-| MediumElectricPole_NoBeacon_NoUnderground | 17.91 ms | 0.097 ms | 0.086 ms |
-| SmallElectricPole_Beacon_Underground      | 33.60 ms | 0.145 ms | 0.136 ms |
-| MediumElectricPole_Beacon_Underground     | 34.00 ms | 0.132 ms | 0.124 ms |
-| BigElectricPole_Beacon_Underground        | 76.93 ms | 0.754 ms | 0.706 ms |
-| Substation_Beacon_Underground             | 38.35 ms | 0.189 ms | 0.168 ms |
+| MediumElectricPole_NoBeacon_NoUnderground | 18.39 ms | 0.100 ms | 0.089 ms |
+| SmallElectricPole_Beacon_Underground      | 34.27 ms | 0.296 ms | 0.277 ms |
+| MediumElectricPole_Beacon_Underground     | 34.57 ms | 0.162 ms | 0.151 ms |
+| BigElectricPole_Beacon_Underground        | 79.04 ms | 0.296 ms | 0.277 ms |
+| Substation_Beacon_Underground             | 39.13 ms | 0.201 ms | 0.178 ms |

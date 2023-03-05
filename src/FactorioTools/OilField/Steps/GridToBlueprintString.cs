@@ -123,6 +123,7 @@ public static class GridToBlueprintString
                     });
                     break;
                 case BeaconSide:
+                case TemporaryEntity:
                     // Ignore
                     break;
                 default:

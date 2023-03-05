@@ -23,6 +23,27 @@ public class PlannerTest
             Planner.Execute(options, blueprint);
         }
 
+        [Theory]
+        [MemberData(nameof(BlueprintIndexTestData))]
+        public void NonStandardBeacon(int blueprintIndex)
+        {
+            var options = OilFieldOptions.ForMediumElectricPole;
+            options.AddBeacons = true;
+            options.UseUndergroundPipes = true;
+            options.OverlapBeacons = true;
+            options.ValidateSolution = true;
+            options.BeaconWidth = 2;
+            options.BeaconHeight = 4;
+            options.BeaconSupplyWidth = 4;
+            options.BeaconSupplyHeight = 6;
+
+            var blueprintString = BlueprintStrings[blueprintIndex];
+            var blueprint = ParseBlueprint.Execute(blueprintString);
+
+            // Act
+            Planner.Execute(options, blueprint);
+        }
+
         private static IReadOnlyDictionary<string, Func<OilFieldOptions>> ElectricPoleToOptions { get; } = new[]
         {
             () => OilFieldOptions.ForSmallElectricPole,
@@ -33,6 +54,20 @@ public class PlannerTest
 
         private static string DataFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
         private static IReadOnlyList<string> BlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(DataFilePath);
+
+        public static TheoryData<int> BlueprintIndexTestData
+        {
+            get
+            {
+                var theoryData = new TheoryData<int>();
+                foreach (var blueprintIndex in Enumerable.Range(0, BlueprintStrings.Count))
+                {
+                    theoryData.Add(blueprintIndex);
+                }
+
+                return theoryData;
+            }
+        }
 
         public static TheoryData<int, string, bool, bool, bool> BlueprintsAndOptions
         {

@@ -51,7 +51,7 @@ public static partial class PlanBeacons
                     includePumpjacks: true,
                     includeBeacons: false);
 
-                var coveredCenterToPoleCenters = GetCoveredCenterToProvderCenters(beaconCenterToCoveredCenters);
+                var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(beaconCenterToCoveredCenters);
 
                 foreach ((var pumpjackCenter, var beaconCenters) in coveredCenterToPoleCenters)
                 {
