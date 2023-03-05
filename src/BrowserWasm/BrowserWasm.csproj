@@ -5,7 +5,11 @@
     <WasmMainJSPath>main.js</WasmMainJSPath>
     <OutputType>Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
     <RunAOTCompilation>true</RunAOTCompilation>
+
+    <WasmEnableES6>true</WasmEnableES6>
+    
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
     <TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
@@ -31,6 +35,7 @@
 
   <ItemGroup>
     <WasmExtraFilesToDeploy Include="index.html" />
+    <WasmExtraFilesToDeploy Include="main-node.js" />
     <WasmExtraFilesToDeploy Include="main.js" />
   </ItemGroup>
 </Project>
