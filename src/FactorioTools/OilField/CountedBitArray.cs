@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-internal class CountedBitArray
+public class CountedBitArray
 {
     private readonly BitArray _array;
 
@@ -52,21 +52,21 @@ internal class CountedBitArray
         TrueCount = value ? _array.Count : 0;
     }
 
-    internal CountedBitArray And(CountedBitArray value)
+    public CountedBitArray And(CountedBitArray value)
     {
         _array.And(value._array);
         TrueCount = CountTrue();
         return this;
     }
 
-    internal CountedBitArray Not()
+    public CountedBitArray Not()
     {
         _array.Not();
         TrueCount = Count - TrueCount;
         return this;
     }
 
-    internal CountedBitArray Or(CountedBitArray value)
+    public CountedBitArray Or(CountedBitArray value)
     {
         _array.Or(value._array);
         TrueCount = CountTrue();

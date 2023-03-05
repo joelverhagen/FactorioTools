@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class ElectricPoleCenter : GridEntity
+public class ElectricPoleCenter : GridEntity
 {
     private readonly HashSet<ElectricPoleCenter> _neighbors = new HashSet<ElectricPoleCenter>();
 

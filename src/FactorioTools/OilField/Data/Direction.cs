@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Data;
 
-internal enum Direction
+public enum Direction
 {
     Up = 0,
     Right = 2,

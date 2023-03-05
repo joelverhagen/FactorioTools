@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class PumpjackSide : GridEntity
+public class PumpjackSide : GridEntity
 {
     public PumpjackSide(PumpjackCenter center)
     {

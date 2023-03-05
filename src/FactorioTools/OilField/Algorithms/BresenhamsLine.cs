@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Algorithms;
 
-internal static class BresenhamsLine
+public static class BresenhamsLine
 {
     public static List<Location> GetPath(Location a, Location b)
     {

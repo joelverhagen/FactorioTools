@@ -4,7 +4,7 @@ using Knapcode.FactorioTools.OilField.Data;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class ParseBlueprint
+public static class ParseBlueprint
 {
     public static List<string> ReadBlueprintFile(string fileName)
     {

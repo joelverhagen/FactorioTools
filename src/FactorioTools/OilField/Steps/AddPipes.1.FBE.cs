@@ -12,7 +12,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// 
 /// Teoxoy came up with the idea to use Delaunay triangulation for this problem. Awesome!
 /// </summary>
-internal static partial class AddPipes
+public static partial class AddPipes
 {
     public static HashSet<Location> ExecuteWithFBE(Context context)
     {

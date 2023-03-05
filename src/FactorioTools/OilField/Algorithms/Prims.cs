@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Algorithms;
 
-internal static class Prims
+public static class Prims
 {
     public static Dictionary<Location, HashSet<Location>> GetMinimumSpanningTree(
         SharedInstances sharedInstances,

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class ExistingPipeGrid : SquareGrid
+public class ExistingPipeGrid : SquareGrid
 {
     public ExistingPipeGrid(SquareGrid squareGrid, HashSet<Location> pipes) : base(squareGrid, clone: false)
     {

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Data;
 
-internal static class SignalTypes
+public static class SignalTypes
 {
     public static class Vanilla
     {

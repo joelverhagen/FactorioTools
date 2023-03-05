@@ -5,7 +5,7 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static partial class AddPipes
+public static partial class AddPipes
 {
     private static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Translations = new[] { (1, 0), (0, 1) };
 

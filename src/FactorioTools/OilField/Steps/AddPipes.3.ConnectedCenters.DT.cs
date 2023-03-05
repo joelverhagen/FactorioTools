@@ -4,7 +4,7 @@ using Knapcode.FactorioTools.OilField.Algorithms;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static partial class AddPipes
+public static partial class AddPipes
 {
     private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithDelaunay(List<Location> centers)
     {

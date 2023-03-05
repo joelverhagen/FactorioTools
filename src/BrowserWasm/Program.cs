@@ -3,7 +3,7 @@ using System.Runtime.InteropServices.JavaScript;
 using Knapcode.FactorioTools.OilField;
 using Knapcode.FactorioTools.OilField.Steps;
 
-internal class Program
+public class Program
 {
     private static void Main(string[] args)
     {
@@ -13,7 +13,7 @@ internal class Program
 public partial class MyClass
 {
     [JSExport]
-    internal static string Greeting()
+    public static string Greeting()
     {
         var sw = Stopwatch.StartNew();
         var options = Options.ForMediumElectricPole;

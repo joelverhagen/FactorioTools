@@ -2,7 +2,7 @@
 using Knapcode.FactorioTools.OilField.Grid;
 using Knapcode.FactorioTools.OilField.Steps;
 
-internal partial class Program
+public partial class Program
 {
     private const string DataPath = "blueprints.txt";
 

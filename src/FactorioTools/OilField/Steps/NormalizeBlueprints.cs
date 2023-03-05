@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class NormalizeBlueprints
+public static class NormalizeBlueprints
 {
     public static void Execute(string dataPath)
     {

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal abstract class SquareGrid
+public abstract class SquareGrid
 {
     public const int NeighborCost = 1;
     private const string EmptyLabel = ".";

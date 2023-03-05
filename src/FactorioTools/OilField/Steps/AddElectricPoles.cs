@@ -4,7 +4,7 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class AddElectricPoles
+public static class AddElectricPoles
 {
     private enum RetryStrategy
     {

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class BeaconSide : GridEntity
+public class BeaconSide : GridEntity
 {
     public BeaconSide(BeaconCenter center)
     {

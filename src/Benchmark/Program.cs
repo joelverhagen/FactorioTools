@@ -6,7 +6,7 @@ using Knapcode.FactorioTools.OilField.Steps;
 
 namespace Knapcode.FactorioTools.Benchmark;
 
-internal class Program
+public class Program
 {
     private static void Main(string[] args)
     {

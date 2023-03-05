@@ -11,7 +11,7 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 /// <summary>
 /// Source: https://www.redblobgames.com/pathfinding/a-star/implementation.html
 /// </summary>
-internal static class AStar
+public static class AStar
 {
 #if USE_OBJECT_POOLING
     public static readonly ObjectPool<Dictionary<Location, Location>> CameFromPool = ObjectPool.Create<Dictionary<Location, Location>>();

@@ -3,7 +3,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
-internal class DijkstrasResult
+public class DijkstrasResult
 {
     private readonly SquareGrid _grid;
 

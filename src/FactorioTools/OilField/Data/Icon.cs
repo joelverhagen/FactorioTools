@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Data;
 
-internal class Icon
+public class Icon
 {
     [JsonPropertyName("signal")]
     public SignalID Signal { get; set; } = null!;

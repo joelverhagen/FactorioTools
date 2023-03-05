@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class ElectricPoleSide : GridEntity
+public class ElectricPoleSide : GridEntity
 {
     public ElectricPoleSide(ElectricPoleCenter center)
     {

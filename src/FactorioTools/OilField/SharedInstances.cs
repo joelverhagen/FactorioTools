@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-internal class SharedInstances
+public class SharedInstances
 {
 #if USE_SHARED_INSTANCES
     public required Queue<Location> LocationQueue;

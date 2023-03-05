@@ -4,7 +4,7 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class InitializeContext
+public static class InitializeContext
 {
     public static Context Execute(Options options, BlueprintRoot root)
     {

@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-class Options
+public class Options
 {
     public static Options ForSmallIronElectricPole
     {

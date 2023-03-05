@@ -6,7 +6,7 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static partial class AddPipes
+public static partial class AddPipes
 {
     public static void Execute(Context context, bool eliminateStrandedTerminals)
     {

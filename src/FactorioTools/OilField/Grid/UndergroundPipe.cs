@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class UndergroundPipe : Pipe
+public class UndergroundPipe : Pipe
 {
     public UndergroundPipe(Direction direction)
     {

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Algorithms;
 
-internal class AStarResult
+public class AStarResult
 {
     private readonly List<Location>? _path;
 

@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class InitializeFLUTE
+public static class InitializeFLUTE
 {
     public static FLUTE? FLUTE { get; private set; }
     private static readonly object FLUTELock = new object();

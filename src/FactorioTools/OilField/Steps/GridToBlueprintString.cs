@@ -7,7 +7,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class GridToBlueprintString
+public static class GridToBlueprintString
 {
     private static readonly IReadOnlyDictionary<string, (float Width, float Height)> EntityNameToSize = new Dictionary<string, (float Width, float Height)>()
     {

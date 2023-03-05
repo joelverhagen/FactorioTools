@@ -3,7 +3,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField;
 
-internal class Context
+public class Context
 {
     public required Options Options { get; set; }
     public required BlueprintRoot InputBlueprint { get; set; }

@@ -3,7 +3,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class AddPipeEntities
+public static class AddPipeEntities
 {
     public static void Execute(Context context, HashSet<Location> pipes, Dictionary<Location, Direction>? undergroundPipes)
     {

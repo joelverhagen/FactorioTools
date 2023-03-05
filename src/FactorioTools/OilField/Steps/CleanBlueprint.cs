@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class CleanBlueprint
+public static class CleanBlueprint
 {
     public static BlueprintRoot Execute(BlueprintRoot root)
     {

@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Data;
 
-internal class Blueprint
+public class Blueprint
 {
     [JsonPropertyName("icons")]
     public Icon[] Icons { get; set; } = null!;

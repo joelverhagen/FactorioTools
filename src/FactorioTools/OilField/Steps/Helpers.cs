@@ -3,7 +3,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class Helpers
+public static class Helpers
 {
     public const int PumpjackWidth = 3;
     public const int PumpjackHeight = 3;

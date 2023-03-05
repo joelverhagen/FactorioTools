@@ -12,7 +12,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// It has been modified with some performance improvements (some are .NET specific) and some quality improvements which
 /// yield better results. Most notably, the beacon candidate sorting only happens once.
 /// </summary>
-internal static partial class PlanBeacons
+public static partial class PlanBeacons
 {
     private const int MinAffectedEntities = 1;
 

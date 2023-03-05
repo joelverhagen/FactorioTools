@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Data;
 
-internal class Position
+public class Position
 {
     [JsonPropertyName("x")]
     public float X { get; set; }

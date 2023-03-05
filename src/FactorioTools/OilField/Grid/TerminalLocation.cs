@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Grid;
 
-internal class TerminalLocation
+public class TerminalLocation
 {
     public TerminalLocation(Location center, Location terminal, Direction direction)
     {

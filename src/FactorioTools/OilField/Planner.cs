@@ -3,7 +3,7 @@ using Knapcode.FactorioTools.OilField.Steps;
 
 namespace Knapcode.FactorioTools.OilField;
 
-internal static class Planner
+public static class Planner
 {
     public static Context Execute(Options options, BlueprintRoot inputBlueprint)
     {

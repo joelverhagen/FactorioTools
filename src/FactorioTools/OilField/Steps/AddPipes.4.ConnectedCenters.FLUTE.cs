@@ -4,7 +4,7 @@ using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static partial class AddPipes
+public static partial class AddPipes
 {
     private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithFLUTE(Context context)
     {

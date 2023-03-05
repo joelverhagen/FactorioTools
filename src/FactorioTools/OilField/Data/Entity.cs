@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Data;
 
-internal class Entity
+public class Entity
 {
     [JsonPropertyName("entity_number")]
     public int EntityNumber { get; set; }

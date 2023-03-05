@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class Facts
 {
-    internal static ElectricPoleCenter AddElectricPole(Context context, Location center)
+    public static ElectricPoleCenter AddElectricPole(Context context, Location center)
     {
         var entity = new ElectricPoleCenter();
 
@@ -22,7 +22,7 @@ public class Facts
         return entity;
     }
 
-    internal static BeaconCenter AddBeacon(Context context, Location center)
+    public static BeaconCenter AddBeacon(Context context, Location center)
     {
         var entity = new BeaconCenter();
 
@@ -37,7 +37,7 @@ public class Facts
         return entity;
     }
 
-    internal static PumpjackCenter AddPumpjack(Context context, Location center, Direction? direction = null)
+    public static PumpjackCenter AddPumpjack(Context context, Location center, Direction? direction = null)
     {
         var entity = Helpers.AddPumpjack(context.Grid, center);
 
@@ -62,7 +62,7 @@ public class Facts
         return entity;
     }
 
-    internal static string GetRepositoryRoot()
+    public static string GetRepositoryRoot()
     {
         var current = Directory.GetCurrentDirectory();
         while (current != null)

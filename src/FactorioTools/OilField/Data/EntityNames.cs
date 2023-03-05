@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField.Data;
 
-internal class EntityNames
+public class EntityNames
 {
     public static class Vanilla
     {

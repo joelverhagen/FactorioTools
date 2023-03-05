@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Data;
 
-internal class SignalID
+public class SignalID
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = null!;

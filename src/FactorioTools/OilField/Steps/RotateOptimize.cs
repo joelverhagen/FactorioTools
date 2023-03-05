@@ -7,7 +7,7 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class RotateOptimize
+public static class RotateOptimize
 {
 #if USE_OBJECT_POOLING
     public static readonly ObjectPool<Queue<Location>> QueuePool = ObjectPool.Create<Queue<Location>>();
@@ -16,7 +16,7 @@ internal static class RotateOptimize
     public static int QueuePoolCount;
 #endif
 
-    internal static void Execute(Context parentContext, HashSet<Location> pipes)
+    public static void Execute(Context parentContext, HashSet<Location> pipes)
     {
         var context = new ChildContext(parentContext, pipes);
 

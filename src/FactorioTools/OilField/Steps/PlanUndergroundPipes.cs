@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-internal static class PlanUndergroundPipes
+public static class PlanUndergroundPipes
 {
     /// <summary>
     /// The ends each occupy one spot. Any less than 3 would not be worth it since the number of underground pipes

@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
-internal static class Dijkstras
+public static class Dijkstras
 {
     public static DijkstrasResult GetShortestPaths(SharedInstances sharedInstances, SquareGrid grid, Location start, HashSet<Location> goals, bool stopOnFirstGoal)
     {

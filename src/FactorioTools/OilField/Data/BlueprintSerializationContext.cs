@@ -4,6 +4,6 @@ namespace Knapcode.FactorioTools.OilField.Data;
 
 [JsonSourceGenerationOptions]
 [JsonSerializable(typeof(BlueprintRoot))]
-internal partial class BlueprintSerializationContext : JsonSerializerContext
+public partial class BlueprintSerializationContext : JsonSerializerContext
 {
 }
