@@ -52,7 +52,7 @@ public static partial class PlanBeacons
 
         if (strategy == BeaconStrategy.FBE)
         {
-            possibleBeacons = SortPossibleBeacons(possibleBeacons);
+            possibleBeacons = SortPossibleBeacons(context, possibleBeacons);
         }
 
         // GENERATE BEACONS
@@ -104,11 +104,12 @@ public static partial class PlanBeacons
         return beacons;
     }
 
-    private static List<BeaconCandidate> SortPossibleBeacons(List<BeaconCandidate> possibleBeacons)
+    private static List<BeaconCandidate> SortPossibleBeacons(Context context, List<BeaconCandidate> possibleBeacons)
     {
         possibleBeacons = possibleBeacons
             .OrderByDescending(b => b.EffectsGivenCount)
             .ThenBy(b => b.EffectsGivenCount == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps)
+            .ThenByDescending(b => b.Center.GetEuclideanDistance(context.Grid.Middle))
             .ToList();
         possibleBeacons.Reverse();
         return possibleBeacons;
