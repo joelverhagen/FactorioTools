@@ -6,7 +6,7 @@ public static class CleanBlueprint
 {
     public static BlueprintRoot Execute(BlueprintRoot root)
     {
-        var context = InitializeContext.Execute(new Options(), root);
+        var context = InitializeContext.Execute(new OilFieldOptions(), root);
 
         var entities = new List<Entity>();
 

@@ -23,12 +23,12 @@ public class PlannerTest
             Planner.Execute(options, blueprint);
         }
 
-        private static IReadOnlyDictionary<string, Func<Options>> ElectricPoleToOptions { get; } = new[]
+        private static IReadOnlyDictionary<string, Func<OilFieldOptions>> ElectricPoleToOptions { get; } = new[]
         {
-            () => Options.ForSmallElectricPole,
-            () => Options.ForMediumElectricPole,
-            () => Options.ForBigElectricPole,
-            () => Options.ForSubstation,
+            () => OilFieldOptions.ForSmallElectricPole,
+            () => OilFieldOptions.ForMediumElectricPole,
+            () => OilFieldOptions.ForBigElectricPole,
+            () => OilFieldOptions.ForSubstation,
         }.ToDictionary(o => o().ElectricPoleEntityName, o => o);
 
         private static string DataFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");

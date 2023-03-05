@@ -229,12 +229,12 @@ public static class AddElectricPoles
         }
     }
 
-    public static bool AreElectricPolesConnected(Location a, Location b, Options options)
+    public static bool AreElectricPolesConnected(Location a, Location b, OilFieldOptions options)
     {
         return GetElectricPoleDistanceSquared(a, b, options) <= options.ElectricPoleWireReachSquared;
     }
 
-    private static int GetElectricPoleDistanceSquared(Location a, Location b, Options options)
+    private static int GetElectricPoleDistanceSquared(Location a, Location b, OilFieldOptions options)
     {
         var offsetX = (options.ElectricPoleWidth - 1) / 2;
         var offsetY = (options.ElectricPoleHeight - 1) / 2;

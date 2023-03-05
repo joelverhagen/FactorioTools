@@ -6,7 +6,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class InitializeContext
 {
-    public static Context Execute(Options options, BlueprintRoot root)
+    public static Context Execute(OilFieldOptions options, BlueprintRoot root)
     {
         // Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
         //   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
@@ -24,7 +24,7 @@ public static class InitializeContext
         return Execute(options, root, marginX, marginY);
     }
 
-    public static Context GetEmpty(Options options, int width, int height)
+    public static Context GetEmpty(OilFieldOptions options, int width, int height)
     {
         var root = new BlueprintRoot
         {
@@ -51,7 +51,7 @@ public static class InitializeContext
         return Execute(options, root, width, height);
     }
 
-    private static Context Execute(Options options, BlueprintRoot root, int marginX, int marginY)
+    private static Context Execute(OilFieldOptions options, BlueprintRoot root, int marginX, int marginY)
     {
         var centers = GetPumpjackCenters(root, marginX, marginY);
         var grid = InitializeGrid(centers, marginX, marginY);

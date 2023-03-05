@@ -33,7 +33,7 @@ public partial class Program
 
         // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
         // var optionsAll = new[] { Options.ForSmallElectricPole };
-        var optionsAll = new[] { Options.ForMediumElectricPole };
+        var optionsAll = new[] { OilFieldOptions.ForMediumElectricPole };
         // var optionsAll = new[] { Options.ForBigElectricPole };
 
         // var addBeaconsAll = new[] { true, false };
@@ -80,7 +80,7 @@ public partial class Program
     {
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
-        var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
+        var optionsAll = new[] { OilFieldOptions.ForSmallElectricPole, OilFieldOptions.ForMediumElectricPole, OilFieldOptions.ForSubstation, OilFieldOptions.ForBigElectricPole };
 
         var outputs = new List<string>();
 

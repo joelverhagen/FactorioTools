@@ -261,7 +261,7 @@ public static partial class AddPipes
         }
     }
 
-    private static void AddBeaconsToGrid(SquareGrid grid, Options options, IEnumerable<Location> centers)
+    private static void AddBeaconsToGrid(SquareGrid grid, OilFieldOptions options, IEnumerable<Location> centers)
     {
         foreach (var center in centers)
         {

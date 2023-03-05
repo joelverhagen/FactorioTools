@@ -5,12 +5,12 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
-    public static Context Execute(Options options, BlueprintRoot inputBlueprint)
+    public static Context Execute(OilFieldOptions options, BlueprintRoot inputBlueprint)
     {
         return Execute(options, inputBlueprint, addElectricPolesFirst: false);
     }
 
-    private static Context Execute(Options options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
+    private static Context Execute(OilFieldOptions options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
     {
         var context = InitializeContext.Execute(options, inputBlueprint);
 

@@ -446,7 +446,7 @@ public class PlanUndergroundPipesTest
             width = width ?? (pipes.Max(l => l.X) + 2);
             height = height ?? (pipes.Max(l => l.Y) + 2);
 
-            var context = InitializeContext.GetEmpty(Options.ForMediumElectricPole, width.Value, height.Value);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForMediumElectricPole, width.Value, height.Value);
 
             return context;
         }

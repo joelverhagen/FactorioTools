@@ -2,13 +2,13 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class Options
+public class OilFieldOptions
 {
-    public static Options ForSmallIronElectricPole
+    public static OilFieldOptions ForSmallIronElectricPole
     {
         get
         {
-            return new Options
+            return new OilFieldOptions
             {
                 ElectricPoleEntityName = EntityNames.AaiIndustry.SmallIronElectricPole,
                 ElectricPoleSupplyWidth = 5,
@@ -20,11 +20,11 @@ public class Options
         }
     }
 
-    public static Options ForSmallElectricPole
+    public static OilFieldOptions ForSmallElectricPole
     {
         get
         {
-            return new Options
+            return new OilFieldOptions
             {
                 ElectricPoleEntityName = EntityNames.Vanilla.SmallElectricPole,
                 ElectricPoleSupplyWidth = 5,
@@ -36,11 +36,11 @@ public class Options
         }
     }
 
-    public static Options ForMediumElectricPole
+    public static OilFieldOptions ForMediumElectricPole
     {
         get
         {
-            return new Options
+            return new OilFieldOptions
             {
                 ElectricPoleEntityName = EntityNames.Vanilla.MediumElectricPole,
                 ElectricPoleSupplyWidth = 7,
@@ -52,11 +52,11 @@ public class Options
         }
     }
 
-    public static Options ForBigElectricPole
+    public static OilFieldOptions ForBigElectricPole
     {
         get
         {
-            return new Options
+            return new OilFieldOptions
             {
                 ElectricPoleEntityName = EntityNames.Vanilla.BigElectricPole,
                 ElectricPoleSupplyWidth = 4,
@@ -68,11 +68,11 @@ public class Options
         }
     }
 
-    public static Options ForSubstation
+    public static OilFieldOptions ForSubstation
     {
         get
         {
-            return new Options
+            return new OilFieldOptions
             {
                 ElectricPoleEntityName = EntityNames.Vanilla.Substation,
                 ElectricPoleSupplyWidth = 18,
@@ -119,7 +119,7 @@ public class Options
         }
     }
 
-    public double ElectricPoleWireReachSquared { get; private set; } = DefaultElectricPoleWireReach * DefaultElectricPoleWireReach;
+    internal double ElectricPoleWireReachSquared { get; private set; } = DefaultElectricPoleWireReach * DefaultElectricPoleWireReach;
 
     public int ElectricPoleWidth { get; set; } = 1;
     public int ElectricPoleHeight { get; set; } = 1;

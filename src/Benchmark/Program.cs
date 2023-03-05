@@ -27,7 +27,7 @@ public class Benchmark
     [Benchmark]
     public void MediumElectricPole_NoBeacon_NoUnderground()
     {
-        var options = Options.ForMediumElectricPole;
+        var options = OilFieldOptions.ForMediumElectricPole;
         options.AddBeacons = false;
         options.UseUndergroundPipes = false;
         Planner.Execute(options, Blueprint);
@@ -36,7 +36,7 @@ public class Benchmark
     [Benchmark]
     public void SmallElectricPole_Beacon_Underground()
     {
-        var options = Options.ForSmallElectricPole;
+        var options = OilFieldOptions.ForSmallElectricPole;
         options.AddBeacons = true;
         options.UseUndergroundPipes = true;
         Planner.Execute(options, Blueprint);
@@ -45,7 +45,7 @@ public class Benchmark
     [Benchmark]
     public void MediumElectricPole_Beacon_Underground()
     {
-        var options = Options.ForMediumElectricPole;
+        var options = OilFieldOptions.ForMediumElectricPole;
         options.AddBeacons = true;
         options.UseUndergroundPipes = true;
         Planner.Execute(options, Blueprint);
@@ -54,7 +54,7 @@ public class Benchmark
     [Benchmark]
     public void BigElectricPole_Beacon_Underground()
     {
-        var options = Options.ForBigElectricPole;
+        var options = OilFieldOptions.ForBigElectricPole;
         options.AddBeacons = true;
         options.UseUndergroundPipes = true;
         Planner.Execute(options, Blueprint);
@@ -63,7 +63,7 @@ public class Benchmark
     [Benchmark]
     public void Substation_Beacon_Underground()
     {
-        var options = Options.ForSubstation;
+        var options = OilFieldOptions.ForSubstation;
         options.AddBeacons = true;
         options.UseUndergroundPipes = true;
         Planner.Execute(options, Blueprint);

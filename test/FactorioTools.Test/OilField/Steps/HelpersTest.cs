@@ -10,7 +10,7 @@ public class HelpersTest
         [Fact]
         public void SmallElectricPole()
         {
-            var context = InitializeContext.GetEmpty(Options.ForSmallElectricPole, width: 20, height: 20);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForSmallElectricPole, width: 20, height: 20);
             var center = new Location(10, 10);
             AddElectricPole(context, center);
 
@@ -45,7 +45,7 @@ public class HelpersTest
         [Fact]
         public void MediumElectricPole()
         {
-            var context = InitializeContext.GetEmpty(Options.ForMediumElectricPole, width: 20, height: 20);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForMediumElectricPole, width: 20, height: 20);
             var center = new Location(10, 10);
             AddElectricPole(context, center);
 
@@ -85,7 +85,7 @@ public class HelpersTest
         [Fact]
         public void Substation()
         {
-            var context = InitializeContext.GetEmpty(Options.ForSubstation, width: 28, height: 28);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForSubstation, width: 28, height: 28);
             var center = new Location(12, 12);
             AddElectricPole(context, center);
 
@@ -145,7 +145,7 @@ public class HelpersTest
         [Fact]
         public void BigElectricPole()
         {
-            var context = InitializeContext.GetEmpty(Options.ForBigElectricPole, width: 20, height: 20);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForBigElectricPole, width: 20, height: 20);
             var center = new Location(10, 10);
             AddElectricPole(context, center);
 
@@ -182,7 +182,7 @@ public class HelpersTest
         [Fact]
         public void Beacon()
         {
-            var context = InitializeContext.GetEmpty(Options.ForSmallElectricPole, width: 20, height: 20);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForSmallElectricPole, width: 20, height: 20);
             var center = new Location(10, 10);
             AddBeacon(context, center);
 
@@ -233,7 +233,7 @@ public class HelpersTest
         [Fact]
         public void SmallElectricPole_RemoveUnused()
         {
-            var context = InitializeContext.GetEmpty(Options.ForSmallElectricPole, width: 20, height: 7);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForSmallElectricPole, width: 20, height: 7);
             AddElectricPole(context, new Location(1, 3));
             AddElectricPole(context, new Location(5, 3));
             AddElectricPole(context, new Location(8, 3));
@@ -284,7 +284,7 @@ public class HelpersTest
         [Fact]
         public void Substation_RemoveUnused()
         {
-            var context = InitializeContext.GetEmpty(Options.ForSubstation, width: 16, height: 16);
+            var context = InitializeContext.GetEmpty(OilFieldOptions.ForSubstation, width: 16, height: 16);
             AddElectricPole(context, new Location(10, 12));
             AddElectricPole(context, new Location(12, 10));
             AddElectricPole(context, new Location(12, 12));
