@@ -51,8 +51,6 @@ public static partial class AddPipes
             .ToDictionary(x => x.Key, x => x.Min(y => y.Value));
 
         // GENERATE LINES
-        var middleMatters = new List<List<TerminalPair>>();
-
         var lines = PointsToLines(context.CenterToTerminals.Keys)
             .Select(line =>
             {

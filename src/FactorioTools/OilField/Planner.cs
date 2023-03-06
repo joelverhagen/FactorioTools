@@ -14,9 +14,9 @@ public static class Planner
     {
         var context = InitializeContext.Execute(options, inputBlueprint);
 
-        if (context.CenterToTerminals.Count < 2)
+        if (context.CenterToTerminals.Count == 0)
         {
-            throw new InvalidOperationException("The must be at least two pumpjacks in the blueprint.");
+            throw new InvalidOperationException("The must be at least one pumpjack in the blueprint.");
         }
 
         HashSet<Location>? poles;

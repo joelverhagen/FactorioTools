@@ -21,39 +21,55 @@ public static partial class AddPipes
             EliminateStrandedTerminals(context);
         }
 
-        foreach (var strategy in context.Options.PipeStrategies)
+        if (context.CenterToTerminals.Count == 1)
         {
-            context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
-            context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
-
-            switch (strategy)
+            var terminal = context
+                .CenterToTerminals
+                .Single()
+                .Value
+                .OrderBy(x => x.Direction)
+                .First();
+            EliminateOtherTerminals(context, terminal);
+            var pipes = new HashSet<Location> { terminal.Terminal };
+            var solution = OptimizeAndAddSolution(context, pipesToSolution, default, pipes, centerToConnectedCenters: null);
+            solution.Strategies.Clear();
+        }
+        else
+        {
+            foreach (var strategy in context.Options.PipeStrategies)
             {
-                case PipeStrategy.FBE:
-                    {
-                        var pipes = ExecuteWithFBE(context);
-                        OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters: null);
-                    }
-                    break;
+                context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
+                context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 
-                case PipeStrategy.ConnectedCenters_Delaunay:
-                case PipeStrategy.ConnectedCenters_DelaunayMst:
-                case PipeStrategy.ConnectedCenters_FLUTE:
-                    {
-                        Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
-                        if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
+                switch (strategy)
+                {
+                    case PipeStrategy.FBE:
                         {
-                            solution.Strategies.Add(strategy);
-                            continue;
+                            var pipes = ExecuteWithFBE(context);
+                            OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters: null);
                         }
+                        break;
 
-                        var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
-                        solution = OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters);
-                        connectedCentersToSolutions.Add(centerToConnectedCenters, solution);
-                    }
-                    break;
+                    case PipeStrategy.ConnectedCenters_Delaunay:
+                    case PipeStrategy.ConnectedCenters_DelaunayMst:
+                    case PipeStrategy.ConnectedCenters_FLUTE:
+                        {
+                            Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
+                            if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
+                            {
+                                solution.Strategies.Add(strategy);
+                                continue;
+                            }
 
-                default:
-                    throw new NotImplementedException();
+                            var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
+                            solution = OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters);
+                            connectedCentersToSolutions.Add(centerToConnectedCenters, solution);
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
             }
         }
 
