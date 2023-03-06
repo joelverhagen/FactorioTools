@@ -12,5 +12,20 @@ public class Context
     public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
     public required int[,] LocationToAdjacentCount { get; set; }
 
+    public required List<AttemptedPlan> Plans { get; set; }
+
     public required SharedInstances SharedInstances { get; set; }
 }
+
+public record PlanSummary(
+    int MissingPumpjacks,
+    IReadOnlyList<AttemptedPlan> SelectedPlans,
+    IReadOnlyList<AttemptedPlan> AllPlans);
+
+public record AttemptedPlan(
+    PipeStrategy PipeStrategy,
+    bool OptimizePipes,
+    BeaconStrategy? BeaconStrategy,
+    int BeaconEffectCount,
+    int BeaconCount,
+    int PipeCount);

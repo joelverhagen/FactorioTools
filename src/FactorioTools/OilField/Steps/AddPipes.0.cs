@@ -8,13 +8,13 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class AddPipes
 {
-    public static void Execute(Context context, bool eliminateStrandedTerminals)
+    public static (List<AttemptedPlan> SelectedPlans, List<AttemptedPlan> AllPlans) Execute(Context context, bool eliminateStrandedTerminals)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        var pipesToSolution = new Dictionary<HashSet<Location>, Solution>(LocationSetComparer.Instance);
-        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, Solution>(ConnectedCentersComparer.Instance);
+        var pipesToSolutions = new Dictionary<HashSet<Location>, List<Solution>>(LocationSetComparer.Instance);
+        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, List<Solution>>(ConnectedCentersComparer.Instance);
 
         if (eliminateStrandedTerminals)
         {
@@ -31,8 +31,11 @@ public static partial class AddPipes
                 .First();
             EliminateOtherTerminals(context, terminal);
             var pipes = new HashSet<Location> { terminal.Terminal };
-            var solution = OptimizeAndAddSolution(context, pipesToSolution, default, pipes, centerToConnectedCenters: null);
-            solution.Strategies.Clear();
+            var solutions = OptimizeAndAddSolutions(context, pipesToSolutions, default, pipes, centerToConnectedCenters: null);
+            foreach (var solution in solutions)
+            {
+                solution.Strategies.Clear();
+            }
         }
         else
         {
@@ -46,7 +49,7 @@ public static partial class AddPipes
                     case PipeStrategy.FBE:
                         {
                             var pipes = ExecuteWithFBE(context);
-                            OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters: null);
+                            OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters: null);
                         }
                         break;
 
@@ -55,15 +58,18 @@ public static partial class AddPipes
                     case PipeStrategy.ConnectedCenters_FLUTE:
                         {
                             Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
-                            if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solution))
+                            if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solutions))
                             {
-                                solution.Strategies.Add(strategy);
+                                foreach (var solution in solutions)
+                                {
+                                    solution.Strategies.Add(strategy);
+                                }
                                 continue;
                             }
 
                             var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
-                            solution = OptimizeAndAddSolution(context, pipesToSolution, strategy, pipes, centerToConnectedCenters);
-                            connectedCentersToSolutions.Add(centerToConnectedCenters, solution);
+                            solutions = OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters);
+                            connectedCentersToSolutions.Add(centerToConnectedCenters, solutions);
                         }
                         break;
 
@@ -73,37 +79,111 @@ public static partial class AddPipes
             }
         }
 
-        if (pipesToSolution.Count == 0)
+        Solution? bestSolution = null;
+        BeaconSolution? bestBeacons = null;
+        var bestComparand = (EffectCount: int.MinValue, BeaconCount: int.MinValue, PipeCount: int.MinValue);
+        var selectedPlans = new List<AttemptedPlan>();
+        var allPlans = new List<AttemptedPlan>();
+
+        foreach (var solutions in pipesToSolutions.Values)
+        {
+            foreach (var solution in solutions)
+            {
+                if (solution.BeaconSolutions is null)
+                {
+                    var comparand = (int.MinValue, int.MinValue, -solution.Pipes.Count);
+                    var comparison = comparand.CompareTo(bestComparand);
+
+                    if (comparison > 0)
+                    {
+                        bestSolution = solution;
+                        bestBeacons = null;
+                        bestComparand = comparand;
+                        selectedPlans.Clear();
+                    }
+
+                    foreach (var strategy in solution.Strategies)
+                    {
+                        foreach (var optimized in solution.Optimized)
+                        {
+                            var plan = new AttemptedPlan(strategy, optimized, null, 0, 0, solution.Pipes.Count);
+                            allPlans.Add(plan);
+
+                            if (comparison >= 0)
+                            {
+                                selectedPlans.Add(plan);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var beacons in solution.BeaconSolutions)
+                    {
+                        var comparand = (beacons.Effects, -beacons.Beacons.Count, -solution.Pipes.Count);
+                        var comparison = comparand.CompareTo(bestComparand);
+
+                        if (comparison > 0)
+                        {
+                            bestSolution = solution;
+                            bestBeacons = beacons;
+                            bestComparand = comparand;
+                            selectedPlans.Clear();
+                        }
+
+                        foreach (var strategy in solution.Strategies)
+                        {
+                            foreach (var optimized in solution.Optimized)
+                            {
+                                var plan = new AttemptedPlan(strategy, optimized, beacons.Strategy, beacons.Effects, beacons.Beacons.Count, solution.Pipes.Count);
+                                allPlans.Add(plan);
+
+                                if (comparison >= 0)
+                                {
+                                    selectedPlans.Add(plan);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestSolution is null)
         {
             throw new InvalidOperationException("At least one pipe strategy must be used.");
         }
-
-        var bestSolution = pipesToSolution.Values.MaxBy(s => (s.Beacons?.Count, -s.Pipes.Count))!;
 
         context.CenterToTerminals = bestSolution.CenterToTerminals;
         context.LocationToTerminals = bestSolution.LocationToTerminals;
 
         AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
 
-        if (bestSolution.Beacons is not null)
+        if (bestBeacons is not null)
         {
             // Visualizer.Show(context.Grid, bestSolution.Beacons.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-            AddBeaconsToGrid(context.Grid, context.Options, bestSolution.Beacons);
+            AddBeaconsToGrid(context.Grid, context.Options, bestBeacons.Beacons);
         }
+
+        return (selectedPlans, allPlans);
     }
 
-    private static Solution OptimizeAndAddSolution(
+    private static List<Solution> OptimizeAndAddSolutions(
         Context context,
-        Dictionary<HashSet<Location>, Solution> pipesToSolutions,
+        Dictionary<HashSet<Location>, List<Solution>> pipesToSolutions,
         PipeStrategy strategy,
         HashSet<Location> pipes,
         Dictionary<Location, HashSet<Location>>? centerToConnectedCenters)
     {
-        Solution? solution;
-        if (pipesToSolutions.TryGetValue(pipes, out solution))
+        List<Solution>? solutions;
+        if (pipesToSolutions.TryGetValue(pipes, out solutions))
         {
-            solution.Strategies.Add(strategy);
-            return solution;
+            foreach (var solution in solutions)
+            {
+                solution.Strategies.Add(strategy);
+            }
+
+            return solutions;
         }
 
         // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
@@ -123,75 +203,43 @@ public static partial class AddPipes
         if (pipes.SetEquals(optimizedPipes))
         {
             optimizedPipes = context.Options.UseUndergroundPipes ? new HashSet<Location>(pipes) : pipes;
-            solution = GetSolution(context, strategy, centerToConnectedCenters, optimizedPipes);
+            solutions = new List<Solution>
+            {
+                GetSolution(context, strategy, optimized: false, centerToConnectedCenters, optimizedPipes)
+            };
+
+            if (context.Options.OptimizePipes)
+            {
+                solutions[0].Optimized.Add(true);
+            }
         }
         else
         {
-            var solutionA = GetSolution(context, strategy, centerToConnectedCenters, optimizedPipes);
+            var solutionA = GetSolution(context, strategy, optimized: true, centerToConnectedCenters, optimizedPipes);
 
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             var pipesB = context.Options.UseUndergroundPipes ? new HashSet<Location>(pipes) : pipes;
-            var solutionB = GetSolution(context, strategy, centerToConnectedCenters, pipesB);
+            var solutionB = GetSolution(context, strategy, optimized: false, centerToConnectedCenters, pipesB);
 
-            if (context.Options.AddBeacons)
-            {
-                var c = solutionA.Beacons!.Count.CompareTo(solutionB.Beacons!.Count);
-                if (c > 0)
-                {
-                    solution = solutionA;
-                }
-                else if (c < 0)
-                {
-                    solution = solutionB;
-                }
-                else
-                {
-                    solution = solutionA.Pipes.Count <= solutionB.Pipes.Count ? solutionA : solutionB;
-                }
-            }
-            else
-            {
-                solution = solutionA.Pipes.Count <= solutionB.Pipes.Count ? solutionA : solutionB;
-            }
+            Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionA.UndergroundPipes, solutionB.Pipes, solutionB.UndergroundPipes);
+
+            solutions = new List<Solution> { solutionA, solutionB };
         }
 
-        pipesToSolutions.Add(pipes, solution);
+        pipesToSolutions.Add(pipes, solutions);
 
-        return solution;
+        return solutions;
     }
 
     private static Solution GetSolution(
         Context context,
         PipeStrategy strategy,
+        bool optimized,
         Dictionary<Location, HashSet<Location>>? centerToConnectedCenters,
         HashSet<Location> optimizedPipes)
     {
-        Solution? solution;
-        if (context.Options.ValidateSolution)
-        {
-            foreach (var terminals in context.CenterToTerminals.Values)
-            {
-                if (terminals.Count != 1)
-                {
-                    throw new InvalidOperationException("A pumpjack has more than one terminal.");
-                }
-            }
-
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
-            var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
-            var start = goals.First();
-            goals.Remove(start);
-            var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
-            var reachedGoals = result.ReachedGoals;
-            reachedGoals.Add(start);
-            var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
-            if (unreachedGoals.Count > 0)
-            {
-                // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                throw new InvalidOperationException("The pipes are not fully connected.");
-            }
-        }
+        Validate.PipesAreConnected(context, optimizedPipes);
 
         Dictionary<Location, Direction>? undergroundPipes = null;
         if (context.Options.UseUndergroundPipes)
@@ -199,36 +247,27 @@ public static partial class AddPipes
             undergroundPipes = PlanUndergroundPipes.Execute(context, optimizedPipes);
         }
 
-        List<Location>? beacons = null;
+        List<BeaconSolution>? beaconSolutions = null;
         if (context.Options.AddBeacons)
         {
-            beacons = PlanBeacons.Execute(context, optimizedPipes);
+            beaconSolutions = PlanBeacons.Execute(context, optimizedPipes);
         }
 
-        if (context.Options.ValidateSolution)
-        {
-            var clone = new PipeGrid(context.Grid);
-            AddPipeEntities.Execute(clone, context.SharedInstances, context.CenterToTerminals, optimizedPipes, undergroundPipes);
-            if (beacons is not null)
-            {
-                AddBeaconsToGrid(clone, context.Options, beacons);
-            }
-        }
+        Validate.NoOverlappingEntities(context, optimizedPipes, undergroundPipes, beaconSolutions);
 
         // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        solution = new Solution
+        return new Solution
         {
-            Strategies = new HashSet<PipeStrategy> { strategy },
+            Strategies = new List<PipeStrategy> { strategy },
+            Optimized = new List<bool> { optimized },
             CenterToConnectedCenters = centerToConnectedCenters,
             CenterToTerminals = context.CenterToTerminals,
             LocationToTerminals = context.LocationToTerminals,
             Pipes = optimizedPipes,
             UndergroundPipes = undergroundPipes,
-            Beacons = beacons,
+            BeaconSolutions = beaconSolutions,
         };
-
-        return solution;
     }
 
     private static void EliminateStrandedTerminals(Context context)
@@ -277,29 +316,16 @@ public static partial class AddPipes
         }
     }
 
-    private static void AddBeaconsToGrid(SquareGrid grid, OilFieldOptions options, IEnumerable<Location> centers)
-    {
-        foreach (var center in centers)
-        {
-            AddProvider(
-                grid,
-                center,
-                new BeaconCenter(),
-                c => new BeaconSide(c),
-                options.BeaconWidth,
-                options.BeaconHeight);
-        }
-    }
-
     private class Solution
     {
-        public required HashSet<PipeStrategy> Strategies { get; set; }
+        public required List<PipeStrategy> Strategies { get; set; }
+        public required List<bool> Optimized { get; set; }
         public required Dictionary<Location, HashSet<Location>>? CenterToConnectedCenters { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
         public required HashSet<Location> Pipes { get; set; }
         public required Dictionary<Location, Direction>? UndergroundPipes { get; set; }
-        public List<Location>? Beacons { get; set; }
+        public required List<BeaconSolution>? BeaconSolutions { get; set; }
     }
 
     private class LocationSetComparer : IEqualityComparer<HashSet<Location>>
@@ -334,9 +360,10 @@ public static partial class AddPipes
         public int GetHashCode([DisallowNull] HashSet<Location> obj)
         {
             var hashCode = new HashCode();
-            foreach (var x in obj)
+
+            foreach (var l in obj.OrderBy(p => p.X).ThenBy(p => p.Y))
             {
-                hashCode.Add(x);
+                hashCode.Add(l);
             }
 
             return hashCode.ToHashCode();
@@ -388,12 +415,13 @@ public static partial class AddPipes
         public int GetHashCode([DisallowNull] Dictionary<Location, HashSet<Location>> obj)
         {
             var hashCode = new HashCode();
-            foreach ((var key, var value) in obj)
+
+            foreach ((var key, var value) in obj.OrderBy(p => p.Key.X).ThenBy(p => p.Key.Y))
             {
                 hashCode.Add(key);
-                foreach (var x in value)
+                foreach (var l in value.OrderBy(p => p.X).ThenBy(p => p.Y))
                 {
-                    hashCode.Add(x);
+                    hashCode.Add(l);
                 }
             }
 

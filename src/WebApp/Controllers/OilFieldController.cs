@@ -20,7 +20,7 @@ public class OilFieldController : ControllerBase
     {
         _logger.LogInformation("Planning for blueprint: {Blueprint}.", blueprint);
         var parsedBlueprint = ParseBlueprint.Execute(blueprint);
-        var context = Planner.Execute(options, parsedBlueprint);
+        (var context, _) = Planner.Execute(options, parsedBlueprint);
         var outputBlueprint = GridToBlueprintString.Execute(context, addOffsetCorrection);
         return new { Blueprint = outputBlueprint };
     }

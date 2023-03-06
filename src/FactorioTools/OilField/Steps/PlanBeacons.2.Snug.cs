@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class PlanBeacons
 {
-    private static List<Location> AddBeacons_Snug(Context context)
+    private static (List<Location> Beacons, int Effects) AddBeacons_Snug(Context context)
     {
         var poweredEntities = context
             .CenterToTerminals
@@ -19,10 +19,7 @@ public static partial class PlanBeacons
             CandidateFactory.Instance,
             removeUnused: false);
 
-        if (context.Options.ValidateSolution && existingBeacons.Count > 0)
-        {
-            throw new InvalidOperationException("There should not be any existing beacons.");
-        }
+        Validate.NoExistingBeacons(context, existingBeacons);
 
         PopulateCandidateToInfo(context, candidateToInfo, poweredEntities);
 
@@ -40,6 +37,7 @@ public static partial class PlanBeacons
         }
 
         var beacons = new List<Location>();
+        var effects = 0;
 
         try
         {
@@ -95,8 +93,9 @@ public static partial class PlanBeacons
                             candidateToInfo);
                     }
 
-
                     beacons.Add(candidate);
+                    effects += info.CoveredCount;
+                    // Console.WriteLine($"{candidate} --- {info.CoveredCount}");
 
                     AddNeighborsAndSort(
                         context,
@@ -132,7 +131,7 @@ public static partial class PlanBeacons
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        return beacons;
+        return (beacons, effects);
     }
 
     private class CandidateFactory : ICandidateFactory<BeaconCandidateInfo>
@@ -154,6 +153,7 @@ public static partial class PlanBeacons
         {
             info.EntityDistance = GetEntityDistance(poweredEntities, candidate, info.Covered);
             info.MiddleDistance = candidate.GetEuclideanDistanceSquared(context.Grid.Middle);
+            info.CoveredCount = info.Covered.TrueCount;
         }
     }
 
@@ -164,6 +164,7 @@ public static partial class PlanBeacons
         }
 
         public int MiddleDistance;
+        public int CoveredCount;
     }
 
     private static void AddNeighborsAndSort(

@@ -11,7 +11,7 @@ public class Facts
     {
         var entity = new ElectricPoleCenter();
 
-        AddProvider(
+        AddProviderToGrid(
             context.Grid,
             center,
             entity,
@@ -26,7 +26,7 @@ public class Facts
     {
         var entity = new BeaconCenter();
 
-        AddProvider(
+        AddProviderToGrid(
             context.Grid,
             center,
             entity,

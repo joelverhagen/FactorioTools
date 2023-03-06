@@ -14,7 +14,7 @@ public static class AddElectricPoles
         PreferUncoveredEntities = 3,
     }
 
-    public static HashSet<Location>? Execute(Context context, bool avoidTerminals, bool retryWithUncovered)
+    public static HashSet<Location>? Execute(Context context, bool avoidTerminals, bool allowRetries)
     {
         HashSet<Location>? temporaryTerminals = null;
         if (avoidTerminals)
@@ -35,7 +35,7 @@ public static class AddElectricPoles
 
         // Visualizer.Show(context.Grid, poweredEntities.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.Center.X, c.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        (var electricPoleList, var poweredEntities) = AddElectricPolesAroundEntities(context, retryWithUncovered);
+        (var electricPoleList, var poweredEntities) = AddElectricPolesAroundEntities(context, allowRetries);
         if (electricPoleList is null)
         {
             return null;
@@ -82,46 +82,9 @@ public static class AddElectricPoles
         return electricPoles.Keys.ToHashSet();
     }
 
-    public static void VerifyAllEntitiesHasPower(Context context)
-    {
-        (var poweredEntities, _) = GetPoweredEntities(context);
-
-        var electricPoleCenters = new List<Location>();
-        foreach ((var entity, var location) in context.Grid.EntityToLocation)
-        {
-            if (entity is ElectricPoleCenter)
-            {
-                electricPoleCenters.Add(location);
-            }
-        }
-
-        GetPoleCoverage(context, poweredEntities, electricPoleCenters);
-    }
-
-    private static (List<ProviderRecipient> PoweredEntities, bool HasBeacons) GetPoweredEntities(Context context)
-    {
-        var poweredEntities = new List<ProviderRecipient>();
-        var hasBeacons = false;
-        foreach ((var entity, var location) in context.Grid.EntityToLocation)
-        {
-            switch (entity)
-            {
-                case PumpjackCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
-                    break;
-                case BeaconCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
-                    hasBeacons = true;
-                    break;
-            }
-        }
-
-        return (poweredEntities, hasBeacons);
-    }
-
     private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
-        (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetPoleCoverage(context, poweredEntities, electricPoles.Keys);
+        (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetElectricPoleCoverage(context, poweredEntities, electricPoles.Keys);
 
         var removeCandidates = coveredCenterToPoleCenters
             .Where(p => p.Value.Count > 2) // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
@@ -137,7 +100,7 @@ public static class AddElectricPoles
             if (ArePolesConnectedWithout(electricPoles, centerEntity))
             {
                 electricPoles.Remove(center);
-                RemoveProvider(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
+                RemoveEntity(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
 
                 foreach (var coveredCenter in poleCenterToCoveredCenters[center])
                 {
@@ -154,36 +117,6 @@ public static class AddElectricPoles
 
             removeCandidates.Remove(center);
         }
-    }
-
-    private static (Dictionary<Location, HashSet<Location>> PoleCenterToCoveredCenters, Dictionary<Location, HashSet<Location>> CoveredCenterToPoleCenters) GetPoleCoverage(
-        Context context,
-        List<ProviderRecipient> poweredEntities,
-        IEnumerable<Location> electricPoleCenters)
-    {
-        var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
-            context.Grid,
-            context.Options.ElectricPoleWidth,
-            context.Options.ElectricPoleHeight,
-            context.Options.ElectricPoleSupplyWidth,
-            context.Options.ElectricPoleSupplyHeight,
-            electricPoleCenters,
-            includePumpjacks: true,
-            includeBeacons: true);
-
-        var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(poleCenterToCoveredCenters);
-
-        if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
-        {
-            var uncoveredCenters = poweredEntities
-                .Select(e => e.Center)
-                .Except(coveredCenterToPoleCenters.Keys)
-                .ToList();
-            // Visualizer.Show(context.Grid, uncoveredCenters.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-            throw new InvalidOperationException("Not all powered entities are covered by an electric pole.");
-        }
-
-        return (PoleCenterToCoveredCenters: poleCenterToCoveredCenters, CoveredCenterToPoleCenters: coveredCenterToPoleCenters);
     }
 
     private static bool ArePolesConnectedWithout(Dictionary<Location, ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
@@ -244,9 +177,9 @@ public static class AddElectricPoles
 
     private static (List<Location>? ElectricPoleList, List<ProviderRecipient> PoweredEntities) AddElectricPolesAroundEntities(
         Context context,
-        bool retryWithUncovered)
+        bool allowRetries)
     {
-        var retryStrategy = retryWithUncovered ? RetryStrategy.PreferUncoveredEntities : RetryStrategy.None;
+        var retryStrategy = allowRetries ? RetryStrategy.PreferUncoveredEntities : RetryStrategy.None;
         CountedBitArray? entitiesToPowerFirst = null;
 
         while (true)
@@ -286,7 +219,7 @@ public static class AddElectricPoles
                         if (context.Grid[entity.Center] is BeaconCenter)
                         {
                             poweredEntities.RemoveAt(i);
-                            RemoveProvider(context.Grid, entity.Center, entity.Width, entity.Height);
+                            RemoveEntity(context.Grid, entity.Center, entity.Width, entity.Height);
                         }
                         else
                         {
@@ -324,7 +257,7 @@ public static class AddElectricPoles
                         if (shouldRemove)
                         {
                             poweredEntities.RemoveAt(i);
-                            RemoveProvider(context.Grid, entity.Center, entity.Width, entity.Height);
+                            RemoveEntity(context.Grid, entity.Center, entity.Width, entity.Height);
                         }
                     }
                 }
@@ -439,24 +372,7 @@ public static class AddElectricPoles
                 continue;
             }
 
-            if (context.Options.ValidateSolution)
-            {
-                var covered = candidateInfo.Covered;
-                var isSubsetOf = true;
-                for (var i = 0; i < poweredEntities.Count && isSubsetOf; i++)
-                {
-                    if (covered[i])
-                    {
-                        isSubsetOf = coveredEntities[i];
-                    }
-                }
-
-                if (isSubsetOf)
-                {
-                    // Visualizer.Show(context.Grid, new[] { candidate }.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                    throw new InvalidOperationException($"Candidate {candidate} should have been eliminated.");
-                }
-            }
+            Validate.CandidateCoversMoreEntities(context, poweredEntities, coveredEntities, candidate, candidateInfo);
 
             AddProviderAndAllowMultipleProviders(
                 context.Grid,
@@ -504,18 +420,6 @@ public static class AddElectricPoles
         }
 
         return (electricPoleList, coveredEntities);
-    }
-
-    private class ElectricPoleCandidateInfo : CandidateInfo
-    {
-        public ElectricPoleCandidateInfo(CountedBitArray covered) : base(covered)
-        {
-        }
-
-        public int PriorityPowered;
-        public int OthersConnected;
-        public int PoleDistance;
-        public int MiddleDistance;
     }
 
     private static void PopulateCandidateToInfo(
@@ -656,7 +560,7 @@ public static class AddElectricPoles
     {
         var centerEntity = new ElectricPoleCenter();
 
-        AddProvider(
+        AddProviderToGrid(
             context.Grid,
             center,
             centerEntity,

@@ -24,14 +24,7 @@ public static class PlanUndergroundPipes
         ConvertInOneDirection(context, pipes, locationToDirection, (X: 0, Y: 1));
         ConvertInOneDirection(context, pipes, locationToDirection, (X: 1, Y: 0));
 
-        if (context.Options.ValidateSolution)
-        {
-            var missing = locationToDirection.Keys.Except(pipes).ToList();
-            if (missing.Count > 0)
-            {
-                throw new InvalidOperationException("The underground pipes should be in the pipe set.");
-            }
-        }
+        Validate.UndergroundPipesArePipes(context, pipes, locationToDirection);
 
         return locationToDirection;
     }

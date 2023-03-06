@@ -667,15 +667,55 @@ public static class Helpers
         }
     }
 
-    public class CandidateInfo
+    public static (Dictionary<Location, HashSet<Location>> PoleCenterToCoveredCenters, Dictionary<Location, HashSet<Location>> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
+        Context context,
+        List<ProviderRecipient> poweredEntities,
+        IEnumerable<Location> electricPoleCenters)
     {
-        public CandidateInfo(CountedBitArray covered)
+        var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
+            context.Grid,
+            context.Options.ElectricPoleWidth,
+            context.Options.ElectricPoleHeight,
+            context.Options.ElectricPoleSupplyWidth,
+            context.Options.ElectricPoleSupplyHeight,
+            electricPoleCenters,
+            includePumpjacks: true,
+            includeBeacons: true);
+
+        var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(poleCenterToCoveredCenters);
+
+        if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
         {
-            Covered = covered;
+            var uncoveredCenters = poweredEntities
+                .Select(e => e.Center)
+                .Except(coveredCenterToPoleCenters.Keys)
+                .ToList();
+            // Visualizer.Show(context.Grid, uncoveredCenters.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            throw new InvalidOperationException("Not all powered entities are covered by an electric pole.");
         }
 
-        public CountedBitArray Covered;
-        public double EntityDistance;
+        return (PoleCenterToCoveredCenters: poleCenterToCoveredCenters, CoveredCenterToPoleCenters: coveredCenterToPoleCenters);
+    }
+
+    public static (List<ProviderRecipient> PoweredEntities, bool HasBeacons) GetPoweredEntities(Context context)
+    {
+        var poweredEntities = new List<ProviderRecipient>();
+        var hasBeacons = false;
+        foreach ((var entity, var location) in context.Grid.EntityToLocation)
+        {
+            switch (entity)
+            {
+                case PumpjackCenter:
+                    poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
+                    break;
+                case BeaconCenter:
+                    poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
+                    hasBeacons = true;
+                    break;
+            }
+        }
+
+        return (poweredEntities, hasBeacons);
     }
 
     public static Dictionary<int, Dictionary<Location, TInfo>> GetCoveredToCandidates<TInfo>(
@@ -836,12 +876,12 @@ public static class Helpers
         }
     }
 
-    public static void RemoveProvider(SquareGrid grid, Location center, int providerWidth, int providerHeight)
+    public static void RemoveEntity(SquareGrid grid, Location center, int width, int height)
     {
-        var minX = center.X - ((providerWidth - 1) / 2);
-        var maxX = center.X + (providerWidth / 2);
-        var minY = center.Y - ((providerHeight - 1) / 2);
-        var maxY = center.Y + (providerHeight / 2);
+        var minX = center.X - ((width - 1) / 2);
+        var maxX = center.X + (width / 2);
+        var minY = center.Y - ((height - 1) / 2);
+        var maxY = center.Y + (height / 2);
 
         for (var x = minX; x <= maxX; x++)
         {
@@ -852,7 +892,7 @@ public static class Helpers
         }
     }
 
-    public static void AddProvider<TCenter, TSide>(
+    public static void AddProviderToGrid<TCenter, TSide>(
         SquareGrid grid,
         Location center,
         TCenter centerEntity,
@@ -874,6 +914,20 @@ public static class Helpers
                 var location = new Location(x, y);
                 grid.AddEntity(location, location == center ? centerEntity : getNewSide(centerEntity));
             }
+        }
+    }
+
+    public static void AddBeaconsToGrid(SquareGrid grid, OilFieldOptions options, IEnumerable<Location> centers)
+    {
+        foreach (var center in centers)
+        {
+            AddProviderToGrid(
+                grid,
+                center,
+                new BeaconCenter(),
+                c => new BeaconSide(c),
+                options.BeaconWidth,
+                options.BeaconHeight);
         }
     }
 

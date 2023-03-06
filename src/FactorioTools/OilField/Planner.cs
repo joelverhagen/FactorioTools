@@ -5,14 +5,15 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
-    public static Context Execute(OilFieldOptions options, BlueprintRoot inputBlueprint)
+    public static (Context Context, PlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint)
     {
         return Execute(options, inputBlueprint, addElectricPolesFirst: false);
     }
 
-    private static Context Execute(OilFieldOptions options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
+    private static (Context Context, PlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
     {
         var context = InitializeContext.Execute(options, inputBlueprint);
+        var initialPumpjackCount = context.CenterToTerminals.Count;
 
         if (context.CenterToTerminals.Count == 0)
         {
@@ -22,20 +23,20 @@ public static class Planner
         HashSet<Location>? poles;
         if (addElectricPolesFirst)
         {
-            poles = AddElectricPoles.Execute(context, avoidTerminals: true, retryWithUncovered: false);
+            poles = AddElectricPoles.Execute(context, avoidTerminals: true, allowRetries: false);
             if (poles is null)
             {
                 throw new InvalidOperationException("No valid placement for the electric poles could be found.");
             }
         }
 
-        AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
+        (var selectedPlans, var allPlans) = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
         if (!addElectricPolesFirst || context.Options.AddBeacons)
         {
-            poles = AddElectricPoles.Execute(context, avoidTerminals: false, retryWithUncovered: addElectricPolesFirst);
+            poles = AddElectricPoles.Execute(context, avoidTerminals: false, allowRetries: addElectricPolesFirst);
             if (poles is null)
             {
                 if (addElectricPolesFirst)
@@ -50,11 +51,15 @@ public static class Planner
             }
         }
 
-        if (context.Options.ValidateSolution)
-        {
-            AddElectricPoles.VerifyAllEntitiesHasPower(context);
-        }
+        Validate.AllEntitiesHavePower(context);
 
-        return context;
+        var finalPumpjackCount = context.CenterToTerminals.Count;
+
+        var planSummary = new PlanSummary(
+            initialPumpjackCount - finalPumpjackCount,
+            selectedPlans,
+            allPlans);
+
+        return (context, planSummary);
     }
 }

@@ -24,7 +24,7 @@ public static partial class PlanBeacons
 {
     private const int MinAffectedEntities = 1;
 
-    private static List<Location> AddBeacons_FBE(Context context, BeaconStrategy strategy)
+    private static (List<Location> Beacons, int Effects) AddBeacons_FBE(Context context, BeaconStrategy strategy)
     {
         var entityAreas = GetEntityAreas(context);
         var occupiedPositions = GetOccupiedPositions(entityAreas);
@@ -56,9 +56,10 @@ public static partial class PlanBeacons
         return GetBeacons(context, strategy, effectEntityAreas, possibleBeacons);
     }
 
-    private static List<Location> GetBeacons(Context context, BeaconStrategy strategy, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
+    private static (List<Location> Beacons, int Effects) GetBeacons(Context context, BeaconStrategy strategy, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
     {
         var beacons = new List<Location>();
+        var effects = 0;
         var collisionArea = new HashSet<Location>();
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
@@ -95,10 +96,12 @@ public static partial class PlanBeacons
             }
 
             beacons.Add(beacon.Center);
+            effects += beacon.EffectsGivenCount;
+            // Console.WriteLine($"{beacon.Center} --- {beacon.EffectsGivenCount}");
             collisionArea.UnionWith(beacon.CollisionArea);
         }
 
-        return beacons;
+        return (beacons, effects);
     }
 
     private static List<BeaconCandidate> SortPossibleBeacons(Context context, List<BeaconCandidate> possibleBeacons)

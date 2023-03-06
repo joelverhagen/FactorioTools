@@ -70,6 +70,8 @@ public static class InitializeContext
             LocationToTerminals = GetLocationToTerminals(centerToTerminals),
             LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
 
+            Plans = new List<AttemptedPlan>(),
+
             SharedInstances = new SharedInstances
             {
 #if USE_SHARED_INSTANCES

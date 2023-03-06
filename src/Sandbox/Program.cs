@@ -18,8 +18,8 @@ public partial class Program
         }
         else
         {
-            // Measure();
-            Sandbox();
+            Measure();
+            // Sandbox();
         }
     }
 
@@ -59,12 +59,12 @@ public partial class Program
                     options.UseUndergroundPipes = options.AddBeacons;
                     options.OptimizePipes = true;
                     options.ValidateSolution = true;
-                    options.OverlapBeacons = false;
+                    options.OverlapBeacons = true;
                     // options.BeaconStrategies.Remove(BeaconStrategy.FBE);
                     // options.PipeStrategies = new HashSet<PipeStrategy> { PipeStrategy.FBE };
                     // options.BeaconStrategies = new HashSet<BeaconStrategy> { BeaconStrategy.Snug };
 
-                    var context = Planner.Execute(options, inputBlueprint);
+                    (var context, _) = Planner.Execute(options, inputBlueprint);
 
                     if (blueprintStrings.Length == 1)
                     {
@@ -89,6 +89,8 @@ public partial class Program
 
         foreach (var addBeacons in addBeaconsAll)
         {
+            var planToWins = new Dictionary<string, int>();
+
             foreach (var overlapBeacons in overlapBeaconsAll)
             {
                 if (!addBeacons && !overlapBeacons)
@@ -101,6 +103,7 @@ public partial class Program
                     var pipeSum = 0;
                     var poleSum = 0;
                     var beaconSum = 0;
+                    var effectSum = 0;
                     var blueprintCount = 0;
                     for (int i = 0; i < blueprintStrings.Length; i++)
                     {
@@ -113,27 +116,60 @@ public partial class Program
                         options.ValidateSolution = false;
                         options.OverlapBeacons = overlapBeacons;
 
-                        var context = Planner.Execute(options, inputBlueprint);
+                        (var context, var summary) = Planner.Execute(options, inputBlueprint);
 
                         var pipeCount = context.Grid.EntityToLocation.Keys.OfType<Pipe>().Count();
                         var poleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count();
                         var beaconCount = context.Grid.EntityToLocation.Keys.OfType<BeaconCenter>().Count();
+                        var effectCount = summary.SelectedPlans[0].BeaconEffectCount;
 
-                        Console.WriteLine($"{pipeCount},{poleCount},{beaconCount}");
+                        var plans = summary
+                            .SelectedPlans
+                            .Select(p => string.Join(" -> ", new[]
+                            {
+                                p.PipeStrategy.ToString(),
+                                p.OptimizePipes ? "optimize" : "",
+                                p.BeaconStrategy.ToString()
+                            }.Where(p => !string.IsNullOrEmpty(p))));
+
+                        foreach (var plan in plans)
+                        {
+                            if (!planToWins.TryGetValue(plan, out var count))
+                            {
+                                planToWins.Add(plan, 1);
+                            }
+                            else
+                            {
+                                planToWins[plan] = count + 1;
+                            }
+                        }
+
+                        Console.WriteLine($"{pipeCount},{poleCount},{beaconCount},{effectCount}");
 
                         pipeSum += pipeCount;
                         poleSum += poleCount;
                         beaconSum += beaconCount;
+                        effectSum += effectCount;
                         blueprintCount++;
                     }
 
-                    outputs.Add($"{options.ElectricPoleEntityName} | {options.AddBeacons} | {(options.AddBeacons ? options.OverlapBeacons.ToString() : "N/A")} | {pipeSum * 1.0 / blueprintCount} | {poleSum * 1.0 / blueprintCount} | {beaconSum * 1.0 / blueprintCount}");
+                    outputs.Add($"{options.ElectricPoleEntityName} | {options.AddBeacons} | {(options.AddBeacons ? options.OverlapBeacons.ToString() : "N/A")} | {pipeSum * 1.0 / blueprintCount} | {poleSum * 1.0 / blueprintCount} | {beaconSum * 1.0 / blueprintCount} | {effectSum * 1.0 / blueprintCount}");
                 }
             }
+
+            /*
+            Console.WriteLine();
+            var maxWidth = planToWins.Keys.Max(p => p.Length);
+            foreach ((var plan, var wins) in planToWins.OrderBy(p => p.Value))
+            {
+                Console.WriteLine($"{plan.PadLeft(maxWidth)} : {wins}");
+            }
+            Console.WriteLine();
+            */
         }
 
-        Console.WriteLine("Electric pole | Add beacons | Overlap beacons | Pipe count | Pole count | Beacon count");
-        Console.WriteLine("------------- | ----------- | --------------- | ---------- | ---------- | ------------");
+        Console.WriteLine("Electric pole | Add beacons | Overlap beacons | Pipe count | Pole count | Beacon count | Effect count");
+        Console.WriteLine("------------- | ----------- | --------------- | ---------- | ---------- | ------------ | ------------");
         for (int i = 0; i < outputs.Count; i++)
         {
             Console.WriteLine(outputs[i]);
