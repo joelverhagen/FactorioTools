@@ -1,4 +1,4 @@
-name: Deploy static content to pages
+name: Deploy static content to GitHub Pages
 
 on:
   push:

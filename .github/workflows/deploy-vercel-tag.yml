@@ -1,3 +1,5 @@
+name: Deploy tag to Vercel
+
 on:
   push:
     tags:        
