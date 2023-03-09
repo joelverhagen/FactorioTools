@@ -9,6 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - run: curl -X POST -d {} $DEPLOY_HOOK
-      env:
-        DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_TAGS_DEPLOY_HOOK }}
+      - run: curl -X POST -d {} $DEPLOY_HOOK
+        env:
+          DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_TAGS_DEPLOY_HOOK }}
