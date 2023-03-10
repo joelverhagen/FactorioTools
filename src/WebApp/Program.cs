@@ -20,6 +20,7 @@ public class Program
 
         builder.Services.AddRateLimiter(options =>
         {
+            options.RejectionStatusCode = 429;
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: httpContext.GetClientIpAddress(),
@@ -59,6 +60,8 @@ public class Program
         });
 
         var app = builder.Build();
+
+        app.UseStaticFiles();
 
         app.MapHealthChecks("/healthz");
 

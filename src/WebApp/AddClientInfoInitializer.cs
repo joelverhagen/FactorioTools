@@ -20,6 +20,12 @@ public class AddClientInfoInitializer : ITelemetryInitializer
             return;
         }
 
+        if (int.TryParse(request.ResponseCode, out var statusCode)
+            && (statusCode == 400 || statusCode == 404 || statusCode == 429))
+        {
+            request.Success = true;
+        }
+
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext is null)
         {
