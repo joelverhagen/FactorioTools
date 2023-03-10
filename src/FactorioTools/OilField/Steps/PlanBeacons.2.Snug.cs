@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class PlanBeacons
 {
-    private static (List<Location> Beacons, int Effects) AddBeacons_Snug(Context context)
+    private static (List<Location> Beacons, int Effects) AddBeaconsSnug(Context context)
     {
         var poweredEntities = context
             .CenterToTerminals

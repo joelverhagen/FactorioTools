@@ -412,7 +412,7 @@ public static class AddElectricPoles
 
             if (keysOnlyInTest.Count > 0 || keysWithDifferentValues.Count > 0)
             {
-                throw new InvalidOperationException("The mapping from candidate to others connected count was not updated properly.");
+                throw new FactorioToolsException("The mapping from candidate to others connected count was not updated properly.");
             }
             */
 
@@ -594,7 +594,7 @@ public static class AddElectricPoles
 
             if (closest is null)
             {
-                throw new NotImplementedException();
+                throw new FactorioToolsException("No closest electric pole could be found.");
             }
 
             AddSinglePoleForConnection(context, electricPoles, groups, Math.Sqrt(closest.DistanceSquared), closest.Endpoints);
@@ -659,14 +659,15 @@ public static class AddElectricPoles
 
         if (!selectedPoint.HasValue)
         {
-            throw new InvalidOperationException("Could not find a pole that can be connected");
+            throw new FactorioToolsException("Could not find a pole that can be connected.");
         }
+
         var center = AddElectricPole(context, electricPoles, selectedPoint.Value);
         var connectedGroups = groups.Where(g => g.Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
 
         if (connectedGroups.Count == 0)
         {
-            throw new NotImplementedException();
+            throw new FactorioToolsException("Could not find the group containing the selected electric pole.");
         }
 
         connectedGroups[0].Add(selectedPoint.Value);

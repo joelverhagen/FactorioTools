@@ -42,9 +42,9 @@ public static partial class AddPipes
 
         return strategy switch
         {
-            PipeStrategy.ConnectedCenters_Delaunay => GetConnectedPumpjacksWithDelaunay(centers),
-            PipeStrategy.ConnectedCenters_DelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
-            PipeStrategy.ConnectedCenters_FLUTE => GetConnectedPumpjacksWithFLUTE(context),
+            PipeStrategy.ConnectedCentersDelaunay => GetConnectedPumpjacksWithDelaunay(centers),
+            PipeStrategy.ConnectedCentersDelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
+            PipeStrategy.ConnectedCentersFlute => GetConnectedPumpjacksWithFLUTE(context),
             _ => throw new NotImplementedException(),
         };
     }

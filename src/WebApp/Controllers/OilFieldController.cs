@@ -1,5 +1,6 @@
 using Knapcode.FactorioTools.OilField;
 using Knapcode.FactorioTools.OilField.Steps;
+using Knapcode.FactorioTools.WebApp.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Knapcode.FactorioTools.WebApp.Controllers;
@@ -15,13 +16,13 @@ public class OilFieldController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet("plan")]
-    public object GetPlan(string blueprint, [FromQuery] OilFieldOptions options, bool addOffsetCorrection = false)
+    [HttpPost("plan")]
+    public OilFieldPlanResponse GetPlan([FromBody] OilFieldPlanRequest request)
     {
-        _logger.LogInformation("Planning for blueprint: {Blueprint}.", blueprint);
-        var parsedBlueprint = ParseBlueprint.Execute(blueprint);
-        (var context, _) = Planner.Execute(options, parsedBlueprint);
-        var outputBlueprint = GridToBlueprintString.Execute(context, addOffsetCorrection);
-        return new { Blueprint = outputBlueprint };
+        var parsedBlueprint = ParseBlueprint.Execute(request.Blueprint);
+        _logger.LogInformation("Planning oil field for blueprint {Blueprint}", request.Blueprint);
+        (var context, var summary) = Planner.Execute(request, parsedBlueprint);
+        var outputBlueprint = GridToBlueprintString.Execute(context, request.AddFbeOffset);
+        return new OilFieldPlanResponse(request, outputBlueprint, summary);
     }
 }

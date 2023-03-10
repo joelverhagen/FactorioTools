@@ -60,15 +60,15 @@ public partial class Program
                     options.OptimizePipes = true;
                     options.ValidateSolution = true;
                     options.OverlapBeacons = true;
-                    // options.BeaconStrategies.Remove(BeaconStrategy.FBE);
-                    // options.PipeStrategies = new HashSet<PipeStrategy> { PipeStrategy.FBE };
+                    // options.BeaconStrategies.Remove(BeaconStrategy.Fbe);
+                    // options.PipeStrategies = new HashSet<PipeStrategy> { PipeStrategy.Fbe };
                     // options.BeaconStrategies = new HashSet<BeaconStrategy> { BeaconStrategy.Snug };
 
                     (var context, _) = Planner.Execute(options, inputBlueprint);
 
                     if (blueprintStrings.Length == 1)
                     {
-                        var newBlueprint = GridToBlueprintString.Execute(context, addOffsetCorrection: false);
+                        var newBlueprint = GridToBlueprintString.Execute(context, addFbeOffset: false);
                         Console.WriteLine(newBlueprint);
                     }
                 }

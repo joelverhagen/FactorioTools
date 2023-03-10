@@ -8,7 +8,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class AddPipes
 {
-    public static (List<AttemptedPlan> SelectedPlans, List<AttemptedPlan> AllPlans) Execute(Context context, bool eliminateStrandedTerminals)
+    public static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> UnusedPlans) Execute(Context context, bool eliminateStrandedTerminals)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
@@ -46,16 +46,16 @@ public static partial class AddPipes
 
                 switch (strategy)
                 {
-                    case PipeStrategy.FBE:
+                    case PipeStrategy.Fbe:
                         {
-                            var pipes = ExecuteWithFBE(context);
+                            var pipes = ExecuteWithFbe(context);
                             OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters: null);
                         }
                         break;
 
-                    case PipeStrategy.ConnectedCenters_Delaunay:
-                    case PipeStrategy.ConnectedCenters_DelaunayMst:
-                    case PipeStrategy.ConnectedCenters_FLUTE:
+                    case PipeStrategy.ConnectedCentersDelaunay:
+                    case PipeStrategy.ConnectedCentersDelaunayMst:
+                    case PipeStrategy.ConnectedCentersFlute:
                         {
                             Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
                             if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solutions))
@@ -82,8 +82,8 @@ public static partial class AddPipes
         Solution? bestSolution = null;
         BeaconSolution? bestBeacons = null;
         var bestComparand = (EffectCount: int.MinValue, BeaconCount: int.MinValue, PipeCount: int.MinValue);
-        var selectedPlans = new List<AttemptedPlan>();
-        var allPlans = new List<AttemptedPlan>();
+        var selectedPlans = new List<OilFieldPlan>();
+        var unusedPlans = new List<OilFieldPlan>();
 
         foreach (var solutions in pipesToSolutions.Values)
         {
@@ -99,6 +99,7 @@ public static partial class AddPipes
                         bestSolution = solution;
                         bestBeacons = null;
                         bestComparand = comparand;
+                        unusedPlans.AddRange(selectedPlans);
                         selectedPlans.Clear();
                     }
 
@@ -106,12 +107,15 @@ public static partial class AddPipes
                     {
                         foreach (var optimized in solution.Optimized)
                         {
-                            var plan = new AttemptedPlan(strategy, optimized, null, 0, 0, solution.Pipes.Count);
-                            allPlans.Add(plan);
+                            var plan = new OilFieldPlan(strategy, optimized, null, 0, 0, solution.Pipes.Count);
 
                             if (comparison >= 0)
                             {
                                 selectedPlans.Add(plan);
+                            }
+                            else
+                            {
+                                unusedPlans.Add(plan);
                             }
                         }
                     }
@@ -128,6 +132,7 @@ public static partial class AddPipes
                             bestSolution = solution;
                             bestBeacons = beacons;
                             bestComparand = comparand;
+                            unusedPlans.AddRange(selectedPlans);
                             selectedPlans.Clear();
                         }
 
@@ -135,12 +140,15 @@ public static partial class AddPipes
                         {
                             foreach (var optimized in solution.Optimized)
                             {
-                                var plan = new AttemptedPlan(strategy, optimized, beacons.Strategy, beacons.Effects, beacons.Beacons.Count, solution.Pipes.Count);
-                                allPlans.Add(plan);
+                                var plan = new OilFieldPlan(strategy, optimized, beacons.Strategy, beacons.Effects, beacons.Beacons.Count, solution.Pipes.Count);
 
                                 if (comparison >= 0)
                                 {
                                     selectedPlans.Add(plan);
+                                }
+                                else
+                                {
+                                    unusedPlans.Add(plan);
                                 }
                             }
                         }
@@ -151,7 +159,7 @@ public static partial class AddPipes
 
         if (bestSolution is null)
         {
-            throw new InvalidOperationException("At least one pipe strategy must be used.");
+            throw new FactorioToolsException("At least one pipe strategy must be used.");
         }
 
         context.CenterToTerminals = bestSolution.CenterToTerminals;
@@ -165,7 +173,7 @@ public static partial class AddPipes
             AddBeaconsToGrid(context.Grid, context.Options, bestBeacons.Beacons);
         }
 
-        return (selectedPlans, allPlans);
+        return (selectedPlans, unusedPlans);
     }
 
     private static List<Solution> OptimizeAndAddSolutions(
@@ -309,7 +317,7 @@ public static partial class AddPipes
                     terminals.Remove(terminal);
                     if (terminals.Count == 0)
                     {
-                        throw new InvalidOperationException("No path can be found for any of the terminals on a pumpjack.");
+                        throw new FactorioToolsException("No path can be found for any of the terminals on a pumpjack.");
                     }
                 }
             }

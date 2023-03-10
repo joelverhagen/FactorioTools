@@ -483,7 +483,7 @@ public static class Helpers
 
         if (newlyCovered.TrueCount == 0)
         {
-            throw new NotImplementedException("At least one recipient should should have been newly covered.");
+            throw new FactorioToolsException("At least one recipient should should have been newly covered.");
         }
 
         coveredEntities.Or(centerInfo.Covered);
@@ -567,7 +567,7 @@ public static class Helpers
 
         if (newlyCovered.TrueCount == 0)
         {
-            throw new NotImplementedException("At least one recipient should should have been newly covered.");
+            throw new FactorioToolsException("At least one recipient should should have been newly covered.");
         }
 
         coveredEntities.Or(centerInfo.Covered);
@@ -691,7 +691,7 @@ public static class Helpers
                 .Except(coveredCenterToPoleCenters.Keys)
                 .ToList();
             // Visualizer.Show(context.Grid, uncoveredCenters.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-            throw new InvalidOperationException("Not all powered entities are covered by an electric pole.");
+            throw new FactorioToolsException("Not all powered entities are covered by an electric pole.");
         }
 
         return (PoleCenterToCoveredCenters: poleCenterToCoveredCenters, CoveredCenterToPoleCenters: coveredCenterToPoleCenters);

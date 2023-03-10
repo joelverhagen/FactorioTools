@@ -5,19 +5,19 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
-    public static (Context Context, PlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint)
+    public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint)
     {
         return Execute(options, inputBlueprint, addElectricPolesFirst: false);
     }
 
-    private static (Context Context, PlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
+    private static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
     {
         var context = InitializeContext.Execute(options, inputBlueprint);
         var initialPumpjackCount = context.CenterToTerminals.Count;
 
         if (context.CenterToTerminals.Count == 0)
         {
-            throw new InvalidOperationException("The must be at least one pumpjack in the blueprint.");
+            throw new FactorioToolsException("The must be at least one pumpjack in the blueprint.", badInput: true);
         }
 
         HashSet<Location>? poles;
@@ -26,11 +26,11 @@ public static class Planner
             poles = AddElectricPoles.Execute(context, avoidTerminals: true, allowRetries: false);
             if (poles is null)
             {
-                throw new InvalidOperationException("No valid placement for the electric poles could be found.");
+                throw new FactorioToolsException("No valid placement for the electric poles could be found, while adding electric poles first.");
             }
         }
 
-        (var selectedPlans, var allPlans) = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
+        (var selectedPlans, var unusedPlans) = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -42,7 +42,7 @@ public static class Planner
                 if (addElectricPolesFirst)
                 {
                     // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-                    throw new InvalidOperationException("No valid placement for the electric poles could be found.");
+                    throw new FactorioToolsException("No valid placement for the electric poles could be found, after adding electric poles first.");
                 }
                 else
                 {
@@ -55,10 +55,10 @@ public static class Planner
 
         var finalPumpjackCount = context.CenterToTerminals.Count;
 
-        var planSummary = new PlanSummary(
+        var planSummary = new OilFieldPlanSummary(
             initialPumpjackCount - finalPumpjackCount,
             selectedPlans,
-            allPlans);
+            unusedPlans);
 
         return (context, planSummary);
     }

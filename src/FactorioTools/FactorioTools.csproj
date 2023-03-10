@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <UseObjectPooling>false</UseObjectPooling>
     <UseSharedInstances>true</UseSharedInstances>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(UseObjectPooling) == 'true'">

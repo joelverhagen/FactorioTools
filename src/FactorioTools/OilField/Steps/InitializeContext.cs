@@ -70,8 +70,6 @@ public static class InitializeContext
             LocationToTerminals = GetLocationToTerminals(centerToTerminals),
             LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
 
-            Plans = new List<AttemptedPlan>(),
-
             SharedInstances = new SharedInstances
             {
 #if USE_SHARED_INSTANCES
@@ -126,6 +124,12 @@ public static class InitializeContext
             .Where(e => e.Name == EntityNames.Vanilla.Pumpjack)
             .ToList();
 
+        const int maxPumpjacks = 100;
+        if (pumpjacks.Count > 100)
+        {
+            throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
+        }
+
         var centers = new HashSet<Location>();
 
         if (pumpjacks.Count > 0)
@@ -139,12 +143,12 @@ public static class InitializeContext
 
                 if (IsInteger(x))
                 {
-                    throw new InvalidDataException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer X value after translation.");
+                    throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer X value after translation.");
                 }
 
                 if (IsInteger(y))
                 {
-                    throw new InvalidDataException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
+                    throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
                 }
 
                 centers.Add(new Location(ToInt(x), ToInt(y)));
@@ -170,6 +174,13 @@ public static class InitializeContext
         // electric poles.
         var width = pumpjackCenters.Select(p => p.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
         var height = pumpjackCenters.Select(p => p.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
+
+        const int maxWidth = 300;
+        const int maxHeight = 300;
+        if (width > maxWidth || height > maxHeight)
+        {
+            throw new FactorioToolsException($"The planning grid cannot be larger than {maxWidth} x {maxHeight}. The planning grid for the provided options is {width} x {height}.");
+        }
 
         SquareGrid grid = new PipeGrid(width, height);
 

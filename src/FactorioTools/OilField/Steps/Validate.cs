@@ -15,7 +15,7 @@ public static class Validate
             {
                 if (terminals.Count != 1)
                 {
-                    throw new InvalidOperationException("A pumpjack has more than one terminal.");
+                    throw new FactorioToolsException("A pumpjack has more than one terminal.");
                 }
             }
 
@@ -30,7 +30,7 @@ public static class Validate
             if (unreachedGoals.Count > 0)
             {
                 // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                throw new InvalidOperationException("The pipes are not fully connected.");
+                throw new FactorioToolsException("The pipes are not fully connected.");
             }
         }
     }
@@ -42,7 +42,7 @@ public static class Validate
             var missing = locationToDirection.Keys.Except(pipes).ToList();
             if (missing.Count > 0)
             {
-                throw new InvalidOperationException("The underground pipes should be in the pipe set.");
+                throw new FactorioToolsException("The underground pipes should be in the pipe set.");
             }
         }
     }
@@ -58,7 +58,7 @@ public static class Validate
         {
             if (pipes1.SetEquals(pipes2))
             {
-                throw new InvalidOperationException("The two pipe configurations should not match.");
+                throw new FactorioToolsException("The two pipe configurations should not match.");
             }
         }
     }
@@ -85,7 +85,7 @@ public static class Validate
                 {
                     if (beaconCenters.Count > 1)
                     {
-                        throw new InvalidOperationException("Multiple beacons are providing an effect to a pumpjack.");
+                        throw new FactorioToolsException("Multiple beacons are providing an effect to a pumpjack.");
                     }
                 }
             }
@@ -96,7 +96,7 @@ public static class Validate
     {
         if (context.Options.ValidateSolution && existingBeacons.Count > 0)
         {
-            throw new InvalidOperationException("There should not be any existing beacons.");
+            throw new FactorioToolsException("There should not be any existing beacons.");
         }
     }
 
@@ -147,7 +147,7 @@ public static class Validate
             if (isSubsetOf)
             {
                 // Visualizer.Show(context.Grid, new[] { candidate }.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                throw new InvalidOperationException($"Candidate {candidate} should have been eliminated.");
+                throw new FactorioToolsException($"Candidate {candidate} should have been eliminated.");
             }
         }
     }

@@ -23,7 +23,7 @@ public static class GridToBlueprintString
         { EntityNames.AaiIndustry.SmallIronElectricPole, (1, 1) },
     };
 
-    public static string Execute(Context context, bool addOffsetCorrection)
+    public static string Execute(Context context, bool addFbeOffset)
     {
         var entities = new List<Entity>();
         var nextEntityNumber = 1;
@@ -127,14 +127,14 @@ public static class GridToBlueprintString
                     // Ignore
                     break;
                 default:
-                    throw new NotImplementedException("Unknown entity type: " + gridEntity.GetType().FullName);
+                    throw new NotImplementedException();
             }
         }
 
         // FBE applies some offset to the blueprint coordinates. This makes it hard to compare the grid used in memory
         // with the rendered blueprint in FBE. To account for this, we can add an entity to the corner of the
         // blueprint with a position that makes FBE keep the original entity positions used by the grid.
-        if (addOffsetCorrection && entities.Count > 0)
+        if (addFbeOffset && entities.Count > 0)
         {
             var maxX = float.MinValue;
             var maxY = float.MinValue;

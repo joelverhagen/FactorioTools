@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using Knapcode.FactorioTools.OilField.Grid;
-using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+﻿using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -19,9 +17,9 @@ public static partial class PlanBeacons
         {
             (var beacons, var effects) = strategy switch
             {
-                BeaconStrategy.FBE_Original => AddBeacons_FBE(context, strategy),
-                BeaconStrategy.FBE => AddBeacons_FBE(context, strategy),
-                BeaconStrategy.Snug => AddBeacons_Snug(context),
+                BeaconStrategy.FbeOriginal => AddBeaconsFbe(context, strategy),
+                BeaconStrategy.Fbe => AddBeaconsFbe(context, strategy),
+                BeaconStrategy.Snug => AddBeaconsSnug(context),
                 _ => throw new NotImplementedException(),
             };
 
@@ -35,7 +33,7 @@ public static partial class PlanBeacons
 
         if (solutions.Count == 0)
         {
-            throw new InvalidOperationException("At least one beacon strategy must be used.");
+            throw new FactorioToolsException("At least one beacon strategy must be used.");
         }
 
         Validate.BeaconsDoNotOverlap(context, solutions);

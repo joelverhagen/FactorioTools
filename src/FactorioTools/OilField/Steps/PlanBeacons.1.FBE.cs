@@ -24,7 +24,7 @@ public static partial class PlanBeacons
 {
     private const int MinAffectedEntities = 1;
 
-    private static (List<Location> Beacons, int Effects) AddBeacons_FBE(Context context, BeaconStrategy strategy)
+    private static (List<Location> Beacons, int Effects) AddBeaconsFbe(Context context, BeaconStrategy strategy)
     {
         var entityAreas = GetEntityAreas(context);
         var occupiedPositions = GetOccupiedPositions(entityAreas);
@@ -47,7 +47,7 @@ public static partial class PlanBeacons
             pointToBeaconCount,
             pointToEntityArea);
 
-        if (strategy == BeaconStrategy.FBE)
+        if (strategy == BeaconStrategy.Fbe)
         {
             possibleBeacons = SortPossibleBeacons(context, possibleBeacons);
         }
@@ -64,7 +64,7 @@ public static partial class PlanBeacons
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
         {
-            if (strategy == BeaconStrategy.FBE_Original)
+            if (strategy == BeaconStrategy.FbeOriginal)
             {
                 SortPossibleBeaconsOriginal(possibleBeacons);
             }

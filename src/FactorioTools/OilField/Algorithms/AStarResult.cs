@@ -18,7 +18,7 @@ public class AStarResult
         {
             if (_path is null)
             {
-                throw new InvalidOperationException("No goal location was reached.");
+                throw new FactorioToolsException("No goal location was reached.");
             }
 
             return _path;

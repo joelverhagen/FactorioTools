@@ -19,22 +19,31 @@ public static class ParseBlueprint
     {
         if (blueprintString[0] != '0')
         {
-            throw new NotSupportedException("Input blueprint does not have the expected version byte of '0'.");
+            throw new FactorioToolsException("Input blueprint does not have the expected version byte of '0'.", badInput: true);
         }
 
-        var bytes = Convert.FromBase64String(blueprintString.Substring(1)); // skip the version byte
-        using var inputStream = new MemoryStream(bytes);
-        using var zlibStream = new ZLibStream(inputStream, CompressionMode.Decompress);
+        BlueprintRoot? root;
+        try
+        {
+            var bytes = Convert.FromBase64String(blueprintString.Substring(1)); // skip the version byte
 
-        var context = BlueprintSerializationContext.Default;
-        var root = JsonSerializer.Deserialize(
-            zlibStream,
-            typeof(BlueprintRoot),
-            context) as BlueprintRoot;
+            using var inputStream = new MemoryStream(bytes);
+            using var zlibStream = new ZLibStream(inputStream, CompressionMode.Decompress);
+
+            var context = BlueprintSerializationContext.Default;
+            root = JsonSerializer.Deserialize(
+                zlibStream,
+                typeof(BlueprintRoot),
+                context) as BlueprintRoot;
+        }
+        catch (Exception ex)
+        {
+            throw new FactorioToolsException("Input blueprint string could not be decoded.", ex, badInput: true);
+        }
 
         if (root == null)
         {
-            throw new InvalidDataException("The blueprint JSON deserialized as null.");
+            throw new FactorioToolsException("The blueprint JSON deserialized as null.", badInput: true);
         }
 
         return root;

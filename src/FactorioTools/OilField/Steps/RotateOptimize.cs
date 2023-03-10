@@ -18,6 +18,11 @@ public static class RotateOptimize
 
     public static void Execute(Context parentContext, HashSet<Location> pipes)
     {
+        if (parentContext.LocationToTerminals.Count < 2)
+        {
+            return;
+        }
+
         var context = new ChildContext(parentContext, pipes);
 
         // Visualizer.Show(existingPipeGrid, intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());

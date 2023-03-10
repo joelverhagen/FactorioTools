@@ -44,7 +44,7 @@ public static class AddPipeEntities
             {
                 if (terminals.Count != 1)
                 {
-                    throw new InvalidOperationException("Every pumpjack should have a single terminal selected.");
+                    throw new FactorioToolsException("Every pumpjack should have a single terminal selected.");
                 }
 
                 for (int i = 0; i < terminals.Count; i++)

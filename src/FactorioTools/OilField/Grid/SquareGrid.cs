@@ -49,7 +49,7 @@ public abstract class SquareGrid
     {
         if (_grid[id.X, id.Y] is not null)
         {
-            throw new InvalidOperationException($"There is already an entity at {id}.");
+            throw new FactorioToolsException($"There is already an entity at {id}.");
         }
 
         _grid[id.X, id.Y] = entity;

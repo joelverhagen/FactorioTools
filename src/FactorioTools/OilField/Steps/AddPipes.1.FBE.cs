@@ -14,7 +14,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 public static partial class AddPipes
 {
-    public static HashSet<Location> ExecuteWithFBE(Context context)
+    public static HashSet<Location> ExecuteWithFbe(Context context)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
@@ -198,7 +198,7 @@ public static partial class AddPipes
 
         if (finalGroup is null)
         {
-            throw new InvalidOperationException("The final group should be initalized at this point.");
+            throw new FactorioToolsException("The final group should be initalized at this point.");
         }
 
         var leftoverPumpjacks = context
@@ -227,7 +227,7 @@ public static partial class AddPipes
                 Visualizer.Show(clone, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
                 */
 
-                throw new InvalidOperationException("There should be at least one connection between a leftover pumpjack and the final group.");
+                throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group.");
             }
 
             finalGroup.Add(connection.FirstGroup.Entities.Single());
