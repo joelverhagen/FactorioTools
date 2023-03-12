@@ -107,7 +107,7 @@ export default {
         const index = Math.floor(Math.random() * sampleBlueprints.length);
         let sampleBlueprint = sampleBlueprints[index]
         if (sampleBlueprint == this.inputBlueprint) {
-          sampleBlueprint = sampleBlueprint[(index + 1) % sampleBlueprints.length]
+          sampleBlueprint = sampleBlueprints[(index + 1) % sampleBlueprints.length]
         }
         this.inputBlueprint = sampleBlueprint
       }
