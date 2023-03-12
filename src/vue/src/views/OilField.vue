@@ -64,7 +64,7 @@ import PlannerForm from '../components/PlannerForm.vue';
 import PumpjacksForm from '../components/PumpjacksForm.vue';
 import { pick } from '../lib/helpers';
 import { storeToRefs } from 'pinia';
-import { generateQueryString, initializeOilFieldStore, persistStore, useOilFieldStore } from '../stores/OilFieldStore';
+import { generateQueryString, hasMatchingQueryString, initializeOilFieldStore, persistStore, useOilFieldStore } from '../stores/OilFieldStore';
 import ResponseErrorView from '../components/ResponseErrorView.vue';
 import OilFieldPlanView from '../components/OilFieldPlanView.vue';
 import CopyButton from '../components/CopyButton.vue';
@@ -86,6 +86,12 @@ export default {
       'useAdvancedOptions',
       'inputBlueprint'));
   },
+  mounted() {
+    addEventListener('paste', this.handlePasteEvent);
+  },
+  unmounted() {
+    removeEventListener('paste', this.handlePasteEvent);
+  },
   computed: {
     cannotSubmit() { return !this.inputBlueprint.trim() || this.submitting },
     shareUrl() {
@@ -100,6 +106,55 @@ export default {
     toggleAdvancedOptions() {
       this.useAdvancedOptions = !this.useAdvancedOptions;
     },
+    async handlePasteEvent(event: Event) {
+      if (!('clipboardData' in event)) {
+        return
+      }
+      const clipboardEvent = event as ClipboardEvent
+      let plainText = clipboardEvent.clipboardData?.getData('text/plain')?.trim()
+      if (!plainText) {
+        return
+      }
+
+      // try parsing the input as a blueprint string
+      if (plainText.startsWith('0') && /^[A-Za-z0-9\+\/= ]+$/.test(plainText)) {
+        try {
+          // plus signs are sometimes interpreted as spaces in URL, so handle this simple edge case.
+          plainText = plainText.replace(' ', '+')
+          atob(plainText.substring(1))
+          this.inputBlueprint = plainText
+        } catch {
+          // ignore
+        }
+        return
+      }
+
+      // try getting a query string from a URL
+      let params: URLSearchParams | undefined;
+      if (plainText.startsWith('http:') || plainText.startsWith('https:') || plainText.startsWith('file:')) {
+        try {
+          const url = new URL(plainText)
+          params = url.searchParams
+        } catch {
+          // ignore
+        }
+      } else if (/.+[=&].+/.test(plainText)) {
+        try {
+          params = new URLSearchParams(plainText)
+        } catch {
+          // ignore
+        }
+      }
+
+      if (params && hasMatchingQueryString(params, false)) {
+        const query: Record<string, string> = {}
+        for (const [key, value] of params.entries()) {
+          query[key] = value
+        }
+        await this.$router.replace({ query });
+        initializeOilFieldStore(this.$route.query)
+      }
+    },
     addSampleBlueprint() {
       if (!this.inputBlueprint) {
         this.inputBlueprint = sampleBlueprints[0]
@@ -112,11 +167,11 @@ export default {
         this.inputBlueprint = sampleBlueprint
       }
     },
-    reset() {
+    async reset() {
       const store = useOilFieldStore()
-      const usingQueryString = store.usingQueryString
       store.$reset()
-      store.usingQueryString = usingQueryString
+      await this.$router.replace({ query: {} });
+      initializeOilFieldStore(this.$route.query)
     },
     async submit() {
       if (this.cannotSubmit) {

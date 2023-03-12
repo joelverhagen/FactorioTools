@@ -107,17 +107,19 @@ function getStore(): OilFieldStore {
   })();
 }
 
-function hasMatchingQueryString(query: LocationQuery) {
-  let queryCount = Object.keys(query).length;
+export function hasMatchingQueryString(query: LocationQuery | URLSearchParams, writeLog: boolean = true) {
+  const keys = query instanceof URLSearchParams ? Array.from(query.keys()) : Object.keys(query)
   let matching = 0;
-  if (queryCount > 0) {
+  if (keys.length > 0) {
     for (const [_, queryKey] of getEntries(storeToQuery)) {
-      if (queryKey in query) {
+      if (keys.includes(queryKey)) {
         matching++
       }
     }
 
-    console.log(`matched ${matching} query params, ignored ${Object.keys(query).length - matching}`)
+    if (writeLog) {
+      console.log(`matched ${matching} query params, ignored ${keys.length - matching}`)
+    }
   }
   return matching > 0
 }
