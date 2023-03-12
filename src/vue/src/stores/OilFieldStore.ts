@@ -157,6 +157,10 @@ export function getDefaults(): Readonly<OilFieldStoreState> {
   return defaults;
 }
 
+export function setReadOnly(readOnly: boolean) {
+  toggleStorage.setReadOnly(readOnly)
+}
+
 export function initializeOilFieldStore(query: LocationQuery) {
   if (hasMatchingQueryString(query)) {
     console.log('initializing read-only store from query')

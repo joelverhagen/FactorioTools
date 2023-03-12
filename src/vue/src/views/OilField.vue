@@ -64,10 +64,11 @@ import PlannerForm from '../components/PlannerForm.vue';
 import PumpjacksForm from '../components/PumpjacksForm.vue';
 import { pick } from '../lib/helpers';
 import { storeToRefs } from 'pinia';
-import { generateQueryString, hasMatchingQueryString, initializeOilFieldStore, persistStore, useOilFieldStore } from '../stores/OilFieldStore';
+import { generateQueryString, hasMatchingQueryString, initializeOilFieldStore, persistStore, useOilFieldStore, setReadOnly } from '../stores/OilFieldStore';
 import ResponseErrorView from '../components/ResponseErrorView.vue';
 import OilFieldPlanView from '../components/OilFieldPlanView.vue';
 import CopyButton from '../components/CopyButton.vue';
+import { useAutoPlanStore } from '../stores/AutoPlanStore';
 
 const sampleBlueprints = __SAMPLE_BLUEPRINTS__;
 sampleBlueprints.sort((a, b) => b.length - a.length)
@@ -79,15 +80,19 @@ export default {
       recentlyCopied: false,
       submitting: false,
       plan: null as null | OilFieldPlanResult,
-      error: null as null | ResponseError
-    }, pick(
-      storeToRefs(useOilFieldStore()),
-      'usingQueryString',
-      'useAdvancedOptions',
-      'inputBlueprint'));
+      error: null as null | ResponseError,
+    },
+      storeToRefs(useAutoPlanStore()),
+      pick(storeToRefs(useOilFieldStore()),
+        'usingQueryString',
+        'useAdvancedOptions',
+        'inputBlueprint'));
   },
-  mounted() {
+  async mounted() {
     addEventListener('paste', this.handlePasteEvent);
+    if (this.autoPlan) {
+      await this.submit()
+    }
   },
   unmounted() {
     removeEventListener('paste', this.handlePasteEvent);
@@ -123,6 +128,9 @@ export default {
           plainText = plainText.replace(' ', '+')
           atob(plainText.substring(1))
           this.inputBlueprint = plainText
+          if (this.autoPlan) {
+            await this.submit()
+          }
         } catch {
           // ignore
         }
@@ -153,6 +161,9 @@ export default {
         }
         await this.$router.replace({ query });
         initializeOilFieldStore(this.$route.query)
+        if (this.autoPlan) {
+          await this.submit()
+        }
       }
     },
     addSampleBlueprint() {
@@ -168,10 +179,12 @@ export default {
       }
     },
     async reset() {
+      this.plan = null
+      this.error = null
       const store = useOilFieldStore()
       store.$reset()
       await this.$router.replace({ query: {} });
-      initializeOilFieldStore(this.$route.query)
+      initializeOilFieldStore(this.$route.query);
     },
     async submit() {
       if (this.cannotSubmit) {

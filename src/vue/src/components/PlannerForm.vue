@@ -17,6 +17,10 @@
       <input type="checkbox" class="form-check-input" id="use-staging-api" v-model="useStagingApi">
       <label class="form-check-label" for="use-staging-api">Use staging API 🤠</label>
     </div>
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="auto-plan" v-model="autoPlan">
+      <label class="form-check-label" for="auto-plan">Plan on load</label>
+    </div>
     <fieldset class="border p-3 mt-3">
       <legend>Pipe strategies</legend>
       <div class="form-check">
@@ -68,6 +72,7 @@
 <script lang="ts">
 import { storeToRefs } from 'pinia';
 import { pick } from '../lib/helpers';
+import { useAutoPlanStore } from '../stores/AutoPlanStore';
 import { getDefaults, useOilFieldStore } from '../stores/OilFieldStore';
 
 export default {
@@ -78,19 +83,20 @@ export default {
     }
   },
   data() {
-    return pick(
-      storeToRefs(useOilFieldStore()),
-      'useUndergroundPipes',
-      'useStagingApi',
-      'optimizePipes',
-      'validateSolution',
-      'pipeStrategyFbe',
-      'pipeStrategyConnectedCentersDelaunay',
-      'pipeStrategyConnectedCentersDelaunayMst',
-      'pipeStrategyConnectedCentersFlute',
-      'beaconStrategyFbeOriginal',
-      'beaconStrategyFbe',
-      'beaconStrategySnug');
+    return Object.assign(
+      storeToRefs(useAutoPlanStore()),
+      pick(storeToRefs(useOilFieldStore()),
+        'useUndergroundPipes',
+        'useStagingApi',
+        'optimizePipes',
+        'validateSolution',
+        'pipeStrategyFbe',
+        'pipeStrategyConnectedCentersDelaunay',
+        'pipeStrategyConnectedCentersDelaunayMst',
+        'pipeStrategyConnectedCentersFlute',
+        'beaconStrategyFbeOriginal',
+        'beaconStrategyFbe',
+        'beaconStrategySnug'));
   },
   watch: {
     showAdvancedOptions: function (newVal: boolean) {
@@ -103,15 +109,16 @@ export default {
     reset() {
       const defaults = getDefaults()
       this.useUndergroundPipes = defaults.useUndergroundPipes
+      this.useStagingApi = defaults.useStagingApi
       this.optimizePipes = defaults.optimizePipes
       this.validateSolution = defaults.validateSolution
-      this.pipeStrategyFbe = this.pipeStrategyFbe
-      this.pipeStrategyConnectedCentersDelaunay = this.pipeStrategyConnectedCentersDelaunay
-      this.pipeStrategyConnectedCentersDelaunayMst = this.pipeStrategyConnectedCentersDelaunayMst
-      this.pipeStrategyConnectedCentersFlute = this.pipeStrategyConnectedCentersFlute
-      this.beaconStrategyFbeOriginal = this.beaconStrategyFbeOriginal
-      this.beaconStrategyFbe = this.beaconStrategyFbe
-      this.beaconStrategySnug = this.beaconStrategySnug
+      this.pipeStrategyFbe = defaults.pipeStrategyFbe
+      this.pipeStrategyConnectedCentersDelaunay = defaults.pipeStrategyConnectedCentersDelaunay
+      this.pipeStrategyConnectedCentersDelaunayMst = defaults.pipeStrategyConnectedCentersDelaunayMst
+      this.pipeStrategyConnectedCentersFlute = defaults.pipeStrategyConnectedCentersFlute
+      this.beaconStrategyFbeOriginal = defaults.beaconStrategyFbeOriginal
+      this.beaconStrategyFbe = defaults.beaconStrategyFbe
+      this.beaconStrategySnug = defaults.beaconStrategySnug
     }
   }
 }
