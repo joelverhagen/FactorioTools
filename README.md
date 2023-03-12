@@ -2,7 +2,7 @@
 
 Custom tools to augment the play of Factorio by Joel Verhagen.
 
-## Pumpjack Pipe Optimizer
+## Oil field planner
 
 Given a blueprint containing pumpjacks, this tool return output a new blueprint conecting the pumpjacks with pipes and
 electric poles. It also tried to find the best direction for the pumpjack to minimize extra pipes.
