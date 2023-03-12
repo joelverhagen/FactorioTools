@@ -10,7 +10,6 @@ on:
 
 concurrency: 
   group: deploy-azure
-  cancel-in-progress: true
 
 permissions:
   id-token: write
