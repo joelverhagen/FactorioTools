@@ -47,7 +47,7 @@
     <PlannerForm :show-advanced-options="useAdvancedOptions" v-show="useAdvancedOptions" />
     <div class="d-grid gap-2">
       <button type="submit" class="btn btn-primary btn-lg" @click.prevent="submit" :disabled="cannotSubmit">
-        <span v-if="cannotSubmit" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <span v-if="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         Plan oil field
       </button>
     </div>
