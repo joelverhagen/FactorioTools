@@ -64,7 +64,7 @@ import PlannerForm from '../components/PlannerForm.vue';
 import PumpjacksForm from '../components/PumpjacksForm.vue';
 import { pick } from '../lib/helpers';
 import { storeToRefs } from 'pinia';
-import { generateQueryString, hasMatchingQueryString, initializeOilFieldStore, persistStore, useOilFieldStore, setReadOnly } from '../stores/OilFieldStore';
+import { generateQueryString, hasMatchingQueryString, initializeOilFieldStore, persistStore, useOilFieldStore } from '../stores/OilFieldStore';
 import ResponseErrorView from '../components/ResponseErrorView.vue';
 import OilFieldPlanView from '../components/OilFieldPlanView.vue';
 import CopyButton from '../components/CopyButton.vue';
@@ -115,6 +115,17 @@ export default {
       if (!('clipboardData' in event)) {
         return
       }
+
+      if (event.target
+        && (event.target instanceof HTMLTextAreaElement
+          || event.target instanceof HTMLSelectElement
+          || event.target instanceof HTMLInputElement
+          || event.target instanceof HTMLButtonElement)
+        && 'form' in event.target
+        && event.target.form) {
+        return
+      }
+
       const clipboardEvent = event as ClipboardEvent
       let plainText = clipboardEvent.clipboardData?.getData('text/plain')?.trim()
       if (!plainText) {
@@ -127,6 +138,7 @@ export default {
           // plus signs are sometimes interpreted as spaces in URL, so handle this simple edge case.
           plainText = plainText.replace(' ', '+')
           atob(plainText.substring(1))
+          event.preventDefault();
           this.inputBlueprint = plainText
           if (this.autoPlan) {
             await this.submit()
@@ -155,6 +167,7 @@ export default {
       }
 
       if (params && hasMatchingQueryString(params, false)) {
+        event.preventDefault();
         const query: Record<string, string> = {}
         for (const [key, value] of params.entries()) {
           query[key] = value

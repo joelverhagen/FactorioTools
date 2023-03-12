@@ -18,8 +18,8 @@ public partial class Program
         }
         else
         {
-            Measure();
-            // Sandbox();
+            // Measure();
+            Sandbox();
         }
     }
 
