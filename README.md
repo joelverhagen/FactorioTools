@@ -7,9 +7,15 @@ Custom tools to augment the play of Factorio by Joel Verhagen.
 Given a blueprint containing pumpjacks, this tool return output a new blueprint conecting the pumpjacks with pipes and
 electric poles. It also tried to find the best direction for the pumpjack to minimize extra pipes.
 
-**Credits:** the pipe routing algorithm is by [teoxoy](https://github.com/teoxoy) and was innovated in their
-[Factorio Blueprint Editor](https://github.com/teoxoy/factorio-blueprint-editor) project. It performed way better than
-my algorithm based on Dijkstra's.
+**Credits:** one of pipe routing and beacon algorithms in the tool is by [teoxoy](https://github.com/teoxoy) and was innovated
+in their [Factorio Blueprint Editor](https://github.com/teoxoy/factorio-blueprint-editor) project. It performed way better than
+my original algorithm based on Dijkstra's.
+
+### Video
+
+https://user-images.githubusercontent.com/94054/224560733-35ca401f-ae51-46a9-951b-78ecc511227e.mp4
+
+### Screenshots
 
 ![Oil field input in Factorio](docs/img/oil-field-input-in-factorio.png)
 
