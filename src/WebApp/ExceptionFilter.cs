@@ -32,7 +32,7 @@ public class ExceptionFilter : IExceptionFilter
 
             problemDetails.Extensions["errors"] = new Dictionary<string, List<string>>
             {
-                { "exceptions", errors }
+                { nameof(FactorioToolsException), errors }
             };
 
             context.Result = new ObjectResult(problemDetails);

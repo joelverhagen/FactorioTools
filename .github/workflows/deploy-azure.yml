@@ -50,12 +50,14 @@ jobs:
 
       - name: Send test request
         run: |
+          # cannot use --fail-with-body until https://github.com/curl/curl/issues/9078 makes it into Ubuntu
           curl \
             --request POST \
             --header "Content-Type: application/json" \
             --user-agent "GitHub Actions workflow ''$GITHUB_WORKFLOW''" \
             --data "{\"blueprint\":\"$BLUEPRINT\"}" \
-            --fail-with-body \
+            --fail \
+            --retry 5 \
             "$WEBAPP_URL/api/v1/oil-field/plan"
         env:
           BLUEPRINT: "0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F"

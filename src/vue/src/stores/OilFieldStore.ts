@@ -1,93 +1,83 @@
-import { def } from '@vue/shared';
 import { defineStore, Store } from 'pinia'
 import { StorageLike } from 'pinia-plugin-persistedstate';
 import { LocationQuery } from 'vue-router';
+import { getEntries } from '../lib/helpers';
 
-export function getDefaults() {
-  return {
-    usingQueryString: false,
-    inputBlueprint: '',
-    useAdvancedOptions: false,
-    pumpjackModule: 'productivity-module-3',
-    pumpjackModuleIsCustom: false,
-    addBeacons: true,
-    beaconModule: 'speed-module-3',
-    beaconModuleIsCustom: false,
-    beaconModuleSlots: 2,
-    beaconEntityName: 'beacon',
-    beaconSupplyWidth: 9,
-    beaconSupplyHeight: 9,
-    beaconWidth: 3,
-    beaconHeight: 3,
-    electricPoleEntityName: 'medium-electric-pole',
-    electricPoleIsCustom: false,
-    electricPoleWidth: 1,
-    electricPoleHeight: 1,
-    electricPoleSupplyWidth: 7,
-    electricPoleSupplyHeight: 7,
-    electricPoleWireReach: 9,
-    useUndergroundPipes: true,
-    optimizePipes: true,
-    validateSolution: false,
-    pipeStrategyFbe: true,
-    pipeStrategyConnectedCentersDelaunay: true,
-    pipeStrategyConnectedCentersDelaunayMst: true,
-    pipeStrategyConnectedCentersFlute: true,
-    beaconStrategyFbe: true,
-    beaconStrategySnug: true,
-  }
-}
+const defaults = {
+  usingQueryString: false,
+  useStagingApi: false,
+  inputBlueprint: '',
+  useAdvancedOptions: false,
+  pumpjackModule: 'productivity-module-3',
+  pumpjackModuleIsCustom: false,
+  addBeacons: true,
+  overlapBeacons: true,
+  beaconModule: 'speed-module-3',
+  beaconModuleIsCustom: false,
+  beaconModuleSlots: 2,
+  beaconEntityName: 'beacon',
+  beaconSupplyWidth: 9,
+  beaconSupplyHeight: 9,
+  beaconWidth: 3,
+  beaconHeight: 3,
+  electricPoleEntityName: 'medium-electric-pole',
+  electricPoleIsCustom: false,
+  electricPoleWidth: 1,
+  electricPoleHeight: 1,
+  electricPoleSupplyWidth: 7,
+  electricPoleSupplyHeight: 7,
+  electricPoleWireReach: 9,
+  useUndergroundPipes: true,
+  optimizePipes: true,
+  validateSolution: false,
+  pipeStrategyFbe: true,
+  pipeStrategyConnectedCentersDelaunay: true,
+  pipeStrategyConnectedCentersDelaunayMst: true,
+  pipeStrategyConnectedCentersFlute: true,
+  beaconStrategyFbeOriginal: false,
+  beaconStrategyFbe: true,
+  beaconStrategySnug: true,
+};
+export type OilFieldStoreState = typeof defaults
 
-const queryToStore = {
-  'source': 'inputBlueprint',
-  'adv': 'useAdvancedOptions',
-  'pumpMod': 'pumpjackModule',
-  'pumpModCust': 'pumpjackModuleIsCustom',
-  'beacons': 'addBeacons',
-  'beaconMod': 'beaconModule',
-  'beaconModCust': 'beaconModuleIsCustom',
-  'beaconModSlots': 'beaconModuleSlots',
-  'beacon': 'beaconEntityName',
-  'beaconSupW': 'beaconSupplyWidth',
-  'beaconSupH': 'beaconSupplyHeight',
-  'beaconW': 'beaconWidth',
-  'beaconH': 'beaconHeight',
-  'pole': 'electricPoleEntityName',
-  'poleCust': 'electricPoleIsCustom',
-  'poleW': 'electricPoleWidth',
-  'poleH': 'electricPoleHeight',
-  'poleSupW': 'electricPoleSupplyWidth',
-  'poleSupH': 'electricPoleSupplyHeight',
-  'poleReach': 'electricPoleWireReach',
-  'underground': 'useUndergroundPipes',
-  'optimize': 'optimizePipes',
-  'val': 'validateSolution',
-  'pipesFbe': 'pipeStrategyFbe',
-  'pipesCcDt': 'pipeStrategyConnectedCentersDelaunay',
-  'pipesCcDtMst': 'pipeStrategyConnectedCentersDelaunayMst',
-  'pipesCcFlute': 'pipeStrategyConnectedCentersFlute',
-  'beaconsFbe': 'beaconStrategyFbe',
-  'beaconsSnug': 'beaconStrategySnug',
-} as { [k: string]: string }
+type StoreToQuery = {
+  [Property in keyof OilFieldStoreState as Exclude<Property, "usingQueryString" | "useStagingApi">]: string
+};
 
-const storeToQuery = Object.fromEntries(Object.entries(queryToStore).map(([key, value]) => [value, key]))
-const defaults = getDefaults();
+const storeToQuery: StoreToQuery = {
+  inputBlueprint: 'source',
+  useAdvancedOptions: 'adv',
+  pumpjackModule: 'pumpMod',
+  pumpjackModuleIsCustom: 'pumpModCust',
+  addBeacons: 'beacons',
+  overlapBeacons: 'overlapBeacons',
+  beaconModule: 'beaconMod',
+  beaconModuleIsCustom: 'beaconModCust',
+  beaconModuleSlots: 'beaconModSlots',
+  beaconEntityName: 'beacon',
+  beaconSupplyWidth: 'beaconSupW',
+  beaconSupplyHeight: 'beaconSupH',
+  beaconWidth: 'beaconW',
+  beaconHeight: 'beaconH',
+  electricPoleEntityName: 'pole',
+  electricPoleIsCustom: 'poleCust',
+  electricPoleWidth: 'poleW',
+  electricPoleHeight: 'poleH',
+  electricPoleSupplyWidth: 'poleSupW',
+  electricPoleSupplyHeight: 'poleSupH',
+  electricPoleWireReach: 'poleReach',
+  useUndergroundPipes: 'underground',
+  optimizePipes: 'optimize',
+  validateSolution: 'val',
+  pipeStrategyFbe: 'pipesFbe',
+  pipeStrategyConnectedCentersDelaunay: 'pipesCcDt',
+  pipeStrategyConnectedCentersDelaunayMst: 'pipesCcDtMst',
+  pipeStrategyConnectedCentersFlute: 'pipesCcFlute',
+  beaconStrategyFbeOriginal: 'beaconsFbeO',
+  beaconStrategyFbe: 'beaconsFbe',
+  beaconStrategySnug: 'beaconsSnug',
+} as const;
 
-if (Object.keys(storeToQuery).length != Object.keys(queryToStore).length) {
-  throw new Error(`inconsistent query parameter mapping`)
-}
-
-const expectedStoreKeys = Object.keys(getDefaults())
-for (const value of Object.values(queryToStore)) {
-  const index = expectedStoreKeys.indexOf(value);
-  if (index < 0) {
-    console.log('expected store keys:', expectedStoreKeys)
-    throw new Error(`missing query parameter mapping for store key ${value}`)
-  }
-  expectedStoreKeys.splice(index, 1)
-}
-
-type OilFieldStoreState = typeof defaults
 type OilFieldStore = Store<"OilFieldStore", OilFieldStoreState, {}, {}>
 
 class ToggleStorage implements StorageLike {
@@ -110,7 +100,7 @@ const toggleStorage = new ToggleStorage()
 
 function getStore(): OilFieldStore {
   return defineStore('OilFieldStore', {
-    state: () => getDefaults(),
+    state: () => Object.assign({}, defaults),
     persist: {
       storage: toggleStorage
     }
@@ -118,43 +108,61 @@ function getStore(): OilFieldStore {
 }
 
 function hasMatchingQueryString(query: LocationQuery) {
+  let queryCount = Object.keys(query).length;
   let matching = 0;
-  for (const queryKey of Object.keys(queryToStore)) {
-    if (queryKey in query) {
-      matching++
+  if (queryCount > 0) {
+    for (const [_, queryKey] of getEntries(storeToQuery)) {
+      if (queryKey in query) {
+        matching++
+      }
     }
-  }
 
+    console.log(`matched ${matching} query params, ignored ${Object.keys(query).length - matching}`)
+  }
   return matching > 0
 }
 
 function populateStoreFromQuery(query: LocationQuery) {
   const store = useOilFieldStore()
-  for (const [storeKey, storeValue] of Object.entries(store.$state)) {
-    if (storeKey in defaults) {
-      const queryKey = storeToQuery[storeKey]
-      let newValue = queryKey && queryKey in query ? query[queryKey] : (defaults as any)[storeKey] as any
-      switch (typeof storeValue) {
-        case 'boolean':
-          newValue = newValue == 'true' || newValue == '1'
-          break
-        case 'number':
-          newValue = parseFloat(newValue)
-          break
-      }
-      (store as any)[storeKey] = newValue;
+  for (const [storeKey, storeValue] of getEntries(store.$state)) {
+    if (storeKey == 'usingQueryString' || storeKey == 'useStagingApi') {
+      continue
     }
+
+    const queryKey = storeToQuery[storeKey]
+    let queryValue = query[queryKey];
+    if (Array.isArray(queryValue)) {
+      queryValue = queryValue.length > 0 ? queryValue[0] : null;
+    }
+
+    let newValue = queryValue ?? defaults[storeKey];
+    switch (typeof storeValue) {
+      case 'boolean':
+        newValue = newValue == 'true' || newValue == '1'
+        break
+      case 'number':
+        newValue = parseFloat(newValue?.toString())
+        break
+    }
+
+    (store as any)[storeKey] = newValue;
   }
 
   return store
 }
 
+export function getDefaults(): Readonly<OilFieldStoreState> {
+  return defaults;
+}
+
 export function initializeOilFieldStore(query: LocationQuery) {
   if (hasMatchingQueryString(query)) {
+    console.log('initializing read-only store from query')
     toggleStorage.setReadOnly(true)
     const store = populateStoreFromQuery(query)
     store.usingQueryString = true;
   } else {
+    console.log('initializing store from local storage')
     getStore().usingQueryString = false;
   }
 }
@@ -162,12 +170,16 @@ export function initializeOilFieldStore(query: LocationQuery) {
 export function generateQueryString() {
   const store = useOilFieldStore()
   const pieces = []
-  for (const [storeKey, storeValue] of Object.entries(store.$state)) {
+  for (const [storeKey, storeValue] of getEntries(store.$state)) {
+    if (storeKey == 'usingQueryString' || storeKey == 'useStagingApi') {
+      continue
+    }
+
     const queryKey = storeToQuery[storeKey]
     if (queryKey) {
       let queryValue = storeValue;
-      if (typeof storeValue == 'boolean') {
-        queryValue = storeValue ? '1' : '0'
+      if (typeof queryValue == 'boolean') {
+        queryValue = queryValue ? '1' : '0'
       }
       pieces.push(`${queryKey}=${encodeURIComponent(queryValue)}`)
     }

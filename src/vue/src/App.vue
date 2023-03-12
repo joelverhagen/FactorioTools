@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark" v-if="false">
     <div class="container">
       <router-link class="navbar-brand" to="/">Factorio Tools</router-link>
       <div class="navbar-collapse">
@@ -22,7 +22,7 @@
         commit <a :href="`https://github.com/joelverhagen/FactorioTools/tree/${gitCommit}`">{{ gitCommit }}</a>,
         branch <a :href="`https://github.com/joelverhagen/FactorioTools/tree/${gitBranch}`">{{ gitBranch }}</a>,
         built on {{ buildDate }}.
-        Visit the <a href="https://github.com/joelverhagen/FactorioTools">GitHub repository</a>.
+        Report bugs at the <a href="https://github.com/joelverhagen/FactorioTools">GitHub repository</a>.
       </p>
     </div>
   </footer>

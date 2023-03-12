@@ -6,9 +6,6 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Knapcode.FactorioTools.WebApp.Models;
 
-/// <summary>
-/// Source: https://stackoverflow.com/a/68987970
-/// </summary>
 public class OilFieldPlanRequestDefaultsSchemaFilter : ISchemaFilter
 {
     public void Apply(OpenApiSchema model, SchemaFilterContext context)
@@ -20,7 +17,10 @@ public class OilFieldPlanRequestDefaultsSchemaFilter : ISchemaFilter
 
         var defaults = new OilFieldPlanRequest();
 
-        model.Properties["blueprint"].Example = new OpenApiString("0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F");
+        if (model.Properties.ContainsKey("blueprint"))
+        {
+            model.Properties["blueprint"].Example = new OpenApiString("0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F");
+        }
 
         var propertyToValue = defaults
             .GetType()

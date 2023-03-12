@@ -1,5 +1,5 @@
 <template>
-  <fieldset class="border p-3 mb-3 rounded">
+  <fieldset class="border p-3 mb-3">
     <legend>Beacons</legend>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="add-beacons" v-model="addBeacons">
@@ -40,6 +40,12 @@
         </div>
       </div>
     </div>
+    <div class="form-check mt-3" v-if="addBeacons && showAdvancedOptions">
+      <input type="checkbox" class="form-check-input" id="overlap-beacons" v-model="overlapBeacons">
+      <label class="form-check-label" for="overlap-beacons">
+        Overlap beacon effects (e.g. uncheck to avoid <a href="https://spaceexploration.miraheze.org/wiki/Beacon_Overload">beacon overload</a> in Space Exploration)
+      </label>
+    </div>
   </fieldset>
 </template>
 
@@ -60,6 +66,7 @@ export default {
     return pick(
       storeToRefs(useOilFieldStore()),
       'addBeacons',
+      'overlapBeacons',
       'beaconModule',
       'beaconModuleIsCustom',
       'beaconModuleSlots',
@@ -90,6 +97,7 @@ export default {
       this.beaconHeight = defaults.beaconHeight
       this.beaconSupplyWidth = defaults.beaconSupplyWidth
       this.beaconSupplyHeight = defaults.beaconSupplyHeight
+      this.overlapBeacons = defaults.overlapBeacons
     }
   },
   components: { ModuleSelect }

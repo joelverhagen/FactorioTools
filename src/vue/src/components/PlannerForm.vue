@@ -1,5 +1,5 @@
 <template>
-  <fieldset class="border p-3 mb-3 rounded">
+  <fieldset class="border p-3 mb-3">
     <legend>Planner options</legend>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="use-underground-pipes" v-model="useUndergroundPipes">
@@ -11,9 +11,13 @@
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="validate-solution" v-model="validateSolution">
-      <label class="form-check-label" for="validate-solution">Validate solution</label>
+      <label class="form-check-label" for="validate-solution">Validate solution 🐛</label>
     </div>
-    <fieldset class="border p-3 mt-3 rounded">
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="use-staging-api" v-model="useStagingApi">
+      <label class="form-check-label" for="use-staging-api">Use staging API 🤠</label>
+    </div>
+    <fieldset class="border p-3 mt-3">
       <legend>Pipe strategies</legend>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-fbe" v-model="pipeStrategyFbe">
@@ -40,13 +44,17 @@
             href="https://home.engineering.iastate.edu/~cnchu/flute.html">FLUTE</a></label>
       </div>
     </fieldset>
-    <fieldset class="border p-3 mt-3 rounded">
+    <fieldset class="border p-3 mt-3">
       <legend>Beacon strategies</legend>
       <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="beacons-fbe" v-model="beaconStrategyFbe">
-        <label class="form-check-label" for="beacons-fbe">Teoxoy's FBE</label> (<a
+        <input type="checkbox" class="form-check-input" id="beacons-fbe-original" v-model="beaconStrategyFbeOriginal">
+        <label class="form-check-label" for="beacons-fbe-original">Teoxoy's FBE</label> (<a
           href="https://github.com/teoxoy/factorio-blueprint-editor/blob/0bec144b8989422f86bce8cea58ef49258c1a88d/packages/editor/src/core/generators/beacon.ts">original
-          source</a>) with modifications
+          source</a>) without modifications
+      </div>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="beacons-fbe" v-model="beaconStrategyFbe">
+        <label class="form-check-label" for="beacons-fbe">Teoxoy's FBE</label> with modifications
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="beacons-snug" v-model="beaconStrategySnug">
@@ -73,12 +81,14 @@ export default {
     return pick(
       storeToRefs(useOilFieldStore()),
       'useUndergroundPipes',
+      'useStagingApi',
       'optimizePipes',
       'validateSolution',
       'pipeStrategyFbe',
       'pipeStrategyConnectedCentersDelaunay',
       'pipeStrategyConnectedCentersDelaunayMst',
       'pipeStrategyConnectedCentersFlute',
+      'beaconStrategyFbeOriginal',
       'beaconStrategyFbe',
       'beaconStrategySnug');
   },
@@ -99,6 +109,7 @@ export default {
       this.pipeStrategyConnectedCentersDelaunay = this.pipeStrategyConnectedCentersDelaunay
       this.pipeStrategyConnectedCentersDelaunayMst = this.pipeStrategyConnectedCentersDelaunayMst
       this.pipeStrategyConnectedCentersFlute = this.pipeStrategyConnectedCentersFlute
+      this.beaconStrategyFbeOriginal = this.beaconStrategyFbeOriginal
       this.beaconStrategyFbe = this.beaconStrategyFbe
       this.beaconStrategySnug = this.beaconStrategySnug
     }

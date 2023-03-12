@@ -1,5 +1,5 @@
 <template>
-  <fieldset class="border p-3 mb-3 rounded">
+  <fieldset class="border p-3 mb-3">
     <legend>Electric poles</legend>
     <CustomizeSelect custom-label="Entity" label="Entity" idPrefix="electric-pole"
       :showAdvancedOptions="showAdvancedOptions" :defaultValue="electricPoleEntityName"

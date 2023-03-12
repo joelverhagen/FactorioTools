@@ -1,0 +1,507 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Knapcode.FactorioTools.WebApp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/oil-field/plan": {
+      "post": {
+        "tags": [
+          "OilField"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OilFieldPlanRequest"
+                  }
+                ],
+                "description": "The properties needed to generate an oil field plan."
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OilFieldPlanRequest"
+                  }
+                ],
+                "description": "The properties needed to generate an oil field plan."
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OilFieldPlanRequest"
+                  }
+                ],
+                "description": "The properties needed to generate an oil field plan."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OilFieldPlanResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OilFieldPlanResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OilFieldPlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BeaconStrategy": {
+        "enum": [
+          "FbeOriginal",
+          "Fbe",
+          "Snug"
+        ],
+        "type": "string",
+        "description": "The strategy to use when planning beacon placement around the pumpjacks."
+      },
+      "OilFieldPlan": {
+        "required": [
+          "beaconCount",
+          "beaconEffectCount",
+          "optimizePipes",
+          "pipeCount",
+          "pipeStrategy"
+        ],
+        "type": "object",
+        "properties": {
+          "pipeStrategy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PipeStrategy"
+              }
+            ],
+            "description": "The pipe strategy used to generate the plan."
+          },
+          "optimizePipes": {
+            "type": "boolean",
+            "description": "Whether or not the pipe optimized was used."
+          },
+          "beaconStrategy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BeaconStrategy"
+              }
+            ],
+            "description": "Which beacon strategy, if any, was used.",
+            "nullable": true
+          },
+          "beaconEffectCount": {
+            "type": "integer",
+            "description": "The number of effects the beacons provided to pumpjacks. Higher is better.",
+            "format": "int32"
+          },
+          "beaconCount": {
+            "type": "integer",
+            "description": "The number of beacons in the plan. For the same number of beacon effects, lower is better.",
+            "format": "int32"
+          },
+          "pipeCount": {
+            "type": "integer",
+            "description": "The number of pipes in the plan. For the same number of beacon effects and beacons, lower is better.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "A particular attempt oil field plan."
+      },
+      "OilFieldPlanRequest": {
+        "required": [
+          "blueprint"
+        ],
+        "type": "object",
+        "properties": {
+          "useUndergroundPipes": {
+            "type": "boolean",
+            "description": "Whether or not underground pipes (pipe-to-ground) should be used.",
+            "default": true
+          },
+          "addBeacons": {
+            "type": "boolean",
+            "description": "Whether or not to add beacons around the pumpjacks.",
+            "default": true
+          },
+          "optimizePipes": {
+            "type": "boolean",
+            "description": "Whether or not to use the pipe optimizer after each pipe strategy is executed. If set to true, the best solution\r\nfound will still be used, meaning if the unoptimized pipe plan performs better, it will be preferred over the\r\ncorresponding optimized pipe plan.",
+            "default": true
+          },
+          "overlapBeacons": {
+            "type": "boolean",
+            "description": "Whether or to allow beacon effects to overlap. For Factorio mods like Space Exploration, beacon effects cannot\r\noverlap otherwise pumpjacks will break down with a beacon overload. For vanilla Factorio, this should be true.",
+            "default": true
+          },
+          "pipeStrategies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PipeStrategy"
+            },
+            "description": "The pipe planning strategies to attempt.",
+            "default": [
+              "Fbe",
+              "ConnectedCentersDelaunay",
+              "ConnectedCentersDelaunayMst",
+              "ConnectedCentersFlute"
+            ]
+          },
+          "beaconStrategies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BeaconStrategy"
+            },
+            "description": "The beacon planning strategies to attempt. This will have no affect if Knapcode.FactorioTools.OilField.OilFieldOptions.AddBeacons is false.",
+            "default": [
+              "Fbe",
+              "Snug"
+            ]
+          },
+          "electricPoleEntityName": {
+            "type": "string",
+            "description": "The internal entity name for the electric pole to use.",
+            "default": "medium-electric-pole"
+          },
+          "electricPoleSupplyWidth": {
+            "type": "integer",
+            "description": "The supply width (horizontal) for the electric pole. This is the width of the area that the electric pole will\r\nprovide power to.",
+            "format": "int32",
+            "default": 7
+          },
+          "electricPoleSupplyHeight": {
+            "type": "integer",
+            "description": "The supply height (vertical) for the electric pole. This is the height of the area that the electric pole will\r\nprovide power to.",
+            "format": "int32",
+            "default": 7
+          },
+          "electricPoleWireReach": {
+            "type": "number",
+            "description": "The wire reach for the electric pole. This is how far apart electric poles can be but still be connected.",
+            "format": "double",
+            "default": 9
+          },
+          "electricPoleWidth": {
+            "type": "integer",
+            "description": "The width of the electric pole entity.",
+            "format": "int32",
+            "default": 1
+          },
+          "electricPoleHeight": {
+            "type": "integer",
+            "description": "The height of the electric pole entity.",
+            "format": "int32",
+            "default": 1
+          },
+          "beaconEntityName": {
+            "type": "string",
+            "description": "The internal entity name for the beacon to use.",
+            "default": "beacon"
+          },
+          "beaconSupplyWidth": {
+            "type": "integer",
+            "description": "The supply width (horizontal) for the beacon. This is the width of the area that the beacon will provide\r\nmodule effects to.",
+            "format": "int32",
+            "default": 9
+          },
+          "beaconSupplyHeight": {
+            "type": "integer",
+            "description": "The supply height (vertical) for the beacon. This is the height of the area that the beacon will provide\r\nmodule effects to.",
+            "format": "int32",
+            "default": 9
+          },
+          "beaconWidth": {
+            "type": "integer",
+            "description": "The width of the beacon entity.",
+            "format": "int32",
+            "default": 3
+          },
+          "beaconHeight": {
+            "type": "integer",
+            "description": "The height of the beacon entity.",
+            "format": "int32",
+            "default": 3
+          },
+          "validateSolution": {
+            "type": "boolean",
+            "description": "Whether or not additional validations should be perform on the blueprint correctness. In most cases this should\r\nbe false. If you see an invalid blueprint returned, try setting this to true and reporting a bug.",
+            "default": false
+          },
+          "pumpjackModules": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "The modules to add to the pumpjacks. The string key is the internal item name for the module. The value is the\r\ncount that kind of module to add to each pumpjack. There can be multiple module types provided.",
+            "default": {
+              "productivity-module-3": 2
+            }
+          },
+          "beaconModules": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "The modules to add to the beacons. The string key is the internal item name for the module. The value is the\r\ncount that kind of module to add to each beacon. There can be multiple module types provided.",
+            "default": {
+              "speed-module-3": 2
+            }
+          },
+          "blueprint": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The input blueprint containing at least one pumpjack.",
+            "example": "0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F"
+          },
+          "addFbeOffset": {
+            "type": "boolean",
+            "description": "Whether or not to add a placeholder entity to the output grid so that the planning grid entity coordinates match\r\nthe entity coordinate when the output blueprint is pasted into Factorio Blueprint Editor (FBE). This helps with\r\ndebugging the planner.",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "description": "The properties needed to generate an oil field plan."
+      },
+      "OilFieldPlanRequestResponse": {
+        "required": [
+          "addBeacons",
+          "addFbeOffset",
+          "beaconEntityName",
+          "beaconHeight",
+          "beaconModules",
+          "beaconStrategies",
+          "beaconSupplyHeight",
+          "beaconSupplyWidth",
+          "beaconWidth",
+          "blueprint",
+          "electricPoleEntityName",
+          "electricPoleHeight",
+          "electricPoleSupplyHeight",
+          "electricPoleSupplyWidth",
+          "electricPoleWidth",
+          "electricPoleWireReach",
+          "optimizePipes",
+          "overlapBeacons",
+          "pipeStrategies",
+          "pumpjackModules",
+          "useUndergroundPipes",
+          "validateSolution"
+        ],
+        "type": "object",
+        "properties": {
+          "useUndergroundPipes": {
+            "type": "boolean",
+            "description": "Whether or not underground pipes (pipe-to-ground) should be used."
+          },
+          "addBeacons": {
+            "type": "boolean",
+            "description": "Whether or not to add beacons around the pumpjacks."
+          },
+          "optimizePipes": {
+            "type": "boolean",
+            "description": "Whether or not to use the pipe optimizer after each pipe strategy is executed. If set to true, the best solution\r\nfound will still be used, meaning if the unoptimized pipe plan performs better, it will be preferred over the\r\ncorresponding optimized pipe plan."
+          },
+          "overlapBeacons": {
+            "type": "boolean",
+            "description": "Whether or to allow beacon effects to overlap. For Factorio mods like Space Exploration, beacon effects cannot\r\noverlap otherwise pumpjacks will break down with a beacon overload. For vanilla Factorio, this should be true."
+          },
+          "pipeStrategies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PipeStrategy"
+            },
+            "description": "The pipe planning strategies to attempt."
+          },
+          "beaconStrategies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BeaconStrategy"
+            },
+            "description": "The beacon planning strategies to attempt. This will have no affect if Knapcode.FactorioTools.OilField.OilFieldOptions.AddBeacons is false."
+          },
+          "electricPoleEntityName": {
+            "type": "string",
+            "description": "The internal entity name for the electric pole to use."
+          },
+          "electricPoleSupplyWidth": {
+            "type": "integer",
+            "description": "The supply width (horizontal) for the electric pole. This is the width of the area that the electric pole will\r\nprovide power to.",
+            "format": "int32"
+          },
+          "electricPoleSupplyHeight": {
+            "type": "integer",
+            "description": "The supply height (vertical) for the electric pole. This is the height of the area that the electric pole will\r\nprovide power to.",
+            "format": "int32"
+          },
+          "electricPoleWireReach": {
+            "type": "number",
+            "description": "The wire reach for the electric pole. This is how far apart electric poles can be but still be connected.",
+            "format": "double"
+          },
+          "electricPoleWidth": {
+            "type": "integer",
+            "description": "The width of the electric pole entity.",
+            "format": "int32"
+          },
+          "electricPoleHeight": {
+            "type": "integer",
+            "description": "The height of the electric pole entity.",
+            "format": "int32"
+          },
+          "beaconEntityName": {
+            "type": "string",
+            "description": "The internal entity name for the beacon to use."
+          },
+          "beaconSupplyWidth": {
+            "type": "integer",
+            "description": "The supply width (horizontal) for the beacon. This is the width of the area that the beacon will provide\r\nmodule effects to.",
+            "format": "int32"
+          },
+          "beaconSupplyHeight": {
+            "type": "integer",
+            "description": "The supply height (vertical) for the beacon. This is the height of the area that the beacon will provide\r\nmodule effects to.",
+            "format": "int32"
+          },
+          "beaconWidth": {
+            "type": "integer",
+            "description": "The width of the beacon entity.",
+            "format": "int32"
+          },
+          "beaconHeight": {
+            "type": "integer",
+            "description": "The height of the beacon entity.",
+            "format": "int32"
+          },
+          "validateSolution": {
+            "type": "boolean",
+            "description": "Whether or not additional validations should be perform on the blueprint correctness. In most cases this should\r\nbe false. If you see an invalid blueprint returned, try setting this to true and reporting a bug."
+          },
+          "pumpjackModules": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "The modules to add to the pumpjacks. The string key is the internal item name for the module. The value is the\r\ncount that kind of module to add to each pumpjack. There can be multiple module types provided."
+          },
+          "beaconModules": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "The modules to add to the beacons. The string key is the internal item name for the module. The value is the\r\ncount that kind of module to add to each beacon. There can be multiple module types provided."
+          },
+          "blueprint": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The input blueprint containing at least one pumpjack."
+          },
+          "addFbeOffset": {
+            "type": "boolean",
+            "description": "Whether or not to add a placeholder entity to the output grid so that the planning grid entity coordinates match\r\nthe entity coordinate when the output blueprint is pasted into Factorio Blueprint Editor (FBE). This helps with\r\ndebugging the planner."
+          }
+        },
+        "additionalProperties": false,
+        "description": "The properties needed to generate an oil field plan."
+      },
+      "OilFieldPlanResponse": {
+        "required": [
+          "blueprint",
+          "request",
+          "summary"
+        ],
+        "type": "object",
+        "properties": {
+          "request": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OilFieldPlanRequestResponse"
+              }
+            ],
+            "description": "The original request provided, included expanded defaults."
+          },
+          "blueprint": {
+            "type": "string",
+            "description": "The output blueprint, containing the planned oil field."
+          },
+          "summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OilFieldPlanSummary"
+              }
+            ],
+            "description": "A summary of different oil field plans attempted and their performance."
+          }
+        },
+        "additionalProperties": false,
+        "description": "The resulting oil field plan."
+      },
+      "OilFieldPlanSummary": {
+        "required": [
+          "missingPumpjacks",
+          "selectedPlans",
+          "unusedPlans"
+        ],
+        "type": "object",
+        "properties": {
+          "missingPumpjacks": {
+            "type": "integer",
+            "description": "The number of pumpjacks removed to allow for electric poles. This is usually zero.",
+            "format": "int32"
+          },
+          "selectedPlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OilFieldPlan"
+            },
+            "description": "The set of plans which are equivalent and determines to be the best."
+          },
+          "unusedPlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OilFieldPlan"
+            },
+            "description": "The set of plans that were not the best and were discarded."
+          }
+        },
+        "additionalProperties": false,
+        "description": "A summary of the various oil field plans attempted."
+      },
+      "PipeStrategy": {
+        "enum": [
+          "Fbe",
+          "ConnectedCentersDelaunay",
+          "ConnectedCentersDelaunayMst",
+          "ConnectedCentersFlute"
+        ],
+        "type": "string",
+        "description": "The strategy to use while planning pipes between pumpjacks."
+      }
+    }
+  }
+}

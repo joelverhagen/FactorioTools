@@ -1,6 +1,7 @@
 using Knapcode.FactorioTools.OilField;
 using Knapcode.FactorioTools.OilField.Steps;
 using Knapcode.FactorioTools.WebApp.Models;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Knapcode.FactorioTools.WebApp.Controllers;
@@ -17,6 +18,7 @@ public class OilFieldController : ControllerBase
     }
 
     [HttpPost("plan")]
+    [EnableCors]
     public OilFieldPlanResponse GetPlan([FromBody] OilFieldPlanRequest request)
     {
         var parsedBlueprint = ParseBlueprint.Execute(request.Blueprint);
