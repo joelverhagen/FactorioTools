@@ -127,9 +127,23 @@ public partial class Program
                             .SelectedPlans
                             .Select(p => string.Join(" -> ", new[]
                             {
-                                p.PipeStrategy.ToString(),
+                                p.PipeStrategy switch
+                                {
+                                    PipeStrategy.Fbe => "FBE",
+                                    PipeStrategy.ConnectedCentersDelaunay => "CC-DT",
+                                    PipeStrategy.ConnectedCentersDelaunayMst => "CC-DT-MST",
+                                    PipeStrategy.ConnectedCentersFlute => "CC-FLUTE",
+                                    _ => throw new NotImplementedException(),
+                                },
                                 p.OptimizePipes ? "optimize" : "",
-                                p.BeaconStrategy.ToString()
+                                p.BeaconStrategy switch
+                                {
+                                    null => "",
+                                    BeaconStrategy.Fbe => "FBE*",
+                                    BeaconStrategy.FbeOriginal => "FBE",
+                                    BeaconStrategy.Snug => "SNUG",
+                                    _ => throw new NotImplementedException(),
+                                },
                             }.Where(p => !string.IsNullOrEmpty(p))));
 
                         foreach (var plan in plans)
@@ -157,7 +171,6 @@ public partial class Program
                 }
             }
 
-            /*
             Console.WriteLine();
             var maxWidth = planToWins.Keys.Max(p => p.Length);
             foreach ((var plan, var wins) in planToWins.OrderBy(p => p.Value))
@@ -165,7 +178,6 @@ public partial class Program
                 Console.WriteLine($"{plan.PadLeft(maxWidth)} : {wins}");
             }
             Console.WriteLine();
-            */
         }
 
         Console.WriteLine("Electric pole | Add beacons | Overlap beacons | Pipe count | Pole count | Beacon count | Effect count");

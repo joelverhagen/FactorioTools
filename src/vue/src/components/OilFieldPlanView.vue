@@ -82,7 +82,7 @@ function getBeaconStep(beaconStrategy: BeaconStrategy): Step {
     case BeaconStrategy.Fbe:
       return { text: "FBE*", class: "text-bg-fbe" };
     case BeaconStrategy.Snug:
-      return { text: "SNUG", class: "text-bg-primary" };
+      return { text: "snug", class: "text-bg-primary" };
     default:
       throw new Error(`unrecognized beacon strategy ${beaconStrategy}`)
   }
