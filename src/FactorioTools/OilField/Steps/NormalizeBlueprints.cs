@@ -2,17 +2,26 @@
 
 public static class NormalizeBlueprints
 {
-    public static void Execute(string dataPath)
+    public static void Execute(string inputPath, string existingPath)
     {
-        var lines = new List<string>();
-        foreach (var blueprintString in File.ReadAllLines(dataPath))
+        var existing = NormalizeFile(existingPath).Select(x => x.Normalized).ToHashSet();
+
+        var input = NormalizeFile(inputPath).Where(b => !existing.Contains(b.Normalized)).ToArray();
+
+        File.WriteAllLines(inputPath, input.Select(b => b.Normalized).Order().ToArray());
+    }
+
+    private static List<(string Original, string Normalized)> NormalizeFile(string inputPath)
+    {
+        var lines = new List<(string Original, string Normalized)>();
+        foreach (var blueprintString in File.ReadAllLines(inputPath))
         {
             string output = Normalize(blueprintString);
 
-            lines.Add(output);
+            lines.Add((blueprintString, output));
         }
 
-        File.WriteAllLines(dataPath, lines.ToArray());
+        return lines;
     }
 
     public static string Normalize(string blueprintString)

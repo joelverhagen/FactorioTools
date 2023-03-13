@@ -4,13 +4,14 @@ using Knapcode.FactorioTools.OilField.Steps;
 
 public partial class Program
 {
-    private const string DataPath = "blueprints.txt";
+    private const string ExistingDataPath = "blueprints.txt";
+    private const string NormalizeDataPath = @"C:\Users\joelv\Desktop\PumpjackPipeOptimizer\src\Sandbox\normalized.txt";
 
     private static void Main(string[] args)
     {
         if (args.Length > 0 && args[1] == "normalize")
         {
-            NormalizeBlueprints.Execute(DataPath);
+            NormalizeBlueprints.Execute(NormalizeDataPath, ExistingDataPath);
         }
         else if (args.Length > 0 && args[1] == "measure")
         {
@@ -25,7 +26,7 @@ public partial class Program
 
     private static void Sandbox()
     {
-        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
+        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(ExistingDataPath).ToArray();
         // var blueprintStrings = blueprintStringsAll;
         var blueprintStrings = new[] { blueprintStringsAll[1] };
         // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
@@ -78,7 +79,7 @@ public partial class Program
 
     private static void Measure()
     {
-        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(DataPath).ToArray();
+        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(ExistingDataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
         var optionsAll = new[] { OilFieldOptions.ForSmallElectricPole, OilFieldOptions.ForMediumElectricPole, OilFieldOptions.ForSubstation, OilFieldOptions.ForBigElectricPole };
 
