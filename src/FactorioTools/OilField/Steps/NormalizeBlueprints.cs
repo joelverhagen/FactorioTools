@@ -8,7 +8,7 @@ public static class NormalizeBlueprints
 
         var input = NormalizeFile(inputPath).Where(b => !existing.Contains(b.Normalized)).ToArray();
 
-        File.WriteAllLines(inputPath, input.Select(b => b.Normalized).Order().ToArray());
+        File.WriteAllLines(inputPath, input.Select(b => b.Normalized).Distinct().Order().ToArray());
     }
 
     private static List<(string Original, string Normalized)> NormalizeFile(string inputPath)
