@@ -16,9 +16,15 @@ public static class NormalizeBlueprints
         var lines = new List<(string Original, string Normalized)>();
         foreach (var blueprintString in File.ReadAllLines(inputPath))
         {
-            string output = Normalize(blueprintString);
+            try
+            {
+                string output = Normalize(blueprintString);
+                lines.Add((blueprintString, output));
+            }
+            catch
+            {
+            }
 
-            lines.Add((blueprintString, output));
         }
 
         return lines;

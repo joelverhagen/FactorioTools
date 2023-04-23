@@ -5,7 +5,7 @@ using Knapcode.FactorioTools.OilField.Steps;
 public partial class Program
 {
     private const string ExistingDataPath = "blueprints.txt";
-    private const string NormalizeDataPath = @"C:\Users\joelv\Desktop\PumpjackPipeOptimizer\src\Sandbox\normalized.txt";
+    private const string NormalizeDataPath = @"C:\z\Git\joelverhagen\FactorioTools\src\Sandbox\normalized.txt";
 
     private static void Main(string[] args)
     {
