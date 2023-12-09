@@ -272,6 +272,11 @@ public static partial class AddPipes
             .ThenBy(t =>
             {
                 var neighbors = t.Centers.SelectMany(c => centerToConnectedCenters[c]).Except(t.Centers).ToHashSet();
+                if (neighbors.Count == 0)
+                {
+                    return 0;
+                }
+
                 var centroidX = neighbors.Average(l => l.X);
                 var centroidY = neighbors.Average(l => l.Y);
                 return t.Start.GetEuclideanDistance(centroidX, centroidY) + t.End.GetEuclideanDistance(centroidX, centroidY);
