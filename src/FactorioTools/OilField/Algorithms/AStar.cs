@@ -30,7 +30,16 @@ public static class AStar
     {
         if (goals.Contains(start))
         {
-            return new AStarResult(start, new List<Location> { start });
+            if (outputList is not null)
+            {
+                outputList.Add(start);
+            }
+            else
+            {
+                outputList = new List<Location> { start };
+            }
+
+            return new AStarResult(start, outputList);
         }
 
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
