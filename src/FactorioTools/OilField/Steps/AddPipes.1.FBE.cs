@@ -260,7 +260,7 @@ public static partial class AddPipes
             && ent.Connections.Any(t => t.TerminalA.Direction == e.Direction || t.TerminalB.Direction == e.Direction));
     }
 
-    private static TwoConnectedGroups? GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns = 2)
+    private static TwoConnectedGroups? GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns)
     {
         return groups
             .Select(g => ConnectTwoGroups(context, g, group, maxTurns))
@@ -268,7 +268,7 @@ public static partial class AddPipes
             .MinBy(g => g.MinDistance);
     }
 
-    private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns = 2)
+    private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns)
     {
         var aLocations = a.Paths.SelectMany(x => x).ToList();
         var bLocations = b.Paths.SelectMany(x => x).ToList();
@@ -296,6 +296,13 @@ public static partial class AddPipes
             .Select(l =>
             {
                 var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new HashSet<Location> { l.B });
+
+                if (result.ReachedGoal is null)
+                {
+                    // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                    throw new NoPathBetweenTerminalsException();
+                }
+
                 var path = result.Path;
                 var turns = CountTurns(path);
                 return new PathAndTurns(l, path, turns);

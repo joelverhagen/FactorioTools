@@ -5,13 +5,13 @@ using Knapcode.FactorioTools.OilField.Steps;
 public partial class Program
 {
     private const string ExistingDataPath = "blueprints.txt";
-    private const string NormalizeDataPath = @"C:\z\Git\joelverhagen\FactorioTools\src\Sandbox\normalized.txt";
+    private static readonly string NormalizedDataPath = Path.Combine(GetRepositoryRoot(), "src", "Sandbox", "normalized.txt");
 
     private static void Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "normalize")
         {
-            NormalizeBlueprints.Execute(NormalizeDataPath, ExistingDataPath);
+            NormalizeBlueprints.Execute(NormalizedDataPath, ExistingDataPath);
         }
         else if (args.Length > 0 && args[0] == "measure")
         {
@@ -19,9 +19,24 @@ public partial class Program
         }
         else
         {
-            // Measure();
             Sandbox();
         }
+    }
+
+    private static string GetRepositoryRoot()
+    {
+        var dir = Directory.GetCurrentDirectory();
+        while (dir is not null)
+        {
+            if (Directory.GetFiles(dir).Select(Path.GetFileName).Contains("FactorioTools.sln"))
+            {
+                return dir;
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        throw new InvalidOperationException("Could not find the repository root. Current directory: " + Directory.GetCurrentDirectory());
     }
 
     private static void Sandbox()
@@ -47,8 +62,13 @@ public partial class Program
             {
                 for (int i = 0; i < blueprintStrings.Length; i++)
                 {
-                    // Console.WriteLine("index " + i);
+                    Console.WriteLine("index " + i);
                     string? blueprintString = blueprintStrings[i];
+                    if (blueprintStrings.Length == 1)
+                    {
+                        Console.WriteLine(blueprintString);
+                    }
+
                     var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
                     // var options = Options.ForSubstation;
@@ -56,11 +76,11 @@ public partial class Program
                     // options.ElectricPoleHeight = 3;
                     // options.ElectricPoleSupplyWidth = 9;
                     // options.ElectricPoleSupplyHeight = 9;
-                    options.AddBeacons = addBeacons;
-                    options.UseUndergroundPipes = options.AddBeacons;
-                    options.OptimizePipes = true;
-                    options.ValidateSolution = true;
-                    options.OverlapBeacons = true;
+                    // options.AddBeacons = addBeacons;
+                    // options.UseUndergroundPipes = options.AddBeacons;
+                    // options.OptimizePipes = true;
+                    // options.ValidateSolution = true;
+                    // options.OverlapBeacons = true;
                     // options.BeaconStrategies.Remove(BeaconStrategy.Fbe);
                     // options.PipeStrategies = new HashSet<PipeStrategy> { PipeStrategy.Fbe };
                     // options.BeaconStrategies = new HashSet<BeaconStrategy> { BeaconStrategy.Snug };

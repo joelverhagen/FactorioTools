@@ -17,6 +17,5 @@ public class FactorioToolsException : Exception
         BadInput = badInput;
     }
 
-
     public bool BadInput { get; }
 }

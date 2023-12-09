@@ -44,6 +44,24 @@ public class PlannerTest
             Planner.Execute(options, blueprint);
         }
 
+        [Theory]
+        [MemberData(nameof(AllPipeStrategiesTestData))]
+        public void RejectsBlueprintWithIsolatedArea(PipeStrategy strategy)
+        {
+            var options = OilFieldOptions.ForMediumElectricPole;
+            options.PipeStrategies = new List<PipeStrategy> { strategy };
+            var blueprintString = "0eJyM1dtuhCAQBuB3mWsuBDy/StNsXJc0tCsaD02N8d0L4kXrkvBfivg5wMyw0f25qGHUZqZ6I932ZqL6baNJf5jm6cZM0ymqaVi64bNpv4jRvA5uRM+qo52RNg/1QzXf3xkpM+tZK28cD+vNLN1djXYCC1hDP9kPeuP+ZBEpGK12qrTuQ4+q9e+Snb1wAuB47rk8zkmAE4XnyjiXIlzquSrOZchiq4MTSZzLkaPw0Qke5wpksf5khfjPpQGuRLgsyIWiqxCugjmeIGdReu+SxyLkIXXBz+VmQHwCT72rF4wPqozEe0Ch8RSvNMhDakNy7xWAhxSH2xTnlcD+QdVxekArcKkV90rcq/D8k0AzcKmArlcC3UAg9SF8o796ofNwjQj10pd+YO+4496r/1ycjL7VOJ0T9l8AAAD//wMAYfxmNQ==";
+
+            var blueprint = ParseBlueprint.Execute(blueprintString);
+
+            // Act
+            Assert.Throws<NoPathBetweenTerminalsException>(() => Planner.Execute(options, blueprint));
+        }
+
+        public static IEnumerable<object[]> AllPipeStrategiesTestData => Enum
+            .GetValues<PipeStrategy>()
+            .Select(x => new object[] { x });
+
         private static IReadOnlyDictionary<string, Func<OilFieldOptions>> ElectricPoleToOptions { get; } = new[]
         {
             () => OilFieldOptions.ForSmallElectricPole,

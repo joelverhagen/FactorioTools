@@ -161,6 +161,11 @@ public static partial class AddPipes
             var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
 #endif
 
+            if (aStarResultV.ReachedGoal is null)
+            {
+                throw new NoPathBetweenTerminalsException();
+            }
+
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
             {
                 return aStarResultV.Path.ToList();
