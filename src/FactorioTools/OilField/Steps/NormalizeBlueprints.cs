@@ -38,6 +38,11 @@ public static class NormalizeBlueprints
         {
             var blueprint = ParseBlueprint.Execute(trimmed);
             var clean = CleanBlueprint.Execute(blueprint);
+            if (clean.Blueprint.Entities.Length == 0)
+            {
+                throw new InvalidOperationException("There are not pumpjacks in the blueprint.");
+            }
+
             output = GridToBlueprintString.SerializeBlueprint(clean);
         }
 
