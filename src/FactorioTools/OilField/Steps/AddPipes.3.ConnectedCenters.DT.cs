@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using DelaunatorSharp;
 using Knapcode.FactorioTools.OilField.Algorithms;
 
 namespace Knapcode.FactorioTools.OilField.Steps;

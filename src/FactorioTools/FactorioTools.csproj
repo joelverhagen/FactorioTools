@@ -24,6 +24,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Using Include="DelaunatorSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Delaunator" Version="1.0.10" />
     <PackageReference Include="Knapcode.FluteSharp" Version="0.4.0" GeneratePathProperty="true" ExcludeAssets="contentFiles" />
   </ItemGroup>
