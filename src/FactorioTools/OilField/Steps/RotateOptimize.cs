@@ -25,11 +25,16 @@ public static class RotateOptimize
 
         var context = new ChildContext(parentContext, pipes);
 
-        // Visualizer.Show(existingPipeGrid, intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // Visualizer.Show(context.ExistingPipeGrid, context.Intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         var modified = true;
+        var previousPipeCount = int.MaxValue;
 
-        while (modified)
+        // Some oil fields have multiple optimal configurations with the same pipe count. Allow up to 5 of these to be
+        // attempted before settling on one.
+        var allowedSamePipeCounts = 5;
+
+        while (modified && (context.Pipes.Count < previousPipeCount || allowedSamePipeCounts > 0))
         {
             var changedTerminal = false;
             foreach (var terminals in context.CenterToTerminals.Values)
@@ -64,6 +69,14 @@ public static class RotateOptimize
             }
 
             modified = changedTerminal || shortenedPath;
+            if (previousPipeCount == context.Pipes.Count)
+            {
+                allowedSamePipeCounts--;
+            }
+            else
+            {
+                previousPipeCount = context.Pipes.Count;
+            }
         }
     }
 
@@ -116,7 +129,7 @@ public static class RotateOptimize
 #if USE_SHARED_INSTANCES
                 var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
 #else
-            var newPath = new List<Location>();
+                var newPath = new List<Location>();
 #endif
                 var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
                 if (result.ReachedGoal.HasValue)
@@ -165,6 +178,8 @@ public static class RotateOptimize
 
                     EliminateOtherTerminals(context.ParentContext, minTerminal);
                 }
+
+                // Console.WriteLine($"New best terminal: {minTerminal} -> {minPath.Last()}");
 
                 context.UpdateIntersectionsAndGoals();
 
@@ -251,6 +266,8 @@ public static class RotateOptimize
             AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
             Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
             */
+
+            // Console.WriteLine($"Shortened path: {result.Path[0]} -> {result.Path.Last()}");
 
             return true;
         }
