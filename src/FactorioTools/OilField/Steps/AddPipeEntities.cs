@@ -18,7 +18,7 @@ public static class AddPipeEntities
     public static void Execute(
         SquareGrid grid,
         SharedInstances sharedInstances,
-        Dictionary<Location, List<TerminalLocation>> centerToTerminals,
+        IReadOnlyDictionary<Location, List<TerminalLocation>> centerToTerminals,
         HashSet<Location> pipes,
         Dictionary<Location, Direction>? undergroundPipes)
     {
