@@ -9,11 +9,11 @@ public partial class Program
 
     private static void Main(string[] args)
     {
-        if (args.Length > 0 && args[1] == "normalize")
+        if (args.Length > 0 && args[0] == "normalize")
         {
             NormalizeBlueprints.Execute(NormalizeDataPath, ExistingDataPath);
         }
-        else if (args.Length > 0 && args[1] == "measure")
+        else if (args.Length > 0 && args[0] == "measure")
         {
             Measure();
         }
