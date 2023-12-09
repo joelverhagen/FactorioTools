@@ -40,14 +40,51 @@ public static partial class AddPipes
             return connected;
         }
 
-        return strategy switch
+        var connectedCenters = strategy switch
         {
             PipeStrategy.ConnectedCentersDelaunay => GetConnectedPumpjacksWithDelaunay(centers),
             PipeStrategy.ConnectedCentersDelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
             PipeStrategy.ConnectedCentersFlute => GetConnectedPumpjacksWithFLUTE(context),
             _ => throw new NotImplementedException(),
         };
+
+        // check if all connected centers have edges in both directions
+        if (context.Options.ValidateSolution)
+        {
+            foreach (var (center, others) in connectedCenters)
+            {
+                foreach (var other in others)
+                {
+                    if (!connectedCenters[other].Contains(center))
+                    {
+                        throw new FactorioToolsException("The edges in the connected centers graph are not bidirectional.");
+                    }
+                }
+            }
+        }
+
+        // VisualizeConnectedCenters(context, connectedCenters);
+
+        return connectedCenters;
     }
+
+#if DEBUG
+    private static void VisualizeConnectedCenters(Context context, Dictionary<Location, HashSet<Location>> connectedCenters)
+    {
+        var edges = new HashSet<IEdge>();
+
+        foreach (var (center, centers) in connectedCenters)
+        {
+            foreach (var other in centers)
+            {
+                var edge = new Edge(e: 0, new Point(center.X, center.Y), new Point(other.X, other.Y));
+                edges.Add(edge);
+            }
+        }
+
+        Visualizer.Show(context.Grid, connectedCenters.Keys.Select(x => (IPoint)new Point(x.X, x.Y)), edges);
+    }
+#endif
 
     private static HashSet<Location> FindTrunksAndConnect(Context context, Dictionary<Location, HashSet<Location>> centerToConnectedCenters)
     {
@@ -71,7 +108,7 @@ public static partial class AddPipes
 
         /*
         var clone = new PipeGrid(context.Grid);
-        Visualizer.Show(clone, groups.SelectMany(g => g.Pipes).Distinct().Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        Visualizer.Show(clone, groups.SelectMany(g => g.Pipes).Distinct().Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
         */
 
         while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
@@ -128,8 +165,8 @@ public static partial class AddPipes
 
                 /*
                 var clone2 = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone2, context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToHashSet());
-                Visualizer.Show(clone2, path.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToHashSet(), allowMultipleTerminals: true);
+                Visualizer.Show(clone2, path.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
                 */
             }
             else
@@ -140,8 +177,8 @@ public static partial class AddPipes
 
                 /*
                 var clone2 = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone2, context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToHashSet());
-                Visualizer.Show(clone2, path.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToHashSet(), allowMultipleTerminals: true);
+                Visualizer.Show(clone2, path.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
                 */
             }
         }

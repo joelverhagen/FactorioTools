@@ -1103,8 +1103,8 @@ public static class Helpers
         }
 
 
-        var points = filteredNodes.Select<Location, DelaunatorSharp.IPoint>(x => new DelaunatorSharp.Point(x.X, x.Y)).ToArray();
-        var delaunator = new DelaunatorSharp.Delaunator(points);
+        var points = filteredNodes.Select<Location, IPoint>(x => new Point(x.X, x.Y)).ToArray();
+        var delaunator = new Delaunator(points);
 
         var lines = new List<Endpoints>();
         for (var e = 0; e < delaunator.Triangles.Length; e++)

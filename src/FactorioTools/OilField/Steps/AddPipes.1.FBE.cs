@@ -229,7 +229,7 @@ public static partial class AddPipes
                     {
                         /*
                         var clone = new PipeGrid(context.Grid);
-                        AddPipeEntities.Execute(clone, context.SharedInstances, context.CenterToTerminals, finalGroup.Paths.SelectMany(l => l).ToHashSet(), undergroundPipes: null, allowMultipleTerminals: true);
+                        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, finalGroup.Paths.SelectMany(l => l).ToHashSet(), undergroundPipes: null, allowMultipleTerminals: true);
                         Visualizer.Show(clone, Array.Empty<IPoint>(), Array.Empty<IEdge>());
                         */
 

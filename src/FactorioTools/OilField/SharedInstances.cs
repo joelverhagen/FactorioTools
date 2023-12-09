@@ -2,18 +2,27 @@
 
 public class SharedInstances
 {
+    public SharedInstances() : this(new())
+    {
+    }
+
+    public SharedInstances(HashSet<Location> locationSetA)
+    {
+        LocationSetA = locationSetA;
+    }
+
 #if USE_SHARED_INSTANCES
-    public required Queue<Location> LocationQueue;
-    public required Location[] LocationArray;
-    public required int[] IntArrayX;
-    public required int[] IntArrayY;
-    public required Dictionary<Location, Location> LocationToLocation;
-    public required Dictionary<Location, double> LocationToDouble;
-    public required PriorityQueue<Location, double> LocationPriorityQueue;
-    public required List<Location> LocationListA;
-    public required List<Location> LocationListB;
-    public required HashSet<Location> LocationSetA;
-    public required HashSet<Location> LocationSetB;
+    public Queue<Location> LocationQueue = new();
+    public Location[] LocationArray = Array.Empty<Location>();
+    public int[] IntArrayX = Array.Empty<int>();
+    public int[] IntArrayY = Array.Empty<int>();
+    public Dictionary<Location, Location> LocationToLocation = new();
+    public Dictionary<Location, double> LocationToDouble = new();
+    public PriorityQueue<Location, double> LocationPriorityQueue = new();
+    public List<Location> LocationListA = new();
+    public List<Location> LocationListB = new();
+    public HashSet<Location> LocationSetA;
+    public HashSet<Location> LocationSetB = new();
 
     public T[] GetArray<T>(ref T[] array, int length) where T : struct
     {

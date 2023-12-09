@@ -194,7 +194,7 @@ public static partial class AddPipes
             return solutions;
         }
 
-        // Visualizer.Show(context.Grid, pipes.Select(p => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(p.X, p.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // Visualizer.Show(context.Grid, pipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
 
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
@@ -206,6 +206,8 @@ public static partial class AddPipes
             context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             optimizedPipes = new HashSet<Location>(pipes);
             RotateOptimize.Execute(context, optimizedPipes);
+
+            // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
         }
 
         if (pipes.SetEquals(optimizedPipes))
