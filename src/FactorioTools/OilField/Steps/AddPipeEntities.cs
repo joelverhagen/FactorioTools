@@ -20,7 +20,8 @@ public static class AddPipeEntities
         SharedInstances sharedInstances,
         IReadOnlyDictionary<Location, List<TerminalLocation>> centerToTerminals,
         HashSet<Location> pipes,
-        Dictionary<Location, Direction>? undergroundPipes)
+        Dictionary<Location, Direction>? undergroundPipes = null,
+        bool allowMultipleTerminals = false)
     {
 #if USE_SHARED_INSTANCES
         var addedPipes = sharedInstances.LocationSetA;
@@ -42,7 +43,7 @@ public static class AddPipeEntities
 
             foreach (var terminals in centerToTerminals.Values)
             {
-                if (terminals.Count != 1)
+                if (terminals.Count != 1 && !allowMultipleTerminals)
                 {
                     throw new FactorioToolsException("Every pumpjack should have a single terminal selected.");
                 }

@@ -214,24 +214,37 @@ public static partial class AddPipes
                 .Select(t => new Group(new List<TerminalLocation> { t }, new List<List<Location>> { new List<Location> { t.Terminal } }))
                 .ToList();
 
-            var connection = GetPathBetweenGroups(
-                context,
-                terminalGroups,
-                finalGroup);
-
-            if (connection is null)
+            var maxTurns = 2;
+            while (true)
             {
-                /*
-                var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, context.CenterToTerminals, finalGroup.Paths.SelectMany(l => l).ToHashSet());
-                Visualizer.Show(clone, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-                */
+                var connection = GetPathBetweenGroups(
+                    context,
+                    terminalGroups,
+                    finalGroup,
+                    maxTurns);
 
-                throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group.");
+                if (connection is null)
+                {
+                    if (maxTurns > 4)
+                    {
+                        /*
+                        var clone = new PipeGrid(context.Grid);
+                        AddPipeEntities.Execute(clone, context.SharedInstances, context.CenterToTerminals, finalGroup.Paths.SelectMany(l => l).ToHashSet(), undergroundPipes: null, allowMultipleTerminals: true);
+                        Visualizer.Show(clone, Array.Empty<IPoint>(), Array.Empty<IEdge>());
+                        */
+
+                        throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group. Max turns: " + maxTurns);
+                    }
+
+                    maxTurns++;
+                    continue;
+                }
+
+                finalGroup.Add(connection.FirstGroup.Entities.Single());
+                finalGroup.Paths.Add(connection.Lines[0]);
+                break;
             }
 
-            finalGroup.Add(connection.FirstGroup.Entities.Single());
-            finalGroup.Paths.Add(connection.Lines[0]);
         }
 
         var terminals = finalGroup.Entities.ToList();
