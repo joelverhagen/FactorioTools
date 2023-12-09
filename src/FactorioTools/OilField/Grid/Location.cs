@@ -1,4 +1,6 @@
-﻿public struct Location : IEquatable<Location>, IComparable<Location>
+﻿using System.Globalization;
+
+public struct Location : IEquatable<Location>, IComparable<Location>, IFormattable
 {
     public Location(int x, int y)
     {
@@ -125,7 +127,19 @@
 
     public override string ToString()
     {
-        // Show the real X and Y coordinates as well as line and column numbers (in VS Code format).
-        return $"({X}, {Y}) / (Ln {Y + 1}, Col {X + 1})";
+        return ToString("S", formatProvider: null);
+    }
+
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return format switch
+        {
+            "M" => $"({X}, {Y})",
+
+            // Show the real X and Y coordinates as well as line and column numbers (in VS Code format).
+            "S" => $"({X}, {Y}) / (Ln {Y + 1}, Col {X + 1})",
+
+            _ => throw new ArgumentException("Format string is not supported. Use 'M' or 'S'.", nameof(format))
+        };
     }
 }
