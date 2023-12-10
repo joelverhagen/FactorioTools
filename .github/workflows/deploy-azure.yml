@@ -36,7 +36,7 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Publish for Windows
+      - name: Publish
         run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/Release/publish --runtime linux-x64 --no-self-contained /p:PublishReadyToRun=true
 
       - name: Deploy
