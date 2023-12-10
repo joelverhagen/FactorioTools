@@ -22,7 +22,7 @@ jobs:
     environment: azure
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v3
 
       - name: Azure login
         uses: azure/login@v1

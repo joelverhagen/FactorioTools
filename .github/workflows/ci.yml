@@ -50,12 +50,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v3
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           global-json-file: global.json
+        
+      - name: Restore workloads
+        run: dotnet workload restore
         
       - name: Restore dependencies
         run: dotnet restore
