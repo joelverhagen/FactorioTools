@@ -131,33 +131,6 @@ public static class GridToBlueprintString
             }
         }
 
-        // FBE applies some offset to the blueprint coordinates. This makes it hard to compare the grid used in memory
-        // with the rendered blueprint in FBE. To account for this, we can add an entity to the corner of the
-        // blueprint with a position that makes FBE keep the original entity positions used by the grid.
-        if (addFbeOffset && entities.Count > 0)
-        {
-            var maxX = float.MinValue;
-            var maxY = float.MinValue;
-
-            foreach (var entity in entities)
-            {
-                (var width, var height) = EntityNameToSize[entity.Name];
-                maxX = Math.Max(maxX, entity.Position.X + width / 2);
-                maxY = Math.Max(maxY, entity.Position.Y + height / 2);
-            }
-
-            entities.Add(new Entity
-            {
-                EntityNumber = nextEntityNumber++,
-                Name = EntityNames.Vanilla.Wall,
-                Position = new Position
-                {
-                    X = (float)-Math.Ceiling(maxX),
-                    Y = (float)-Math.Ceiling(maxY),
-                },
-            });
-        }
-
         var root = new BlueprintRoot
         {
             Blueprint = new Blueprint
@@ -169,11 +142,40 @@ public static class GridToBlueprintString
             }
         };
 
-        return SerializeBlueprint(root);
+        return SerializeBlueprint(root, addFbeOffset);
     }
 
-    public static string SerializeBlueprint(BlueprintRoot root)
+    public static string SerializeBlueprint(BlueprintRoot root, bool addFbeOffset)
     {
+        // FBE applies some offset to the blueprint coordinates. This makes it hard to compare the grid used in memory
+        // with the rendered blueprint in FBE. To account for this, we can add an entity to the corner of the
+        // blueprint with a position that makes FBE keep the original entity positions used by the grid.
+        if (addFbeOffset && root.Blueprint.Entities.Length > 0)
+        {
+            var maxX = float.MinValue;
+            var maxY = float.MinValue;
+            var maxEntityNumber = int.MinValue;
+
+            foreach (var entity in root.Blueprint.Entities)
+            {
+                (var width, var height) = EntityNameToSize[entity.Name];
+                maxX = Math.Max(maxX, entity.Position.X + width / 2);
+                maxY = Math.Max(maxY, entity.Position.Y + height / 2);
+                maxEntityNumber = Math.Max(maxEntityNumber, entity.EntityNumber);
+            }
+
+            root.Blueprint.Entities = root.Blueprint.Entities.Append(new Entity
+            {
+                EntityNumber = maxEntityNumber + 1,
+                Name = EntityNames.Vanilla.Wall,
+                Position = new Position
+                {
+                    X = (float)-Math.Ceiling(maxX),
+                    Y = (float)-Math.Ceiling(maxY),
+                },
+            }).ToArray();
+        }
+
         var json = JsonSerializer.Serialize(root, typeof(BlueprintRoot), new BlueprintSerializationContext(new JsonSerializerOptions
         {
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

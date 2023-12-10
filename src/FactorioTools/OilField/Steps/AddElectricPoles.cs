@@ -14,20 +14,19 @@ public static class AddElectricPoles
         PreferUncoveredEntities = 3,
     }
 
-    public static HashSet<Location>? Execute(Context context, bool avoidTerminals, bool allowRetries)
+    public static HashSet<Location>? Execute(Context context, IReadOnlyCollection<Location> avoid, bool allowRetries)
     {
-        HashSet<Location>? temporaryTerminals = null;
-        if (avoidTerminals)
+        HashSet<Location>? avoidEntities = null;
+        if (avoid.Count > 0)
         {
-            temporaryTerminals = new HashSet<Location>();
-
-            foreach (var terminal in context.CenterToTerminals.Values.SelectMany(t => t).Select(t => t.Terminal))
+            avoidEntities = new HashSet<Location>();
+            foreach (var location in avoid)
             {
-                if (context.Grid.IsEmpty(terminal))
+                if (context.Grid.IsEmpty(location))
                 {
-                    if (temporaryTerminals.Add(terminal))
+                    if (avoidEntities.Add(location))
                     {
-                        context.Grid.AddEntity(terminal, new TemporaryEntity());
+                        context.Grid.AddEntity(location, new TemporaryEntity());
                     }
                 }
             }   
@@ -71,9 +70,9 @@ public static class AddElectricPoles
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        if (avoidTerminals)
+        if (avoidEntities is not null && avoidEntities.Count > 0)
         {
-            foreach (var terminal in temporaryTerminals!)
+            foreach (var terminal in avoidEntities)
             {
                 context.Grid.RemoveEntity(terminal);
             }

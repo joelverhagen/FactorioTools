@@ -10,20 +10,16 @@ public static partial class AddPipes
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 
-        var centerToPoints = context
-            .CenterToTerminals
-            .ToDictionary(p => p.Key, p => p.Value.Select(t => locationToPoint[t.Terminal]).ToHashSet());
-
         // Determine which terminals should be connected to each other either directly or via only Steiner points.
         var centerToCenters = new Dictionary<Location, HashSet<Location>>();
-        foreach (var center in context.CenterToTerminals.Keys)
+        foreach (var (center, terminals) in context.CenterToTerminals)
         {
             var otherCenters = new HashSet<Location>();
             var visitedPoints = new HashSet<FlutePoint>();
             var queue = new Queue<FlutePoint>();
-            foreach (var point in centerToPoints[center])
+            foreach (var terminal in terminals)
             {
-                queue.Enqueue(point);
+                queue.Enqueue(locationToPoint[terminal.Terminal]);
             }
 
             while (queue.Count > 0)
@@ -35,13 +31,14 @@ public static partial class AddPipes
                     continue;
                 }
 
-                if ((point.Centers.Contains(center) && point.Centers.Count > 1)
-                    || (!point.Centers.Contains(center) && point.Centers.Count > 0))
+                if (!point.Centers.Contains(center) && point.Centers.Count > 0)
                 {
                     otherCenters.UnionWith(point.Centers);
                 }
                 else
                 {
+                    otherCenters.UnionWith(point.Centers);
+
                     foreach (var neighbor in point.Neighbors)
                     {
                         queue.Enqueue(neighbor);
@@ -80,7 +77,7 @@ public static partial class AddPipes
     {
         var fluteTree = GetFluteTree(context);
 
-        // VisualizeFLUTE(context, context.CenterToTerminals.SelectMany(p => p.Value).Select(l => new System.Drawing.Point(l.Terminal.X, l.Terminal.Y)).ToList(), fluteTree);
+        // VisualizeFLUTE(context, context.CenterToTerminals.SelectMany(p => p.Value).Select(l => (IPoint)new Point(l.Terminal.X, l.Terminal.Y)), fluteTree);
 
         // Map the FLUTE tree into a more useful object graph.
         var locationToPoint = new Dictionary<Location, FlutePoint>();
@@ -118,6 +115,12 @@ public static partial class AddPipes
 
                 current = next;
             }
+        }
+
+        // Remove self from neighbors
+        foreach (var point in locationToPoint.Values)
+        {
+            point.Neighbors.Remove(point);
         }
 
         // Add in pumpjack information
@@ -166,15 +169,15 @@ public static partial class AddPipes
     }
 
 #if DEBUG
-    private static void VisualizeFLUTE(Context context, List<System.Drawing.Point> terminalPoints, Tree fluteTree)
+    private static void VisualizeFLUTE(Context context, IEnumerable<IPoint> terminalPoints, Tree fluteTree)
     {
         var steinerPoints = fluteTree
             .Branch
-            .Select(b => new System.Drawing.Point(b.X, b.Y))
+            .Select(b => (IPoint)new Point(b.X, b.Y))
             .Except(terminalPoints)
             .ToList();
 
-        var edges = new HashSet<DelaunatorSharp.IEdge>();
+        var edges = new HashSet<IEdge>();
 
         for (int i = 0; i < fluteTree.Branch.Length; i++)
         {
@@ -183,7 +186,7 @@ public static partial class AddPipes
             while (true)
             {
                 var next = fluteTree.Branch[current.N];
-                var edge = new DelaunatorSharp.Edge(e: 0, new DelaunatorSharp.Point(current.X, current.Y), new DelaunatorSharp.Point(next.X, next.Y));
+                var edge = new Edge(e: 0, new Point(current.X, current.Y), new Point(next.X, next.Y));
                 edges.Add(edge);
 
                 if (current.N == next.N)
@@ -195,7 +198,7 @@ public static partial class AddPipes
             }
         }
 
-        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (IPoint)new Point(x.X, x.Y)), edges);
     }
 #endif
 }

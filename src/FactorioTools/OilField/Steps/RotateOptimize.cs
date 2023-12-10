@@ -1,8 +1,5 @@
 ﻿using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
-#if USE_OBJECT_POOLING
-using Microsoft.Extensions.ObjectPool;
-#endif
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
@@ -25,7 +22,7 @@ public static class RotateOptimize
 
         var context = new ChildContext(parentContext, pipes);
 
-        // Visualizer.Show(context.ExistingPipeGrid, context.Intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // VisualizeIntersections(context);
 
         var modified = true;
         var previousPipeCount = int.MaxValue;
@@ -47,8 +44,14 @@ public static class RotateOptimize
                     continue;
                 }
 
-                changedTerminal |= UseBestTerminal(context, currentTerminal);
+                if (UseBestTerminal(context, currentTerminal))
+                {
+                    // VisualizeIntersections(context);
+                    changedTerminal = true;
+                }
             }
+
+            // VisualizeIntersections(context);
 
             var shortenedPath = false;
             foreach (var intersection in context.Intersections.ToList())
@@ -64,7 +67,11 @@ public static class RotateOptimize
 
                 foreach (var goal in exploredPaths.ReachedGoals)
                 {
-                    shortenedPath |= UseShortestPath(context, exploredPaths, intersection, goal);
+                    if (UseShortestPath(context, exploredPaths, intersection, goal))
+                    {
+                        // VisualizeIntersections(context);
+                        shortenedPath = true;
+                    }
                 }
             }
 
@@ -77,8 +84,19 @@ public static class RotateOptimize
             {
                 previousPipeCount = context.Pipes.Count;
             }
+
+            // VisualizeIntersections(context);
         }
     }
+
+#if DEBUG
+    private static void VisualizeIntersections(ChildContext context)
+    {
+        var clone = new PipeGrid(context.ExistingPipeGrid);
+        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes, allowMultipleTerminals: true);
+        Visualizer.Show(clone, context.Intersections.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+    }
+#endif
 
     private static bool UseBestTerminal(ChildContext context, TerminalLocation originalTerminal)
     {
@@ -89,8 +107,8 @@ public static class RotateOptimize
         if (exploredPaths.ReachedGoals.Count == 0)
         {
             var clone = new PipeGrid(context.ExistingPipeGrid);
-            AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-            Visualizer.Show(clone, context.Goals.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
+            Visualizer.Show(clone, context.Goals.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
         }
         */
 
@@ -121,7 +139,7 @@ public static class RotateOptimize
                 (var direction, var translation) = TerminalOffsets[i];
 
                 var terminalCandidate = originalTerminal.Center.Translate(translation);
-                if (context.Grid.IsEntityType<PumpjackSide>(terminalCandidate))
+                if (!context.Grid.IsEmpty(terminalCandidate) && !context.Grid.IsEntityType<Pipe>(terminalCandidate))
                 {
                     continue;
                 }
@@ -184,18 +202,9 @@ public static class RotateOptimize
                 context.UpdateIntersectionsAndGoals();
 
                 /*
-                if (paths[0].Terminal.Direction == originalTerminal.Direction)
-                {
-                    var clone = new PipeGrid(context.Grid);
-                    AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-                    Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-                }
-                */
-
-                /*
                 var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-                Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
+                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
                 */
 
                 return true;
@@ -228,54 +237,87 @@ public static class RotateOptimize
         var originalPath = new List<Location>();
         var connectionPoints = new HashSet<Location>(context.Pipes.Count);
 #endif
-        exploredPaths.AddPath(originalGoal, originalPath);
-        for (var i = 1; i < originalPath.Count; i++)
-        {
-            context.Pipes.Remove(originalPath[i]);
-        }
-
-        /*
-        var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-        Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-        */
-
-        ExplorePipes(context, originalGoal, connectionPoints);
-
-#if USE_SHARED_INSTANCES
-        var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
-#else
-        var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
-#endif
 
         try
         {
-            if (result.Path.Count > originalPath.Count
-                || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
+
+            exploredPaths.AddPath(originalGoal, originalPath);
+
+            for (var i = 1; i < originalPath.Count; i++)
             {
-                context.Pipes.UnionWith(originalPath);
+                // Does the path contain an intersection as an intermediate point? This can happen if a previous call
+                // of this method with the same exploration changed the intersections.
+                if (i < originalPath.Count - 1 && context.Intersections.Contains(originalPath[i]))
+                {
+                    // Add the path back.
+                    for (var j = i - 1; j > 0; j--)
+                    {
+                        context.Pipes.Add(originalPath[j]);
+                    }
 
-                return false;
+                    return false;
+                }
+
+                context.Pipes.Remove(originalPath[i]);
             }
-
-            context.Pipes.UnionWith(result.Path);
-            context.UpdateIntersectionsAndGoals();
 
             /*
             var clone = new PipeGrid(context.Grid);
-            AddPipeEntities.Execute(clone, context.CenterToTerminals, context.Pipes);
-            Visualizer.Show(clone, originalPath.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
+            Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
             */
 
-            // Console.WriteLine($"Shortened path: {result.Path[0]} -> {result.Path.Last()}");
+            ExplorePipes(context, originalGoal, connectionPoints);
 
-            return true;
+#if USE_SHARED_INSTANCES
+            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
+#else
+            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
+#endif
+
+            /*
+            if (result.ReachedGoal is null)
+            {
+                var clone = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
+                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+            }
+            */
+
+            try
+            {
+                if (result.Path.Count > originalPath.Count
+                    || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
+                {
+                    context.Pipes.UnionWith(originalPath);
+
+                    return false;
+                }
+
+                context.Pipes.UnionWith(result.Path);
+                context.UpdateIntersectionsAndGoals();
+
+                /*
+                var clone2 = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, context.Pipes);
+                Visualizer.Show(clone2, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+                */
+
+                // Console.WriteLine($"Shortened path: {result.Path[0]} -> {result.Path.Last()}");
+
+                return true;
+            }
+            finally
+            {
+#if USE_SHARED_INSTANCES
+                result.Path.Clear();
+#endif
+            }
         }
         finally
         {
 #if USE_SHARED_INSTANCES
             originalPath.Clear();
-            result.Path.Clear();
             connectionPoints.Clear();
 #endif
         }

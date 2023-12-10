@@ -10,16 +10,47 @@ public static partial class AddPipes
 {
     public static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> UnusedPlans) Execute(Context context, bool eliminateStrandedTerminals)
     {
+        if (eliminateStrandedTerminals)
+        {
+            EliminateStrandedTerminals(context);
+        }
+
+        List<OilFieldPlan> selectedPlans;
+        List<OilFieldPlan> unusedPlans;
+        Solution bestSolution;
+        BeaconSolution? bestBeacons;
+
+        try
+        {
+            (selectedPlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
+        }
+        catch (NoPathBetweenTerminalsException) when (!eliminateStrandedTerminals)
+        {
+            EliminateStrandedTerminals(context);
+            (selectedPlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
+        }
+
+        context.CenterToTerminals = bestSolution.CenterToTerminals;
+        context.LocationToTerminals = bestSolution.LocationToTerminals;
+
+        AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
+
+        if (bestBeacons is not null)
+        {
+            // Visualizer.Show(context.Grid, bestSolution.Beacons.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+            AddBeaconsToGrid(context.Grid, context.Options, bestBeacons.Beacons);
+        }
+
+        return (selectedPlans, unusedPlans);
+    }
+
+    private static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> UnusedPlans, Solution BestSolution, BeaconSolution? BestBeacons) GetBestSolution(Context context)
+    {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
         var pipesToSolutions = new Dictionary<HashSet<Location>, List<Solution>>(LocationSetComparer.Instance);
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, List<Solution>>(ConnectedCentersComparer.Instance);
-
-        if (eliminateStrandedTerminals)
-        {
-            EliminateStrandedTerminals(context);
-        }
 
         if (context.CenterToTerminals.Count == 1)
         {
@@ -162,18 +193,7 @@ public static partial class AddPipes
             throw new FactorioToolsException("At least one pipe strategy must be used.");
         }
 
-        context.CenterToTerminals = bestSolution.CenterToTerminals;
-        context.LocationToTerminals = bestSolution.LocationToTerminals;
-
-        AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
-
-        if (bestBeacons is not null)
-        {
-            // Visualizer.Show(context.Grid, bestSolution.Beacons.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-            AddBeaconsToGrid(context.Grid, context.Options, bestBeacons.Beacons);
-        }
-
-        return (selectedPlans, unusedPlans);
+        return (selectedPlans, unusedPlans, bestSolution, bestBeacons);
     }
 
     private static List<Solution> OptimizeAndAddSolutions(
@@ -311,17 +331,32 @@ public static partial class AddPipes
                 locationsToExplore = unreachedTerminals;
             }
 
+            Location? strandedTerminal = null;
             foreach (var location in terminalsToEliminate)
             {
                 foreach (var terminal in context.LocationToTerminals[location])
                 {
                     var terminals = context.CenterToTerminals[terminal.Center];
                     terminals.Remove(terminal);
+
                     if (terminals.Count == 0)
                     {
-                        throw new FactorioToolsException("No path can be found for any of the terminals on a pumpjack.");
+                        strandedTerminal = terminal.Terminal;
                     }
                 }
+
+                context.LocationToTerminals.Remove(location);
+            }
+            
+            if (strandedTerminal.HasValue)
+            {
+                /*
+                var clone = new PipeGrid(context.Grid);
+                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, new HashSet<Location>(), undergroundPipes: null, allowMultipleTerminals: true);
+                Visualizer.Show(clone, new[] { strandedTerminal.Value, locationsToExplore.First() }.Select(x => (IPoint)new Point(x.X, x.Y)), Array.Empty<IEdge>());
+                */
+
+                throw new NoPathBetweenTerminalsException(strandedTerminal.Value, locationsToExplore.First());
             }
         }
     }

@@ -144,8 +144,8 @@ public static partial class AddPipes
         }
 
         // CONNECT GROUPS
-        var maxTries = 3;
-        var tries = 3;
+        const int maxTries = 10;
+        var tries = maxTries;
         var aloneGroups = new List<Group>();
         Group? finalGroup = null;
 
@@ -194,11 +194,18 @@ public static partial class AddPipes
             {
                 aloneGroups.Add(group);
             }
+
+            // VisualizeGroups(context, addedPumpjacks, new[] { group });
         }
 
         if (finalGroup is null)
         {
-            throw new FactorioToolsException("The final group should be initalized at this point.");
+            throw new FactorioToolsException("The final group should be initialized at this point.");
+        }
+
+        if (aloneGroups.Count > 0)
+        {
+            throw new FactorioToolsException("There should be no more alone groups at this point.");
         }
 
         var leftoverPumpjacks = context
@@ -225,14 +232,10 @@ public static partial class AddPipes
 
                 if (connection is null)
                 {
+                    // VisualizeGroups(context, addedPumpjacks, new[] { finalGroup });
+
                     if (maxTurns > 4)
                     {
-                        /*
-                        var clone = new PipeGrid(context.Grid);
-                        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, finalGroup.Paths.SelectMany(l => l).ToHashSet(), undergroundPipes: null, allowMultipleTerminals: true);
-                        Visualizer.Show(clone, Array.Empty<IPoint>(), Array.Empty<IEdge>());
-                        */
-
                         throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group. Max turns: " + maxTurns);
                     }
 
@@ -252,6 +255,15 @@ public static partial class AddPipes
 
         return (terminals, pipes);
     }
+
+#if DEBUG
+    private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
+    {
+        var clone = new PipeGrid(context.Grid);
+        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToHashSet(), undergroundPipes: null, allowMultipleTerminals: true);
+        Visualizer.Show(clone, addedPumpjacks.Select(x => (IPoint)new Point(x.Center.X, x.Center.Y)), Array.Empty<IEdge>());
+    }
+#endif
 
     private static bool LineContainsAnAddedPumpjack(List<TerminalLocation> addedPumpjacks, PumpjackConnection ent)
     {
@@ -300,10 +312,20 @@ public static partial class AddPipes
                 if (result.ReachedGoal is null)
                 {
                     // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                    throw new NoPathBetweenTerminalsException();
+                    throw new NoPathBetweenTerminalsException(l.A, l.B);
                 }
 
                 var path = result.Path;
+
+                /*
+                var path = BreadthFirstFinder.GetShortestPath(context.SharedInstances, context.Grid, l.B, l.A);
+                if (path is null)
+                {
+                    // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                    throw new NoPathBetweenTerminalsException();
+                }
+                */
+
                 var turns = CountTurns(path);
                 return new PathAndTurns(l, path, turns);
             })

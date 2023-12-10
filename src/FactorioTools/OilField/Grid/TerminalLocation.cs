@@ -14,4 +14,9 @@ public class TerminalLocation
     public Location Center { get; set; }
     public Location Terminal { get; }
     public Direction Direction { get; }
+
+    public override string ToString()
+    {
+        return $"Pump {Center:M} {Direction} terminal ({Terminal:M})";
+    }
 }

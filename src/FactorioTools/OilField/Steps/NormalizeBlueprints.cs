@@ -18,7 +18,7 @@ public static class NormalizeBlueprints
         {
             try
             {
-                string output = Normalize(blueprintString);
+                string output = Normalize(blueprintString, includeFbeOffset: false);
                 lines.Add((blueprintString, output));
             }
             catch
@@ -30,7 +30,7 @@ public static class NormalizeBlueprints
         return lines;
     }
 
-    public static string Normalize(string blueprintString)
+    public static string Normalize(string blueprintString, bool includeFbeOffset)
     {
         var trimmed = blueprintString.Trim();
         var output = blueprintString;
@@ -43,7 +43,7 @@ public static class NormalizeBlueprints
                 throw new InvalidOperationException("There are not pumpjacks in the blueprint.");
             }
 
-            output = GridToBlueprintString.SerializeBlueprint(clean);
+            output = GridToBlueprintString.SerializeBlueprint(clean, includeFbeOffset);
         }
 
         return output;

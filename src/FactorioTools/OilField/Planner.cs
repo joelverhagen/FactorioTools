@@ -7,13 +7,18 @@ public static class Planner
 {
     public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint)
     {
-        return Execute(options, inputBlueprint, addElectricPolesFirst: false);
+        return Execute(options, inputBlueprint, electricPolesAvoid: Array.Empty<Location>(), EletricPolesMode.AddLast);
     }
 
-    private static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, BlueprintRoot inputBlueprint, bool addElectricPolesFirst)
+    private static (Context Context, OilFieldPlanSummary Summary) Execute(
+        OilFieldOptions options,
+        BlueprintRoot inputBlueprint,
+        IReadOnlyCollection<Location> electricPolesAvoid,
+        EletricPolesMode eletricPolesMode)
     {
         var context = InitializeContext.Execute(options, inputBlueprint);
         var initialPumpjackCount = context.CenterToTerminals.Count;
+        var addElectricPolesFirst = eletricPolesMode != EletricPolesMode.AddLast;
 
         if (context.CenterToTerminals.Count == 0)
         {
@@ -23,10 +28,45 @@ public static class Planner
         HashSet<Location>? poles;
         if (addElectricPolesFirst)
         {
-            poles = AddElectricPoles.Execute(context, avoidTerminals: true, allowRetries: false);
+            if (eletricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
+            {
+                electricPolesAvoid = context
+                    .CenterToTerminals
+                    .Values
+                    .SelectMany(t => t)
+                    .Select(t => t.Terminal)
+                    .ToHashSet();
+            }
+
+            poles = AddElectricPoles.Execute(context, electricPolesAvoid, allowRetries: false);
+
             if (poles is null)
             {
-                throw new FactorioToolsException("No valid placement for the electric poles could be found, while adding electric poles first.");
+                if (eletricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
+                {
+                    throw new FactorioToolsException("No valid placement for the electric poles could be found, while adding electric poles first.");
+                }
+
+                return Execute(options, inputBlueprint, Array.Empty<Location>(), EletricPolesMode.AddFirstAndAvoidAllTerminals);
+            }
+            else
+            {
+                // remove terminals overlapping with the added poles
+                foreach (var terminals in context.CenterToTerminals.Values)
+                {
+                    for (int i = 0; i < terminals.Count; i++)
+                    {
+                        var terminal = terminals[i];
+                        if (context.Grid.IsEmpty(terminal.Terminal))
+                        {
+                            continue;
+                        }
+
+                        terminals.RemoveAt(i);
+                        context.LocationToTerminals[terminal.Terminal].Remove(terminal);
+                        i--;
+                    }
+                }
             }
         }
 
@@ -36,7 +76,7 @@ public static class Planner
 
         if (!addElectricPolesFirst || context.Options.AddBeacons)
         {
-            poles = AddElectricPoles.Execute(context, avoidTerminals: false, allowRetries: addElectricPolesFirst);
+            poles = AddElectricPoles.Execute(context, avoid: Array.Empty<Location>(), allowRetries: addElectricPolesFirst);
             if (poles is null)
             {
                 if (addElectricPolesFirst)
@@ -46,7 +86,8 @@ public static class Planner
                 }
                 else
                 {
-                    return Execute(options, inputBlueprint, addElectricPolesFirst: true);
+                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToHashSet();
+                    return Execute(options, inputBlueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                 }
             }
         }
@@ -61,5 +102,12 @@ public static class Planner
             unusedPlans);
 
         return (context, planSummary);
+    }
+
+    private enum EletricPolesMode
+    {
+        AddLast,
+        AddFirstAndAvoidSpecificTerminals,
+        AddFirstAndAvoidAllTerminals,
     }
 }

@@ -200,7 +200,7 @@ public static partial class AddPipes
 
             if (aStarResultV.ReachedGoal is null)
             {
-                throw new NoPathBetweenTerminalsException();
+                throw new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.First());
             }
 
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))

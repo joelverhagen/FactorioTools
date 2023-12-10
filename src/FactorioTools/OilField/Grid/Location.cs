@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-public struct Location : IEquatable<Location>, IComparable<Location>, IFormattable
+﻿public struct Location : IEquatable<Location>, IComparable<Location>, IFormattable
 {
     public Location(int x, int y)
     {
@@ -132,6 +130,11 @@ public struct Location : IEquatable<Location>, IComparable<Location>, IFormattab
 
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
+        if (format is null)
+        {
+            format = "S";
+        }
+
         return format switch
         {
             "M" => $"({X}, {Y})",

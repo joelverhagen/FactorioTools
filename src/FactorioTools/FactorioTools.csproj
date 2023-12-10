@@ -34,6 +34,7 @@
 
   <ItemGroup Condition="'$(UseObjectPooling)' == 'true'">
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="7.0.2" />
+    <Using Include="Microsoft.Extensions.ObjectPool" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">

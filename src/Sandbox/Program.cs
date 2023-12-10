@@ -41,16 +41,16 @@ public partial class Program
 
     private static void Sandbox()
     {
-        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(ExistingDataPath).ToArray();
-        // var blueprintStrings = blueprintStringsAll;
-        var blueprintStrings = new[] { blueprintStringsAll[1] };
+        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(NormalizedDataPath).ToArray();
+        var blueprintStrings = blueprintStringsAll;
+        // var blueprintStrings = new[] { blueprintStringsAll[1] };
         // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 50).ToArray();
 
         // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
         // var optionsAll = new[] { Options.ForSmallElectricPole };
         var optionsAll = new[] { OilFieldOptions.ForMediumElectricPole };
-        // var optionsAll = new[] { Options.ForBigElectricPole };
+        // var optionsAll = new[] { OilFieldOptions.ForBigElectricPole };
 
         // var addBeaconsAll = new[] { true, false };
         var addBeaconsAll = new[] { true };
@@ -64,10 +64,20 @@ public partial class Program
                 {
                     Console.WriteLine("index " + i);
                     string? blueprintString = blueprintStrings[i];
+
                     if (blueprintStrings.Length == 1)
                     {
                         Console.WriteLine(blueprintString);
                     }
+
+                    /*
+                    blueprintString = NormalizeBlueprints.Normalize(blueprintString, includeFbeOffset: true);
+
+                    if (blueprintStrings.Length == 1)
+                    {
+                        Console.WriteLine(blueprintString);
+                    }
+                    */
 
                     var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
@@ -137,7 +147,7 @@ public partial class Program
                         options.ValidateSolution = false;
                         options.OverlapBeacons = overlapBeacons;
 
-                        (var context, var summary) = Planner.Execute(options, inputBlueprint);
+                        var (context, summary) = Planner.Execute(options, inputBlueprint);
 
                         var pipeCount = context.Grid.EntityToLocation.Keys.OfType<Pipe>().Count();
                         var poleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count();
