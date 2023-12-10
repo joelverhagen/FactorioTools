@@ -37,7 +37,7 @@ jobs:
           global-json-file: global.json
 
       - name: Publish for Windows
-        run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/Release/publish --runtime win-x64 --no-self-contained /p:PublishReadyToRun=true
+        run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/Release/publish --runtime linux-x64 --no-self-contained /p:PublishReadyToRun=true
 
       - name: Deploy
         id: deploy
@@ -45,7 +45,6 @@ jobs:
         with: 
           app-name: FactorioTools
           package: src/WebApp/bin/Release/publish
-          slot-name: staging
 
       - name: Send test request
         run: |
@@ -61,7 +60,3 @@ jobs:
         env:
           BLUEPRINT: "0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F"
           WEBAPP_URL: "${{ steps.deploy.outputs['webapp-url'] }}"
-
-      - name: Swap slots
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: az webapp deployment slot swap --slot staging --name FactorioTools --resource-group Knapcode.FactorioTools
