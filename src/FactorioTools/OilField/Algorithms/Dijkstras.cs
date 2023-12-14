@@ -10,14 +10,14 @@ public static class Dijkstras
         cameFrom[start] = new HashSet<Location>();
         var remainingGoals = new HashSet<Location>(goals);
 
-#if USE_SHARED_INSTANCES
-        var priorityQueue = sharedInstances.LocationPriorityQueue;
-        var costSoFar = sharedInstances.LocationToDouble;
-        var inQueue = sharedInstances.LocationSetB;
-#else
+#if NO_SHARED_INSTANCES
         var priorityQueue = new PriorityQueue<Location, double>();
         var costSoFar = new Dictionary<Location, double>();
         var inQueue = new HashSet<Location>();
+#else
+        var priorityQueue = sharedInstances.LocationPriorityQueue;
+        var costSoFar = sharedInstances.LocationToDouble;
+        var inQueue = sharedInstances.LocationSetB;
 #endif
 
         var reachedGoals = new HashSet<Location>();
@@ -80,7 +80,7 @@ public static class Dijkstras
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             priorityQueue.Clear();
             costSoFar.Clear();
             inQueue.Clear();

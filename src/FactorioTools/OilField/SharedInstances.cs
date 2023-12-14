@@ -8,12 +8,12 @@ public class SharedInstances
 
     public SharedInstances(HashSet<Location> locationSetA)
     {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
         LocationSetA = locationSetA;
 #endif
     }
 
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
     public Queue<Location> LocationQueue = new();
     public Location[] LocationArray = Array.Empty<Location>();
     public int[] IntArrayX = Array.Empty<int>();

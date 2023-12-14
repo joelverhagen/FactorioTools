@@ -8,10 +8,10 @@ public static class Prims
         Location firstNode,
         bool digraph)
     {
-#if USE_SHARED_INSTANCES
-        var visited = sharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
         var visited = new HashSet<Location>();
+#else
+        var visited = sharedInstances.LocationSetA;
 #endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
         var mst = new Dictionary<Location, HashSet<Location>>();
@@ -75,7 +75,7 @@ public static class Prims
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             visited.Clear();
 #endif
         }

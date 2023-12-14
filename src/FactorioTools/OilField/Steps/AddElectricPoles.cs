@@ -611,12 +611,12 @@ public static class AddElectricPoles
         }
         var idealPoint = idealLine[idealIndex];
 
-#if USE_SHARED_INSTANCES
-        var candidates = context.SharedInstances.LocationQueue;
-        var attempted = context.SharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
         var candidates = new Queue<Location>();
         var attempted = new HashSet<Location>();
+#else
+        var candidates = context.SharedInstances.LocationQueue;
+        var attempted = context.SharedInstances.LocationSetA;
 #endif
 
         Location? selectedPoint = null;
@@ -650,7 +650,7 @@ public static class AddElectricPoles
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             candidates.Clear();
             attempted.Clear();
 #endif

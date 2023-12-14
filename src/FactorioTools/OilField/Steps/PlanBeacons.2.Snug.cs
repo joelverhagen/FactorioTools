@@ -39,94 +39,84 @@ public static partial class PlanBeacons
         var beacons = new List<Location>();
         var effects = 0;
 
-        try
+        while (candidateToInfo.Count > 0)
         {
-            while (candidateToInfo.Count > 0)
-            {
-                var pair = candidateToInfo
-                    .MinBy(pair =>
-                    {
-                        return (
-                            beacons.Count > 0 && context.Options.OverlapBeacons ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
-                            -pair.Value.Covered.TrueCount,
-                            -pair.Value.EntityDistance,
-                            pair.Value.MiddleDistance
-                        );
-                    })!;
-
-                scopedCandidates.Clear();
-                scopedCandidates.Add(pair);
-                scopedCandidatesSet.Clear();
-                scopedCandidatesSet.Add(pair.Key, pair.Value);
-
-                while (scopedCandidates.Count > 0)
+            var pair = candidateToInfo
+                .MinBy(pair =>
                 {
-                    (var candidate, var info) = scopedCandidates[scopedCandidates.Count - 1];
-                    scopedCandidates.RemoveAt(scopedCandidates.Count - 1);
+                    return (
+                        beacons.Count > 0 && context.Options.OverlapBeacons ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
+                        -pair.Value.Covered.TrueCount,
+                        -pair.Value.EntityDistance,
+                        pair.Value.MiddleDistance
+                    );
+                })!;
 
-                    if (!candidateToInfo.ContainsKey(candidate))
-                    {
-                        continue;
-                    }
+            scopedCandidates.Clear();
+            scopedCandidates.Add(pair);
+            scopedCandidatesSet.Clear();
+            scopedCandidatesSet.Add(pair.Key, pair.Value);
 
-                    if (context.Options.OverlapBeacons)
-                    {
-                        RemoveOverlappingCandidates(
-                            context.Grid,
-                            candidate,
-                            context.Options.BeaconWidth,
-                            context.Options.BeaconHeight,
-                            candidateToInfo);
-                    }
-                    else
-                    {
-                        AddProviderAndPreventMultipleProviders(
-                            context.Grid,
-                            context.SharedInstances,
-                            candidate,
-                            info,
-                            context.Options.BeaconWidth,
-                            context.Options.BeaconHeight,
-                            poweredEntities,
-                            coveredEntities,
-                            coveredToCandidates!,
-                            candidateToInfo);
-                    }
+            while (scopedCandidates.Count > 0)
+            {
+                (var candidate, var info) = scopedCandidates[scopedCandidates.Count - 1];
+                scopedCandidates.RemoveAt(scopedCandidates.Count - 1);
 
-                    beacons.Add(candidate);
-                    effects += info.CoveredCount;
-                    // Console.WriteLine($"{candidate} --- {info.CoveredCount}");
-
-                    AddNeighborsAndSort(
-                        context,
-                        candidateToInfo,
-                        scopedCandidates,
-                        scopedCandidatesSet,
-                        sorter,
-                        candidate);
-
-                    /*
-                    var clone = new PipeGrid(context.Grid);
-                    foreach (var beaconCenter in beacons)
-                    {
-                        AddProvider(clone, beaconCenter, new BeaconCenter(), c => new BeaconSide(c), context.Options.BeaconWidth, context.Options.BeaconHeight);
-                    }
-                    Visualizer.Show(
-                        clone,
-                        candidateToInfo.Keys.Concat(new[] { candidate }).Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)),
-                        Array.Empty<DelaunatorSharp.IEdge>());
-                    */
+                if (!candidateToInfo.ContainsKey(candidate))
+                {
+                    continue;
                 }
 
-                // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+                if (context.Options.OverlapBeacons)
+                {
+                    RemoveOverlappingCandidates(
+                        context.Grid,
+                        candidate,
+                        context.Options.BeaconWidth,
+                        context.Options.BeaconHeight,
+                        candidateToInfo);
+                }
+                else
+                {
+                    AddProviderAndPreventMultipleProviders(
+                        context.Grid,
+                        context.SharedInstances,
+                        candidate,
+                        info,
+                        context.Options.BeaconWidth,
+                        context.Options.BeaconHeight,
+                        poweredEntities,
+                        coveredEntities,
+                        coveredToCandidates!,
+                        candidateToInfo);
+                }
+
+                beacons.Add(candidate);
+                effects += info.CoveredCount;
+                // Console.WriteLine($"{candidate} --- {info.CoveredCount}");
+
+                AddNeighborsAndSort(
+                    context,
+                    candidateToInfo,
+                    scopedCandidates,
+                    scopedCandidatesSet,
+                    sorter,
+                    candidate);
+
+                /*
+                var clone = new PipeGrid(context.Grid);
+                foreach (var beaconCenter in beacons)
+                {
+                    AddProvider(clone, beaconCenter, new BeaconCenter(), c => new BeaconSide(c), context.Options.BeaconWidth, context.Options.BeaconHeight);
+                }
+                Visualizer.Show(
+                    clone,
+                    candidateToInfo.Keys.Concat(new[] { candidate }).Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)),
+                    Array.Empty<DelaunatorSharp.IEdge>());
+                */
             }
-        }
-        finally
-        {
-#if USE_SHARED_INSTANCES
-            scopedCandidates.Clear();
-            scopedCandidatesSet.Clear();
-#endif
+
+            // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
         }
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());

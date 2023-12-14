@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿#if ENABLE_VISUALIZER
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
@@ -123,3 +124,4 @@ public static class Visualizer
         return new PointF((float)((p.X + 0.5f) * CellSize), (float)((p.Y + 0.5f) * CellSize));
     }
 }
+#endif

@@ -57,7 +57,7 @@ public static class InitializeContext
         var grid = InitializeGrid(centers, marginX, marginY);
         var centerToTerminals = GetCenterToTerminals(grid, centers);
 
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
         centers.Clear();
 #endif
 

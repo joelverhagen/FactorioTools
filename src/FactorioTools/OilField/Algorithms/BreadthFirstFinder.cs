@@ -6,14 +6,14 @@ namespace Knapcode.FactorioTools.OilField.Algorithms
     {
         public static List<Location>? GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, Location goal)
         {
-#if USE_SHARED_INSTANCES
-            var toExplore = sharedInstances.LocationQueue;
-            var parents = sharedInstances.LocationToLocation;
-            var visited = sharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
             var toExplore = new Queue<Location>();
             var parents = new Dictionary<Location, Location>();
             var visited = new HashSet<Location>();
+#else
+            var toExplore = sharedInstances.LocationQueue;
+            var parents = sharedInstances.LocationToLocation;
+            var visited = sharedInstances.LocationSetA;
 #endif
             try
             {
@@ -61,7 +61,7 @@ namespace Knapcode.FactorioTools.OilField.Algorithms
             }
             finally
             {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
                 toExplore.Clear();
                 parents.Clear();
                 visited.Clear();

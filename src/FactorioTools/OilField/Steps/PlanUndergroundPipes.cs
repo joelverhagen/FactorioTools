@@ -51,10 +51,10 @@ public static class PlanUndergroundPipes
         // Find candidates for underground pipes. These are pipes that have other pipes before and after them in
         // axis they are going and no pipes next to them.
 
-#if USE_SHARED_INSTANCES
-        var candidates = context.SharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
         var candidates = new HashSet<Location>();
+#else
+        var candidates = context.SharedInstances.LocationSetA;
 #endif
 
         try
@@ -116,7 +116,7 @@ public static class PlanUndergroundPipes
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             candidates.Clear();
 #endif
         }

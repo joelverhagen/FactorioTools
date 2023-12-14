@@ -1,10 +1,6 @@
 ﻿using System.Numerics;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
-#if USE_OBJECT_POOLING
-using System.Buffers;
-using Microsoft.Extensions.ObjectPool;
-#endif
 
 namespace Knapcode.FactorioTools.OilField.Algorithms;
 
@@ -13,12 +9,6 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 /// </summary>
 public static class AStar
 {
-#if USE_OBJECT_POOLING
-    public static readonly ObjectPool<Dictionary<Location, Location>> CameFromPool = ObjectPool.Create<Dictionary<Location, Location>>();
-    public static readonly ObjectPool<Dictionary<Location, double>> CostSoFarPool = ObjectPool.Create<Dictionary<Location, double>>();
-    public static readonly ObjectPool<PriorityQueue<Location, double>> FrontierPool = ObjectPool.Create<PriorityQueue<Location, double>>();
-#endif
-
 #if DEBUG
     public static int CameFromPoolCount;
     public static int CostSoFarPoolCount;
@@ -43,12 +33,10 @@ public static class AStar
         }
 
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
-#if USE_OBJECT_POOLING
-        var goalsArray = ArrayPool<Location>.Shared.Rent(goals.Count);
-#elif USE_SHARED_INSTANCES
-        var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
-#else
+#if NO_SHARED_INSTANCES
         var goalsArray = new Location[goals.Count];
+#else
+        var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
 #endif
 #if DEBUG
         Interlocked.Increment(ref ArrayPoolCount);
@@ -59,15 +47,12 @@ public static class AStar
         int[]? ys = null;
         if (useVector)
         {
-#if USE_OBJECT_POOLING
-            xs = ArrayPool<int>.Shared.Rent(goals.Count);
-            ys = ArrayPool<int>.Shared.Rent(goals.Count);
-#elif USE_SHARED_INSTANCES
-            xs = sharedInstances.GetArray(ref sharedInstances.IntArrayX, goals.Count);
-            ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
-#else
+#if NO_SHARED_INSTANCES
             xs = new int[goals.Count];
             ys = new int[goals.Count];
+#else
+            xs = sharedInstances.GetArray(ref sharedInstances.IntArrayX, goals.Count);
+            ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
 #endif
 #if DEBUG
             Interlocked.Increment(ref ArrayPoolCount);
@@ -79,26 +64,19 @@ public static class AStar
                 ys[i] = goalsArray[i].Y;
             }
 
-#if USE_OBJECT_POOLING
-            ArrayPool<Location>.Shared.Return(goalsArray);
-#endif
 #if DEBUG
             Interlocked.Decrement(ref ArrayPoolCount);
 #endif
         }
 
-#if USE_OBJECT_POOLING
-        var cameFrom = CameFromPool.Get();
-        var costSoFar = CostSoFarPool.Get();
-        var frontier = FrontierPool.Get();
-#elif USE_SHARED_INSTANCES
-        var cameFrom = sharedInstances.LocationToLocation;
-        var costSoFar = sharedInstances.LocationToDouble;
-        var frontier = sharedInstances.LocationPriorityQueue;
-#else
+#if NO_SHARED_INSTANCES
         var cameFrom = new Dictionary<Location, Location>();
         var costSoFar = new Dictionary<Location, double>();
         var frontier = new PriorityQueue<Location, double>();
+#else
+        var cameFrom = sharedInstances.LocationToLocation;
+        var costSoFar = sharedInstances.LocationToDouble;
+        var frontier = sharedInstances.LocationPriorityQueue;
 #endif
 #if DEBUG
         Interlocked.Increment(ref CostSoFarPoolCount);
@@ -182,16 +160,7 @@ public static class AStar
         }
         finally
         {
-#if USE_OBJECT_POOLING
-            cameFrom.Clear();
-            CameFromPool.Return(cameFrom);
-
-            costSoFar.Clear();
-            CostSoFarPool.Return(costSoFar);
-
-            frontier.Clear();
-            FrontierPool.Return(frontier);
-#elif USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             cameFrom.Clear();
             costSoFar.Clear();
             frontier.Clear();
@@ -205,11 +174,6 @@ public static class AStar
 
             if (useVector)
             {
-#if USE_OBJECT_POOLING
-                ArrayPool<int>.Shared.Return(xs!);
-                ArrayPool<int>.Shared.Return(ys!);
-#endif
-
 #if DEBUG
                 Interlocked.Decrement(ref ArrayPoolCount);
                 Interlocked.Decrement(ref ArrayPoolCount);
@@ -217,10 +181,6 @@ public static class AStar
             }
             else
             {
-#if USE_OBJECT_POOLING
-                ArrayPool<Location>.Shared.Return(goalsArray);
-#endif
-
 #if DEBUG
                 Interlocked.Decrement(ref ArrayPoolCount);
 #endif

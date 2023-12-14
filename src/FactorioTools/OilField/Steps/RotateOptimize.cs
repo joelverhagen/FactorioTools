@@ -6,13 +6,6 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class RotateOptimize
 {
-#if USE_OBJECT_POOLING
-    public static readonly ObjectPool<Queue<Location>> QueuePool = ObjectPool.Create<Queue<Location>>();
-#endif
-#if DEBUG && USE_OBJECT_POOLING
-    public static int QueuePoolCount;
-#endif
-
     public static void Execute(Context parentContext, HashSet<Location> pipes)
     {
         if (parentContext.LocationToTerminals.Count < 2)
@@ -114,10 +107,10 @@ public static class RotateOptimize
 
         var originalGoal = exploredPaths.ReachedGoals.Single();
 
-#if USE_SHARED_INSTANCES
-        var originalPath = context.ParentContext.SharedInstances.LocationListA;
-#else
+#if NO_SHARED_INSTANCES
         var originalPath = new List<Location>();
+#else
+        var originalPath = context.ParentContext.SharedInstances.LocationListA;
 #endif
 
         try
@@ -144,10 +137,10 @@ public static class RotateOptimize
                     continue;
                 }
 
-#if USE_SHARED_INSTANCES
-                var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
-#else
+#if NO_SHARED_INSTANCES
                 var newPath = new List<Location>();
+#else
+                var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
 #endif
                 var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
                 if (result.ReachedGoal.HasValue)
@@ -217,7 +210,7 @@ public static class RotateOptimize
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             context.ParentContext.SharedInstances.LocationListA.Clear();
             context.ParentContext.SharedInstances.LocationListB.Clear();
 #endif
@@ -230,12 +223,12 @@ public static class RotateOptimize
         Location start,
         Location originalGoal)
     {
-#if USE_SHARED_INSTANCES
-        var originalPath = context.ParentContext.SharedInstances.LocationListA;
-        var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
         var originalPath = new List<Location>();
         var connectionPoints = new HashSet<Location>(context.Pipes.Count);
+#else
+        var originalPath = context.ParentContext.SharedInstances.LocationListA;
+        var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
 #endif
 
         try
@@ -269,10 +262,10 @@ public static class RotateOptimize
 
             ExplorePipes(context, originalGoal, connectionPoints);
 
-#if USE_SHARED_INSTANCES
-            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
-#else
+#if NO_SHARED_INSTANCES
             var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
+#else
+            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
 #endif
 
             /*
@@ -309,14 +302,14 @@ public static class RotateOptimize
             }
             finally
             {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
                 result.Path.Clear();
 #endif
             }
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             originalPath.Clear();
             connectionPoints.Clear();
 #endif
@@ -400,30 +393,17 @@ public static class RotateOptimize
 
     private static Queue<Location> GetQueue(ChildContext context)
     {
-#if DEBUG && USE_OBJECT_POOLING
-        Interlocked.Increment(ref QueuePoolCount);
-#endif
-
-#if USE_OBJECT_POOLING
-        return QueuePool.Get();
-#elif USE_SHARED_INSTANCES
-        return context.ParentContext.SharedInstances.LocationQueue;
-#else
+#if NO_SHARED_INSTANCES
         return new Queue<Location>();
+#else
+        return context.ParentContext.SharedInstances.LocationQueue;
 #endif
     }
 
     private static void ReturnQueue(Queue<Location> toExplore)
     {
-#if USE_OBJECT_POOLING
+#if !NO_SHARED_INSTANCES
         toExplore.Clear();
-        QueuePool.Return(toExplore);
-#elif USE_SHARED_INSTANCES
-        toExplore.Clear();
-#endif
-
-#if DEBUG && USE_OBJECT_POOLING
-            Interlocked.Decrement(ref QueuePoolCount);
 #endif
     }
 

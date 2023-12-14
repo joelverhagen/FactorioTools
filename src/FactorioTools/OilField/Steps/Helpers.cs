@@ -201,10 +201,10 @@ public static class Helpers
 
         if (removeUnused && unusedProviders.Count > 0)
         {
-#if USE_SHARED_INSTANCES
-            var coveredCenters = context.SharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
             var coveredCenters = new HashSet<Location>();
+#else
+            var coveredCenters = context.SharedInstances.LocationSetA;
 #endif
 
             try
@@ -271,7 +271,7 @@ public static class Helpers
             }
             finally
             {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
                 coveredCenters.Clear();
 #endif
             }
@@ -496,12 +496,12 @@ public static class Helpers
             candidateToInfo,
             coveredToCandidates);
 
-#if USE_SHARED_INSTANCES
-        var toRemove = sharedInstances.LocationListA;
-        var updated = sharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
         var toRemove = new List<Location>();
         var updated = new HashSet<Location>();
+#else
+        var toRemove = sharedInstances.LocationListA;
+        var updated = sharedInstances.LocationSetA;
 #endif
 
         try
@@ -537,7 +537,7 @@ public static class Helpers
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             toRemove.Clear();
             updated.Clear();
 #endif
@@ -586,12 +586,12 @@ public static class Helpers
             return;
         }
 
-#if USE_SHARED_INSTANCES
-        var toRemove = sharedInstances.LocationListA;
-        var updated = sharedInstances.LocationSetA;
-#else
+#if NO_SHARED_INSTANCES
         var toRemove = new List<Location>();
         var updated = new HashSet<Location>();
+#else
+        var toRemove = sharedInstances.LocationListA;
+        var updated = sharedInstances.LocationSetA;
 #endif
 
         try
@@ -660,7 +660,7 @@ public static class Helpers
         }
         finally
         {
-#if USE_SHARED_INSTANCES
+#if !NO_SHARED_INSTANCES
             toRemove.Clear();
             updated.Clear();
 #endif
