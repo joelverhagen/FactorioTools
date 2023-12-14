@@ -8,7 +8,9 @@ public class SharedInstances
 
     public SharedInstances(HashSet<Location> locationSetA)
     {
+#if USE_SHARED_INSTANCES
         LocationSetA = locationSetA;
+#endif
     }
 
 #if USE_SHARED_INSTANCES
