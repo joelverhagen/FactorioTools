@@ -1,4 +1,6 @@
-﻿namespace Knapcode.FactorioTools;
+﻿using System;
+
+namespace Knapcode.FactorioTools;
 
 public class FactorioToolsException : Exception
 {

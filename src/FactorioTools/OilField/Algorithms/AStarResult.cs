@@ -1,4 +1,6 @@
-﻿namespace Knapcode.FactorioTools.OilField.Algorithms;
+﻿using System.Collections.Generic;
+
+namespace Knapcode.FactorioTools.OilField.Algorithms;
 
 public class AStarResult
 {

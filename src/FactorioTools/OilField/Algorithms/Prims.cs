@@ -1,4 +1,7 @@
-﻿namespace Knapcode.FactorioTools.OilField.Algorithms;
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace Knapcode.FactorioTools.OilField.Algorithms;
 
 public static class Prims
 {

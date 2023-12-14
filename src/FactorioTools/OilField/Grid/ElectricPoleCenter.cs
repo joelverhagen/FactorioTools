@@ -1,4 +1,6 @@
-﻿namespace Knapcode.FactorioTools.OilField.Grid;
+﻿using System.Collections.Generic;
+
+namespace Knapcode.FactorioTools.OilField.Grid;
 
 public class ElectricPoleCenter : GridEntity
 {

@@ -1,6 +1,9 @@
 ﻿using System.Data;
 using Knapcode.FluteSharp;
 using Knapcode.FactorioTools.OilField.Grid;
+using DelaunatorSharp;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 

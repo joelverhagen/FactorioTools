@@ -1,4 +1,7 @@
-﻿namespace Knapcode.FactorioTools.OilField;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Knapcode.FactorioTools.OilField;
 
 public class SharedInstances
 {

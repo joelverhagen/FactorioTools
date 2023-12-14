@@ -1,4 +1,6 @@
-﻿public struct Location : IEquatable<Location>, IComparable<Location>, IFormattable
+﻿using System;
+
+public struct Location : IEquatable<Location>, IComparable<Location>, IFormattable
 {
     public Location(int x, int y)
     {

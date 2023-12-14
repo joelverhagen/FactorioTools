@@ -1,4 +1,6 @@
-﻿namespace Knapcode.FactorioTools.OilField.Grid;
+﻿using System;
+
+namespace Knapcode.FactorioTools.OilField.Grid;
 
 public class PipeGrid : SquareGrid
 {

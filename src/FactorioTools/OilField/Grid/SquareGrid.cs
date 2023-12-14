@@ -1,4 +1,9 @@
-﻿namespace Knapcode.FactorioTools.OilField.Grid;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Knapcode.FactorioTools.OilField.Grid;
 
 public abstract class SquareGrid
 {

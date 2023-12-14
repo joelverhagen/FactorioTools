@@ -1,4 +1,7 @@
-﻿namespace Knapcode.FactorioTools.OilField.Algorithms;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Knapcode.FactorioTools.OilField.Algorithms;
 
 public static class BresenhamsLine
 {

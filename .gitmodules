@@ -1,0 +1,8 @@
+[submodule "submodules/FluteSharp"]
+	path = submodules/FluteSharp
+	url = https://github.com/joelverhagen/FluteSharp.git
+	branch = main
+[submodule "submodules/delaunator-sharp"]
+	path = submodules/delaunator-sharp
+	url = https://github.com/nol1fe/delaunator-sharp.git
+	branch = master
