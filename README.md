@@ -96,7 +96,7 @@ I want to thank [teoxoy](https://github.com/teoxoy), author of the awesome Facto
 ### Runtime performance
 
 ``` ini
-BenchmarkDotNet v0.13.11, Windows 11 (10.0.22621.2715/22H2/2022Update/SunValley2)
+BenchmarkDotNet v0.13.11, Windows 11 (10.0.22621.2861/22H2/2022Update/SunValley2)
 AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 .NET SDK 8.0.100
   [Host]     : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
@@ -105,8 +105,8 @@ AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 
 | Method                                    |     Mean |    Error |   StdDev |
 | ----------------------------------------- | -------: | -------: | -------: |
-| MediumElectricPole_NoBeacon_NoUnderground | 16.27 ms | 0.094 ms | 0.079 ms |
-| SmallElectricPole_Beacon_Underground      | 31.34 ms | 0.294 ms | 0.275 ms |
-| MediumElectricPole_Beacon_Underground     | 31.88 ms | 0.220 ms | 0.206 ms |
-| BigElectricPole_Beacon_Underground        | 72.32 ms | 0.465 ms | 0.435 ms |
-| Substation_Beacon_Underground             | 36.51 ms | 0.199 ms | 0.155 ms |
+| MediumElectricPole_NoBeacon_NoUnderground | 16.84 ms | 0.122 ms | 0.114 ms |
+| SmallElectricPole_Beacon_Underground      | 31.21 ms | 0.080 ms | 0.067 ms |
+| MediumElectricPole_Beacon_Underground     | 30.95 ms | 0.092 ms | 0.086 ms |
+| BigElectricPole_Beacon_Underground        | 69.70 ms | 0.432 ms | 0.404 ms |
+| Substation_Beacon_Underground             | 34.48 ms | 0.242 ms | 0.215 ms |
