@@ -24,6 +24,19 @@ public class PlannerTest
         }
 
         [Theory]
+        [MemberData(nameof(BigListIndexTestData))]
+        public void PlannerOnBigList(int blueprintIndex)
+        {
+            var options = OilFieldOptions.ForMediumElectricPole;
+            options.ValidateSolution = true;
+            var blueprintString = BigListBlueprintStrings[blueprintIndex];
+            var blueprint = ParseBlueprint.Execute(blueprintString);
+
+            // Act
+            Planner.Execute(options, blueprint);
+        }
+
+        [Theory]
         [MemberData(nameof(BlueprintIndexTestData))]
         public void NonStandardBeacon(int blueprintIndex)
         {
@@ -100,7 +113,10 @@ public class PlannerTest
         }.ToDictionary(o => o().ElectricPoleEntityName, o => o);
 
         private static string DataFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
+        private static string BigListFilePath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "big-list.txt");
+
         private static IReadOnlyList<string> BlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(DataFilePath);
+        private static IReadOnlyList<string> BigListBlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(BigListFilePath);
 
         public static TheoryData<int> BlueprintIndexTestData
         {
@@ -108,6 +124,20 @@ public class PlannerTest
             {
                 var theoryData = new TheoryData<int>();
                 foreach (var blueprintIndex in Enumerable.Range(0, BlueprintStrings.Count))
+                {
+                    theoryData.Add(blueprintIndex);
+                }
+
+                return theoryData;
+            }
+        }
+
+        public static TheoryData<int> BigListIndexTestData
+        {
+            get
+            {
+                var theoryData = new TheoryData<int>();
+                foreach (var blueprintIndex in Enumerable.Range(0, BigListBlueprintStrings.Count))
                 {
                     theoryData.Add(blueprintIndex);
                 }

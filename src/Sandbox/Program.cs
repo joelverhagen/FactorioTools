@@ -4,14 +4,14 @@ using Knapcode.FactorioTools.OilField.Steps;
 
 public partial class Program
 {
-    private const string ExistingDataPath = "blueprints.txt";
-    private static readonly string NormalizedDataPath = Path.Combine(GetRepositoryRoot(), "src", "Sandbox", "normalized.txt");
+    private static readonly string ExistingDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
+    private static readonly string BigListDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "big-list.txt");
 
     private static void Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "normalize")
         {
-            NormalizeBlueprints.Execute(NormalizedDataPath, ExistingDataPath);
+            NormalizeBlueprints.Execute(BigListDataPath, ExistingDataPath);
         }
         else if (args.Length > 0 && args[0] == "measure")
         {
@@ -41,7 +41,7 @@ public partial class Program
 
     private static void Sandbox()
     {
-        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(NormalizedDataPath).ToArray();
+        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(BigListDataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
         // var blueprintStrings = new[] { blueprintStringsAll[1] };
         // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();

@@ -21,10 +21,10 @@ public static class NormalizeBlueprints
                 string output = Normalize(blueprintString, includeFbeOffset: false);
                 lines.Add((blueprintString, output));
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine(ex);
             }
-
         }
 
         return lines;
