@@ -1,5 +1,4 @@
-﻿using System.IO;
-using Knapcode.FluteSharp;
+﻿using Knapcode.FluteSharp;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -8,6 +7,7 @@ public static class InitializeFLUTE
     public static FLUTE? FLUTE { get; private set; }
     private static readonly object FLUTELock = new object();
 
+#if ALLOW_DYNAMIC_FLUTE_DEGREE
     public static void Execute(int lutD)
     {
         var baseType = typeof(Planner);
@@ -18,7 +18,7 @@ public static class InitializeFLUTE
         Execute(lutD, powvStream, postStream);
     }
 
-    public static void Execute(int lutD, Stream powvStream, Stream postStream)
+    private static void Execute(int lutD, System.IO.Stream powvStream, System.IO.Stream postStream)
     {
         lock (FLUTELock)
         {
@@ -32,4 +32,25 @@ public static class InitializeFLUTE
             FLUTE = flute;
         }
     }
+#else
+    public static void Execute(int lutD)
+    {
+        if (lutD != 6)
+        {
+            throw new System.ArgumentOutOfRangeException(nameof(lutD), "Only lookup table of degree 6 is supported.");
+        }
+
+        lock (FLUTELock)
+        {
+            if (FLUTE is not null)
+            {
+                return;
+            }
+
+            var lookUpTable = LookUpTable.Degree6;
+            var flute = new FLUTE(lookUpTable);
+            FLUTE = flute;
+        }
+    }
+#endif
 }

@@ -4,19 +4,24 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NoSharedInstances>false</NoSharedInstances>
-    <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">true</EnableVisualizer>
-    <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(NoSharedInstances) == 'true'">
-    <DefineConstants>$(DefineConstants);NO_SHARED_INSTANCES</DefineConstants>
+  <PropertyGroup>
+    <NoSharedInstances>false</NoSharedInstances>
+    <DefineConstants Condition="$(NoSharedInstances) == 'true'">$(DefineConstants);NO_SHARED_INSTANCES</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$(EnableVisualizer) == 'true'">
-    <DefineConstants>$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>
+  <PropertyGroup>
+    <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">true</EnableVisualizer>
+    <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
+    <DefineConstants Condition="$(EnableVisualizer) == 'true'">$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AllowDynamicFluteDegree>true</AllowDynamicFluteDegree>
+    <DefineConstants Condition="$(AllowDynamicFluteDegree) == 'true'">$(DefineConstants);ALLOW_DYNAMIC_FLUTE_DEGREE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>

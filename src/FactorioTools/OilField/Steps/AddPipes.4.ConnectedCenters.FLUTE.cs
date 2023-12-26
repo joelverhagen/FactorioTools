@@ -153,7 +153,7 @@ public static partial class AddPipes
         var terminalPoints = context
             .CenterToTerminals
             .Values
-            .SelectMany(ts => ts.Select(t => new System.Drawing.Point(t.Terminal.X, t.Terminal.Y)))
+            .SelectMany(ts => ts.Select(t => new FluteSharp.Point(t.Terminal.X, t.Terminal.Y)))
             .ToList();
 
         /*
@@ -176,7 +176,7 @@ public static partial class AddPipes
     {
         var steinerPoints = fluteTree
             .Branch
-            .Select(b => (IPoint)new Point(b.X, b.Y))
+            .Select(b => (IPoint)new DelaunatorSharp.Point(b.X, b.Y))
             .Except(terminalPoints)
             .ToList();
 
@@ -189,7 +189,7 @@ public static partial class AddPipes
             while (true)
             {
                 var next = fluteTree.Branch[current.N];
-                var edge = new Edge(e: 0, new Point(current.X, current.Y), new Point(next.X, next.Y));
+                var edge = new Edge(e: 0, new DelaunatorSharp.Point(current.X, current.Y), new DelaunatorSharp.Point(next.X, next.Y));
                 edges.Add(edge);
 
                 if (current.N == next.N)
@@ -201,7 +201,7 @@ public static partial class AddPipes
             }
         }
 
-        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (IPoint)new Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
     }
 #endif
 }
