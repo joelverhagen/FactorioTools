@@ -148,18 +148,18 @@ public static partial class AddPipes
                                 })
                                 .MinBy(t => (t.Path.Count, t.ChildCentroidDistanceSquared))!;
 
-                            return new { BestTerminal = bestTerminal, Center = center };
+                            return KeyValuePair.Create(bestTerminal, center);
                         })
-                        .MinBy(t => (t.BestTerminal.Path.Count, t.BestTerminal.ChildCentroidDistanceSquared))!;
+                        .MinBy(t => (t.Key.Path.Count, t.Key.ChildCentroidDistanceSquared))!;
 
-                    return new { BestCenter = bestCenter, Group = group };
+                    return KeyValuePair.Create(bestCenter, group);
                 })
-                .MinBy(t => (t.BestCenter.BestTerminal.Path.Count, t.BestCenter.BestTerminal.ChildCentroidDistanceSquared))!;
+                .MinBy(t => (t.Key.Key.Path.Count, t.Key.Key.ChildCentroidDistanceSquared))!;
 
-            var group = bestGroup.Group;
-            var center = bestGroup.BestCenter.Center;
-            var terminal = bestGroup.BestCenter.BestTerminal.Terminal;
-            var path = bestGroup.BestCenter.BestTerminal.Path;
+            var group = bestGroup.Value;
+            var center = bestGroup.Key.Value;
+            var terminal = bestGroup.Key.Key.Terminal;
+            var path = bestGroup.Key.Key.Path;
 
             if (allIncludedCenters.Contains(terminal.Center))
             {

@@ -340,8 +340,8 @@ public static class Helpers
     public static Dictionary<Location, HashSet<Location>> GetCoveredCenterToProviderCenters(Dictionary<Location, HashSet<Location>> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
-            .SelectMany(p => p.Value.Select(c => (PoleCenter: p.Key, RecipientCenter: c)))
-            .GroupBy(p => p.RecipientCenter, p => p.PoleCenter)
+            .SelectMany(p => p.Value.Select(c => KeyValuePair.Create(p.Key, c)))
+            .GroupBy(p => p.Value, p => p.Key)
             .ToDictionary(g => g.Key, g => g.ToHashSet());
     }
 

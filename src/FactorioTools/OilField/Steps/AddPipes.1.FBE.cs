@@ -290,8 +290,8 @@ public static partial class AddPipes
         var bLocations = b.Paths.SelectMany(x => x).ToList();
 
         var lines = aLocations
-            .SelectMany(al => bLocations.Where(bl => al.X == bl.X || al.Y == bl.Y).Select(bl => (A: al, B: bl)))
-            .Select(p => new PathAndTurns(new Endpoints(p.A, p.B), MakeStraightLine(p.A, p.B), Turns: 0))
+            .SelectMany(al => bLocations.Where(bl => al.X == bl.X || al.Y == bl.Y).Select(bl => KeyValuePair.Create(al, bl)))
+            .Select(p => new PathAndTurns(new Endpoints(p.Key, p.Value), MakeStraightLine(p.Key, p.Value), Turns: 0))
             .Where(l => l.Path.All(x => context.Grid.IsEmpty(x)))
             .ToList();
 
