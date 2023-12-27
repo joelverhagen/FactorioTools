@@ -556,10 +556,12 @@ public static partial class AddPipes
         public Location Start => Terminals[0].Terminal;
         public Location End => Terminals.Last().Terminal;
 
+#if ENABLE_VISUALIZER
         public override string ToString()
         {
             return $"{Start} -> {End}";
         }
+#endif
     }
 
     private class PumpjackGroup

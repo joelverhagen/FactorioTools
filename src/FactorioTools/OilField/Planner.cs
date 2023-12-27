@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.Data;
+using Knapcode.FactorioTools.OilField.Grid;
 using Knapcode.FactorioTools.OilField.Steps;
 
 namespace Knapcode.FactorioTools.OilField;

@@ -1,5 +1,5 @@
 ﻿using System;
-using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField.Grid;
 
@@ -12,6 +12,7 @@ public class UndergroundPipe : Pipe
 
     public Direction Direction { get; }
 
+#if ENABLE_VISUALIZER
     public override string Label => Direction switch
     {
         Direction.Up => "^",
@@ -20,4 +21,5 @@ public class UndergroundPipe : Pipe
         Direction.Left => "<",
         _ => throw new NotImplementedException(),
     };
+#endif
 }

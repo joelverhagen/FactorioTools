@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 
 namespace Knapcode.FactorioTools.OilField;

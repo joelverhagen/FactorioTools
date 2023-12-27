@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\FactorioTools\FactorioTools.csproj" />
+    <ProjectReference Include="..\..\src\FactorioTools.Serialization\FactorioTools.Serialization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

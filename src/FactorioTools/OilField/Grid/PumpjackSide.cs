@@ -9,5 +9,7 @@ public class PumpjackSide : GridEntity
 
     public PumpjackCenter Center { get; }
 
+#if ENABLE_VISUALIZER
     public override string Label => "j";
+#endif
 }

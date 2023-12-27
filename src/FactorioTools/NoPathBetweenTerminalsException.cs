@@ -1,4 +1,6 @@
-﻿namespace Knapcode.FactorioTools;
+﻿using Knapcode.FactorioTools.OilField.Grid;
+
+namespace Knapcode.FactorioTools;
 
 public class NoPathBetweenTerminalsException : FactorioToolsException
 {

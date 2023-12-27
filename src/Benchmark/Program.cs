@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Knapcode.FactorioTools.OilField;
-using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.Data;
 using Knapcode.FactorioTools.OilField.Steps;
 
 namespace Knapcode.FactorioTools.Benchmark;

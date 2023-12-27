@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
-using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 

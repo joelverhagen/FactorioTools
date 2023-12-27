@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <AllowDynamicFluteDegree>true</AllowDynamicFluteDegree>
+    <AllowDynamicFluteDegree>false</AllowDynamicFluteDegree>
     <DefineConstants Condition="$(AllowDynamicFluteDegree) == 'true'">$(DefineConstants);ALLOW_DYNAMIC_FLUTE_DEGREE</DefineConstants>
   </PropertyGroup>
 
@@ -34,7 +34,7 @@
     <ProjectReference Include="..\..\submodules\FluteSharp\src\FluteSharp\FluteSharp.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(AllowDynamicFluteDegree)' == 'true'">
     <EmbeddedResource Include="..\..\submodules\FluteSharp\data\POWV6.dat" LinkBase="OilField" />
     <EmbeddedResource Include="..\..\submodules\FluteSharp\data\POST6.dat" LinkBase="OilField" />
   </ItemGroup>

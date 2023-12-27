@@ -9,5 +9,7 @@ public class BeaconSide : GridEntity
 
     public BeaconCenter Center { get; }
 
+#if ENABLE_VISUALIZER
     public override string Label => "b";
+#endif
 }

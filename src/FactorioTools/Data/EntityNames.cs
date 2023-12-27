@@ -1,4 +1,4 @@
-﻿namespace Knapcode.FactorioTools.OilField.Data;
+﻿namespace Knapcode.FactorioTools.Data;
 
 public class EntityNames
 {

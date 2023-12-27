@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Knapcode.FactorioTools.OilField.Algorithms;
-using Knapcode.FactorioTools.OilField.Data;
+using Knapcode.FactorioTools.Data;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 

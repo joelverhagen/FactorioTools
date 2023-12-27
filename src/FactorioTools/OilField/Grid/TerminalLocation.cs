@@ -1,4 +1,4 @@
-﻿using Knapcode.FactorioTools.OilField.Data;
+﻿using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField.Grid;
 
@@ -15,8 +15,10 @@ public class TerminalLocation
     public Location Terminal { get; }
     public Direction Direction { get; }
 
+#if ENABLE_VISUALIZER
     public override string ToString()
     {
         return $"Pump {Center:M} {Direction} terminal ({Terminal:M})";
     }
+#endif
 }

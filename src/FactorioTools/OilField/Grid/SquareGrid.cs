@@ -8,7 +8,10 @@ namespace Knapcode.FactorioTools.OilField.Grid;
 public abstract class SquareGrid
 {
     public const int NeighborCost = 1;
+
+#if ENABLE_VISUALIZER
     private const string EmptyLabel = ".";
+#endif
 
     private readonly Dictionary<GridEntity, Location> _entityToLocation;
     private readonly GridEntity?[,] _grid;
@@ -99,6 +102,7 @@ public abstract class SquareGrid
         adjacent[3] = IsInBounds(d) ? d : Location.Invalid;
     }
 
+#if ENABLE_VISUALIZER
     public void WriteTo(TextWriter sw, int spacing = 0)
     {
         var maxLabelLength = _entityToLocation.Keys.Max(x => x.Label.Length) + spacing;
@@ -122,11 +126,14 @@ public abstract class SquareGrid
             sw.WriteLine();
         }
     }
+#endif
 
     private class Empty : GridEntity
     {
         public static Empty Instance { get; } = new Empty();
 
+#if ENABLE_VISUALIZER
         public override string Label => EmptyLabel;
+#endif
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Knapcode.FactorioTools.OilField.Data;
+namespace Knapcode.FactorioTools.Data;
 
 public class Entity
 {

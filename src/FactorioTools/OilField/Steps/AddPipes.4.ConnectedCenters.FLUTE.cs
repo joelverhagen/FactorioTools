@@ -70,10 +70,12 @@ public static partial class AddPipes
         public HashSet<TerminalLocation> Terminals { get; } = new HashSet<TerminalLocation>();
         public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
 
+#if ENABLE_VISUALIZER
         public override string ToString()
         {
             return Location.ToString();
         }
+#endif
     }
 
     private static Dictionary<Location, FlutePoint> GetLocationToFlutePoint(Context context)

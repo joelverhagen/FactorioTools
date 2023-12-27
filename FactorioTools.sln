@@ -41,6 +41,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelaunatorSharp", "submodul
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerator", "submodules\FluteSharp\src\SourceGenerator\SourceGenerator.csproj", "{CA3BE482-7936-432C-878F-F856719E326E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FactorioTools.Serialization", "src\FactorioTools.Serialization\FactorioTools.Serialization.csproj", "{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{CA3BE482-7936-432C-878F-F856719E326E}.Release|x64.Build.0 = Release|Any CPU
 		{CA3BE482-7936-432C-878F-F856719E326E}.Release|x86.ActiveCfg = Release|Any CPU
 		{CA3BE482-7936-432C-878F-F856719E326E}.Release|x86.Build.0 = Release|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Debug|x64.Build.0 = Debug|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Debug|x86.Build.0 = Debug|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x64.ActiveCfg = Release|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x64.Build.0 = Release|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x86.ActiveCfg = Release|Any CPU
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -188,6 +202,7 @@ Global
 		{ADC9955B-7C4B-4657-B6F8-DDD569315D2A} = {C941BE21-DBF2-46EA-879E-892758A3AE53}
 		{85D6968F-F3B7-40FC-8491-524D77FD858E} = {ADC9955B-7C4B-4657-B6F8-DDD569315D2A}
 		{CA3BE482-7936-432C-878F-F856719E326E} = {EEA7B6C1-01A0-465D-8806-5E48680F8E70}
+		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79} = {2237B275-4DF9-492E-A555-E38CE0DC0E12}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E6A453D-7E2E-4504-B5F6-474D9AEA13B8}

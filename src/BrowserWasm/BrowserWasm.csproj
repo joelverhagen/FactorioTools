@@ -30,7 +30,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\FactorioTools\FactorioTools.csproj" />
+    <ProjectReference Include="..\FactorioTools.Serialization\FactorioTools.Serialization.csproj" />
   </ItemGroup>
 
   <ItemGroup>

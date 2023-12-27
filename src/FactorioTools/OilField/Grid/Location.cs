@@ -1,6 +1,13 @@
 ﻿using System;
 
-public struct Location : IEquatable<Location>, IComparable<Location>, IFormattable
+namespace Knapcode.FactorioTools.OilField.Grid;
+
+public struct Location :
+#if ENABLE_VISUALIZER
+    IFormattable,
+#endif
+    IEquatable<Location>,
+    IComparable<Location>
 {
     public Location(int x, int y)
     {
@@ -125,6 +132,7 @@ public struct Location : IEquatable<Location>, IComparable<Location>, IFormattab
         return left.CompareTo(right) >= 0;
     }
 
+#if ENABLE_VISUALIZER
     public override string ToString()
     {
         return ToString("S", formatProvider: null);
@@ -147,4 +155,5 @@ public struct Location : IEquatable<Location>, IComparable<Location>, IFormattab
             _ => throw new ArgumentException("Format string is not supported. Use 'M' or 'S'.", nameof(format))
         };
     }
+#endif
 }

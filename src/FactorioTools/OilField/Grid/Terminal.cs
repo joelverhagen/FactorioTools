@@ -2,5 +2,7 @@
 
 public class Terminal : Pipe
 {
+#if ENABLE_VISUALIZER
     public override string Label => "+";
+#endif
 }

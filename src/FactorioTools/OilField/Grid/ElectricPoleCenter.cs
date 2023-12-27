@@ -6,7 +6,9 @@ public class ElectricPoleCenter : GridEntity
 {
     private readonly HashSet<ElectricPoleCenter> _neighbors = new HashSet<ElectricPoleCenter>();
 
+#if ENABLE_VISUALIZER
     public override string Label => "E";
+#endif
 
     public IReadOnlySet<ElectricPoleCenter> Neighbors => _neighbors;
 
