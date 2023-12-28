@@ -122,7 +122,7 @@ public partial class Program
         var blueprintStrings = blueprintStringsAll;
         var optionsAll = new[] { OilFieldOptions.ForSmallElectricPole, OilFieldOptions.ForMediumElectricPole, OilFieldOptions.ForSubstation, OilFieldOptions.ForBigElectricPole };
 
-        var outputs = new List<string>();
+        var outputs = new List<MeasureResult>();
 
         var addBeaconsAll = new[] { true, false };
         var overlapBeaconsAll = new[] { true, false };
@@ -181,7 +181,7 @@ public partial class Program
                                     null => "",
                                     BeaconStrategy.Fbe => "FBE*",
                                     BeaconStrategy.FbeOriginal => "FBE",
-                                    BeaconStrategy.Snug => "SNUG",
+                                    BeaconStrategy.Snug => "snug",
                                     _ => throw new NotImplementedException(),
                                 },
                             }.Where(p => !string.IsNullOrEmpty(p))));
@@ -207,7 +207,14 @@ public partial class Program
                         blueprintCount++;
                     }
 
-                    outputs.Add($"{options.ElectricPoleEntityName} | {options.AddBeacons} | {(options.AddBeacons ? options.OverlapBeacons.ToString() : "N/A")} | {pipeSum * 1.0 / blueprintCount} | {poleSum * 1.0 / blueprintCount} | {beaconSum * 1.0 / blueprintCount} | {effectSum * 1.0 / blueprintCount}");
+                    outputs.Add(new MeasureResult(
+                        options.ElectricPoleEntityName,
+                        options.AddBeacons,
+                        options.AddBeacons ? options.OverlapBeacons.ToString() : "N/A",
+                        pipeSum * 1.0 / blueprintCount,
+                        poleSum * 1.0 / blueprintCount,
+                        beaconSum * 1.0 / blueprintCount,
+                        effectSum * 1.0 / blueprintCount));
                 }
             }
 
@@ -227,4 +234,13 @@ public partial class Program
             Console.WriteLine(outputs[i]);
         }
     }
+
+    public record MeasureResult(
+        string ElectricPoleEntityName,
+        bool AddBeacons,
+        string OverlapBeacons,
+        double PipeCount,
+        double PoleCount,
+        double BeaconCount,
+        double EffectCount);
 }
