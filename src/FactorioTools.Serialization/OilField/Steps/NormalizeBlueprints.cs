@@ -18,8 +18,8 @@ public static class NormalizeBlueprints
         var orderedInput = input
             .Concat(existing.SelectMany(g => g))
             .Where(x => x.Valid)
-            .OrderBy(x => existing[x.Normalized].Select(x => x.Index).DefaultIfEmpty(int.MaxValue).Min())
-            .ThenBy(x => x.Index);
+            .Where(x => !existing[x.Normalized].Any())
+            .OrderBy(x => x.Index);
 
         foreach (var line in orderedInput)
         {
