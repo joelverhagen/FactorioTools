@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using Knapcode.FluteSharp;
 using Knapcode.FactorioTools.OilField.Grid;
-using DelaunatorSharp;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,16 +8,16 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class AddPipes
 {
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithFLUTE(Context context)
+    private static Dictionary<Location, LocationSet> GetConnectedPumpjacksWithFLUTE(Context context)
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 
         // Determine which terminals should be connected to each other either directly or via only Steiner points.
-        var centerToCenters = new Dictionary<Location, HashSet<Location>>();
+        var centerToCenters = new Dictionary<Location, LocationSet>();
         foreach (var (center, terminals) in context.CenterToTerminals)
         {
-            var otherCenters = new HashSet<Location>();
-            var visitedPoints = new HashSet<FlutePoint>();
+            var otherCenters = new LocationSet();
+            var visitedPoints = new LocationSet();
             var queue = new Queue<FlutePoint>();
             foreach (var terminal in terminals)
             {
@@ -29,7 +28,7 @@ public static partial class AddPipes
             {
                 var point = queue.Dequeue();
 
-                if (!visitedPoints.Add(point))
+                if (!visitedPoints.Add(point.Location))
                 {
                     continue;
                 }
@@ -66,8 +65,8 @@ public static partial class AddPipes
         public bool IsEliminated { get; set; }
         public bool IsSteinerPoint => Centers.Count == 0;
         public Location Location { get; }
-        public HashSet<Location> Centers { get; } = new HashSet<Location>();
-        public HashSet<TerminalLocation> Terminals { get; } = new HashSet<TerminalLocation>();
+        public LocationSet Centers { get; } = new LocationSet();
+        public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
         public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
 
 #if ENABLE_GRID_TOSTRING
@@ -174,15 +173,15 @@ public static partial class AddPipes
     }
 
 #if DEBUG
-    private static void VisualizeFLUTE(Context context, IEnumerable<IPoint> terminalPoints, Tree fluteTree)
+    private static void VisualizeFLUTE(Context context, IEnumerable<DelaunatorSharp.IPoint> terminalPoints, Tree fluteTree)
     {
         var steinerPoints = fluteTree
             .Branch
-            .Select(b => (IPoint)new DelaunatorSharp.Point(b.X, b.Y))
+            .Select(b => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(b.X, b.Y))
             .Except(terminalPoints)
             .ToList();
 
-        var edges = new HashSet<IEdge>();
+        var edges = new HashSet<DelaunatorSharp.IEdge>();
 
         for (int i = 0; i < fluteTree.Branch.Length; i++)
         {
@@ -191,7 +190,7 @@ public static partial class AddPipes
             while (true)
             {
                 var next = fluteTree.Branch[current.N];
-                var edge = new Edge(e: 0, new DelaunatorSharp.Point(current.X, current.Y), new DelaunatorSharp.Point(next.X, next.Y));
+                var edge = new DelaunatorSharp.Edge(e: 0, new DelaunatorSharp.Point(current.X, current.Y), new DelaunatorSharp.Point(next.X, next.Y));
                 edges.Add(edge);
 
                 if (current.N == next.N)
@@ -203,7 +202,7 @@ public static partial class AddPipes
             }
         }
 
-        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
     }
 #endif
 }

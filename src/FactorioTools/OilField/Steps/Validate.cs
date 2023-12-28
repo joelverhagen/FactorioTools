@@ -9,7 +9,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class Validate
 {
-    public static void PipesAreConnected(Context context, HashSet<Location> optimizedPipes)
+    public static void PipesAreConnected(Context context, LocationSet optimizedPipes)
     {
         if (context.Options.ValidateSolution)
         {
@@ -21,14 +21,14 @@ public static class Validate
                 }
             }
 
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToHashSet();
+            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToLocationSet();
             var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
             var start = goals.First();
             goals.Remove(start);
             var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
             var reachedGoals = result.ReachedGoals;
             reachedGoals.Add(start);
-            var unreachedGoals = goals.Except(reachedGoals).ToHashSet();
+            var unreachedGoals = goals.Except(reachedGoals).ToLocationSet();
             if (unreachedGoals.Count > 0)
             {
                 // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
@@ -37,7 +37,7 @@ public static class Validate
         }
     }
 
-    public static void UndergroundPipesArePipes(Context context, HashSet<Location> pipes, Dictionary<Location, Direction> locationToDirection)
+    public static void UndergroundPipesArePipes(Context context, LocationSet pipes, Dictionary<Location, Direction> locationToDirection)
     {
         if (context.Options.ValidateSolution)
         {
@@ -51,9 +51,9 @@ public static class Validate
 
     public static void PipesDoNotMatch(
         Context context,
-        HashSet<Location> pipes1,
+        LocationSet pipes1,
         Dictionary<Location, Direction>? undergroundPipes1,
-        HashSet<Location> pipes2,
+        LocationSet pipes2,
         Dictionary<Location, Direction>? undergroundPipes2)
     {
         if (context.Options.ValidateSolution)
@@ -104,7 +104,7 @@ public static class Validate
 
     public static void NoOverlappingEntities(
         Context context,
-        HashSet<Location> optimizedPipes,
+        LocationSet optimizedPipes,
         Dictionary<Location, Direction>? undergroundPipes,
         List<BeaconSolution>? beaconSolutions)
     {

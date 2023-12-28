@@ -6,23 +6,23 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 
 public static class Dijkstras
 {
-    public static DijkstrasResult GetShortestPaths(SharedInstances sharedInstances, SquareGrid grid, Location start, HashSet<Location> goals, bool stopOnFirstGoal)
+    public static DijkstrasResult GetShortestPaths(SharedInstances sharedInstances, SquareGrid grid, Location start, LocationSet goals, bool stopOnFirstGoal)
     {
-        var cameFrom = new Dictionary<Location, HashSet<Location>>();
-        cameFrom[start] = new HashSet<Location>();
-        var remainingGoals = new HashSet<Location>(goals);
+        var cameFrom = new Dictionary<Location, LocationSet>();
+        cameFrom[start] = new LocationSet();
+        var remainingGoals = new LocationSet(goals);
 
 #if NO_SHARED_INSTANCES
         var priorityQueue = new PriorityQueue<Location, double>();
         var costSoFar = new Dictionary<Location, double>();
-        var inQueue = new HashSet<Location>();
+        var inQueue = new LocationSet();
 #else
         var priorityQueue = sharedInstances.LocationPriorityQueue;
         var costSoFar = sharedInstances.LocationToDouble;
         var inQueue = sharedInstances.LocationSetB;
 #endif
 
-        var reachedGoals = new HashSet<Location>();
+        var reachedGoals = new LocationSet();
         costSoFar[start] = 0;
 
         try
@@ -64,7 +64,7 @@ public static class Dijkstras
                         if (!previousExists || alternateCost < neighborCost)
                         {
                             costSoFar[neighbor] = alternateCost;
-                            cameFrom[neighbor] = new HashSet<Location> { current };
+                            cameFrom[neighbor] = new LocationSet { current };
                         }
                         else
                         {

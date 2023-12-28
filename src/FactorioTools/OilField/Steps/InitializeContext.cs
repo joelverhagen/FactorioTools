@@ -100,7 +100,7 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static HashSet<Location> GetPumpjackCenters(Blueprint blueprint, int marginX, int marginY)
+    private static LocationSet GetPumpjackCenters(Blueprint blueprint, int marginX, int marginY)
     {
         var pumpjacks = blueprint
             .Entities
@@ -113,7 +113,7 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centers = new HashSet<Location>();
+        var centers = new LocationSet();
 
         if (pumpjacks.Count > 0)
         {

@@ -5,12 +5,12 @@ namespace Knapcode.FactorioTools.OilField.Grid;
 
 public class ExistingPipeGrid : SquareGrid
 {
-    public ExistingPipeGrid(SquareGrid squareGrid, HashSet<Location> pipes) : base(squareGrid, clone: false)
+    public ExistingPipeGrid(SquareGrid squareGrid, LocationSet pipes) : base(squareGrid, clone: false)
     {
         Pipes = pipes;
     }
 
-    public HashSet<Location> Pipes { get; }
+    public LocationSet Pipes { get; }
 
     public override void GetNeighbors(Span<Location> neighbors, Location id)
     {

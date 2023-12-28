@@ -9,10 +9,10 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class AddPipes
 {
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithDelaunay(List<Location> centers)
+    private static Dictionary<Location, LocationSet> GetConnectedPumpjacksWithDelaunay(List<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
-        var dlGraph = centers.ToDictionary(c => c, c => new HashSet<Location>());
+        var dlGraph = centers.ToDictionary(c => c, c => new LocationSet());
 
         for (var e = 0; e < delaunator.Triangles.Length; e++)
         {
@@ -29,7 +29,7 @@ public static partial class AddPipes
         return dlGraph;
     }
 
-    private static Dictionary<Location, HashSet<Location>> GetConnectedPumpjacksWithDelaunayMst(Context context, List<Location> centers)
+    private static Dictionary<Location, LocationSet> GetConnectedPumpjacksWithDelaunayMst(Context context, List<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
         var dlGraph = centers.ToDictionary(c => c, c => new Dictionary<Location, int>());

@@ -10,7 +10,7 @@ public class SharedInstances
     {
     }
 
-    public SharedInstances(HashSet<Location> locationSetA)
+    public SharedInstances(LocationSet locationSetA)
     {
 #if !NO_SHARED_INSTANCES
         LocationSetA = locationSetA;
@@ -27,8 +27,8 @@ public class SharedInstances
     public PriorityQueue<Location, double> LocationPriorityQueue = new();
     public List<Location> LocationListA = new();
     public List<Location> LocationListB = new();
-    public HashSet<Location> LocationSetA;
-    public HashSet<Location> LocationSetB = new();
+    public LocationSet LocationSetA;
+    public LocationSet LocationSetB = new();
 
     public T[] GetArray<T>(ref T[] array, int length) where T : struct
     {

@@ -52,8 +52,8 @@ public static partial class AddPipes
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        var pipesToSolutions = new Dictionary<HashSet<Location>, List<Solution>>(LocationSetComparer.Instance);
-        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, HashSet<Location>>, List<Solution>>(ConnectedCentersComparer.Instance);
+        var pipesToSolutions = new Dictionary<LocationSet, List<Solution>>(LocationSetComparer.Instance);
+        var connectedCentersToSolutions = new Dictionary<Dictionary<Location, LocationSet>, List<Solution>>(ConnectedCentersComparer.Instance);
 
         if (context.CenterToTerminals.Count == 1)
         {
@@ -64,7 +64,7 @@ public static partial class AddPipes
                 .OrderBy(x => x.Direction)
                 .First();
             EliminateOtherTerminals(context, terminal);
-            var pipes = new HashSet<Location> { terminal.Terminal };
+            var pipes = new LocationSet { terminal.Terminal };
             var solutions = OptimizeAndAddSolutions(context, pipesToSolutions, default, pipes, centerToConnectedCenters: null);
             foreach (var solution in solutions)
             {
@@ -91,7 +91,7 @@ public static partial class AddPipes
                     case PipeStrategy.ConnectedCentersDelaunayMst:
                     case PipeStrategy.ConnectedCentersFlute:
                         {
-                            Dictionary<Location, HashSet<Location>> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
+                            Dictionary<Location, LocationSet> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
                             if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solutions))
                             {
                                 foreach (var solution in solutions)
@@ -201,10 +201,10 @@ public static partial class AddPipes
 
     private static List<Solution> OptimizeAndAddSolutions(
         Context context,
-        Dictionary<HashSet<Location>, List<Solution>> pipesToSolutions,
+        Dictionary<LocationSet, List<Solution>> pipesToSolutions,
         PipeStrategy strategy,
-        HashSet<Location> pipes,
-        Dictionary<Location, HashSet<Location>>? centerToConnectedCenters)
+        LocationSet pipes,
+        Dictionary<Location, LocationSet>? centerToConnectedCenters)
     {
         List<Solution>? solutions;
         if (pipesToSolutions.TryGetValue(pipes, out solutions))
@@ -222,12 +222,12 @@ public static partial class AddPipes
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        HashSet<Location> optimizedPipes = pipes;
+        LocationSet optimizedPipes = pipes;
         if (context.Options.OptimizePipes)
         {
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
-            optimizedPipes = new HashSet<Location>(pipes);
+            optimizedPipes = new LocationSet(pipes);
             RotateOptimize.Execute(context, optimizedPipes);
 
             // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
@@ -235,7 +235,7 @@ public static partial class AddPipes
 
         if (pipes.SetEquals(optimizedPipes))
         {
-            optimizedPipes = context.Options.UseUndergroundPipes ? new HashSet<Location>(pipes) : pipes;
+            optimizedPipes = context.Options.UseUndergroundPipes ? new LocationSet(pipes) : pipes;
             solutions = new List<Solution>
             {
                 GetSolution(context, strategy, optimized: false, centerToConnectedCenters, optimizedPipes)
@@ -252,7 +252,7 @@ public static partial class AddPipes
 
             context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
             context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
-            var pipesB = context.Options.UseUndergroundPipes ? new HashSet<Location>(pipes) : pipes;
+            var pipesB = context.Options.UseUndergroundPipes ? new LocationSet(pipes) : pipes;
             var solutionB = GetSolution(context, strategy, optimized: false, centerToConnectedCenters, pipesB);
 
             Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionA.UndergroundPipes, solutionB.Pipes, solutionB.UndergroundPipes);
@@ -269,8 +269,8 @@ public static partial class AddPipes
         Context context,
         PipeStrategy strategy,
         bool optimized,
-        Dictionary<Location, HashSet<Location>>? centerToConnectedCenters,
-        HashSet<Location> optimizedPipes)
+        Dictionary<Location, LocationSet>? centerToConnectedCenters,
+        LocationSet optimizedPipes)
     {
         Validate.PipesAreConnected(context, optimizedPipes);
 
@@ -305,11 +305,11 @@ public static partial class AddPipes
 
     private static void EliminateStrandedTerminals(Context context)
     {
-        var locationsToExplore = context.LocationToTerminals.Keys.ToHashSet();
+        var locationsToExplore = context.LocationToTerminals.Keys.ToLocationSet();
 
         while (locationsToExplore.Count > 0)
         {
-            var goals = new HashSet<Location>(locationsToExplore);
+            var goals = new LocationSet(locationsToExplore);
             var start = goals.First();
             goals.Remove(start);
 
@@ -318,11 +318,11 @@ public static partial class AddPipes
             var reachedTerminals = result.ReachedGoals;
             reachedTerminals.Add(start);
 
-            var unreachedTerminals = goals.Except(result.ReachedGoals).ToHashSet();
+            var unreachedTerminals = goals.Except(result.ReachedGoals).ToLocationSet();
 
-            var reachedPumpjacks = result.ReachedGoals.SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToHashSet();
+            var reachedPumpjacks = result.ReachedGoals.SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToLocationSet();
 
-            HashSet<Location> terminalsToEliminate;
+            LocationSet terminalsToEliminate;
             if (reachedPumpjacks.Count == context.CenterToTerminals.Count)
             {
                 terminalsToEliminate = unreachedTerminals;
@@ -355,7 +355,7 @@ public static partial class AddPipes
             {
                 /*
                 var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, new HashSet<Location>(), undergroundPipes: null, allowMultipleTerminals: true);
+                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, new LocationSet(), undergroundPipes: null, allowMultipleTerminals: true);
                 Visualizer.Show(clone, new[] { strandedTerminal.Value, locationsToExplore.First() }.Select(x => (IPoint)new Point(x.X, x.Y)), Array.Empty<IEdge>());
                 */
 
@@ -368,19 +368,19 @@ public static partial class AddPipes
     {
         public required List<PipeStrategy> Strategies { get; set; }
         public required List<bool> Optimized { get; set; }
-        public required Dictionary<Location, HashSet<Location>>? CenterToConnectedCenters { get; set; }
+        public required Dictionary<Location, LocationSet>? CenterToConnectedCenters { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
         public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
-        public required HashSet<Location> Pipes { get; set; }
+        public required LocationSet Pipes { get; set; }
         public required Dictionary<Location, Direction>? UndergroundPipes { get; set; }
         public required List<BeaconSolution>? BeaconSolutions { get; set; }
     }
 
-    private class LocationSetComparer : IEqualityComparer<HashSet<Location>>
+    private class LocationSetComparer : IEqualityComparer<LocationSet>
     {
         public static readonly LocationSetComparer Instance = new LocationSetComparer();
 
-        public bool Equals(HashSet<Location>? x, HashSet<Location>? y)
+        public bool Equals(LocationSet? x, LocationSet? y)
         {
             if (x is null && y is null)
             {
@@ -405,7 +405,7 @@ public static partial class AddPipes
             return x.SetEquals(y);
         }
 
-        public int GetHashCode([DisallowNull] HashSet<Location> obj)
+        public int GetHashCode([DisallowNull] LocationSet obj)
         {
             var hashCode = new HashCode();
 
@@ -418,11 +418,11 @@ public static partial class AddPipes
         }
     }
 
-    private class ConnectedCentersComparer : IEqualityComparer<Dictionary<Location, HashSet<Location>>>
+    private class ConnectedCentersComparer : IEqualityComparer<Dictionary<Location, LocationSet>>
     {
         public static readonly ConnectedCentersComparer Instance = new ConnectedCentersComparer();
 
-        public bool Equals(Dictionary<Location, HashSet<Location>>? x, Dictionary<Location, HashSet<Location>>? y)
+        public bool Equals(Dictionary<Location, LocationSet>? x, Dictionary<Location, LocationSet>? y)
         {
             if (x is null && y is null)
             {
@@ -460,7 +460,7 @@ public static partial class AddPipes
             return true;
         }
 
-        public int GetHashCode([DisallowNull] Dictionary<Location, HashSet<Location>> obj)
+        public int GetHashCode([DisallowNull] Dictionary<Location, LocationSet> obj)
         {
             var hashCode = new HashCode();
 

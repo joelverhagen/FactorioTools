@@ -29,7 +29,7 @@ public static class Planner
             throw new FactorioToolsException("The must be at least one pumpjack in the blueprint.", badInput: true);
         }
 
-        HashSet<Location>? poles;
+        LocationSet? poles;
         if (addElectricPolesFirst)
         {
             if (eletricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
@@ -39,7 +39,7 @@ public static class Planner
                     .Values
                     .SelectMany(t => t)
                     .Select(t => t.Terminal)
-                    .ToHashSet();
+                    .ToLocationSet();
             }
 
             poles = AddElectricPoles.Execute(context, electricPolesAvoid, allowRetries: false);
@@ -90,7 +90,7 @@ public static class Planner
                 }
                 else
                 {
-                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToHashSet();
+                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToLocationSet();
                     return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                 }
             }

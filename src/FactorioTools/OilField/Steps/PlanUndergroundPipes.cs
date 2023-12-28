@@ -20,7 +20,7 @@ public static class PlanUndergroundPipes
     /// </summary>
     private const int MaxUnderground = 11;
 
-    public static Dictionary<Location, Direction> Execute(Context context, HashSet<Location> pipes)
+    public static Dictionary<Location, Direction> Execute(Context context, LocationSet pipes)
     {
         // Track underground pipes and their directions
         var locationToDirection = new Dictionary<Location, Direction>();
@@ -35,7 +35,7 @@ public static class PlanUndergroundPipes
 
     private static void ConvertInOneDirection(
         Context context,
-        HashSet<Location> pipes,
+        LocationSet pipes,
         Dictionary<Location, Direction> locationToDirection,
         (int X, int Y) forward)
     {
@@ -56,7 +56,7 @@ public static class PlanUndergroundPipes
         // axis they are going and no pipes next to them.
 
 #if NO_SHARED_INSTANCES
-        var candidates = new HashSet<Location>();
+        var candidates = new LocationSet();
 #else
         var candidates = context.SharedInstances.LocationSetA;
 #endif
@@ -127,7 +127,7 @@ public static class PlanUndergroundPipes
     }
 
     private static void AddRunAndClear(
-        HashSet<Location> pipes,
+        LocationSet pipes,
         Dictionary<Location, Direction> locationToDirection,
         Direction forwardDirection,
         Direction backwardDirection,

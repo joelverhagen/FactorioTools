@@ -11,7 +11,7 @@ namespace Knapcode.FactorioTools.OilField.Algorithms
 #if NO_SHARED_INSTANCES
             var toExplore = new Queue<Location>();
             var parents = new Dictionary<Location, Location>();
-            var visited = new HashSet<Location>();
+            var visited = new LocationSet();
 #else
             var toExplore = sharedInstances.LocationQueue;
             var parents = sharedInstances.LocationToLocation;

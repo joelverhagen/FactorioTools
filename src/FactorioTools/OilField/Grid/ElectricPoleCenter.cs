@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools.OilField.Grid;
 
 public class ElectricPoleCenter : GridEntity
 {
-    private readonly HashSet<ElectricPoleCenter> _neighbors = new HashSet<ElectricPoleCenter>();
+    private readonly ElectricPoleCenterSet _neighbors = new();
 
 #if ENABLE_GRID_TOSTRING
     public override string Label => "E";

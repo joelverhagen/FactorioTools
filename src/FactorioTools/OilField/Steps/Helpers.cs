@@ -158,7 +158,7 @@ public static class Helpers
             .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
             .Where(p => p.Entity is not null)
             .ToDictionary(p => p.Location, p => p.Entity!);
-        var unusedProviders = new HashSet<Location>(providers.Keys);
+        var unusedProviders = new LocationSet(providers.Keys);
 
         for (int i = 0; i < recipients.Count; i++)
         {
@@ -211,7 +211,7 @@ public static class Helpers
         if (removeUnused && unusedProviders.Count > 0)
         {
 #if NO_SHARED_INSTANCES
-            var coveredCenters = new HashSet<Location>();
+            var coveredCenters = new LocationSet();
 #else
             var coveredCenters = context.SharedInstances.LocationSetA;
 #endif
@@ -310,7 +310,7 @@ public static class Helpers
         return (candidateToInfo, coveredEntities, providers);
     }
 
-    public static Dictionary<Location, HashSet<Location>> GetProviderCenterToCoveredCenters(
+    public static Dictionary<Location, LocationSet> GetProviderCenterToCoveredCenters(
         SquareGrid grid,
         int providerWidth,
         int providerHeight,
@@ -320,11 +320,11 @@ public static class Helpers
         bool includePumpjacks,
         bool includeBeacons)
     {
-        var poleCenterToCoveredCenters = new Dictionary<Location, HashSet<Location>>();
+        var poleCenterToCoveredCenters = new Dictionary<Location, LocationSet>();
 
         foreach (var center in providerCenters)
         {
-            var coveredCenters = new HashSet<Location>();
+            var coveredCenters = new LocationSet();
             AddCoveredCenters(
                 coveredCenters,
                 grid,
@@ -342,16 +342,16 @@ public static class Helpers
         return poleCenterToCoveredCenters;
     }
 
-    public static Dictionary<Location, HashSet<Location>> GetCoveredCenterToProviderCenters(Dictionary<Location, HashSet<Location>> providerCenterToCoveredCenters)
+    public static Dictionary<Location, LocationSet> GetCoveredCenterToProviderCenters(Dictionary<Location, LocationSet> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
             .SelectMany(p => p.Value.Select(c => KeyValuePair.Create(p.Key, c)))
             .GroupBy(p => p.Value, p => p.Key)
-            .ToDictionary(g => g.Key, g => g.ToHashSet());
+            .ToDictionary(g => g.Key, g => g.ToLocationSet());
     }
 
     private static void AddCoveredCenters(
-        HashSet<Location> coveredCenters,
+        LocationSet coveredCenters,
         SquareGrid grid,
         Location center,
         int providerWidth,
@@ -507,7 +507,7 @@ public static class Helpers
 
 #if NO_SHARED_INSTANCES
         var toRemove = new List<Location>();
-        var updated = new HashSet<Location>();
+        var updated = new LocationSet();
 #else
         var toRemove = sharedInstances.LocationListA;
         var updated = sharedInstances.LocationSetA;
@@ -597,7 +597,7 @@ public static class Helpers
 
 #if NO_SHARED_INSTANCES
         var toRemove = new List<Location>();
-        var updated = new HashSet<Location>();
+        var updated = new LocationSet();
 #else
         var toRemove = sharedInstances.LocationListA;
         var updated = sharedInstances.LocationSetA;
@@ -676,7 +676,7 @@ public static class Helpers
         }
     }
 
-    public static (Dictionary<Location, HashSet<Location>> PoleCenterToCoveredCenters, Dictionary<Location, HashSet<Location>> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
+    public static (Dictionary<Location, LocationSet> PoleCenterToCoveredCenters, Dictionary<Location, LocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
         Context context,
         List<ProviderRecipient> poweredEntities,
         IEnumerable<Location> electricPoleCenters)

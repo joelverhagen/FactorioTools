@@ -10,15 +10,15 @@ public class DijkstrasResult
 {
     private readonly SquareGrid _grid;
 
-    public DijkstrasResult(SquareGrid grid, Dictionary<Location, HashSet<Location>> locationToPrevious, HashSet<Location> reachedGoals)
+    public DijkstrasResult(SquareGrid grid, Dictionary<Location, LocationSet> locationToPrevious, LocationSet reachedGoals)
     {
         _grid = grid;
         LocationToPrevious = locationToPrevious;
         ReachedGoals = reachedGoals;
     }
 
-    public Dictionary<Location, HashSet<Location>> LocationToPrevious { get; }
-    public HashSet<Location> ReachedGoals { get; }
+    public Dictionary<Location, LocationSet> LocationToPrevious { get; }
+    public LocationSet ReachedGoals { get; }
 
     public List<List<Location>> GetStraightPaths(Location goal)
     {

@@ -63,7 +63,7 @@ public static partial class PlanBeacons
     {
         var beacons = new List<Location>();
         var effects = 0;
-        var collisionArea = new HashSet<Location>();
+        var collisionArea = new LocationSet();
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
         {
@@ -242,11 +242,11 @@ public static partial class PlanBeacons
         return (entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
-    private static HashSet<Location> GetOccupiedPositions(List<Area> entityAreas)
+    private static LocationSet GetOccupiedPositions(List<Area> entityAreas)
     {
         return entityAreas
             .SelectMany(a => a.Locations)
-            .ToHashSet();
+            .ToLocationSet();
     }
 
     private static List<Area> GetEntityAreas(Context context)
@@ -331,9 +331,9 @@ public static partial class PlanBeacons
         return effectEntityArea;
     }
 
-    private static List<Location[]> GetPossibleBeaconAreas(Context context, HashSet<Location> occupiedPositions)
+    private static List<Location[]> GetPossibleBeaconAreas(Context context, LocationSet occupiedPositions)
     {
-        var validBeaconCenters = new HashSet<Location>();
+        var validBeaconCenters = new LocationSet();
         var possibleBeaconAreas = new List<Location[]>();
 
         var gridMinX = (context.Options.BeaconWidth - 1) / 2;

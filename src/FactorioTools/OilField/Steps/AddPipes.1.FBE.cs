@@ -18,7 +18,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 public static partial class AddPipes
 {
-    public static HashSet<Location> ExecuteWithFbe(Context context)
+    public static LocationSet ExecuteWithFbe(Context context)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
@@ -34,7 +34,7 @@ public static partial class AddPipes
         return pipes;
     }
 
-    private static (List<TerminalLocation> Terminals, HashSet<Location> Pipes) DelaunayTriangulation(Context context, Location middle)
+    private static (List<TerminalLocation> Terminals, LocationSet Pipes) DelaunayTriangulation(Context context, Location middle)
     {
         var centerDistance = new Dictionary<(Location, Location), int>();
         var centers = context.CenterToTerminals.Keys.ToList();
@@ -135,7 +135,7 @@ public static partial class AddPipes
                         .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
                         .Select(p =>
                         {
-                            var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, p.A.Terminal, new HashSet<Location> { p.B.Terminal });
+                            var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, p.A.Terminal, new LocationSet { p.B.Terminal });
                             return new TerminalPair(p.A, p.B, result.Path);
                         })
                         .MinBy(x => x.Line.Count)!;
@@ -255,7 +255,7 @@ public static partial class AddPipes
         }
 
         var terminals = finalGroup.Entities.ToList();
-        var pipes = finalGroup.Paths.SelectMany(l => l).ToHashSet();
+        var pipes = finalGroup.Paths.SelectMany(l => l).ToLocationSet();
 
         return (terminals, pipes);
     }
@@ -264,7 +264,7 @@ public static partial class AddPipes
     private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
     {
         var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToHashSet(), undergroundPipes: null, allowMultipleTerminals: true);
+        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToLocationSet(), undergroundPipes: null, allowMultipleTerminals: true);
         Visualizer.Show(clone, addedPumpjacks.Select(x => (IPoint)new Point(x.Center.X, x.Center.Y)), Array.Empty<IEdge>());
     }
 #endif
@@ -311,7 +311,7 @@ public static partial class AddPipes
             .Take(5)
             .Select(l =>
             {
-                var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new HashSet<Location> { l.B });
+                var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new LocationSet { l.B });
 
                 if (result.ReachedGoal is null)
                 {

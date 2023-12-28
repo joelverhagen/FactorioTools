@@ -10,7 +10,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class RotateOptimize
 {
-    public static void Execute(Context parentContext, HashSet<Location> pipes)
+    public static void Execute(Context parentContext, LocationSet pipes)
     {
         if (parentContext.LocationToTerminals.Count < 2)
         {
@@ -229,7 +229,7 @@ public static class RotateOptimize
     {
 #if NO_SHARED_INSTANCES
         var originalPath = new List<Location>();
-        var connectionPoints = new HashSet<Location>(context.Pipes.Count);
+        var connectionPoints = new LocationSet(context.Pipes.Count);
 #else
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
         var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
@@ -320,7 +320,7 @@ public static class RotateOptimize
         }
     }
 
-    private static void ExplorePipes(ChildContext context, Location start, HashSet<Location> pipes)
+    private static void ExplorePipes(ChildContext context, Location start, LocationSet pipes)
     {
         var toExplore = GetQueue(context);
         try
@@ -413,12 +413,12 @@ public static class RotateOptimize
 
     private class ChildContext
     {
-        public ChildContext(Context parentContext, HashSet<Location> pipes)
+        public ChildContext(Context parentContext, LocationSet pipes)
         {
             ParentContext = parentContext;
             Pipes = pipes;
-            Intersections = new HashSet<Location>(pipes.Count);
-            Goals = new HashSet<Location>(pipes.Count);
+            Intersections = new LocationSet(pipes.Count);
+            Goals = new LocationSet(pipes.Count);
             ExistingPipeGrid = new ExistingPipeGrid(parentContext.Grid, pipes);
 
             UpdateIntersectionsAndGoals();
@@ -428,9 +428,9 @@ public static class RotateOptimize
         public SquareGrid Grid => ParentContext.Grid;
         public Dictionary<Location, List<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
         public IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
-        public HashSet<Location> Pipes { get; }
-        public HashSet<Location> Intersections { get; }
-        public HashSet<Location> Goals { get; }
+        public LocationSet Pipes { get; }
+        public LocationSet Intersections { get; }
+        public LocationSet Goals { get; }
         public ExistingPipeGrid ExistingPipeGrid { get; }
 
         public void UpdateIntersectionsAndGoals()
