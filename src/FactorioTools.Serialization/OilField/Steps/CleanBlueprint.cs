@@ -6,9 +6,9 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class CleanBlueprint
 {
-    public static BlueprintRoot Execute(BlueprintRoot root)
+    public static Blueprint Execute(Blueprint blueprint)
     {
-        var context = InitializeContext.Execute(new OilFieldOptions(), root);
+        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint);
 
         var entities = new List<Entity>();
 
@@ -34,26 +34,23 @@ public static class CleanBlueprint
             });
         }
 
-        return new BlueprintRoot
+        return new Blueprint
         {
-            Blueprint = new Blueprint
+            Entities = entities.ToArray(),
+            Icons = new Icon[]
             {
-                Entities = entities.ToArray(),
-                Icons = new Icon[]
+                new Icon
                 {
-                    new Icon
+                    Index = 1,
+                    Signal = new SignalID
                     {
-                        Index = 1,
-                        Signal = new SignalID
-                        {
-                            Name = EntityNames.Vanilla.Pumpjack,
-                            Type = SignalTypes.Vanilla.Item,
-                        }
+                        Name = EntityNames.Vanilla.Pumpjack,
+                        Type = SignalTypes.Vanilla.Item,
                     }
-                },
-                Item = ItemNames.Vanilla.Blueprint,
-                Version = 0,
-            }
+                }
+            },
+            Item = ItemNames.Vanilla.Blueprint,
+            Version = 0,
         };
     }
 }

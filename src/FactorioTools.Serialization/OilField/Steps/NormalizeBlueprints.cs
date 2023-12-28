@@ -51,7 +51,22 @@ public static class NormalizeBlueprints
             }
             catch (Exception ex)
             {
+                Console.WriteLine();
                 Console.WriteLine(ex);
+                Console.WriteLine();
+
+                string response;
+                do
+                {
+                    Console.Write("A blueprint could not be parsed. See the error above. Keep in file? (y/N) ");
+                    response = (Console.ReadLine() ?? string.Empty).Trim().ToLowerInvariant();
+                }
+                while (response != "y" && response != "n");
+
+                if (response == "y")
+                {
+                    lines.Add((blueprintString, blueprintString, index, true));
+                }
             }
 
             index++;
@@ -68,9 +83,9 @@ public static class NormalizeBlueprints
         {
             var blueprint = ParseBlueprint.Execute(trimmed);
             var clean = CleanBlueprint.Execute(blueprint);
-            if (clean.Blueprint.Entities.Length == 0)
+            if (clean.Entities.Length == 0)
             {
-                throw new InvalidOperationException("There are not pumpjacks in the blueprint.");
+                throw new InvalidOperationException("There are no pumpjacks in the blueprint.");
             }
 
             normalized = GridToBlueprintString.SerializeBlueprint(clean, includeFbeOffset);

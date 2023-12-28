@@ -59,6 +59,11 @@ public static class Helpers
                 }
             }
 
+            if (candidateTerminals.Count == 0)
+            {
+                throw new FactorioToolsException("At least one pumpjack has no room for a pipe connection. Try removing some pumpjacks.", badInput: true);
+            }
+
             centerToTerminals.Add(center, candidateTerminals);
         }
 

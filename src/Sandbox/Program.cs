@@ -44,6 +44,7 @@ public partial class Program
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(BigListDataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
         // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = blueprintStringsAll.Reverse().Take(11).Skip(11).ToArray();
         // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 50).ToArray();
 
@@ -80,6 +81,14 @@ public partial class Program
                     */
 
                     var inputBlueprint = ParseBlueprint.Execute(blueprintString);
+
+                    /*
+                    var entityTypes = inputBlueprint
+                        .Entities
+                        .GroupBy(e => e.Name)
+                        .ToDictionary(g => g.Key, g => g.Count())
+                        .OrderByDescending(p => p.Value);
+                    */
 
                     // var options = Options.ForSubstation;
                     // options.ElectricPoleWidth = 3;

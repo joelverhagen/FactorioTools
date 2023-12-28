@@ -9,7 +9,7 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class InitializeContext
 {
-    public static Context Execute(OilFieldOptions options, BlueprintRoot root)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint)
     {
         // Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
         //   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
@@ -24,39 +24,36 @@ public static class InitializeContext
             marginY += options.BeaconSupplyHeight + (options.BeaconHeight / 2);
         }
 
-        return Execute(options, root, marginX, marginY);
+        return Execute(options, blueprint, marginX, marginY);
     }
 
     public static Context GetEmpty(OilFieldOptions options, int width, int height)
     {
-        var root = new BlueprintRoot
+        var blueprint = new Blueprint
         {
-            Blueprint = new Blueprint
+            Entities = Array.Empty<Entity>(),
+            Icons = new[]
             {
-                Entities = Array.Empty<Entity>(),
-                Icons = new[]
+                new Icon
                 {
-                    new Icon
+                    Index = 1,
+                    Signal = new SignalID
                     {
-                        Index = 1,
-                        Signal = new SignalID
-                        {
-                            Name = EntityNames.Vanilla.Pumpjack,
-                            Type = SignalTypes.Vanilla.Item,
-                        },
+                        Name = EntityNames.Vanilla.Pumpjack,
+                        Type = SignalTypes.Vanilla.Item,
                     },
                 },
-                Item = ItemNames.Vanilla.Blueprint,
-                Version = 1,
             },
+            Item = ItemNames.Vanilla.Blueprint,
+            Version = 1,
         };
 
-        return Execute(options, root, width, height);
+        return Execute(options, blueprint, width, height);
     }
 
-    private static Context Execute(OilFieldOptions options, BlueprintRoot root, int marginX, int marginY)
+    private static Context Execute(OilFieldOptions options, Blueprint blueprint, int marginX, int marginY)
     {
-        var centers = GetPumpjackCenters(root, marginX, marginY);
+        var centers = GetPumpjackCenters(blueprint, marginX, marginY);
         var grid = InitializeGrid(centers, marginX, marginY);
         var centerToTerminals = GetCenterToTerminals(grid, centers);
 
@@ -67,7 +64,7 @@ public static class InitializeContext
         return new Context
         {
             Options = options,
-            InputBlueprint = root,
+            InputBlueprint = blueprint,
             Grid = grid,
             CenterToTerminals = centerToTerminals,
             LocationToTerminals = GetLocationToTerminals(centerToTerminals),
@@ -103,16 +100,15 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static HashSet<Location> GetPumpjackCenters(BlueprintRoot root, int marginX, int marginY)
+    private static HashSet<Location> GetPumpjackCenters(Blueprint blueprint, int marginX, int marginY)
     {
-        var pumpjacks = root
-            .Blueprint
+        var pumpjacks = blueprint
             .Entities
             .Where(e => e.Name == EntityNames.Vanilla.Pumpjack)
             .ToList();
 
-        const int maxPumpjacks = 100;
-        if (pumpjacks.Count > 100)
+        const int maxPumpjacks = 150;
+        if (pumpjacks.Count > maxPumpjacks)
         {
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
@@ -162,11 +158,15 @@ public static class InitializeContext
         var width = pumpjackCenters.Select(p => p.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
         var height = pumpjackCenters.Select(p => p.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
 
-        const int maxWidth = 300;
-        const int maxHeight = 300;
-        if (width > maxWidth || height > maxHeight)
+        const int maxWidth = 1000;
+        const int maxHeight = 1000;
+        const int maxArea = 500 * 500;
+        var area = width * height;
+        if (width > maxWidth || height > maxHeight || area > maxArea)
         {
-            throw new FactorioToolsException($"The planning grid cannot be larger than {maxWidth} x {maxHeight}. The planning grid for the provided options is {width} x {height}.");
+            throw new FactorioToolsException(
+                $"The planning grid cannot be larger than {maxWidth} x {maxHeight} or an area larger than {maxArea}. " +
+                $"The planning grid for the provided options is {width} x {height} with an area of {area}.");
         }
 
         SquareGrid grid = new PipeGrid(width, height);

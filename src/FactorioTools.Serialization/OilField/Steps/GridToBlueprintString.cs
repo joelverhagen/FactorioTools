@@ -135,32 +135,29 @@ public static class GridToBlueprintString
             }
         }
 
-        var root = new BlueprintRoot
+        var blueprint = new Blueprint
         {
-            Blueprint = new Blueprint
-            {
-                Icons = context.InputBlueprint.Blueprint.Icons,
-                Version = context.InputBlueprint.Blueprint.Version,
-                Item = context.InputBlueprint.Blueprint.Item,
-                Entities = entities.ToArray(),
-            }
+            Icons = context.InputBlueprint.Icons,
+            Version = context.InputBlueprint.Version,
+            Item = context.InputBlueprint.Item,
+            Entities = entities.ToArray(),
         };
 
-        return SerializeBlueprint(root, addFbeOffset);
+        return SerializeBlueprint(blueprint, addFbeOffset);
     }
 
-    public static string SerializeBlueprint(BlueprintRoot root, bool addFbeOffset)
+    public static string SerializeBlueprint(Blueprint blueprint, bool addFbeOffset)
     {
         // FBE applies some offset to the blueprint coordinates. This makes it hard to compare the grid used in memory
         // with the rendered blueprint in FBE. To account for this, we can add an entity to the corner of the
         // blueprint with a position that makes FBE keep the original entity positions used by the grid.
-        if (addFbeOffset && root.Blueprint.Entities.Length > 0)
+        if (addFbeOffset && blueprint.Entities.Length > 0)
         {
             var maxX = float.MinValue;
             var maxY = float.MinValue;
             var maxEntityNumber = int.MinValue;
 
-            foreach (var entity in root.Blueprint.Entities)
+            foreach (var entity in blueprint.Entities)
             {
                 (var width, var height) = EntityNameToSize[entity.Name];
                 maxX = Math.Max(maxX, entity.Position.X + width / 2);
@@ -168,7 +165,7 @@ public static class GridToBlueprintString
                 maxEntityNumber = Math.Max(maxEntityNumber, entity.EntityNumber);
             }
 
-            root.Blueprint.Entities = root.Blueprint.Entities.Append(new Entity
+            blueprint.Entities = blueprint.Entities.Append(new Entity
             {
                 EntityNumber = maxEntityNumber + 1,
                 Name = EntityNames.Vanilla.Wall,
@@ -179,6 +176,8 @@ public static class GridToBlueprintString
                 },
             }).ToArray();
         }
+
+        var root = new BlueprintRoot { Blueprint = blueprint };
 
         var json = JsonSerializer.Serialize(root, typeof(BlueprintRoot), new BlueprintSerializationContext(new JsonSerializerOptions
         {
