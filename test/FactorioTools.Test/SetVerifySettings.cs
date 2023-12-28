@@ -7,7 +7,7 @@ public static class SetVerifySettings
     [ModuleInitializer]
     public static void Initialize()
     {
-#if DEBUG || true
+#if DEBUG
         VerifierSettings.AutoVerify(includeBuildServer: false);
 #endif
     }
