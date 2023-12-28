@@ -10,6 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3CE8C202-6915-434A-A6D5-31776270EE21}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		.gitattributes = .gitattributes
 		global.json = global.json
 		LICENSE = LICENSE
 		README.md = README.md
@@ -41,7 +42,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DelaunatorSharp", "submodul
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerator", "submodules\FluteSharp\src\SourceGenerator\SourceGenerator.csproj", "{CA3BE482-7936-432C-878F-F856719E326E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FactorioTools.Serialization", "src\FactorioTools.Serialization\FactorioTools.Serialization.csproj", "{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FactorioTools.Serialization", "src\FactorioTools.Serialization\FactorioTools.Serialization.csproj", "{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

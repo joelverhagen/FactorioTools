@@ -2,12 +2,13 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public partial class PlannerFacts
+public class NonStandardBeacon : BasePlannerFacts
 {
     [Theory]
     [MemberData(nameof(BlueprintIndexTestData))]
-    public void NonStandardBeacon(int blueprintIndex)
+    public async Task Execute(int blueprintIndex)
     {
+        // Arrange
         var options = OilFieldOptions.ForMediumElectricPole;
         options.AddBeacons = true;
         options.UseUndergroundPipes = true;
@@ -22,6 +23,12 @@ public partial class PlannerFacts
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
-        Planner.Execute(options, blueprint);
+        var (context, _) = Planner.Execute(options, blueprint);
+
+        // Assert
+        await Verify(GetGridString(context))
+            .UseTypeName("Theory")
+            .UseMethodName("E")
+            .UseTextForParameters($"{blueprintIndex:D4}");
     }
 }

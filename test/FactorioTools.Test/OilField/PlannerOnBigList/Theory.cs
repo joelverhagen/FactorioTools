@@ -2,18 +2,25 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public partial class PlannerFacts
+public class PlannerOnBigList : BasePlannerFacts
 {
     [Theory]
     [MemberData(nameof(BigListIndexTestData))]
-    public void PlannerOnBigList(int blueprintIndex)
+    public async Task Execute(int blueprintIndex)
     {
+        // Arrange
         var options = OilFieldOptions.ForMediumElectricPole;
         options.ValidateSolution = true;
         var blueprintString = BigListBlueprintStrings[blueprintIndex];
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
-        Planner.Execute(options, blueprint);
+        var (context, _) = Planner.Execute(options, blueprint);
+
+        // Assert
+        await Verify(GetGridString(context))
+            .UseTypeName("Theory")
+            .UseMethodName("E")
+            .UseTextForParameters($"{blueprintIndex:D4}");
     }
 }

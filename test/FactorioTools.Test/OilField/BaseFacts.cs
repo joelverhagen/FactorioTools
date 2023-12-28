@@ -5,7 +5,7 @@ using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class Facts
+public abstract class BaseFacts
 {
     public static ElectricPoleCenter AddElectricPole(Context context, Location center)
     {
