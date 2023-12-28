@@ -20,6 +20,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <EnableGridToString>true</EnableGridToString>
+    <DefineConstants Condition="$(EnableGridToString) == 'true'">$(DefineConstants);ENABLE_GRID_TOSTRING</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <AllowDynamicFluteDegree>false</AllowDynamicFluteDegree>
     <DefineConstants Condition="$(AllowDynamicFluteDegree) == 'true'">$(DefineConstants);ALLOW_DYNAMIC_FLUTE_DEGREE</DefineConstants>
   </PropertyGroup>

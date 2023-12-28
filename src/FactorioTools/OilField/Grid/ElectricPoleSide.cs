@@ -9,7 +9,7 @@ public class ElectricPoleSide : GridEntity
 
     public ElectricPoleCenter Center { get; }
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public override string Label => "e";
 #endif
 }

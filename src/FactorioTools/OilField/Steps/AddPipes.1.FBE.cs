@@ -397,7 +397,7 @@ public static partial class AddPipes
 
     private record TerminalPair(TerminalLocation TerminalA, TerminalLocation TerminalB, List<Location> Line)
     {
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
         public override string ToString()
         {
             return $"{TerminalA.Terminal} -> {TerminalB.Terminal} (length {Line.Count})";

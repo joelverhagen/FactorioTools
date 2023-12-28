@@ -9,7 +9,7 @@ public abstract class SquareGrid
 {
     public const int NeighborCost = 1;
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     private const string EmptyLabel = ".";
 #endif
 
@@ -102,7 +102,7 @@ public abstract class SquareGrid
         adjacent[3] = IsInBounds(d) ? d : Location.Invalid;
     }
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public void WriteTo(TextWriter sw, int spacing = 0)
     {
         var maxLabelLength = _entityToLocation.Keys.Max(x => x.Label.Length) + spacing;
@@ -132,7 +132,7 @@ public abstract class SquareGrid
     {
         public static Empty Instance { get; } = new Empty();
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
         public override string Label => EmptyLabel;
 #endif
     }

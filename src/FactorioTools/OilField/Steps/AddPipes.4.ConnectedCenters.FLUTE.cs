@@ -70,7 +70,7 @@ public static partial class AddPipes
         public HashSet<TerminalLocation> Terminals { get; } = new HashSet<TerminalLocation>();
         public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
         public override string ToString()
         {
             return Location.ToString();

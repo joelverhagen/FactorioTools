@@ -2,7 +2,7 @@
 
 public class Terminal : Pipe
 {
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public override string Label => "+";
 #endif
 }

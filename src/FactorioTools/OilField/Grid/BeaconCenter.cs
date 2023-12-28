@@ -2,7 +2,7 @@
 
 public class BeaconCenter : GridEntity
 {
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public override string Label => "B";
 #endif
 }

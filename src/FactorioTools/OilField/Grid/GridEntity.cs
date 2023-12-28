@@ -2,7 +2,7 @@
 
 public abstract class GridEntity
 {
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public abstract string Label { get; }
 #endif
 

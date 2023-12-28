@@ -556,7 +556,7 @@ public static partial class AddPipes
         public Location Start => Terminals[0].Terminal;
         public Location End => Terminals.Last().Terminal;
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
         public override string ToString()
         {
             return $"{Start} -> {End}";

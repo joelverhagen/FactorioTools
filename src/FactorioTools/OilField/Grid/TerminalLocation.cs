@@ -15,7 +15,7 @@ public class TerminalLocation
     public Location Terminal { get; }
     public Direction Direction { get; }
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public override string ToString()
     {
         return $"Pump {Center:M} {Direction} terminal ({Terminal:M})";

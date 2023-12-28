@@ -12,7 +12,7 @@ public class UndergroundPipe : Pipe
 
     public Direction Direction { get; }
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public override string Label => Direction switch
     {
         Direction.Up => "^",

@@ -3,7 +3,7 @@
 namespace Knapcode.FactorioTools.OilField.Grid;
 
 public struct Location :
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     IFormattable,
 #endif
     IEquatable<Location>,
@@ -132,7 +132,7 @@ public struct Location :
         return left.CompareTo(right) >= 0;
     }
 
-#if ENABLE_VISUALIZER
+#if ENABLE_GRID_TOSTRING
     public override string ToString()
     {
         return ToString("S", formatProvider: null);
