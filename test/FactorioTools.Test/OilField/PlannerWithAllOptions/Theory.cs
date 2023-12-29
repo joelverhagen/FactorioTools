@@ -19,14 +19,16 @@ public class PlannerOnAllBlueprintsAndOptions : BasePlannerFacts
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
-        var (context, _) = Planner.Execute(options, blueprint);
+        var result = Planner.Execute(options, blueprint);
 
         // Assert
 #if USE_VERIFY
-        await Verify(GetGridString(context))
+        await Verify(GetGridString(result))
             .UseTypeName("Theory")
             .UseMethodName("E")
             .UseTextForParameters($"{blueprintIndex:D4}_{electricPole}{(addBeacons ? "_b" : "")}{(overlapBeacons ? "_o" : "")}{(useUndergroundPipes ? "_u" : "")}");
+#else
+        await Task.Yield();
 #endif
     }
 }

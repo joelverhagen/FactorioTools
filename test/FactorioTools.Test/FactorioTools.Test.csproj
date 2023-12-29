@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseVerify Condition="'$(UseVerify)' == ''">false</UseVerify>
+    <UseVerify Condition="'$(UseVerify)' == ''">true</UseVerify>
     <DefineConstants Condition="'$(UseVerify)' == 'true'">$(DefineConstants);USE_VERIFY</DefineConstants>
   </PropertyGroup>
 

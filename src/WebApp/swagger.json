@@ -463,6 +463,7 @@
       },
       "OilFieldPlanSummary": {
         "required": [
+          "alternatePlans",
           "missingPumpjacks",
           "selectedPlans",
           "unusedPlans"
@@ -479,7 +480,14 @@
             "items": {
               "$ref": "#/components/schemas/OilFieldPlan"
             },
-            "description": "The set of plans which are equivalent and determines to be the best."
+            "description": "The set of plans which exactly the same and determined to be the best."
+          },
+          "alternatePlans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OilFieldPlan"
+            },
+            "description": "The set of plans which are equivalent to the selected plans by ranking but not exactly the same."
           },
           "unusedPlans": {
             "type": "array",

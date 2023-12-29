@@ -1,17 +1,19 @@
-﻿using Knapcode.FactorioTools.OilField.Algorithms;
-using Knapcode.FactorioTools.Data;
-using Knapcode.FactorioTools.OilField.Grid;
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Knapcode.FactorioTools.Data;
+using Knapcode.FactorioTools.OilField.Algorithms;
+using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static partial class AddPipes
 {
-    public static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> UnusedPlans) Execute(Context context, bool eliminateStrandedTerminals)
+    public static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> AlternatePlans, List<OilFieldPlan> UnusedPlans)
+        Execute(Context context, bool eliminateStrandedTerminals)
     {
         if (eliminateStrandedTerminals)
         {
@@ -19,18 +21,19 @@ public static partial class AddPipes
         }
 
         List<OilFieldPlan> selectedPlans;
+        List<OilFieldPlan> alternatePlans;
         List<OilFieldPlan> unusedPlans;
         Solution bestSolution;
         BeaconSolution? bestBeacons;
 
         try
         {
-            (selectedPlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
+            (selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
         }
         catch (NoPathBetweenTerminalsException) when (!eliminateStrandedTerminals)
         {
             EliminateStrandedTerminals(context);
-            (selectedPlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
+            (selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
         }
 
         context.CenterToTerminals = bestSolution.CenterToTerminals;
@@ -44,15 +47,126 @@ public static partial class AddPipes
             AddBeaconsToGrid(context.Grid, context.Options, bestBeacons.Beacons);
         }
 
-        return (selectedPlans, unusedPlans);
+        return (selectedPlans, alternatePlans, unusedPlans);
     }
 
-    private static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> UnusedPlans, Solution BestSolution, BeaconSolution? BestBeacons) GetBestSolution(Context context)
+    private static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> AltnernatePlans, List<OilFieldPlan> UnusedPlans, Solution BestSolution, BeaconSolution? BestBeacons)
+        GetBestSolution(Context context)
+    {
+        var sortedPlans = GetAllPlans(context)
+            .OrderByDescending(x => x.Plan.BeaconEffectCount) // more effects = better
+            .ThenBy(x => x.Plan.BeaconCount) // fewer beacons = better (less power)
+            .ThenBy(x => x.Plan.PipeCount) // fewer pipes = better
+            .ThenByDescending(x => x.GroupSize) // prefer solutions that more algorithms find
+            .ThenBy(x => x.Plan.PipeStrategy)  // the rest of the sorting is for arbitrary tie breaking
+            .ThenBy(x => x.Plan.OptimizePipes)
+            .ThenBy(x => x.Plan.BeaconStrategy)
+            .ThenBy(x => x.GroupNumber);
+
+        (int GroupNumber, int GroupSize, OilFieldPlan Plan, Solution Pipes, BeaconSolution? Beacons)? bestPlanInfo = null;
+        var noMoreAlternates = false;
+        var selectedPlans = new List<OilFieldPlan>();
+        var alternatePlans = new List<OilFieldPlan>();
+        var unusedPlans = new List<OilFieldPlan>();
+
+        foreach (var planInfo in sortedPlans)
+        {
+            if (noMoreAlternates)
+            {
+                unusedPlans.Add(planInfo.Plan);
+                continue;
+            }
+            else if (bestPlanInfo is null)
+            {
+                bestPlanInfo = planInfo;
+                selectedPlans.Add(planInfo.Plan);
+                continue;
+            }
+
+            var (bestGroupNumber, _, bestPlan, _, _) = bestPlanInfo.Value;
+            if (planInfo.Plan.IsEquivalent(bestPlan))
+            {
+                if (planInfo.GroupNumber == bestGroupNumber)
+                {
+                    selectedPlans.Add(planInfo.Plan);
+                }
+                else
+                {
+                    alternatePlans.Add(planInfo.Plan);
+                }
+            }
+            else
+            {
+                noMoreAlternates = true;
+                unusedPlans.Add(planInfo.Plan);
+            }
+        }
+
+        if (bestPlanInfo is null)
+        {
+            throw new FactorioToolsException("At least one pipe strategy must be used.");
+        }
+
+        return (selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Value.Pipes, bestPlanInfo.Value.Beacons);
+    }
+
+
+    private static IEnumerable<(int GroupNumber, int GroupSize, OilFieldPlan Plan, Solution Pipes, BeaconSolution? Beacons)> GetAllPlans(Context context)
+    {
+        var solutionGroups = GetSolutionGroups(context);
+        foreach ((var solutionGroup, var groupNumber) in solutionGroups)
+        {
+            foreach (var solution in solutionGroup)
+            {
+                if (solution.BeaconSolutions is null)
+                {
+                    foreach (var strategy in solution.Strategies)
+                    {
+                        foreach (var optimized in solution.Optimized)
+                        {
+                            var plan = new OilFieldPlan(
+                                strategy,
+                                optimized,
+                                BeaconStrategy: null,
+                                BeaconEffectCount: 0,
+                                BeaconCount: 0,
+                                solution.Pipes.Count);
+
+                            yield return (groupNumber, solutionGroup.Count, plan, solution, null);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var beacons in solution.BeaconSolutions)
+                    {
+                        foreach (var strategy in solution.Strategies)
+                        {
+                            foreach (var optimized in solution.Optimized)
+                            {
+                                var plan = new OilFieldPlan(
+                                    strategy,
+                                    optimized,
+                                    beacons.Strategy,
+                                    beacons.Effects,
+                                    beacons.Beacons.Count,
+                                    solution.Pipes.Count);
+
+                                yield return (groupNumber, solutionGroup.Count, plan, solution, beacons);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<(List<Solution> Solutions, int GroupNumber)> GetSolutionGroups(Context context)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        var pipesToSolutions = new Dictionary<LocationSet, List<Solution>>(LocationSetComparer.Instance);
+        var pipesToSolutions = new Dictionary<LocationSet, (List<Solution> Solutions, int GroupNumber)>(LocationSetComparer.Instance);
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, LocationSet>, List<Solution>>(ConnectedCentersComparer.Instance);
 
         if (context.CenterToTerminals.Count == 1)
@@ -73,8 +187,14 @@ public static partial class AddPipes
         }
         else
         {
+            var completedStrategies = new BitArray((int)PipeStrategy.ConnectedCentersFlute + 1); // max value
             foreach (var strategy in context.Options.PipeStrategies)
             {
+                if (completedStrategies[(int)strategy])
+                {
+                    continue;
+                }
+
                 context.CenterToTerminals = originalCenterToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
                 context.LocationToTerminals = originalLocationToTerminals.ToDictionary(x => x.Key, x => x.Value.ToList());
 
@@ -83,8 +203,10 @@ public static partial class AddPipes
                     case PipeStrategy.FbeOriginal:
                     case PipeStrategy.Fbe:
                         {
-                            var pipes = ExecuteWithFbe(context, strategy);
-                            OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters: null);
+                            (var pipes, var finalStrategy) = ExecuteWithFbe(context, strategy);
+                            completedStrategies[(int)finalStrategy] = true;
+
+                            OptimizeAndAddSolutions(context, pipesToSolutions, finalStrategy, pipes, centerToConnectedCenters: null);
                         }
                         break;
 
@@ -93,6 +215,8 @@ public static partial class AddPipes
                     case PipeStrategy.ConnectedCentersFlute:
                         {
                             Dictionary<Location, LocationSet> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
+                            completedStrategies[(int)strategy] = true;
+
                             if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solutions))
                             {
                                 foreach (var solution in solutions)
@@ -114,108 +238,25 @@ public static partial class AddPipes
             }
         }
 
-        Solution? bestSolution = null;
-        BeaconSolution? bestBeacons = null;
-        var bestComparand = (EffectCount: int.MinValue, BeaconCount: int.MinValue, PipeCount: int.MinValue);
-        var selectedPlans = new List<OilFieldPlan>();
-        var unusedPlans = new List<OilFieldPlan>();
-
-        foreach (var solutions in pipesToSolutions.Values)
-        {
-            foreach (var solution in solutions)
-            {
-                if (solution.BeaconSolutions is null)
-                {
-                    var comparand = (int.MinValue, int.MinValue, -solution.Pipes.Count);
-                    var comparison = comparand.CompareTo(bestComparand);
-
-                    if (comparison > 0)
-                    {
-                        bestSolution = solution;
-                        bestBeacons = null;
-                        bestComparand = comparand;
-                        unusedPlans.AddRange(selectedPlans);
-                        selectedPlans.Clear();
-                    }
-
-                    foreach (var strategy in solution.Strategies)
-                    {
-                        foreach (var optimized in solution.Optimized)
-                        {
-                            var plan = new OilFieldPlan(strategy, optimized, null, 0, 0, solution.Pipes.Count);
-
-                            if (comparison >= 0)
-                            {
-                                selectedPlans.Add(plan);
-                            }
-                            else
-                            {
-                                unusedPlans.Add(plan);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var beacons in solution.BeaconSolutions)
-                    {
-                        var comparand = (beacons.Effects, -beacons.Beacons.Count, -solution.Pipes.Count);
-                        var comparison = comparand.CompareTo(bestComparand);
-
-                        if (comparison > 0)
-                        {
-                            bestSolution = solution;
-                            bestBeacons = beacons;
-                            bestComparand = comparand;
-                            unusedPlans.AddRange(selectedPlans);
-                            selectedPlans.Clear();
-                        }
-
-                        foreach (var strategy in solution.Strategies)
-                        {
-                            foreach (var optimized in solution.Optimized)
-                            {
-                                var plan = new OilFieldPlan(strategy, optimized, beacons.Strategy, beacons.Effects, beacons.Beacons.Count, solution.Pipes.Count);
-
-                                if (comparison >= 0)
-                                {
-                                    selectedPlans.Add(plan);
-                                }
-                                else
-                                {
-                                    unusedPlans.Add(plan);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (bestSolution is null)
-        {
-            throw new FactorioToolsException("At least one pipe strategy must be used.");
-        }
-
-        return (selectedPlans, unusedPlans, bestSolution, bestBeacons);
+        return pipesToSolutions.Values;
     }
 
     private static List<Solution> OptimizeAndAddSolutions(
         Context context,
-        Dictionary<LocationSet, List<Solution>> pipesToSolutions,
+        Dictionary<LocationSet, (List<Solution> Solutions, int GroupNumber)> pipesToSolutions,
         PipeStrategy strategy,
         LocationSet pipes,
         Dictionary<Location, LocationSet>? centerToConnectedCenters)
     {
-        List<Solution>? solutions;
-        if (pipesToSolutions.TryGetValue(pipes, out solutions))
+        (List<Solution> Solutions, int Index) solutionsAndIndex;
+        if (pipesToSolutions.TryGetValue(pipes, out solutionsAndIndex))
         {
-            foreach (var solution in solutions)
+            foreach (var solution in solutionsAndIndex.Solutions)
             {
                 solution.Strategies.Add(strategy);
             }
 
-            return solutions;
+            return solutionsAndIndex.Solutions;
         }
 
         // Visualizer.Show(context.Grid, pipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
@@ -234,6 +275,7 @@ public static partial class AddPipes
             // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
         }
 
+        List<Solution> solutions;
         if (pipes.SetEquals(optimizedPipes))
         {
             optimizedPipes = context.Options.UseUndergroundPipes ? new LocationSet(pipes) : pipes;
@@ -261,7 +303,7 @@ public static partial class AddPipes
             solutions = new List<Solution> { solutionA, solutionB };
         }
 
-        pipesToSolutions.Add(pipes, solutions);
+        pipesToSolutions.Add(pipes, (solutions, pipesToSolutions.Count + 1));
 
         return solutions;
     }

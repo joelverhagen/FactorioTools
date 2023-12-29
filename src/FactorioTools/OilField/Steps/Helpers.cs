@@ -467,7 +467,15 @@ public static class Helpers
         public void MoveCandidate(Location location, TInfo info, int oldKey, int newKey)
         {
             Lookup[oldKey].Remove(location);
-            Lookup[newKey].Add(location, info);
+            if (Lookup.TryGetValue(newKey, out var batches))
+            {
+                batches.Add(location, info);
+            }
+            else
+            {
+                batches = new Dictionary<Location, TInfo> { { location, info } };
+                Lookup.Add(newKey, batches);
+            }
         }
     }
 

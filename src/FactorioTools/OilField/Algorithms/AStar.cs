@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
 
@@ -42,7 +41,7 @@ public static class AStar
         var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
 #endif
 #if DEBUG
-        Interlocked.Increment(ref ArrayPoolCount);
+        System.Threading.Interlocked.Increment(ref ArrayPoolCount);
 #endif
         goals.CopyTo(goalsArray);
 
@@ -58,8 +57,8 @@ public static class AStar
             ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
 #endif
 #if DEBUG
-            Interlocked.Increment(ref ArrayPoolCount);
-            Interlocked.Increment(ref ArrayPoolCount);
+            System.Threading.Interlocked.Increment(ref ArrayPoolCount);
+            System.Threading.Interlocked.Increment(ref ArrayPoolCount);
 #endif
             for (var i = 0; i < goals.Count; i++)
             {
@@ -68,7 +67,7 @@ public static class AStar
             }
 
 #if DEBUG
-            Interlocked.Decrement(ref ArrayPoolCount);
+            System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
 #endif
         }
 
@@ -82,9 +81,9 @@ public static class AStar
         var frontier = sharedInstances.LocationPriorityQueue;
 #endif
 #if DEBUG
-        Interlocked.Increment(ref CostSoFarPoolCount);
-        Interlocked.Increment(ref FrontierPoolCount);
-        Interlocked.Increment(ref CameFromPoolCount);
+        System.Threading.Interlocked.Increment(ref CostSoFarPoolCount);
+        System.Threading.Interlocked.Increment(ref FrontierPoolCount);
+        System.Threading.Interlocked.Increment(ref CameFromPoolCount);
 #endif
 
         try
@@ -170,22 +169,22 @@ public static class AStar
 #endif
 
 #if DEBUG
-            Interlocked.Decrement(ref CameFromPoolCount);
-            Interlocked.Decrement(ref CostSoFarPoolCount);
-            Interlocked.Decrement(ref FrontierPoolCount);
+            System.Threading.Interlocked.Decrement(ref CameFromPoolCount);
+            System.Threading.Interlocked.Decrement(ref CostSoFarPoolCount);
+            System.Threading.Interlocked.Decrement(ref FrontierPoolCount);
 #endif
 
             if (useVector)
             {
 #if DEBUG
-                Interlocked.Decrement(ref ArrayPoolCount);
-                Interlocked.Decrement(ref ArrayPoolCount);
+                System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
+                System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
 #endif
             }
             else
             {
 #if DEBUG
-                Interlocked.Decrement(ref ArrayPoolCount);
+                System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
 #endif
             }
 

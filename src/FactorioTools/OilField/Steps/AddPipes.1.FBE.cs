@@ -17,23 +17,23 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 public static partial class AddPipes
 {
-    public static LocationSet ExecuteWithFbe(Context context, PipeStrategy strategy)
+    public static (LocationSet Pipes, PipeStrategy FinalStrategy) ExecuteWithFbe(Context context, PipeStrategy strategy)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
         var middle = context.Grid.Middle.Translate(-2, -2);
 
-        (var terminals, var pipes) = DelaunayTriangulation(context, middle, strategy);
+        (var terminals, var pipes, var finalStrategy) = DelaunayTriangulation(context, middle, strategy);
 
         foreach (var terminal in terminals)
         {
             EliminateOtherTerminals(context, terminal);
         }
 
-        return pipes;
+        return (pipes, finalStrategy);
     }
 
-    private static (List<TerminalLocation> Terminals, LocationSet Pipes) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
+    private static (List<TerminalLocation> Terminals, LocationSet Pipes, PipeStrategy FinalStrategy) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         var centerDistance = new Dictionary<(Location, Location), int>();
         var centers = context.CenterToTerminals.Keys.ToList();
@@ -209,6 +209,13 @@ public static partial class AddPipes
 
         if (aloneGroups.Count > 0)
         {
+            // Fallback to the modified FBE algorithm if the original cannot connect all of the groups.
+            // Related to https://github.com/teoxoy/factorio-blueprint-editor/issues/254
+            if (strategy == PipeStrategy.FbeOriginal)
+            {
+                return DelaunayTriangulation(context, middle, PipeStrategy.Fbe);
+            }
+
             throw new FactorioToolsException("There should be no more alone groups at this point.");
         }
 
@@ -239,7 +246,13 @@ public static partial class AddPipes
                 {
                     // VisualizeGroups(context, addedPumpjacks, new[] { finalGroup });
 
-                    if (strategy == PipeStrategy.FbeOriginal || maxTurns > 4)
+                    // Allow more max turns with the modified FBE algorithm.
+                    // Related to https://github.com/teoxoy/factorio-blueprint-editor/issues/253
+                    if (strategy == PipeStrategy.FbeOriginal)
+                    {
+                        return DelaunayTriangulation(context, middle, PipeStrategy.Fbe);
+                    }
+                    else if (strategy == PipeStrategy.FbeOriginal || maxTurns > 4)
                     {
                         throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group. Max turns: " + maxTurns);
                     }
@@ -258,7 +271,7 @@ public static partial class AddPipes
         var terminals = finalGroup.Entities.ToList();
         var pipes = finalGroup.Paths.SelectMany(l => l).ToLocationSet();
 
-        return (terminals, pipes);
+        return (terminals, pipes, strategy);
     }
 
 #if DEBUG
@@ -325,7 +338,6 @@ public static partial class AddPipes
                 else
                 {
                     var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new LocationSet { l.B });
-
                     if (result.ReachedGoal is null)
                     {
                         // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());

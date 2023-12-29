@@ -10,14 +10,16 @@ public class AllStrategiesOnBigList : BasePlannerFacts
         var blueprintString = BigListBlueprintStrings[blueprintIndex];
 
         // Act
-        var context = ExecuteAllStrategies(blueprintString);
+        var result = ExecuteAllStrategies(blueprintString);
 
         // Assert
 #if USE_VERIFY
-        await Verify(GetGridString(context))
+        await Verify(GetGridString(result))
             .UseTypeName("Theory")
             .UseMethodName("E")
             .UseTextForParameters($"{blueprintIndex:D4}");
+#else
+        await Task.Yield();
 #endif
     }
 }

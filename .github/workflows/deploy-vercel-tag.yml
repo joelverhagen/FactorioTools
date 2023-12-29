@@ -2,8 +2,9 @@ name: Deploy tag to Vercel
 
 on:
   push:
-    tags:        
+    tags:
       - '*'
+  workflow_dispatch:
 
 jobs:
   build:

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Knapcode.FactorioTools.OilField.Grid;
 
@@ -15,8 +16,14 @@ public static partial class PlanBeacons
 
         var solutions = new List<BeaconSolution>(context.Options.BeaconStrategies.Count);
 
+        var completedStrategies = new BitArray((int)BeaconStrategy.Snug + 1); // max value
         foreach (var strategy in context.Options.BeaconStrategies)
         {
+            if (completedStrategies[(int)strategy])
+            {
+                continue;
+            }
+
             (var beacons, var effects) = strategy switch
             {
                 BeaconStrategy.FbeOriginal => AddBeaconsFbe(context, strategy),
@@ -24,6 +31,8 @@ public static partial class PlanBeacons
                 BeaconStrategy.Snug => AddBeaconsSnug(context),
                 _ => throw new NotImplementedException(),
             };
+
+            completedStrategies[(int)strategy] = true;
 
             solutions.Add(new BeaconSolution(strategy, beacons, effects));
         }
@@ -43,5 +52,3 @@ public static partial class PlanBeacons
         return solutions;
     }
 }
-
-public record BeaconSolution(BeaconStrategy Strategy, List<Location> Beacons, int Effects);

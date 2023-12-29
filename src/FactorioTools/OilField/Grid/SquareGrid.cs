@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Knapcode.FactorioTools.OilField.Grid;
 
@@ -103,7 +103,14 @@ public abstract class SquareGrid
     }
 
 #if ENABLE_GRID_TOSTRING
-    public void WriteTo(TextWriter sw, int spacing = 0)
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        ToString(builder, spacing: 1);
+        return builder.ToString();
+    }
+
+    public void ToString(StringBuilder builder, int spacing)
     {
         var maxLabelLength = _entityToLocation.Keys.Max(x => x.Label.Length) + spacing;
 
@@ -115,15 +122,15 @@ public abstract class SquareGrid
                 var entity = _grid[x, y];
                 if (entity is not null)
                 {
-                    sw.Write(entity.Label.PadRight(maxLabelLength));
+                    builder.Append(entity.Label.PadRight(maxLabelLength));
                 }
                 else
                 {
-                    sw.Write(EmptyLabel.PadRight(maxLabelLength));
+                    builder.Append(EmptyLabel.PadRight(maxLabelLength));
                 }
             }
 
-            sw.WriteLine();
+            builder.AppendLine();
         }
     }
 #endif

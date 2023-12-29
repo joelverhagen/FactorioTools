@@ -54,6 +54,10 @@ public static partial class PlanBeacons
         {
             possibleBeacons = SortPossibleBeacons(context, possibleBeacons);
         }
+        else if (strategy == BeaconStrategy.FbeOriginal)
+        {
+            SortPossibleBeaconsOriginal(possibleBeacons);
+        }
 
         // GENERATE BEACONS
         return GetBeacons(context, strategy, effectEntityAreas, possibleBeacons);
@@ -67,11 +71,6 @@ public static partial class PlanBeacons
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
         {
-            if (strategy == BeaconStrategy.FbeOriginal)
-            {
-                SortPossibleBeaconsOriginal(possibleBeacons);
-            }
-
             var beacon = possibleBeacons[possibleBeacons.Count - 1];
             possibleBeacons.RemoveAt(possibleBeacons.Count - 1);
 
@@ -120,10 +119,55 @@ public static partial class PlanBeacons
 
     private static void SortPossibleBeaconsOriginal(List<BeaconCandidate> possibleBeacons)
     {
+        /*
         possibleBeacons
             .Sort((a, b) =>
             {
-                // This is not exactly like FBE because it causes inconsistent sorting results causing an exception.
+                var c = b.EffectsGivenCount.CompareTo(a.EffectsGivenCount);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                var aN = a.EffectsGivenCount == 1 ? -a.AverageDistanceToEntities : a.NumberOfOverlaps;
+                var bN = b.EffectsGivenCount == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps;
+                c = aN.CompareTo(bN);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                aN = a.Center.GetEuclideanDistance(context.Grid.Middle);
+                bN = b.Center.GetEuclideanDistance(context.Grid.Middle);
+                return bN.CompareTo(aN);
+            });
+        */
+
+        // This is not exactly like FBE because it causes inconsistent sorting results causing an exception.
+        // The original is here. The original comparer violates expectations held by List<T>.Sort in .NET:
+        // https://github.com/teoxoy/factorio-blueprint-editor/blob/83343e6a6c91608c43a823326fb16c01c934b4bd/packages/editor/src/core/generators/beacon.ts#L177-L183
+        possibleBeacons
+            .Sort((a, b) =>
+            {
+                var c = b.EffectsGivenCount.CompareTo(a.EffectsGivenCount);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                c = a.NumberOfOverlaps.CompareTo(b.NumberOfOverlaps);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                return b.AverageDistanceToEntities.CompareTo(a.AverageDistanceToEntities);
+            });
+
+        /*
+        possibleBeacons
+            .Sort((a, b) =>
+            {
                 if (a.EffectsGivenCount == 1 || b.EffectsGivenCount == 1)
                 {
                     return b.AverageDistanceToEntities.CompareTo(a.AverageDistanceToEntities);
@@ -133,6 +177,7 @@ public static partial class PlanBeacons
             });
 
         possibleBeacons.Sort((a, b) => b.EffectsGivenCount.CompareTo(a.EffectsGivenCount));
+        */
 
         possibleBeacons.Reverse();
     }

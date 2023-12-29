@@ -20,7 +20,7 @@
           </tr>
         </thead>
         <tbody class="table-group-divider">
-          <tr v-for="p in allPlans" :class="p.selected ? 'table-primary' : ''">
+          <tr v-for="p in allPlans" :class="p.class">
             <th scope="row">{{ p.rank }}</th>
             <td>
               <template v-for="(s, i) of p.steps">
@@ -48,9 +48,16 @@ import { OilFieldPlanResult } from '../lib/OilFieldPlanner';
 import CopyButton from './CopyButton.vue';
 
 interface SelectedOilFieldPlan extends OilFieldPlan {
-  selected: boolean,
+  category: PlanCategory,
+  class: string,
   rank: number,
   steps: Step[],
+}
+
+enum PlanCategory {
+  Selected,
+  Alternate,
+  Unused,
 }
 
 interface Step {
@@ -62,8 +69,10 @@ const optimizeStep: Step = { text: "optimize", class: "text-bg-secondary" }
 
 function getPipeStep(pipeStrategy: PipeStrategy): Step {
   switch (pipeStrategy) {
-    case PipeStrategy.Fbe:
+    case PipeStrategy.FbeOriginal:
       return { text: "FBE", class: "text-bg-fbe" };
+    case PipeStrategy.Fbe:
+      return { text: "FBE*", class: "text-bg-fbe" };
     case PipeStrategy.ConnectedCentersDelaunay:
       return { text: "CC-DT", class: "text-bg-primary" };
     case PipeStrategy.ConnectedCentersDelaunayMst:
@@ -88,6 +97,26 @@ function getBeaconStep(beaconStrategy: BeaconStrategy): Step {
   }
 }
 
+function initPlan(plan: OilFieldPlan, category: PlanCategory): SelectedOilFieldPlan {
+  let c: string = ""
+  switch (category) {
+    case PlanCategory.Selected:
+      c = "table-primary"
+      break
+    case PlanCategory.Alternate:
+      c = "table-info"
+      break
+  }
+
+  return {
+    ...plan,
+    rank: 1,
+    category,
+    class: c,
+    steps: [] as Step[]
+  }
+}
+
 export default {
   props: {
     plan: {
@@ -101,26 +130,9 @@ export default {
     },
     allPlans(): SelectedOilFieldPlan[] {
       const allPlans = []
-      allPlans.push(...this.plan.data.summary.selectedPlans.map(p => ({ ...p, selected: true, rank: 1, steps: [] as Step[] })))
-      allPlans.push(...this.plan.data.summary.unusedPlans.map(p => ({ ...p, selected: false, rank: 1, steps: [] as Step[] })))
-
-      allPlans.sort((a, b) => {
-        let c = b.beaconEffectCount - a.beaconEffectCount
-        if (c != 0) { return c }
-
-        c = a.beaconCount - b.beaconCount
-        if (c != 0) { return c }
-
-        c = a.pipeCount - b.pipeCount
-        if (c != 0) { return c }
-
-        c = a.pipeStrategy.localeCompare(b.pipeStrategy)
-        if (c != 0) { return c }
-
-        if (a.optimizePipes != b.optimizePipes) { return a.optimizePipes ? -1 : 1 }
-
-        return (a.beaconStrategy ?? "").localeCompare(b.pipeStrategy ?? "")
-      })
+      allPlans.push(...this.plan.data.summary.selectedPlans.map(p => initPlan(p, PlanCategory.Selected)))
+      allPlans.push(...this.plan.data.summary.alternatePlans.map(p => initPlan(p, PlanCategory.Alternate)))
+      allPlans.push(...this.plan.data.summary.unusedPlans.map(p => initPlan(p, PlanCategory.Unused)))
 
       let rank = 1;
       for (let i = 0; i < allPlans.length; i++) {

@@ -48,7 +48,10 @@ public static class Planner
             {
                 if (eletricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
                 {
-                    throw new FactorioToolsException("No valid placement for the electric poles could be found, while adding electric poles first.");
+                    throw new FactorioToolsException(
+                        "No valid placement for the electric poles could be found, while adding electric poles first. " +
+                        "Try removing some pumpjacks or using a different electric pole.",
+                        badInput: true);
                 }
 
                 return Execute(options, blueprint, Array.Empty<Location>(), EletricPolesMode.AddFirstAndAvoidAllTerminals);
@@ -74,7 +77,7 @@ public static class Planner
             }
         }
 
-        (var selectedPlans, var unusedPlans) = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
+        (var selectedPlans, var alternatePlans, var unusedPlans) = AddPipes.Execute(context, eliminateStrandedTerminals: addElectricPolesFirst);
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -86,7 +89,10 @@ public static class Planner
                 if (addElectricPolesFirst)
                 {
                     // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-                    throw new FactorioToolsException("No valid placement for the electric poles could be found, after adding electric poles first.");
+                    throw new FactorioToolsException(
+                        "No valid placement for the electric poles could be found, after adding electric poles first. " +
+                        "Try removing some pumpjacks or using a different electric pole.",
+                        badInput: true);
                 }
                 else
                 {
@@ -103,6 +109,7 @@ public static class Planner
         var planSummary = new OilFieldPlanSummary(
             initialPumpjackCount - finalPumpjackCount,
             selectedPlans,
+            alternatePlans,
             unusedPlans);
 
         return (context, planSummary);

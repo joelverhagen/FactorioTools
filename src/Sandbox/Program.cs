@@ -1,4 +1,5 @@
-﻿using Knapcode.FactorioTools.OilField;
+﻿using System.Text;
+using Knapcode.FactorioTools.OilField;
 using Knapcode.FactorioTools.OilField.Grid;
 using Knapcode.FactorioTools.OilField.Steps;
 
@@ -147,6 +148,7 @@ public partial class Program
                     var blueprintCount = 0;
                     for (int i = 0; i < blueprintStrings.Length; i++)
                     {
+                        Console.WriteLine("Index " + i);
                         string? blueprintString = blueprintStrings[i];
                         var inputBlueprint = ParseBlueprint.Execute(blueprintString);
 
@@ -163,31 +165,7 @@ public partial class Program
                         var beaconCount = context.Grid.EntityToLocation.Keys.OfType<BeaconCenter>().Count();
                         var effectCount = summary.SelectedPlans[0].BeaconEffectCount;
 
-                        var plans = summary
-                            .SelectedPlans
-                            .Select(p => string.Join(" -> ", new[]
-                            {
-                                p.PipeStrategy switch
-                                {
-                                    PipeStrategy.FbeOriginal => "FBE",
-                                    PipeStrategy.Fbe => "FBE*",
-                                    PipeStrategy.ConnectedCentersDelaunay => "CC-DT",
-                                    PipeStrategy.ConnectedCentersDelaunayMst => "CC-DT-MST",
-                                    PipeStrategy.ConnectedCentersFlute => "CC-FLUTE",
-                                    _ => throw new NotImplementedException(),
-                                },
-                                p.OptimizePipes ? "optimize" : "",
-                                p.BeaconStrategy switch
-                                {
-                                    null => "",
-                                    BeaconStrategy.FbeOriginal => "FBE",
-                                    BeaconStrategy.Fbe => "FBE*",
-                                    BeaconStrategy.Snug => "snug",
-                                    _ => throw new NotImplementedException(),
-                                },
-                            }.Where(p => !string.IsNullOrEmpty(p))));
-
-                        foreach (var plan in plans)
+                        foreach (var plan in summary.SelectedPlans.Concat(summary.AlternatePlans).Select(p => p.ToString()))
                         {
                             if (!planToWins.TryGetValue(plan, out var count))
                             {
@@ -211,7 +189,7 @@ public partial class Program
                     outputs.Add(new MeasureResult(
                         options.ElectricPoleEntityName,
                         options.AddBeacons,
-                        options.AddBeacons ? options.OverlapBeacons.ToString() : "N/A",
+                        options.AddBeacons ? (options.OverlapBeacons ? "yes" : "no") : "N/A",
                         pipeSum * 1.0 / blueprintCount,
                         poleSum * 1.0 / blueprintCount,
                         beaconSum * 1.0 / blueprintCount,
@@ -228,15 +206,113 @@ public partial class Program
             Console.WriteLine();
         }
 
-        Console.WriteLine("Electric pole | Add beacons | Overlap beacons | Pipe count | Pole count | Beacon count | Effect count");
-        Console.WriteLine("------------- | ----------- | --------------- | ---------- | ---------- | ------------ | ------------");
-        for (int i = 0; i < outputs.Count; i++)
+        var tableBuilder = new TableBuilder();
+        tableBuilder.AddColumns(
+            "Electric pole",
+            "Add beacons",
+            "Overlap beacons",
+            "Pipe count",
+            "Pole count",
+            "Beacon count",
+            "Effect count");
+
+        foreach (var output in outputs)
         {
-            Console.WriteLine(outputs[i]);
+            tableBuilder.AddRow(
+                output.ElectricPoleEntityName,
+                output.AddBeacons ? "yes" : "no",
+                output.OverlapBeacons,
+                output.PipeCount,
+                output.PoleCount,
+                output.BeaconCount,
+                output.EffectCount);
+        }
+
+        Console.WriteLine(tableBuilder.Build());
+    }
+
+    public class TableBuilder
+    {
+        private readonly List<string> _columns = new();
+        private readonly List<IEnumerable<object>> _rows = new();
+
+        public void AddColumn(string label)
+        {
+            _columns.Add(label);
+        }
+
+        public void AddColumns(params string[] labels)
+        {
+            for (var i = 0; i < labels.Length; i++)
+            {
+                AddColumn(labels[i]);
+            }
+        }
+
+        public void AddRow(params object[] row)
+        {
+            _rows.Add(row);
+        }
+
+        public void AddRow<T>(IEnumerable<T> row)
+        {
+            _rows.Add(row.Cast<object>());
+        }
+
+        public string Build()
+        {
+            var rows = _rows.Select(x => x.ToList()).ToList();
+            var columnCount = Math.Max(_columns.Count, rows.Select(x => x.Count).DefaultIfEmpty(0).Max());
+
+            var maxWidths = new int[columnCount];
+            var columnHeadings = new string[columnCount];
+
+            for (var i = 0; i < columnCount; i++)
+            {
+                columnHeadings[i] = _columns.ElementAtOrDefault(i) ?? $"(column {i + 1})";
+                maxWidths[i] = _rows
+                    .Select(x => x.ElementAtOrDefault(i)?.ToString() ?? string.Empty)
+                    .Append(columnHeadings[i])
+                    .Max(x => x.Length);
+            }
+
+            var builder = new StringBuilder();
+            AppendRow(builder, columnCount, maxWidths, i => columnHeadings[i]);
+            AppendRow(builder, columnCount, maxWidths, i => new string('-', maxWidths[i]));
+            foreach (var row in rows)
+            {
+                AppendRow(builder, columnCount, maxWidths, i => row[i]?.ToString() ?? string.Empty);
+            }
+
+            return builder.ToString();
+        }
+
+        private static void AppendRow(StringBuilder builder, int columnCount, int[] maxWidths, Func<int, string> getValue)
+        {
+            for (var i = 0; i < columnCount; i++)
+            {
+                if (i == 0)
+                {
+                    builder.Append("| ");
+                }
+                else
+                {
+                    builder.Append(" | ");
+                }
+
+                builder.Append(getValue(i).PadRight(maxWidths[i]));
+
+                if (i ==  columnCount - 1)
+                {
+                    builder.Append(" |");
+                }
+            }
+
+            builder.AppendLine();
         }
     }
 
-    public record MeasureResult(
+    private record MeasureResult(
         string ElectricPoleEntityName,
         bool AddBeacons,
         string OverlapBeacons,

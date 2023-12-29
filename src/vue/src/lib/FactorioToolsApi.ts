@@ -296,14 +296,17 @@ export interface OilFieldPlanSummary {
    * @format int32
    */
   missingPumpjacks: number;
-  /** The set of plans which are equivalent and determines to be the best. */
+  /** The set of plans which exactly the same and determined to be the best. */
   selectedPlans: OilFieldPlan[];
+  /** The set of plans which are equivalent to the selected plans by ranking but not exactly the same. */
+  alternatePlans: OilFieldPlan[];
   /** The set of plans that were not the best and were discarded. */
   unusedPlans: OilFieldPlan[];
 }
 
 /** The strategy to use while planning pipes between pumpjacks. */
 export enum PipeStrategy {
+  FbeOriginal = "FbeOriginal",
   Fbe = "Fbe",
   ConnectedCentersDelaunay = "ConnectedCentersDelaunay",
   ConnectedCentersDelaunayMst = "ConnectedCentersDelaunayMst",
