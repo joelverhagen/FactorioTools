@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using DelaunatorSharp;
 using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
@@ -75,18 +74,18 @@ public static partial class AddPipes
 #if DEBUG
     private static void VisualizeConnectedCenters(Context context, Dictionary<Location, LocationSet> connectedCenters)
     {
-        var edges = new HashSet<IEdge>();
+        var edges = new HashSet<DelaunatorSharp.IEdge>();
 
         foreach (var (center, centers) in connectedCenters)
         {
             foreach (var other in centers)
             {
-                var edge = new Edge(e: 0, new Point(center.X, center.Y), new Point(other.X, other.Y));
+                var edge = new DelaunatorSharp.Edge(e: 0, new DelaunatorSharp.Point(center.X, center.Y), new DelaunatorSharp.Point(other.X, other.Y));
                 edges.Add(edge);
             }
         }
 
-        Visualizer.Show(context.Grid, connectedCenters.Keys.Select(x => (IPoint)new Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, connectedCenters.Keys.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
     }
 #endif
 

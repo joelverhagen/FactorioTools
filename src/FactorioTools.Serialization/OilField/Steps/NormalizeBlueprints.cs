@@ -7,18 +7,18 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 
 public static class NormalizeBlueprints
 {
-    public static void Execute(string inputPath, string existingPath)
+    public static void Execute(string inputPath, string excludePath)
     {
-        var existing = NormalizeFile(existingPath).ToLookup(x => x.Normalized);
+        var exclude = NormalizeFile(excludePath).ToLookup(x => x.Normalized);
 
         var input = NormalizeFile(inputPath);
 
         var output = new List<string>();
         var added = new HashSet<string>();
         var orderedInput = input
-            .Concat(existing.SelectMany(g => g))
+            .Concat(exclude.SelectMany(g => g))
             .Where(x => x.Valid)
-            .Where(x => !existing[x.Normalized].Any())
+            .Where(x => !exclude[x.Normalized].Any())
             .OrderBy(x => x.Index);
 
         foreach (var line in orderedInput)

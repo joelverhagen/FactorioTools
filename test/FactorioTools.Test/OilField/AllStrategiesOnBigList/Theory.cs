@@ -1,26 +1,23 @@
-﻿using Knapcode.FactorioTools.OilField.Steps;
+﻿namespace Knapcode.FactorioTools.OilField;
 
-namespace Knapcode.FactorioTools.OilField;
-
-public class PlannerOnBigList : BasePlannerFacts
+public class AllStrategiesOnBigList : BasePlannerFacts
 {
     [Theory]
     [MemberData(nameof(BigListIndexTestData))]
     public async Task Execute(int blueprintIndex)
     {
         // Arrange
-        var options = OilFieldOptions.ForMediumElectricPole;
-        options.ValidateSolution = true;
         var blueprintString = BigListBlueprintStrings[blueprintIndex];
-        var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
-        var (context, _) = Planner.Execute(options, blueprint);
+        var context = ExecuteAllStrategies(blueprintString);
 
         // Assert
+#if USE_VERIFY
         await Verify(GetGridString(context))
             .UseTypeName("Theory")
             .UseMethodName("E")
             .UseTextForParameters($"{blueprintIndex:D4}");
+#endif
     }
 }

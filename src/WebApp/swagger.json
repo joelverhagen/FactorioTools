@@ -494,6 +494,7 @@
       },
       "PipeStrategy": {
         "enum": [
+          "FbeOriginal",
           "Fbe",
           "ConnectedCentersDelaunay",
           "ConnectedCentersDelaunayMst",

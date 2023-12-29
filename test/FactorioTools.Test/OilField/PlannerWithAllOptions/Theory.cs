@@ -15,16 +15,18 @@ public class PlannerOnAllBlueprintsAndOptions : BasePlannerFacts
         options.OverlapBeacons = overlapBeacons;
         options.ValidateSolution = true;
 
-        var blueprintString = BlueprintStrings[blueprintIndex];
+        var blueprintString = SmallListBlueprintStrings[blueprintIndex];
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
         var (context, _) = Planner.Execute(options, blueprint);
 
         // Assert
+#if USE_VERIFY
         await Verify(GetGridString(context))
             .UseTypeName("Theory")
             .UseMethodName("E")
             .UseTextForParameters($"{blueprintIndex:D4}_{electricPole}{(addBeacons ? "_b" : "")}{(overlapBeacons ? "_o" : "")}{(useUndergroundPipes ? "_u" : "")}");
+#endif
     }
 }

@@ -27,7 +27,7 @@ if (version == `${shortVersion}-0-g${commit}` && branch == 'main') {
   version += "-" + branch
 }
 
-const sampleBlueprints = Array.from(new Set(readFileSync("../../test/FactorioTools.Test/OilField/blueprints.txt", { encoding: 'utf8' })
+const sampleBlueprints = Array.from(new Set(readFileSync("../../test/FactorioTools.Test/OilField/small-list.txt", { encoding: 'utf8' })
   .split(/\r?\n/)
   .map(l => l.trim())
   .filter(l => l.length > 0 && !l.startsWith("#"))))

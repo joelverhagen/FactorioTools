@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using DelaunatorSharp;
 using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
@@ -18,13 +17,13 @@ namespace Knapcode.FactorioTools.OilField.Steps;
 /// </summary>
 public static partial class AddPipes
 {
-    public static LocationSet ExecuteWithFbe(Context context)
+    public static LocationSet ExecuteWithFbe(Context context, PipeStrategy strategy)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
         var middle = context.Grid.Middle.Translate(-2, -2);
 
-        (var terminals, var pipes) = DelaunayTriangulation(context, middle);
+        (var terminals, var pipes) = DelaunayTriangulation(context, middle, strategy);
 
         foreach (var terminal in terminals)
         {
@@ -34,7 +33,7 @@ public static partial class AddPipes
         return pipes;
     }
 
-    private static (List<TerminalLocation> Terminals, LocationSet Pipes) DelaunayTriangulation(Context context, Location middle)
+    private static (List<TerminalLocation> Terminals, LocationSet Pipes) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         var centerDistance = new Dictionary<(Location, Location), int>();
         var centers = context.CenterToTerminals.Keys.ToList();
@@ -148,7 +147,7 @@ public static partial class AddPipes
         }
 
         // CONNECT GROUPS
-        const int maxTries = 10;
+        var maxTries = strategy == PipeStrategy.FbeOriginal ? 3 : 10;
         var tries = maxTries;
         var aloneGroups = new List<Group>();
         Group? finalGroup = null;
@@ -186,7 +185,8 @@ public static partial class AddPipes
                 context,
                 par,
                 group,
-                2 + maxTries - tries);
+                2 + maxTries - tries,
+                strategy);
 
             if (connection is not null)
             {
@@ -232,13 +232,14 @@ public static partial class AddPipes
                     context,
                     terminalGroups,
                     finalGroup,
-                    maxTurns);
+                    maxTurns,
+                    strategy);
 
                 if (connection is null)
                 {
                     // VisualizeGroups(context, addedPumpjacks, new[] { finalGroup });
 
-                    if (maxTurns > 4)
+                    if (strategy == PipeStrategy.FbeOriginal || maxTurns > 4)
                     {
                         throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group. Max turns: " + maxTurns);
                     }
@@ -265,7 +266,7 @@ public static partial class AddPipes
     {
         var clone = new PipeGrid(context.Grid);
         AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToLocationSet(), undergroundPipes: null, allowMultipleTerminals: true);
-        Visualizer.Show(clone, addedPumpjacks.Select(x => (IPoint)new Point(x.Center.X, x.Center.Y)), Array.Empty<IEdge>());
+        Visualizer.Show(clone, addedPumpjacks.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.Center.X, x.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
 
@@ -276,15 +277,15 @@ public static partial class AddPipes
             && ent.Connections.Any(t => t.TerminalA.Direction == e.Direction || t.TerminalB.Direction == e.Direction));
     }
 
-    private static TwoConnectedGroups? GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns)
+    private static TwoConnectedGroups? GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns, PipeStrategy strategy)
     {
         return groups
-            .Select(g => ConnectTwoGroups(context, g, group, maxTurns))
+            .Select(g => ConnectTwoGroups(context, g, group, maxTurns, strategy))
             .Where(g => g.Lines.Count > 0)
             .MinBy(g => g.MinDistance);
     }
 
-    private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns)
+    private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns, PipeStrategy strategy)
     {
         var aLocations = a.Paths.SelectMany(x => x).ToList();
         var bLocations = b.Paths.SelectMany(x => x).ToList();
@@ -311,24 +312,28 @@ public static partial class AddPipes
             .Take(5)
             .Select(l =>
             {
-                var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new LocationSet { l.B });
-
-                if (result.ReachedGoal is null)
+                List<Location>? path;
+                if (strategy == PipeStrategy.FbeOriginal)
                 {
-                    // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                    throw new NoPathBetweenTerminalsException(l.A, l.B);
+                    path = BreadthFirstFinder.GetShortestPath(context.SharedInstances, context.Grid, l.B, l.A);
+                    if (path is null)
+                    {
+                        // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                        throw new NoPathBetweenTerminalsException(l.A, l.B);
+                    }
                 }
-
-                var path = result.Path;
-
-                /*
-                var path = BreadthFirstFinder.GetShortestPath(context.SharedInstances, context.Grid, l.B, l.A);
-                if (path is null)
+                else
                 {
-                    // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                    throw new NoPathBetweenTerminalsException();
+                    var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new LocationSet { l.B });
+
+                    if (result.ReachedGoal is null)
+                    {
+                        // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                        throw new NoPathBetweenTerminalsException(l.A, l.B);
+                    }
+
+                    path = result.Path;
                 }
-                */
 
                 var turns = CountTurns(path);
                 return new PathAndTurns(l, path, turns);

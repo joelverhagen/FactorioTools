@@ -87,12 +87,23 @@ public class OilFieldOptions
         }
     }
 
-    private readonly static List<PipeStrategy> DefaultPipeStrategies = Enum
+    public static IReadOnlyList<PipeStrategy> AllPipeStrategies { get; } = Enum
         .GetValues<PipeStrategy>()
         .Order()
         .ToList();
 
-    private readonly static List<BeaconStrategy> DefaultBeaconStrategies = Enum
+    public static IReadOnlyList<PipeStrategy> DefaultPipeStrategies { get; } = Enum
+        .GetValues<PipeStrategy>()
+        .Except(new[] { PipeStrategy.FbeOriginal })
+        .Order()
+        .ToList();
+
+    public static IReadOnlyList<BeaconStrategy> AllBeaconStrategies { get; } = Enum
+        .GetValues<BeaconStrategy>()
+        .Order()
+        .ToList();
+
+    public static IReadOnlyList<BeaconStrategy> DefaultBeaconStrategies { get; } = Enum
         .GetValues<BeaconStrategy>()
         .Except(new[] { BeaconStrategy.FbeOriginal })
         .Order()

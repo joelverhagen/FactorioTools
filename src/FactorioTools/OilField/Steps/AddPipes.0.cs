@@ -80,9 +80,10 @@ public static partial class AddPipes
 
                 switch (strategy)
                 {
+                    case PipeStrategy.FbeOriginal:
                     case PipeStrategy.Fbe:
                         {
-                            var pipes = ExecuteWithFbe(context);
+                            var pipes = ExecuteWithFbe(context, strategy);
                             OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters: null);
                         }
                         break;

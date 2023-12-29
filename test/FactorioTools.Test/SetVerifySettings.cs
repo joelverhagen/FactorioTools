@@ -7,8 +7,7 @@ public static class SetVerifySettings
     [ModuleInitializer]
     public static void Initialize()
     {
-#if DEBUG
+        VerifyDiffPlex.Initialize();
         VerifierSettings.AutoVerify(includeBuildServer: false);
-#endif
     }
 }

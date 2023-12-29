@@ -4,14 +4,14 @@ using Knapcode.FactorioTools.OilField.Steps;
 
 public partial class Program
 {
-    private static readonly string ExistingDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "blueprints.txt");
+    private static readonly string SmallListDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "small-list.txt");
     private static readonly string BigListDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "big-list.txt");
 
     private static void Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "normalize")
         {
-            NormalizeBlueprints.Execute(BigListDataPath, ExistingDataPath);
+            NormalizeBlueprints.Execute(BigListDataPath, SmallListDataPath);
         }
         else if (args.Length > 0 && args[0] == "measure")
         {
@@ -42,8 +42,8 @@ public partial class Program
     private static void Sandbox()
     {
         var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(BigListDataPath).ToArray();
-        var blueprintStrings = blueprintStringsAll;
-        // var blueprintStrings = new[] { blueprintStringsAll[1] };
+        // var blueprintStrings = blueprintStringsAll;
+        var blueprintStrings = new[] { blueprintStringsAll[91] };
         // var blueprintStrings = blueprintStringsAll.Reverse().Take(11).Skip(11).ToArray();
         // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
         // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 50).ToArray();
@@ -101,8 +101,8 @@ public partial class Program
                     // options.ValidateSolution = true;
                     // options.OverlapBeacons = true;
                     // options.BeaconStrategies.Remove(BeaconStrategy.Fbe);
-                    // options.PipeStrategies = new HashSet<PipeStrategy> { PipeStrategy.Fbe };
-                    // options.BeaconStrategies = new HashSet<BeaconStrategy> { BeaconStrategy.Snug };
+                    options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToList();
+                    options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
 
                     (var context, _) = Planner.Execute(options, inputBlueprint);
 
@@ -118,7 +118,7 @@ public partial class Program
 
     private static void Measure()
     {
-        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(ExistingDataPath).ToArray();
+        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(SmallListDataPath).ToArray();
         var blueprintStrings = blueprintStringsAll;
         var optionsAll = new[] { OilFieldOptions.ForSmallElectricPole, OilFieldOptions.ForMediumElectricPole, OilFieldOptions.ForSubstation, OilFieldOptions.ForBigElectricPole };
 
@@ -169,7 +169,8 @@ public partial class Program
                             {
                                 p.PipeStrategy switch
                                 {
-                                    PipeStrategy.Fbe => "FBE",
+                                    PipeStrategy.FbeOriginal => "FBE",
+                                    PipeStrategy.Fbe => "FBE*",
                                     PipeStrategy.ConnectedCentersDelaunay => "CC-DT",
                                     PipeStrategy.ConnectedCentersDelaunayMst => "CC-DT-MST",
                                     PipeStrategy.ConnectedCentersFlute => "CC-FLUTE",
@@ -179,8 +180,8 @@ public partial class Program
                                 p.BeaconStrategy switch
                                 {
                                     null => "",
-                                    BeaconStrategy.Fbe => "FBE*",
                                     BeaconStrategy.FbeOriginal => "FBE",
+                                    BeaconStrategy.Fbe => "FBE*",
                                     BeaconStrategy.Snug => "snug",
                                     _ => throw new NotImplementedException(),
                                 },

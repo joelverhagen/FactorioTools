@@ -123,6 +123,7 @@ public static partial class PlanBeacons
         possibleBeacons
             .Sort((a, b) =>
             {
+                // This is not exactly like FBE because it causes inconsistent sorting results causing an exception.
                 if (a.EffectsGivenCount == 1 || b.EffectsGivenCount == 1)
                 {
                     return b.AverageDistanceToEntities.CompareTo(a.AverageDistanceToEntities);

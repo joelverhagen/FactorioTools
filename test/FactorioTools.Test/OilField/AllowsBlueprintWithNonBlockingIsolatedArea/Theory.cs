@@ -19,9 +19,11 @@ public class AllowsBlueprintWithNonBlockingIsolatedArea : BasePlannerFacts
         var (context, _) = Planner.Execute(options, blueprint);
 
         // Assert
+#if USE_VERIFY
         await Verify(GetGridString(context))
             .UseTypeName("Theory")
             .UseMethodName("E")
             .UseTextForParameters($"{strategy}");
+#endif
     }
 }

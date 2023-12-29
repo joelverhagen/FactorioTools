@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using DelaunatorSharp;
 using Knapcode.FactorioTools.OilField.Algorithms;
 using Knapcode.FactorioTools.OilField.Grid;
 using static Knapcode.FactorioTools.OilField.Steps.Helpers;
@@ -91,7 +90,7 @@ public static class RotateOptimize
     {
         var clone = new PipeGrid(context.ExistingPipeGrid);
         AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes, allowMultipleTerminals: true);
-        Visualizer.Show(clone, context.Intersections.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
+        Visualizer.Show(clone, context.Intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
 

@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 public class NonStandardBeacon : BasePlannerFacts
 {
     [Theory]
-    [MemberData(nameof(BlueprintIndexTestData))]
+    [MemberData(nameof(SmallListIndexTestData))]
     public async Task Execute(int blueprintIndex)
     {
         // Arrange
@@ -18,17 +18,20 @@ public class NonStandardBeacon : BasePlannerFacts
         options.BeaconHeight = 4;
         options.BeaconSupplyWidth = 4;
         options.BeaconSupplyHeight = 6;
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
 
-        var blueprintString = BlueprintStrings[blueprintIndex];
+        var blueprintString = SmallListBlueprintStrings[blueprintIndex];
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
         var (context, _) = Planner.Execute(options, blueprint);
 
         // Assert
+#if USE_VERIFY
         await Verify(GetGridString(context))
             .UseTypeName("Theory")
             .UseMethodName("E")
             .UseTextForParameters($"{blueprintIndex:D4}");
+#endif
     }
 }

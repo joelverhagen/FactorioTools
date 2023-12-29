@@ -6,7 +6,12 @@
 public enum PipeStrategy
 {
     /// <summary>
-    /// The Factorio Blueprint Editor (FBE) pipe planning strategy.
+    /// The original Factorio Blueprint Editor (FBE) pipe planning strategy.
+    /// </summary>
+    FbeOriginal,
+
+    /// <summary>
+    /// The Factorio Blueprint Editor (FBE) pipe planning strategy, with minor modifications.
     /// </summary>
     Fbe,
 
