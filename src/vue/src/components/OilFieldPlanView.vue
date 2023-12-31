@@ -8,6 +8,12 @@
         <a class="btn btn-link" :href="fbeUrl" target="_blank" rel="noopener noreferrer">View in FBE</a>
       </div>
     </div>
+    <div v-if="plan.data.summary.rotatedPumpjacks > 0" class="row g-2" role="alert">
+      <div class="col-12 alert alert-warning" role="alert">
+        <b>Rotation needed!</b> At least one pumpjack was rotated
+        from it's original position. Consider removing existing pumpjacks before placing the new blueprint.
+      </div>
+    </div>
     <template v-if="allPlans.length > 0">
       <table class="table">
         <thead>

@@ -292,10 +292,15 @@ export interface OilFieldPlanResponse {
 /** A summary of the various oil field plans attempted. */
 export interface OilFieldPlanSummary {
   /**
-   * The number of pumpjacks removed to allow for electric poles. This is usually zero.
+   * The number of pumpjacks removed to allow for electric poles. This must be zero.
    * @format int32
    */
   missingPumpjacks: number;
+  /**
+   * The number of pumpjacks that were rotated from their original position.
+   * @format int32
+   */
+  rotatedPumpjacks: number;
   /** The set of plans which exactly the same and determined to be the best. */
   selectedPlans: OilFieldPlan[];
   /** The set of plans which are equivalent to the selected plans by ranking but not exactly the same. */
