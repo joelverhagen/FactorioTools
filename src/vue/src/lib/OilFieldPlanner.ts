@@ -37,6 +37,7 @@ const requestPropertyGetters: RequestPropertyGetters = {
   optimizePipes: (state) => state.optimizePipes,
   overlapBeacons: (state) => state.overlapBeacons,
   pipeStrategies: (state) => [
+    state.pipeStrategyFbeOriginal ? PipeStrategy.FbeOriginal : undefined,
     state.pipeStrategyFbe ? PipeStrategy.Fbe : undefined,
     state.pipeStrategyConnectedCentersDelaunay ? PipeStrategy.ConnectedCentersDelaunay : undefined,
     state.pipeStrategyConnectedCentersDelaunayMst ? PipeStrategy.ConnectedCentersDelaunayMst : undefined,

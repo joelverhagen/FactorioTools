@@ -24,10 +24,14 @@
     <fieldset class="border p-3 mt-3">
       <legend>Pipe strategies</legend>
       <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="pipes-fbe" v-model="pipeStrategyFbe">
-        <label class="form-check-label" for="pipes-fbe">Teoxoy's FBE</label> (<a
+        <input type="checkbox" class="form-check-input" id="pipes-fbe-original" v-model="pipeStrategyFbeOriginal">
+        <label class="form-check-label" for="pipes-fbe-original">Teoxoy's FBE</label> (<a
           href="https://github.com/teoxoy/factorio-blueprint-editor/blob/0bec144b8989422f86bce8cea58ef49258c1a88d/packages/editor/src/core/generators/pipe.ts">original
-          source</a>)
+          source</a>) without modifications
+      </div>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="pipes-fbe" v-model="pipeStrategyFbe">
+        <label class="form-check-label" for="pipes-fbe">Teoxoy's FBE</label> with modifications
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-connected-centers-delaunay"
@@ -90,6 +94,7 @@ export default {
         'useStagingApi',
         'optimizePipes',
         'validateSolution',
+        'pipeStrategyFbeOriginal',
         'pipeStrategyFbe',
         'pipeStrategyConnectedCentersDelaunay',
         'pipeStrategyConnectedCentersDelaunayMst',
@@ -112,6 +117,7 @@ export default {
       this.useStagingApi = defaults.useStagingApi
       this.optimizePipes = defaults.optimizePipes
       this.validateSolution = defaults.validateSolution
+      this.pipeStrategyFbeOriginal = defaults.pipeStrategyFbeOriginal
       this.pipeStrategyFbe = defaults.pipeStrategyFbe
       this.pipeStrategyConnectedCentersDelaunay = defaults.pipeStrategyConnectedCentersDelaunay
       this.pipeStrategyConnectedCentersDelaunayMst = defaults.pipeStrategyConnectedCentersDelaunayMst
