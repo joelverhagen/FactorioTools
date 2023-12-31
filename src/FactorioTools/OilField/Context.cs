@@ -10,6 +10,7 @@ public class Context
     public required Blueprint InputBlueprint { get; set; }
     public required SquareGrid Grid { get; set; }
     public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
+    public required Dictionary<Location, Direction> CenterToOriginalDirection { get; set; }
     public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
     public required int[,] LocationToAdjacentCount { get; set; }
 

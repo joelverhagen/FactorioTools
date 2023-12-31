@@ -18,11 +18,11 @@ public static class Planner
         OilFieldOptions options,
         Blueprint blueprint,
         IReadOnlyCollection<Location> electricPolesAvoid,
-        EletricPolesMode eletricPolesMode)
+        EletricPolesMode electricPolesMode)
     {
         var context = InitializeContext.Execute(options, blueprint);
         var initialPumpjackCount = context.CenterToTerminals.Count;
-        var addElectricPolesFirst = eletricPolesMode != EletricPolesMode.AddLast;
+        var addElectricPolesFirst = electricPolesMode != EletricPolesMode.AddLast;
 
         if (context.CenterToTerminals.Count == 0)
         {
@@ -32,7 +32,7 @@ public static class Planner
         LocationSet? poles;
         if (addElectricPolesFirst)
         {
-            if (eletricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
+            if (electricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
             {
                 electricPolesAvoid = context
                     .CenterToTerminals
@@ -46,7 +46,7 @@ public static class Planner
 
             if (poles is null)
             {
-                if (eletricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
+                if (electricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
                 {
                     throw new FactorioToolsException(
                         "No valid placement for the electric poles could be found, while adding electric poles first. " +
@@ -104,15 +104,25 @@ public static class Planner
 
         Validate.AllEntitiesHavePower(context);
 
-        var finalPumpjackCount = context.CenterToTerminals.Count;
-
-        if (finalPumpjackCount != initialPumpjackCount)
+        var missingPumpjacks = initialPumpjackCount - context.CenterToTerminals.Count;
+        if (missingPumpjacks > 0)
         {
             throw new FactorioToolsException("The initial number of pumpjacks does not match the final pumpjack count.");
         }
 
+        var rotatedPumpjacks = 0;
+        foreach ((var location, var originalDirection) in context.CenterToOriginalDirection)
+        {
+            var finalDirection = context.CenterToTerminals[location].Single().Direction;
+            if (originalDirection != finalDirection)
+            {
+                rotatedPumpjacks++;
+            }
+        }
+
         var planSummary = new OilFieldPlanSummary(
-            initialPumpjackCount - finalPumpjackCount,
+            missingPumpjacks,
+            rotatedPumpjacks,
             selectedPlans,
             alternatePlans,
             unusedPlans);

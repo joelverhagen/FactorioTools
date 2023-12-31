@@ -21,6 +21,51 @@ public class PlannerFacts : BasePlannerFacts
     }
 
     [Fact]
+    public void CountsAllRotatedPumpjacks()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForMediumElectricPole;
+        var blueprintString = "0eJyNkMsOgjAQRf/lrisJBcR26W8YY3hMTBVKU4qRkP67BaIxsnE3jztn7syEshnIWKUd5ARVdbqHPE3o1VUXzVxzoyFIKEctGHTRzpkZWnMrqjs8g9I1PSFjf2Yg7ZRTtDKWZLzooS3JBsF2msF0fRjo9LwpQHZJlDGMIciiLLBrZala+3vPNkj+B/JNTH+BfDa8nCW/vsDwINuvgkOc5oLnKRciEcF+U5QUfoLjR+39C6d7aOc=";
+        var blueprint = ParseBlueprint.Execute(blueprintString);
+
+        // Act
+        (_, var summary) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.Equal(2, summary.RotatedPumpjacks);
+    }
+
+    [Fact]
+    public void CountsSomeRotatedPumpjacks()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForMediumElectricPole;
+        var blueprintString = "0eJyNkE0OgjAQhe/y1pWECkG69BrGmAITU6WlocVISO9ugWiMbNzNz5vvzcyEqh3I9sp4iAmq7oyDOE1w6mpkO9f8aAkCypMGg5F6zuyg7U3WdwQGZRp6QqThzEDGK69oZSzJeDGDrqiPgu00g+1cHOjM7BQhu32SM4wxyJM8shvVU732eWAbJP8D+SZmv8BsXng5S3x9geFBvVsdD2lWlLzIeFnuy7h+KyuKP8Hxow7hBaWraOU=";
+        var blueprint = ParseBlueprint.Execute(blueprintString);
+
+        // Act
+        (_, var summary) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.Equal(1, summary.RotatedPumpjacks);
+    }
+
+    [Fact]
+    public void CountsNoRotatedPumpjacks()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForMediumElectricPole;
+        var blueprintString = "0eJyNkMsOgjAQRf/lriuRV7Bd+hvGGB4TU6WlKcVISP/dAtEY2bibx51zZ2ZC1Q5krNQOYoKsO91DnCb08qrLdq650RAEpCMFBl2qOTODMreyvsMzSN3QEyL2ZwbSTjpJK2NJxoseVEU2CLbTDKbrw0CnZ6cA2aVRzjCGII/ywG6kpXrtJ55tkMkfyDcx+wXu54WXs8TXFxgeZPvV8RBnBU+KLOE85WH9tqwo/ATHj9r7F6STaOE=";
+        var blueprint = ParseBlueprint.Execute(blueprintString);
+
+        // Act
+        (_, var summary) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.Equal(0, summary.RotatedPumpjacks);
+    }
+
+    [Fact]
     public void YieldsAlternateSolutions()
     {
         // Arrange

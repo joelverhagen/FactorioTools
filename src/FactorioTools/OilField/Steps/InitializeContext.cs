@@ -53,13 +53,9 @@ public static class InitializeContext
 
     private static Context Execute(OilFieldOptions options, Blueprint blueprint, int marginX, int marginY)
     {
-        var centers = GetPumpjackCenters(blueprint, marginX, marginY);
-        var grid = InitializeGrid(centers, marginX, marginY);
-        var centerToTerminals = GetCenterToTerminals(grid, centers);
-
-#if !NO_SHARED_INSTANCES
-        centers.Clear();
-#endif
+        var centerToOriginalDirection = GetPumpjackCenterToOriginalDirection(blueprint, marginX, marginY);
+        var grid = InitializeGrid(centerToOriginalDirection.Keys, marginX, marginY);
+        var centerToTerminals = GetCenterToTerminals(grid, centerToOriginalDirection.Keys);
 
         return new Context
         {
@@ -67,9 +63,10 @@ public static class InitializeContext
             InputBlueprint = blueprint,
             Grid = grid,
             CenterToTerminals = centerToTerminals,
+            CenterToOriginalDirection = centerToOriginalDirection,
             LocationToTerminals = GetLocationToTerminals(centerToTerminals),
             LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
-            SharedInstances = new SharedInstances(centers),
+            SharedInstances = new SharedInstances(),
         };
     }
 
@@ -100,7 +97,7 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static LocationSet GetPumpjackCenters(Blueprint blueprint, int marginX, int marginY)
+    private static Dictionary<Location, Direction> GetPumpjackCenterToOriginalDirection(Blueprint blueprint, int marginX, int marginY)
     {
         var pumpjacks = blueprint
             .Entities
@@ -113,7 +110,7 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centers = new LocationSet();
+        var centerToOriginalDirection = new Dictionary<Location, Direction>();
 
         if (pumpjacks.Count > 0)
         {
@@ -134,11 +131,17 @@ public static class InitializeContext
                     throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
                 }
 
-                centers.Add(new Location(ToInt(x), ToInt(y)));
+                if (entity.Direction is null)
+                {
+                    throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have a direction.");
+                }
+
+                var location = new Location(ToInt(x), ToInt(y));
+                centerToOriginalDirection.Add(location, entity.Direction.Value);
             }
         }
 
-        return centers;
+        return centerToOriginalDirection;
     }
 
     private static int ToInt(float x)
@@ -151,7 +154,7 @@ public static class InitializeContext
         return Math.Abs(value % 1) > float.Epsilon * 100;
     }
 
-    private static SquareGrid InitializeGrid(IReadOnlySet<Location> pumpjackCenters, int marginX, int marginY)
+    private static SquareGrid InitializeGrid(IReadOnlyCollection<Location> pumpjackCenters, int marginX, int marginY)
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.

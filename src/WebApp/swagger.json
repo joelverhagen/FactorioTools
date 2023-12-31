@@ -465,6 +465,7 @@
         "required": [
           "alternatePlans",
           "missingPumpjacks",
+          "rotatedPumpjacks",
           "selectedPlans",
           "unusedPlans"
         ],
@@ -472,7 +473,12 @@
         "properties": {
           "missingPumpjacks": {
             "type": "integer",
-            "description": "The number of pumpjacks removed to allow for electric poles. This is usually zero.",
+            "description": "The number of pumpjacks removed to allow for electric poles. This must be zero.",
+            "format": "int32"
+          },
+          "rotatedPumpjacks": {
+            "type": "integer",
+            "description": "The number of pumpjacks that were rotated from their original position.",
             "format": "int32"
           },
           "selectedPlans": {
