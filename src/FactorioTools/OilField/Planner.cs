@@ -106,6 +106,11 @@ public static class Planner
 
         var finalPumpjackCount = context.CenterToTerminals.Count;
 
+        if (finalPumpjackCount != initialPumpjackCount)
+        {
+            throw new FactorioToolsException("The initial number of pumpjacks does not match the final pumpjack count.");
+        }
+
         var planSummary = new OilFieldPlanSummary(
             initialPumpjackCount - finalPumpjackCount,
             selectedPlans,
