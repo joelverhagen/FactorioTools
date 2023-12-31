@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-dotnet:
     name: Build and deploy
     runs-on: ubuntu-latest
     environment: azure
@@ -26,6 +26,26 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          global-json-file: global.json
+
+      - name: Restore workloads
+        run: dotnet workload restore
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build release
+        run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
+
+      - name: Publish
+        run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/publish --runtime linux-x64 --no-self-contained /p:PublishReadyToRun=true
+        
       - name: Azure login
         uses: azure/login@v1
         with:
@@ -33,20 +53,12 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          global-json-file: global.json
-
-      - name: Publish
-        run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/Release/publish --runtime linux-x64 --no-self-contained /p:PublishReadyToRun=true
-
       - name: Deploy staging
         id: deploy-staging
         uses: azure/webapps-deploy@v2
         with:
           app-name: factoriotools-staging
-          package: src/WebApp/bin/Release/publish
+          package: src/WebApp/bin/publish
 
       - name: Send test request
         run: |
@@ -69,7 +81,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: factoriotools
-          package: src/WebApp/bin/Release/publish
+          package: src/WebApp/bin/publish
 
       - name: Send test request
         if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}

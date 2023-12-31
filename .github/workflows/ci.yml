@@ -2,9 +2,11 @@ name: Continuous integration
 
 on:
   push:
-    branches: ['main']
+    branches:
+      - "*"
   pull_request:
-    branches: ['main']
+    branches:
+      - "*"
   workflow_dispatch:
 
 env:
@@ -25,7 +27,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: ${{ env.BUILD_PATH }}/package-lock.json
 
       - name: Setup Pages
@@ -35,16 +37,16 @@ jobs:
       - name: Restore dependencies
         run: npm install
         working-directory: ${{ env.BUILD_PATH }}
-        
+
       - name: Build
         run: npm run build
         working-directory: ${{ env.BUILD_PATH }}
         env:
-          BASE_PATH: '${{ steps.pages.outputs.base_path }}'
+          BASE_PATH: "${{ steps.pages.outputs.base_path }}"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: '${{ env.BUILD_PATH }}/dist'
+          path: "${{ env.BUILD_PATH }}/dist"
 
   build-dotnet:
     name: Build and deploy
@@ -59,21 +61,27 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           global-json-file: global.json
-        
+
       - name: Restore workloads
         run: dotnet workload restore
-        
+
       - name: Restore dependencies
         run: dotnet restore
-        
-      - name: Build debug
-        run: dotnet build --configuration Debug
-    
-      - name: Test
-        run: dotnet test --no-build --logger "console;verbosity=normal"
-      
+
+      - name: Build debug, no shared instances
+        run: dotnet build --configuration Debug /p:NoSharedInstances=true
+
+      - name: Build debug, no grid ToString
+        run: dotnet build --configuration Debug /p:EnableGridToString=false
+
+      - name: Build debug, dynamic FLUTE degree
+        run: dotnet build --configuration Debug /p:AllowDynamicFluteDegree=true
+
       - name: Build release
         run: dotnet build --configuration Release
 
-      - name: Publish for Windows
-        run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/Release/publish --runtime win-x64 --no-self-contained /p:PublishReadyToRun=true
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
+
+      - name: Publish
+        run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/publish --runtime linux-x64 --no-self-contained /p:PublishReadyToRun=true
