@@ -40,12 +40,9 @@ jobs:
       - name: Build release
         run: dotnet build --configuration Release
 
-      - name: Test
-        run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
-
       - name: Publish
         run: dotnet publish src/WebApp --configuration Release --output src/WebApp/bin/publish --runtime linux-x64 --no-self-contained /p:PublishReadyToRun=true
-        
+
       - name: Azure login
         uses: azure/login@v1
         with:
@@ -74,6 +71,9 @@ jobs:
         env:
           BLUEPRINT: "0eJyMj70OwjAMhN/lZg8NbHkVhFB/rMrQuFGSIqoq707aMiCVgcWSz+fP5wXNMLEPogl2gbSjRtjLgii91sOqae0YFn5y/l63DxDS7FdFEjtkgmjHL1iTrwTWJEl4Z2zNfNPJNRyKgX6w/BjLwqjrpQI5E+ZSC7WTwO0+qTIdYKc/YKbaaOaAK0G38Pbre8KTQ/wY8hsAAP//AwAEfF3F"
           WEBAPP_URL: "${{ steps.deploy-staging.outputs['webapp-url'] }}"
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
 
       - name: Deploy
         if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
