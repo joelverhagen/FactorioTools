@@ -21,7 +21,10 @@
         </thead>
         <tbody class="table-group-divider">
           <tr v-for="p in allPlans" :class="p.class">
-            <th scope="row">{{ p.rank }}</th>
+            <th scope="row">
+              {{ p.rank }}
+              <i class="fw-normal" v-if="p.isAlternate">(alternate)</i>
+            </th>
             <td>
               <template v-for="(s, i) of p.steps">
                 <span v-if="i > 0">➡️</span>
@@ -49,6 +52,7 @@ import CopyButton from './CopyButton.vue';
 
 interface SelectedOilFieldPlan extends OilFieldPlan {
   category: PlanCategory,
+  isAlternate: boolean,
   class: string,
   rank: number,
   steps: Step[],
@@ -112,6 +116,7 @@ function initPlan(plan: OilFieldPlan, category: PlanCategory): SelectedOilFieldP
     ...plan,
     rank: 1,
     category,
+    isAlternate: category == PlanCategory.Alternate,
     class: c,
     steps: [] as Step[]
   }
