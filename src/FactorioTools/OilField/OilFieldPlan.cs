@@ -74,5 +74,10 @@ public record OilFieldPlan(
 
         return output;
     }
+#else
+    public string ToString(bool includeCounts)
+    {
+        return ToString();
+    }
 #endif
 }

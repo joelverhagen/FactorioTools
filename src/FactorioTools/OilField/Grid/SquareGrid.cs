@@ -133,6 +133,10 @@ public abstract class SquareGrid
             builder.AppendLine();
         }
     }
+#else
+    public void ToString(StringBuilder builder, int spacing)
+    {
+    }
 #endif
 
     private class Empty : GridEntity
