@@ -1,0 +1,31 @@
+﻿= FBE* (pipes: 6)
+= FBE* -> optimize (pipes: 6)
+= CC-DT (pipes: 6)
+= CC-DT -> optimize (pipes: 6)
+= CC-DT-MST (pipes: 6)
+= CC-DT-MST -> optimize (pipes: 6)
+= CC-FLUTE (pipes: 6)
+= CC-FLUTE -> optimize (pipes: 6)
+
+. . . . . . . . . . . 
+. . . . . . . . . . . 
+. . . . . j j j . . . 
+. . . . . j J j . . . 
+. . . . . j j j . . . 
+. . . . . ^ E . . . . 
+. . . . . . j j j . . 
+. . . . . v j J j . . 
+. . . . . + j j j . . 
+. . . . . ^ . . . . . 
+. . . . . E . . . . . 
+. . . . . . . . . . . 
+. . . . . . . . . . . 
+. . . . . . . . . . . 
+. . . . . . . . . . . 
+. . . . . . . . . . . 
+. . . E . v . . . . . 
+. . j j j + . . . . . 
+. . j J j . . . . . . 
+. . j j j . . . . . . 
+. . . . . . . . . . . 
+. . . . . . . . . . . 

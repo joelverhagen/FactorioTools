@@ -1,0 +1,91 @@
+﻿= CC-FLUTE -> FBE* (effects: 196, beacons: 137, pipes: 169)
+- CC-DT -> optimize -> FBE* (effects: 194, beacons: 132, pipes: 170)
+- CC-DT -> FBE* (effects: 194, beacons: 132, pipes: 178)
+- CC-FLUTE -> optimize -> FBE* (effects: 192, beacons: 131, pipes: 168)
+- CC-DT-MST -> optimize -> FBE* (effects: 191, beacons: 130, pipes: 169)
+- CC-DT-MST -> FBE* (effects: 189, beacons: 131, pipes: 172)
+- CC-DT -> optimize -> snug (effects: 185, beacons: 130, pipes: 170)
+- FBE* -> optimize -> FBE* (effects: 185, beacons: 131, pipes: 176)
+- CC-DT-MST -> optimize -> snug (effects: 183, beacons: 129, pipes: 169)
+- CC-DT-MST -> snug (effects: 183, beacons: 129, pipes: 172)
+- CC-DT -> snug (effects: 182, beacons: 128, pipes: 178)
+- CC-FLUTE -> snug (effects: 181, beacons: 130, pipes: 169)
+- CC-FLUTE -> optimize -> snug (effects: 180, beacons: 128, pipes: 168)
+- FBE* -> FBE* (effects: 179, beacons: 128, pipes: 197)
+- FBE* -> optimize -> snug (effects: 175, beacons: 126, pipes: 176)
+- FBE* -> snug (effects: 168, beacons: 122, pipes: 197)
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b b b b . b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b B b b B b . b B b b B b . . . . . . . . . E . . . E . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b b b b . b b b b b b . . . . . . . . . . b b b b b b . b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . b b b . . . . . . . . . . b B b b B b . b B b b B b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . b B b . . E . . . . . . . b b b b b b . b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b . E j j j . . b b b b b b b b b . b b b . . . . . . . . . . b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b B b . . j J j b b b . . b B b b B b . b B b b b b . . . . E . . b B b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b . . j j j b B b . . b b b b b b . b b b b B b . . j j j . . b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b . . + o o b b b . . . . . . . . . . . . b b b . . j J j . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b B b . . . . + o o o o o o o o o o o o + o o o o o o + j j j . . b b b b b b b b b b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b . . j j j E o b b b b b b . E j j j o . b b b . . . . . . . b B b b B b b B b b B b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . j J j . o b B b b B b . . j J j o . b B b . E . . . . E b b b b b b b b b b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b . . j j j . o b b b b b b . . j j j o . b b b b b b . b b b b b b . . . . . . b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b B b b b b b b b o b b b . . b b b b b b o . . . . b B b . b B b b B b . . . . . . b B b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b b B b b B b o b B b . . b B b b B b o b b b . b b b . b b b b b b E j j j . . b b b E . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b b b b b b b b b o b b b . . b b b b b b o b B b . . . . . . . . . . . . j J j . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . b B b b b b . E . o . . b b b b b b . . . o b b b . E . . . . . . . b b b j j j . . b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . E b b b b B b . . . + o . b B b b B b . . . o o . b b b . . . . b b b b B b + . . . . b B b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . b b b . j j j o . b b b b b b . j j j + . b B b . . . . b B b b b b o . . . . b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . j J j o . . . . . . E . j J j o . b b b . . . . b b b b b b o . . b b b . . b b b . . . . . . . . . . . . . . . . . 
+. . . . . . . . . b b b E . j j j o . b b b b b b . j j j o . b b b E . . . b b b b B b o . . b B b . . b B b . . . . . . . . . . . . . . . . . 
+. . . . . . . . . b B b . . . . o o . b B b b B b . . . . o . b B b . . . . b B b b b b o o o b b b . . b b b . . . . . . . . . . . . . . . . . 
+. . . . . . . . . b b b . . . . o . . b b b b b b . . . . o . b b b . . . . b b b . . j j j + . . . . . b b b b b b . b b b b b b . . . . . . . 
+. . . . . . . . . b b b b b b . o . . b b b b b b . b b b o b b b . . . . . . . . . . j J j o E . . . . b B b b B b . b B b b B b . . . . . . . 
+. . . . . . . . . b B b b B b . o . . b B b b B b . b B b o b B b . . . . . b b b E . j j j o j j j . E b b b b b b . b b b b b b . . . . . . . 
+. . . . . . . . . b b b b b b . o . . b b b b b b . b b b o b b b . . E . . b B b . . . . . o j J j . . . . . . . . . . . . b b b . . . . . . . 
+. . . . . . . . . . . . . . . . o . . . . . . . E . . . . o . . . . b b b . b b b . . . . . + j j j . . b b b . . . . . E . b B b . . . . . . . 
+. . . . . . . . . . . . . . . . o . . . . . . . . . . . . + o b b b b B b . b b b . . b b b o . . . . . b B b . . j j j . . b b b . . . . . . . 
+. . . . . . . . . . . . . . . . o . . . . . . . b b b j j j o b B b b b b . b B b . . b B b o . . . . . b b b . . j J j . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . o . . . . . . . b B b j J j o b b b . . . . b b b . . b b b o o o o o o o o o o + j j j . . b b b E . . . . . . 
+. . . . . . . . . . . . . . . . o . . . . . . . b b b j j j o + o o o o o o o o o o o o o o o . . . . . . . E . . . . . . . b B b . . . . . . . 
+. . . . . . . b b b b b b b b b o b b b . . . . . . b b b j j j b b b . . . . . . . . . . . o b b b . . b b b . . b b b . . b b b . . . . . . . 
+. . . . . . . b B b b B b b B b o b B b . . . . . . b B b j J j b B b . . . . . b b b j j j + b B b . . b B b . . b B b . . b b b . . . . . . . 
+. . . . . . . b b b b b b b b b o b b b . . b b b . b b b j j j b b b . b b b . b B b j J j o b b b . . b b b . . b b b . . b B b . . . . . . . 
+. . . . . . . b b b . . . . . . o b b b . . b B b . . . . . . . . . . . b B b . b b b j j j o . . . . . . . E . . b b b . . b b b . . . . . . . 
+. . . . . . . b B b . . . . . . o b B b . . b b b . . . . . E . . b b b b b b j j j . . E . o b b b . . . . . . . b B b . . . . . . . . . . . . 
+. . . . . . . b b b . E j j j + o b b b E . b b b b b b b b b . . b B b b b b j J j . b b b o b B b . . j j j . . b b b . . . . . . . . . . . . 
+. . . . . . . . . . . . j J j o . . . b b b b B b b B b b B b . . b b b b B b j j j . b B b o b b b . . j J j . . . . . . . . . . . . . . . . . 
+. . . . . . . . . b b b j j j o b b b b B b b b b b b b b b b . b b b E b b b + j j j b b b o o o o o + j j j . . b b b . . . . . . . . . . . . 
+. . . . . . . . . b B b b b b o b B b b b b b b b . . . . . . . b B b . b b b o j J j o o o + b b b . . . . E . . b B b . . . . . . . . . . . . 
+. . . . . . . . . b b b b B b o b b b . . . b B b . . . . . . . b b b . b B b + j j j o j j j b B b . . . . . . . b b b . . . . . . . . . . . . 
+. . . . . . . . b b b . b b b o . j j j . . b b b . . b b b b b b . . . b b b o o o o o j J j b b b b b b . b b b b b b . . . . . . . . . . . . 
+. . . . . . . . b B b . . . . + o j J j . . . . . . . b B b b B b . . . o o o + b b b E j j j b b b b B b . b B b b B b . . . . . . . . . . . . 
+. . . . . . . . b b b . . j j j + j j j . E b b b . . b b b b b b b b b o j j j b B b . b b b b B b b b b . b b b b b b . . . . . . . . . . . . 
+. . . . . . . . . . . . . j J j b b b . . . b B b E . b b b . . . b B b o j J j b b b . b B b b b b E . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . b b b E . j j j b B b b b b b b b . . b B b E . . b b b o j j j b b b . b b b E . b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . b B b . . b b b b b b b B b b b b . . b b b . . j j j + o E . . b B b . . . . . . b B b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . b b b . . b B b . . . b b b b B b b b b . . . . j J j o b b b . b b b . . . . . . b b b . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . b b b . . b b b . . b b b . b b b b B b . . . . j j j o b B b b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . b B b . . . . . . . b B b . . . . b b b . b b b o o o o b b b b B b b B b . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . b b b . . . . . . . b b b . . . . b b b . b B b o b b b . . . b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b B b . b b b + b B b . b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . E . . . . . . . . b b b . . j j j b b b . b B b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . j J j . . . . b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b b b . E j j j . E b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b B b . . . . . . . b B b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b b b . . . . . . . b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b b b b b b . b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b B b b B b . b B b b B b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . b b b b b b . b b b b b b . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
