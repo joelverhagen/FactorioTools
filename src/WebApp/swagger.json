@@ -5,6 +5,69 @@
     "version": "1.0"
   },
   "paths": {
+    "/api/v1/oil-field/normalize": {
+      "post": {
+        "tags": [
+          "OilField"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OilFieldNormalizeRequest"
+                  }
+                ],
+                "description": "The properties needed to normalize a oil field blueprint."
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OilFieldNormalizeRequest"
+                  }
+                ],
+                "description": "The properties needed to normalize a oil field blueprint."
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OilFieldNormalizeRequest"
+                  }
+                ],
+                "description": "The properties needed to normalize a oil field blueprint."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/OilFieldNormalizeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OilFieldNormalizeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OilFieldNormalizeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/oil-field/plan": {
       "post": {
         "tags": [
@@ -79,6 +142,55 @@
         ],
         "type": "string",
         "description": "The strategy to use when planning beacon placement around the pumpjacks."
+      },
+      "OilFieldNormalizeRequest": {
+        "required": [
+          "blueprint"
+        ],
+        "type": "object",
+        "properties": {
+          "blueprint": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The input blueprint containing at least one pumpjack."
+          }
+        },
+        "additionalProperties": false,
+        "description": "The properties needed to normalize a oil field blueprint."
+      },
+      "OilFieldNormalizeRequestResponse": {
+        "required": [
+          "blueprint"
+        ],
+        "type": "object",
+        "properties": {
+          "blueprint": {
+            "minLength": 1,
+            "type": "string",
+            "description": "The input blueprint containing at least one pumpjack."
+          }
+        },
+        "additionalProperties": false,
+        "description": "The properties needed to normalize a oil field blueprint."
+      },
+      "OilFieldNormalizeResponse": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OilFieldNormalizeRequestResponse"
+              }
+            ],
+            "description": "The original request provided, included expanded defaults."
+          },
+          "blueprint": {
+            "type": "string",
+            "description": "The output normalized blueprint."
+          }
+        },
+        "additionalProperties": false,
+        "description": "The normalized oil field blueprint."
       },
       "OilFieldPlan": {
         "required": [

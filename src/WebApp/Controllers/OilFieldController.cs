@@ -17,6 +17,17 @@ public class OilFieldController : ControllerBase
         _logger = logger;
     }
 
+    [HttpPost("normalize")]
+    [EnableCors]
+    public OilFieldNormalizeResponse NormalizeBlueprint([FromBody] OilFieldNormalizeRequest request)
+    {
+        var parsedBlueprint = ParseBlueprint.Execute(request.Blueprint);
+        _logger.LogInformation("Normalizing blueprint {Blueprint}", request.Blueprint);
+        var clean = CleanBlueprint.Execute(parsedBlueprint);
+        var outputBlueprint = GridToBlueprintString.SerializeBlueprint(clean, addFbeOffset: false);
+        return new OilFieldNormalizeResponse(request, outputBlueprint);
+    }
+
     [HttpPost("plan")]
     [EnableCors]
     public OilFieldPlanResponse GetPlan([FromBody] OilFieldPlanRequest request)
