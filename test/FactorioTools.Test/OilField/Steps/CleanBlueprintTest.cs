@@ -1,49 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
-public class CleanBlueprintTest : PlannerFacts
+public class CleanBlueprintTest : BasePlannerFacts
 {
     [Theory]
     [MemberData(nameof(BigListIndexTestData))]
     public void BigListBlueprintsAreNormalized(int blueprintIndex)
     {
-        // Arrange
-        var expected = BigListBlueprintStrings[blueprintIndex];
-        string actual = Clean(expected);
-
-        // Assert
-        Assert.Equal(expected, actual);
-    }
-
-    private static string Clean(string expected)
-    {
-        var blueprint = ParseBlueprint.Execute(expected);
-
-        // Act
-        var clean = CleanBlueprint.Execute(blueprint);
-        var actual = GridToBlueprintString.SerializeBlueprint(clean, addFbeOffset: false);
-        return actual;
+        VerifySameBlueprint(BigListBlueprintStrings[blueprintIndex]);
     }
 
     [Theory]
     [MemberData(nameof(SmallListIndexTestData))]
     public void SmallListBlueprintsAreNormalized(int blueprintIndex)
     {
-        // Arrange
-        var expected = SmallListBlueprintStrings[blueprintIndex];
-        var blueprint = ParseBlueprint.Execute(expected);
+        VerifySameBlueprint(SmallListBlueprintStrings[blueprintIndex]);
+    }
 
-        // Act
+    private static void VerifySameBlueprint(string input)
+    {
+        var blueprint = ParseBlueprint.Execute(input);
+     
         var clean = CleanBlueprint.Execute(blueprint);
-        var actual = GridToBlueprintString.SerializeBlueprint(clean, addFbeOffset: false);
-
-        // Assert
-        Assert.Equal(expected, actual);
+        
+        Assert.Equal(JsonSerializer.Serialize(blueprint), JsonSerializer.Serialize(clean));
     }
 }
 
