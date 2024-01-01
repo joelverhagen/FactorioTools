@@ -11,7 +11,7 @@ public class AllowsBlueprintWithNonBlockingIsolatedArea : BasePlannerFacts
         // Arrange
         var options = OilFieldOptions.ForMediumElectricPole;
         options.PipeStrategies = new List<PipeStrategy> { strategy };
-        var blueprintString = "0eJyU1dtuhCAQBuB3mWsudEBdfZWm2bguaWhXNB6aGuO7FxcuejDx51LEzxHnh5Vuj1n3g7ETVSuZprMjVS8rjebN1o99zNatpor6ue3f6+aDBE1Lv4+YSbe0CTL2rr+oSrdXQdpOZjLaG8+L5Wrn9qYHN0EcWH03ugc6u7/JIawELW6qdO7dDLrx95JN/OMY4CTDnES4AuYUwiWey39zfMBlEdUBXA5waeCK848tAE7lnruccxekUUJ15TlXImsnYS5NkMXzHieAF5ELTgGP8daDvIhkMAMeEg0O9QFJSzO8XVgBHhIOqXAPSkeCe0g8VER9SD449DOwGey/7nz9ykPvaK9iKB+uCZwngX7miIMD8qB8+N1PZn89d2Y+z9Hqx0Es6FMPY5iwfQMAAP//AwAyF4Ax";
+        var blueprintString = "0eJyU1ctugzAQBdB/mbUXZmwg8CtVFRFiVW6Dg3hURYh/r8Fe9IHEZQmYw2DN9cx0e4ym7awbqJzJ1k/XU/kyU2/fXPVY77mqMVRSOzbte1V/kKBhatc7djANLYKsu5svKpPlVZBxgx2sCcZ2MV3d2NxM5xeIHat99v6Fp1u/5BHWgia/VHn3bjtTh2dyEf84BjjFMKcQLoc5jXAycNlvjne49ER1AJcBXBK5/Phnc4DTWeAux9wFaZRYXXHMFcjeKZhLJLJ5wWMJeCdywQngQcGQuHciGcyAh0SDY31A0hIkG7FdWAMeEg6lcQ9Kh8Q9JB76RH1IPjj2M3AYMJIPVex6e2cVQ/lIN08B/cwnBgfkQfkIp59K/3p+Zm5ztPwxiAV9mq6PC5ZvAAAA//8DADIXgDE=";
 
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
