@@ -11,7 +11,8 @@
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="validate-solution" v-model="validateSolution">
-      <label class="form-check-label" for="validate-solution">Validate solution 🐛</label>
+      <label class="form-check-label" for="validate-solution">Validate solution 🐛</label> (slower but checks for
+      problems in the resulting blueprint)
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="use-staging-api" v-model="useStagingApi">
@@ -19,7 +20,7 @@
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="auto-plan" v-model="autoPlan">
-      <label class="form-check-label" for="auto-plan">Plan on load</label> (useful for share URLs)
+      <label class="form-check-label" for="auto-plan">Start planning on page load</label> (useful for share URLs)
     </div>
     <fieldset class="border p-3 mt-3">
       <legend>Pipe strategies</legend>

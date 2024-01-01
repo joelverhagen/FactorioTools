@@ -37,11 +37,15 @@
       <label for="input-blueprint" class="form-label fs-4">Input blueprint</label>
       <a class="btn btn-link btn-sm ms-1s mb-2" :href="fbeUrl" target="_blank" rel="noopener noreferrer">View in FBE</a>
       <button type="button" class="btn btn-info btn-sm mb-2 me-2" @click="normalize"
-        :disabled="recentlyNormalized || cannotSubmit">
+        :disabled="recentlyNormalized || cannotSubmit"
+        title="Remove all entities except pumpjacks, sort and rotate pumpjacks">
         Normalize blueprint
         {{ recentlyNormalized ? '☑️' : '' }}
       </button>
-      <button type="button" class="btn btn-warning btn-sm mb-2" @click="addSampleBlueprint">Add sample</button>
+      <button type="button" class="btn btn-warning btn-sm mb-2" @click="addSampleBlueprint"
+        title="Replace the current blueprint with a sample blueprint">
+        Add sample
+      </button>
       <textarea class="form-control font-monospace" id="input-blueprint" aria-describedby="input-blueprint-help"
         placeholder="paste blueprint string here" rows="3" v-model="inputBlueprint" spellcheck="false" autocomplete="off"
         data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></textarea>
