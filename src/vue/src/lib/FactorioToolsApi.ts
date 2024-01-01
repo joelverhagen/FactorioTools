@@ -16,6 +16,32 @@ export enum BeaconStrategy {
   Snug = "Snug",
 }
 
+/** The properties needed to normalize a oil field blueprint. */
+export interface OilFieldNormalizeRequest {
+  /**
+   * The input blueprint containing at least one pumpjack.
+   * @minLength 1
+   */
+  blueprint: string;
+}
+
+/** The properties needed to normalize a oil field blueprint. */
+export interface OilFieldNormalizeRequestResponse {
+  /**
+   * The input blueprint containing at least one pumpjack.
+   * @minLength 1
+   */
+  blueprint: string;
+}
+
+/** The normalized oil field blueprint. */
+export interface OilFieldNormalizeResponse {
+  /** The original request provided, included expanded defaults. */
+  request: OilFieldNormalizeRequestResponse;
+  /** The output normalized blueprint. */
+  blueprint: string;
+}
+
 /** A particular attempt oil field plan. */
 export interface OilFieldPlan {
   /** The pipe strategy used to generate the plan. */
@@ -534,6 +560,23 @@ export class HttpClient<SecurityDataType = unknown> {
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
   api = {
+    /**
+     * No description
+     *
+     * @tags OilField
+     * @name V1OilFieldNormalizeCreate
+     * @request POST:/api/v1/oil-field/normalize
+     */
+    v1OilFieldNormalizeCreate: (data: OilFieldNormalizeRequest, params: RequestParams = {}) =>
+      this.request<OilFieldNormalizeResponse, any>({
+        path: `/api/v1/oil-field/normalize`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
     /**
      * No description
      *

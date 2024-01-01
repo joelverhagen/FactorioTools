@@ -1,5 +1,5 @@
 import { OilFieldStoreState, useOilFieldStore } from "../stores/OilFieldStore";
-import { Api, BeaconStrategy, HttpResponse, OilFieldPlanRequest, OilFieldPlanResponse, PipeStrategy } from "./FactorioToolsApi";
+import { Api, BeaconStrategy, HttpResponse, OilFieldNormalizeRequest, OilFieldNormalizeResponse, OilFieldPlanRequest, OilFieldPlanResponse, PipeStrategy } from "./FactorioToolsApi";
 import { getEntries } from "./helpers";
 
 type RequestPropertyGetters = {
@@ -55,40 +55,35 @@ const requestPropertyGetters: RequestPropertyGetters = {
   validateSolution: (state) => state.validateSolution,
 } as const;
 
-export type ResponseError =
+export type ApiError =
   {
     isError: true,
     title: string,
     errors?: Record<string, string[]>,
     errorDetails?: string[],
-    response?: HttpResponse<OilFieldPlanRequest, any>
+    response?: HttpResponse<any, any>
   }
 
-export interface OilFieldPlanResult {
+export interface ApiResult<Data> {
   isError: false,
-  data: OilFieldPlanResponse
+  data: Data
 }
 
-export async function getPlan(): Promise<OilFieldPlanResult | ResponseError> {
+async function getApiResultOrError<Request, Data>(invokeApi: (factorio: Api<unknown>) => Promise<HttpResponse<Data, any>>): Promise<ApiResult<Data> | ApiError> {
 
   const store = useOilFieldStore()
-  const request: OilFieldPlanRequest = { blueprint: "" }
-  for (const [requestKey, getter] of getEntries(requestPropertyGetters)) {
-    (request as any)[requestKey] = getter(store.$state)
-  }
-
   const baseUrl = store.useStagingApi ? 'https://factoriotools-staging.azurewebsites.net' : 'https://factoriotools.azurewebsites.net'
   const factorio = new Api({ baseUrl })
 
   try {
-    const response = await factorio.api.v1OilFieldPlanCreate(request);
+    const response = await invokeApi(factorio);
     return {
       isError: false,
       data: response.data
     }
   } catch (e) {
     if (e instanceof Response) {
-      const response = e as HttpResponse<OilFieldPlanRequest, any>;
+      const response = e as HttpResponse<Request, any>;
       const errors: Record<string, string[]> = {}
       const title = response.error.title ?? `HTTP ${response.status} (${response.statusText})`
 
@@ -128,4 +123,21 @@ export async function getPlan(): Promise<OilFieldPlanResult | ResponseError> {
       }
     }
   }
+}
+
+export async function normalize(): Promise<ApiResult<OilFieldNormalizeResponse> | ApiError> {
+  const store = useOilFieldStore()
+  const request: OilFieldNormalizeRequest = { blueprint: store.$state.inputBlueprint }
+
+  return await getApiResultOrError(factorio => factorio.api.v1OilFieldNormalizeCreate(request));
+}
+
+export async function getPlan(): Promise<ApiResult<OilFieldPlanResponse> | ApiError> {
+  const store = useOilFieldStore()
+  const request: OilFieldPlanRequest = { blueprint: "" }
+  for (const [requestKey, getter] of getEntries(requestPropertyGetters)) {
+    (request as any)[requestKey] = getter(store.$state)
+  }
+
+  return await getApiResultOrError(factorio => factorio.api.v1OilFieldPlanCreate(request));
 }

@@ -2,7 +2,7 @@
   <h1 class="row gx-2">
     <div class="col-md-auto">
       Oil field planner
-      <span v-if="useAdvancedOptions">🤓</span>
+      <span v-if="useAdvancedOptions">🧙‍♂️</span>
       <span v-else>🐣</span>
     </div>
     <div class="col-md-auto">
@@ -36,11 +36,17 @@
     <fieldset class="border p-3 mb-3">
       <label for="input-blueprint" class="form-label fs-4">Input blueprint</label>
       <a class="btn btn-link btn-sm ms-1s mb-2" :href="fbeUrl" target="_blank" rel="noopener noreferrer">View in FBE</a>
+      <button type="button" class="btn btn-info btn-sm mb-2 me-2" @click="normalize"
+        :disabled="recentlyNormalized || cannotSubmit">
+        Normalize blueprint
+        {{ recentlyNormalized ? '☑️' : '' }}
+      </button>
       <button type="button" class="btn btn-warning btn-sm mb-2" @click="addSampleBlueprint">Add sample</button>
       <textarea class="form-control font-monospace" id="input-blueprint" aria-describedby="input-blueprint-help"
-        placeholder="paste blueprint string here" rows="3" v-model="inputBlueprint" spellcheck="false"
-        autocomplete="off"></textarea>
+        placeholder="paste blueprint string here" rows="3" v-model="inputBlueprint" spellcheck="false" autocomplete="off"
+        data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></textarea>
     </fieldset>
+    <ResponseErrorView v-if="normalizeError" :error="normalizeError" />
     <PumpjacksForm :show-advanced-options="useAdvancedOptions" />
     <BeaconForm :show-advanced-options="useAdvancedOptions" />
     <ElectricPoleSelect :show-advanced-options="useAdvancedOptions" />
@@ -52,12 +58,12 @@
       </button>
     </div>
     <OilFieldPlanView v-if="plan" :plan="plan" />
-    <ResponseErrorView v-if="error" :error="error" />
+    <ResponseErrorView v-if="planError" :error="planError" />
   </form>
 </template>
 
 <script lang="ts">
-import { getPlan, OilFieldPlanResult, ResponseError } from '../lib/OilFieldPlanner'
+import { ApiError, ApiResult, getPlan, normalize } from '../lib/OilFieldPlanner'
 import BeaconForm from '../components/BeaconForm.vue';
 import ElectricPoleSelect from '../components/ElectricPoleForm.vue';
 import PlannerForm from '../components/PlannerForm.vue';
@@ -69,18 +75,22 @@ import ResponseErrorView from '../components/ResponseErrorView.vue';
 import OilFieldPlanView from '../components/OilFieldPlanView.vue';
 import CopyButton from '../components/CopyButton.vue';
 import { useAutoPlanStore } from '../stores/AutoPlanStore';
+import { OilFieldPlanResponse } from '../lib/FactorioToolsApi';
 
 const sampleBlueprints = __SAMPLE_BLUEPRINTS__;
 sampleBlueprints.sort((a, b) => b.length - a.length)
 
+const recentlyNormalizedMs = 3000;
+
 export default {
   data() {
     return Object.assign({
-      copiedAt: new Date(0),
-      recentlyCopied: false,
+      normalizedAt: new Date(0),
+      recentlyNormalized: false,
       submitting: false,
-      plan: null as null | OilFieldPlanResult,
-      error: null as null | ResponseError,
+      normalizeError: null as null | ApiError,
+      plan: null as null | ApiResult<OilFieldPlanResponse>,
+      planError: null as null | ApiError,
     },
       storeToRefs(useAutoPlanStore()),
       pick(storeToRefs(useOilFieldStore()),
@@ -192,29 +202,58 @@ export default {
       }
     },
     async reset() {
+      this.normalizeError = null
       this.plan = null
-      this.error = null
+      this.planError = null
       const store = useOilFieldStore()
       store.$reset()
       await this.$router.replace({ query: {} });
       initializeOilFieldStore(this.$route.query);
     },
+    async normalize() {
+      await this.invokeApi(async () => {
+        const dataOrError = await normalize()
+        if (dataOrError.isError) {
+          this.normalizeError = dataOrError
+        } else {
+          this.inputBlueprint = dataOrError.data.blueprint
+          this.normalizeError = null
+
+          this.recentlyNormalized = true
+          this.normalizedAt = new Date()
+          setTimeout(() => {
+            this.recentlyNormalized = (new Date().getTime() - this.normalizedAt.getTime()) < recentlyNormalizedMs
+          }, recentlyNormalizedMs)
+        }
+
+        return dataOrError
+      })
+    },
     async submit() {
+      await this.invokeApi(async () => {
+        this.normalizeError = null
+        const dataOrError = await getPlan()
+        if (dataOrError.isError) {
+          this.plan = null
+          this.planError = dataOrError
+        } else {
+          this.plan = dataOrError
+          this.planError = null
+        }
+        return dataOrError
+      })
+    },
+    async invokeApi<Data>(api: () => Promise<ApiResult<Data> | ApiError>) {
       if (this.cannotSubmit) {
         return
       }
 
       this.submitting = true;
-      const planOrError = await getPlan()
-      if (planOrError.isError) {
-        this.plan = null
-        this.error = planOrError
-      } else {
-        this.plan = planOrError
-        this.error = null
+      try {
+        await api()
+      } finally {
+        this.submitting = false
       }
-
-      this.submitting = false
     },
     async overrideLocalSettings() {
       persistStore()

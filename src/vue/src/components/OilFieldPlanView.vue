@@ -10,8 +10,8 @@
     </div>
     <div v-if="plan.data.summary.rotatedPumpjacks > 0" class="row g-2" role="alert">
       <div class="col-12 alert alert-warning" role="alert">
-        <b>Rotation needed!</b> At least one pumpjack was rotated
-        from it's original position. Consider removing existing pumpjacks before placing the new blueprint.
+        <b>Rotation needed!</b> At least one pumpjack was rotated from it's original position. Consider removing
+        improperly overlapping pumpjacks before placing the new blueprint.
       </div>
     </div>
     <template v-if="allPlans.length > 0">
@@ -52,8 +52,8 @@
 <script lang="ts">
 import clipboard from 'clipboardy';
 import { PropType } from 'vue';
-import { BeaconStrategy, OilFieldPlan, PipeStrategy } from '../lib/FactorioToolsApi';
-import { OilFieldPlanResult } from '../lib/OilFieldPlanner';
+import { BeaconStrategy, OilFieldPlan, OilFieldPlanResponse, PipeStrategy } from '../lib/FactorioToolsApi';
+import { ApiResult } from '../lib/OilFieldPlanner';
 import CopyButton from './CopyButton.vue';
 
 interface SelectedOilFieldPlan extends OilFieldPlan {
@@ -131,7 +131,7 @@ function initPlan(plan: OilFieldPlan, category: PlanCategory): SelectedOilFieldP
 export default {
   props: {
     plan: {
-      type: Object as PropType<OilFieldPlanResult>,
+      type: Object as PropType<ApiResult<OilFieldPlanResponse>>,
       required: true
     }
   },

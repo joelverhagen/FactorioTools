@@ -67,6 +67,8 @@ public class Program
         builder.Services.AddSwaggerGen(options =>
         {
             options.SchemaFilter<OilFieldPlanRequestDefaultsSchemaFilter>();
+            options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldNormalizeResponse>>();
+            options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldNormalizeRequestResponse>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanResponse>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanRequestResponse>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanSummary>>();

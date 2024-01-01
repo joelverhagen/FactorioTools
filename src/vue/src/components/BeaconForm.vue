@@ -5,7 +5,7 @@
       <input type="checkbox" class="form-check-input" id="add-beacons" v-model="addBeacons">
       <label class="form-check-label" for="add-beacons">Add beacons</label>
     </div>
-    <ModuleSelect v-if="addBeacons" class="mt-3" label="Module" :showAdvancedOptions="showAdvancedOptions"
+    <ModuleSelect v-if="addBeacons" class="mt-3" label="Beacon module" :showAdvancedOptions="showAdvancedOptions"
       :defaultValue="beaconModule" :defaultIsCustom="beaconModuleIsCustom" v-model="beaconModule"
       v-model:isCustom="beaconModuleIsCustom" :showProductivityModules="isCustom" />
     <div class="row" v-show="showAdvancedOptions && addBeacons">

@@ -1,5 +1,5 @@
 <template>
-  <div class="card mt-3 rounded-0">
+  <div class="card my-3 rounded-0">
     <h4 class="card-header bg-danger bg-opacity-10">
       {{ error.title }}
     </h4>
@@ -19,12 +19,12 @@
       
 <script lang="ts">
 import { PropType } from 'vue';
-import { ResponseError } from '../lib/OilFieldPlanner';
+import { ApiError } from '../lib/OilFieldPlanner';
 
 export default {
   props: {
     error: {
-      type: Object as PropType<ResponseError>,
+      type: Object as PropType<ApiError>,
       required: true
     }
   }

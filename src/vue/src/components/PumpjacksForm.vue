@@ -1,7 +1,7 @@
 <template>
   <fieldset class="border p-3 mb-3">
     <legend>Pumpjacks</legend>
-    <ModuleSelect label="Module" :showAdvancedOptions="showAdvancedOptions" showProductivityModules
+    <ModuleSelect label="Pumpjack module" :showAdvancedOptions="showAdvancedOptions" showProductivityModules
       :defaultValue="pumpjackModule" :defaultIsCustom="pumpjackModuleIsCustom" v-model="pumpjackModule"
       v-model:isCustom="pumpjackModuleIsCustom" />
   </fieldset>

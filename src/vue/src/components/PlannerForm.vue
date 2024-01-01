@@ -19,7 +19,7 @@
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="auto-plan" v-model="autoPlan">
-      <label class="form-check-label" for="auto-plan">Plan on load</label>
+      <label class="form-check-label" for="auto-plan">Plan on load</label> (useful for share URLs)
     </div>
     <fieldset class="border p-3 mt-3">
       <legend>Pipe strategies</legend>
@@ -52,8 +52,11 @@
             href="https://home.engineering.iastate.edu/~cnchu/flute.html">FLUTE</a></label>
       </div>
     </fieldset>
-    <fieldset class="border p-3 mt-3">
-      <legend>Beacon strategies</legend>
+    <fieldset class="border p-3 mt-3" :disabled="!addBeacons">
+      <legend>
+        Beacon strategies
+        <span v-if="!addBeacons" class="badge bg-secondary">disabled</span>
+      </legend>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="beacons-fbe-original" v-model="beaconStrategyFbeOriginal">
         <label class="form-check-label" for="beacons-fbe-original">Teoxoy's FBE</label> (<a
@@ -90,6 +93,7 @@ export default {
     return Object.assign(
       storeToRefs(useAutoPlanStore()),
       pick(storeToRefs(useOilFieldStore()),
+        'addBeacons',
         'useUndergroundPipes',
         'useStagingApi',
         'optimizePipes',
