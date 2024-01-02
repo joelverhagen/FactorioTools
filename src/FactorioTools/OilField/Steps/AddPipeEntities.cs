@@ -24,10 +24,10 @@ public static class AddPipeEntities
         Dictionary<Location, Direction>? undergroundPipes = null,
         bool allowMultipleTerminals = false)
     {
-#if NO_SHARED_INSTANCES
-        var addedPipes = new LocationSet();
-#else
+#if USE_SHARED_INSTANCES
         var addedPipes = sharedInstances.LocationSetA;
+#else
+        var addedPipes = new LocationSet();
 #endif
 
         try
@@ -69,7 +69,7 @@ public static class AddPipeEntities
         }
         finally
         {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
             addedPipes.Clear();
 #endif
         }

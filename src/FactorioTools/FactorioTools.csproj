@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <NoSharedInstances Condition="'$(NoSharedInstances)' == ''">false</NoSharedInstances>
-    <DefineConstants Condition="$(NoSharedInstances) == 'true'">$(DefineConstants);NO_SHARED_INSTANCES</DefineConstants>
+    <UseSharedInstances Condition="'$(NoSharedInstances)' == ''">true</UseSharedInstances>
+    <DefineConstants Condition="$(UseSharedInstances) == 'true'">$(DefineConstants);USE_SHARED_INSTANCES</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>

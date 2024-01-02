@@ -28,10 +28,10 @@ public static class AStar
         }
 
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
-#if NO_SHARED_INSTANCES
-        var goalsArray = new Location[goals.Count];
-#else
+#if USE_SHARED_INSTANCES
         var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
+#else
+        var goalsArray = new Location[goals.Count];
 #endif
         goals.CopyTo(goalsArray);
 
@@ -39,12 +39,12 @@ public static class AStar
         int[]? ys = null;
         if (useVector)
         {
-#if NO_SHARED_INSTANCES
-            xs = new int[goals.Count];
-            ys = new int[goals.Count];
-#else
+#if USE_SHARED_INSTANCES
             xs = sharedInstances.GetArray(ref sharedInstances.IntArrayX, goals.Count);
             ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
+#else
+            xs = new int[goals.Count];
+            ys = new int[goals.Count];
 #endif
             for (var i = 0; i < goals.Count; i++)
             {
@@ -53,14 +53,14 @@ public static class AStar
             }
         }
 
-#if NO_SHARED_INSTANCES
-        var cameFrom = new Dictionary<Location, Location>();
-        var costSoFar = new Dictionary<Location, double>();
-        var frontier = new PriorityQueue<Location, double>();
-#else
+#if USE_SHARED_INSTANCES
         var cameFrom = sharedInstances.LocationToLocation;
         var costSoFar = sharedInstances.LocationToDouble;
         var frontier = sharedInstances.LocationPriorityQueue;
+#else
+        var cameFrom = new Dictionary<Location, Location>();
+        var costSoFar = new Dictionary<Location, double>();
+        var frontier = new PriorityQueue<Location, double>();
 #endif
 
         try
@@ -139,7 +139,7 @@ public static class AStar
         }
         finally
         {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
             cameFrom.Clear();
             costSoFar.Clear();
             frontier.Clear();

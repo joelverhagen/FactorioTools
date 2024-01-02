@@ -110,10 +110,10 @@ public static class RotateOptimize
 
         var originalGoal = exploredPaths.ReachedGoals.Single();
 
-#if NO_SHARED_INSTANCES
-        var originalPath = new List<Location>();
-#else
+#if USE_SHARED_INSTANCES
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
+#else
+        var originalPath = new List<Location>();
 #endif
 
         try
@@ -140,10 +140,10 @@ public static class RotateOptimize
                     continue;
                 }
 
-#if NO_SHARED_INSTANCES
-                var newPath = new List<Location>();
-#else
+#if USE_SHARED_INSTANCES
                 var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
+#else
+                var newPath = new List<Location>();
 #endif
                 var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
                 if (result.ReachedGoal.HasValue)
@@ -213,7 +213,7 @@ public static class RotateOptimize
         }
         finally
         {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
             context.ParentContext.SharedInstances.LocationListA.Clear();
             context.ParentContext.SharedInstances.LocationListB.Clear();
 #endif
@@ -226,12 +226,12 @@ public static class RotateOptimize
         Location start,
         Location originalGoal)
     {
-#if NO_SHARED_INSTANCES
-        var originalPath = new List<Location>();
-        var connectionPoints = new LocationSet(context.Pipes.Count);
-#else
+#if USE_SHARED_INSTANCES
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
         var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
+#else
+        var originalPath = new List<Location>();
+        var connectionPoints = new LocationSet(context.Pipes.Count);
 #endif
 
         try
@@ -265,10 +265,10 @@ public static class RotateOptimize
 
             ExplorePipes(context, originalGoal, connectionPoints);
 
-#if NO_SHARED_INSTANCES
-            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
-#else
+#if USE_SHARED_INSTANCES
             var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
+#else
+            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
 #endif
 
             /*
@@ -305,14 +305,14 @@ public static class RotateOptimize
             }
             finally
             {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
                 result.Path.Clear();
 #endif
             }
         }
         finally
         {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
             originalPath.Clear();
             connectionPoints.Clear();
 #endif
@@ -396,16 +396,16 @@ public static class RotateOptimize
 
     private static Queue<Location> GetQueue(ChildContext context)
     {
-#if NO_SHARED_INSTANCES
-        return new Queue<Location>();
-#else
+#if USE_SHARED_INSTANCES
         return context.ParentContext.SharedInstances.LocationQueue;
+#else
+        return new Queue<Location>();
 #endif
     }
 
     private static void ReturnQueue(Queue<Location> toExplore)
     {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
         toExplore.Clear();
 #endif
     }

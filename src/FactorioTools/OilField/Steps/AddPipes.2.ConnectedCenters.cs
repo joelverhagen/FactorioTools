@@ -198,12 +198,12 @@ public static partial class AddPipes
     {
         try
         {
-#if NO_SHARED_INSTANCES
-            var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
-            var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
-#else
+#if USE_SHARED_INSTANCES
             var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2, outputList: context.SharedInstances.LocationListA);
             var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2, outputList: context.SharedInstances.LocationListB);
+#else
+            var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
+            var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
 #endif
 
             if (aStarResultV.ReachedGoal is null)
@@ -224,10 +224,10 @@ public static partial class AddPipes
 
             var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
 
-#if NO_SHARED_INSTANCES
-            var locationToCentroidDistanceSquared = new Dictionary<Location, double>(sizeEstimate);
-#else
+#if USE_SHARED_INSTANCES
             var locationToCentroidDistanceSquared = context.SharedInstances.LocationToDouble;
+#else
+            var locationToCentroidDistanceSquared = new Dictionary<Location, double>(sizeEstimate);
 #endif
 
             try
@@ -259,7 +259,7 @@ public static partial class AddPipes
             }
             finally
             {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
                 locationToCentroidDistanceSquared.Clear();
 #endif
             }
@@ -283,7 +283,7 @@ public static partial class AddPipes
         }
         finally
         {
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
             context.SharedInstances.LocationListA.Clear();
             context.SharedInstances.LocationListB.Clear();
 #endif

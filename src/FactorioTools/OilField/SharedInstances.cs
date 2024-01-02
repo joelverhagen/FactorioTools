@@ -10,7 +10,7 @@ public class SharedInstances
     {
     }
 
-#if !NO_SHARED_INSTANCES
+#if USE_SHARED_INSTANCES
     public Queue<Location> LocationQueue = new();
     public Location[] LocationArray = Array.Empty<Location>();
     public int[] IntArrayX = Array.Empty<int>();
