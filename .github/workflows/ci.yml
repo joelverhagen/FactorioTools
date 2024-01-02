@@ -69,7 +69,7 @@ jobs:
         run: dotnet restore
 
       - name: Build debug, no shared instances
-        run: dotnet build --configuration Debug /p:NoSharedInstances=true
+        run: dotnet build --configuration Debug /p:UseSharedInstances=false
 
       - name: Build debug, no grid ToString
         run: dotnet build --configuration Debug /p:EnableGridToString=false
