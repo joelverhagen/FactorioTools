@@ -11,13 +11,6 @@ namespace Knapcode.FactorioTools.OilField.Algorithms;
 /// </summary>
 public static class AStar
 {
-#if DEBUG
-    public static int CameFromPoolCount;
-    public static int CostSoFarPoolCount;
-    public static int FrontierPoolCount;
-    public static int ArrayPoolCount;
-#endif
-
     public static AStarResult GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, LocationSet goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1, List<Location>? outputList = null)
     {
         if (goals.Contains(start))
@@ -40,9 +33,6 @@ public static class AStar
 #else
         var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
 #endif
-#if DEBUG
-        System.Threading.Interlocked.Increment(ref ArrayPoolCount);
-#endif
         goals.CopyTo(goalsArray);
 
         int[]? xs = null;
@@ -56,19 +46,11 @@ public static class AStar
             xs = sharedInstances.GetArray(ref sharedInstances.IntArrayX, goals.Count);
             ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
 #endif
-#if DEBUG
-            System.Threading.Interlocked.Increment(ref ArrayPoolCount);
-            System.Threading.Interlocked.Increment(ref ArrayPoolCount);
-#endif
             for (var i = 0; i < goals.Count; i++)
             {
                 xs[i] = goalsArray[i].X;
                 ys[i] = goalsArray[i].Y;
             }
-
-#if DEBUG
-            System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
-#endif
         }
 
 #if NO_SHARED_INSTANCES
@@ -79,11 +61,6 @@ public static class AStar
         var cameFrom = sharedInstances.LocationToLocation;
         var costSoFar = sharedInstances.LocationToDouble;
         var frontier = sharedInstances.LocationPriorityQueue;
-#endif
-#if DEBUG
-        System.Threading.Interlocked.Increment(ref CostSoFarPoolCount);
-        System.Threading.Interlocked.Increment(ref FrontierPoolCount);
-        System.Threading.Interlocked.Increment(ref CameFromPoolCount);
 #endif
 
         try
@@ -167,27 +144,6 @@ public static class AStar
             costSoFar.Clear();
             frontier.Clear();
 #endif
-
-#if DEBUG
-            System.Threading.Interlocked.Decrement(ref CameFromPoolCount);
-            System.Threading.Interlocked.Decrement(ref CostSoFarPoolCount);
-            System.Threading.Interlocked.Decrement(ref FrontierPoolCount);
-#endif
-
-            if (useVector)
-            {
-#if DEBUG
-                System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
-                System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
-#endif
-            }
-            else
-            {
-#if DEBUG
-                System.Threading.Interlocked.Decrement(ref ArrayPoolCount);
-#endif
-            }
-
         }
     }
 

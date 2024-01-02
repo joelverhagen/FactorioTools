@@ -71,7 +71,7 @@ public static partial class AddPipes
         return connectedCenters;
     }
 
-#if DEBUG
+#if ENABLE_VISUALIZER
     private static void VisualizeConnectedCenters(Context context, Dictionary<Location, LocationSet> connectedCenters)
     {
 #if USE_HASHSETS
@@ -93,7 +93,7 @@ public static partial class AddPipes
     }
 #endif
 
-        private static LocationSet FindTrunksAndConnect(Context context, Dictionary<Location, LocationSet> centerToConnectedCenters)
+    private static LocationSet FindTrunksAndConnect(Context context, Dictionary<Location, LocationSet> centerToConnectedCenters)
     {
         var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 

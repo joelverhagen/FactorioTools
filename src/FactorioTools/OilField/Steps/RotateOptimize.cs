@@ -85,7 +85,7 @@ public static class RotateOptimize
         }
     }
 
-#if DEBUG
+#if ENABLE_VISUALIZER
     private static void VisualizeIntersections(ChildContext context)
     {
         var clone = new PipeGrid(context.ExistingPipeGrid);

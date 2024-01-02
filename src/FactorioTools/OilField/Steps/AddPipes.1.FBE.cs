@@ -274,7 +274,7 @@ public static partial class AddPipes
         return (terminals, pipes, strategy);
     }
 
-#if DEBUG
+#if ENABLE_VISUALIZER
     private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
     {
         var clone = new PipeGrid(context.Grid);
