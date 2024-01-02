@@ -71,14 +71,17 @@ jobs:
       - name: Build debug, no shared instances
         run: dotnet build --configuration Debug /p:UseSharedInstances=false
 
-      - name: Build debug, no grid ToString
-        run: dotnet build --configuration Debug /p:EnableGridToString=false
-
-      - name: Build debug, dynamic FLUTE degree
-        run: dotnet build --configuration Debug /p:AllowDynamicFluteDegree=true
-
       - name: Build debug, no hash sets
         run: dotnet build --configuration Debug /p:UseHashSets=false
+
+      - name: Build debug, no vectors
+        run: dotnet build --configuration Debug /p:UseVectors=false
+
+      - name: Build debug, allow dynamic FLUTE degree
+        run: dotnet build --configuration Debug /p:AllowDynamicFluteDegree=true
+
+      - name: Build debug, no grid ToString
+        run: dotnet build --configuration Debug /p:EnableGridToString=false
 
       - name: Build release
         run: dotnet build --configuration Release

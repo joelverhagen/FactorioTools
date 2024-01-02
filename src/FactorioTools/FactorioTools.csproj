@@ -14,6 +14,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <UseVectors Condition="'$(UseVectors)' == ''">true</UseVectors>
+    <DefineConstants Condition="$(UseVectors) == 'true'">$(DefineConstants);USE_VECTORS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">true</EnableVisualizer>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
     <DefineConstants Condition="$(EnableVisualizer) == 'true'">$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>

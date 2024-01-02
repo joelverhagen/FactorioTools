@@ -27,7 +27,10 @@ public static class AStar
             return new AStarResult(start, outputList);
         }
 
+#if USE_VECTORS
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
+#endif
+
 #if USE_SHARED_INSTANCES
         var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
 #else
@@ -35,6 +38,7 @@ public static class AStar
 #endif
         goals.CopyTo(goalsArray);
 
+#if USE_VECTORS
         int[]? xs = null;
         int[]? ys = null;
         if (useVector)
@@ -52,6 +56,7 @@ public static class AStar
                 ys[i] = goalsArray[i].Y;
             }
         }
+#endif
 
 #if USE_SHARED_INSTANCES
         var cameFrom = sharedInstances.LocationToLocation;
@@ -101,11 +106,14 @@ public static class AStar
                     {
                         costSoFar[next] = newCost;
                         double priority;
+
+#if USE_VECTORS
                         if (useVector)
                         {
                             priority = newCost + Heuristic(next, xs!, ys!, goals.Count, xWeight, yWeight);
                         }
                         else
+#endif
                         {
                             priority = newCost + Heuristic(next, goalsArray, goals.Count, xWeight, yWeight);
                         }
@@ -169,6 +177,7 @@ public static class AStar
         return min;
     }
 
+#if USE_VECTORS
     private static int Heuristic(Location current, int[] xs, int[] ys, int goalsCount, int xWeight, int yWeight)
     {
         var remaining = goalsCount % Vector<int>.Count;
@@ -214,4 +223,5 @@ public static class AStar
 
         return min;
     }
+#endif
 }
