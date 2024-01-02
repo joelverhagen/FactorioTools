@@ -1,2 +1,0 @@
-﻿global using LocationSet = System.Collections.Generic.HashSet<Knapcode.FactorioTools.OilField.Grid.Location>;
-global using ElectricPoleCenterSet = System.Collections.Generic.HashSet<Knapcode.FactorioTools.OilField.Grid.ElectricPoleCenter>;

@@ -1,0 +1,8 @@
+<Project>
+  
+  <PropertyGroup>
+    <UseHashSets Condition="'$(UseHashSets)' == ''">true</UseHashSets>
+    <DefineConstants Condition="$(UseHashSets) == 'true'">$(DefineConstants);USE_HASHSETS</DefineConstants>
+  </PropertyGroup>
+  
+</Project>

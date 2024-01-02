@@ -10,7 +10,7 @@ public class ElectricPoleCenter : GridEntity
     public override string Label => "E";
 #endif
 
-    public IReadOnlySet<ElectricPoleCenter> Neighbors => _neighbors;
+    public ElectricPoleCenterSet Neighbors => _neighbors;
 
     public void AddNeighbor(ElectricPoleCenter neighbor)
     {
@@ -20,7 +20,7 @@ public class ElectricPoleCenter : GridEntity
 
     public void ClearNeighbors()
     {
-        foreach (var neighbor in _neighbors)
+        foreach (var neighbor in _neighbors.EnumerateItems())
         {
             neighbor._neighbors.Remove(this);
         }

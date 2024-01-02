@@ -158,7 +158,7 @@ public static class Helpers
             .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
             .Where(p => p.Entity is not null)
             .ToDictionary(p => p.Location, p => p.Entity!);
-        var unusedProviders = new LocationSet(providers.Keys);
+        var unusedProviders = providers.Keys.ToSet();
 
         for (int i = 0; i < recipients.Count; i++)
         {
@@ -218,7 +218,7 @@ public static class Helpers
 
             try
             {
-                foreach (var center in unusedProviders)
+                foreach (var center in unusedProviders.EnumerateItems())
                 {
                     var entityMinX = center.X - ((providerWidth - 1) / 2);
                     var entityMinY = center.Y - ((providerHeight - 1) / 2);
@@ -345,9 +345,9 @@ public static class Helpers
     public static Dictionary<Location, LocationSet> GetCoveredCenterToProviderCenters(Dictionary<Location, LocationSet> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
-            .SelectMany(p => p.Value.Select(c => KeyValuePair.Create(p.Key, c)))
+            .SelectMany(p => p.Value.EnumerateItems().Select(c => KeyValuePair.Create(p.Key, c)))
             .GroupBy(p => p.Value, p => p.Key)
-            .ToDictionary(g => g.Key, g => g.ToLocationSet());
+            .ToDictionary(g => g.Key, g => g.ToSet());
     }
 
     private static void AddCoveredCenters(

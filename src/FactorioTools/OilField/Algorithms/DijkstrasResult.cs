@@ -32,7 +32,7 @@ public class DijkstrasResult
                 paths.Add(new List<Location> { goal });
             }
 
-            foreach (var beforeGoal in previousLocations)
+            foreach (var beforeGoal in previousLocations.EnumerateItems())
             {
                 // This is the final direction used in the path. We'll start with preferring this direction as we reconstruct
                 // the full path.
@@ -55,7 +55,7 @@ public class DijkstrasResult
                     }
 
                     var directionToPrevious = new Dictionary<Direction, Location>();
-                    foreach (var candidate in allPrevious)
+                    foreach (var candidate in allPrevious.EnumerateItems())
                     {
                         directionToPrevious[GetDirection(candidate, current)] = candidate;
                     }

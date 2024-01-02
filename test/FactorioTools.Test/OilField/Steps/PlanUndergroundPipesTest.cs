@@ -19,7 +19,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.All(originalPipes, p => Assert.IsType<Pipe>(context.Grid[p]));
+            Assert.All(originalPipes.EnumerateItems(), p => Assert.IsType<Pipe>(context.Grid[p]));
             Assert.True(originalPipes.SetEquals(pipes));
         }
 
@@ -150,7 +150,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.All(originalPipes, p => Assert.IsType<Pipe>(context.Grid[p]));
+            Assert.All(originalPipes.EnumerateItems(), p => Assert.IsType<Pipe>(context.Grid[p]));
             Assert.True(originalPipes.SetEquals(pipes));
         }
 
@@ -443,8 +443,8 @@ public class PlanUndergroundPipesTest
 
         private static Context GetContext(LocationSet pipes, int? width = null, int? height = null)
         {
-            width = width ?? (pipes.Max(l => l.X) + 2);
-            height = height ?? (pipes.Max(l => l.Y) + 2);
+            width = width ?? (pipes.EnumerateItems().Max(l => l.X) + 2);
+            height = height ?? (pipes.EnumerateItems().Max(l => l.Y) + 2);
 
             var context = InitializeContext.GetEmpty(OilFieldOptions.ForMediumElectricPole, width.Value, height.Value);
 

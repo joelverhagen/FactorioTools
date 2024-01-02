@@ -41,7 +41,7 @@ public static partial class AddPipes
                 {
                     otherCenters.UnionWith(point.Centers);
 
-                    foreach (var neighbor in point.Neighbors)
+                    foreach (var neighbor in point.Neighbors.EnumerateItems())
                     {
                         queue.Enqueue(neighbor);
                     }
@@ -67,7 +67,11 @@ public static partial class AddPipes
         public Location Location { get; }
         public LocationSet Centers { get; } = new LocationSet();
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
+#if USE_HASHSETS
         public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
+#else
+        public Dictionary<FlutePoint, bool> Neighbors { get; } = new Dictionary<FlutePoint, bool>();
+#endif
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <NoSharedInstances>false</NoSharedInstances>
+    <NoSharedInstances Condition="'$(NoSharedInstances)' == ''">false</NoSharedInstances>
     <DefineConstants Condition="$(NoSharedInstances) == 'true'">$(DefineConstants);NO_SHARED_INSTANCES</DefineConstants>
   </PropertyGroup>
 
@@ -20,12 +20,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <EnableGridToString>true</EnableGridToString>
+    <EnableGridToString Condition="'$(EnableGridToString)' == ''">true</EnableGridToString>
     <DefineConstants Condition="$(EnableGridToString) == 'true'">$(DefineConstants);ENABLE_GRID_TOSTRING</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <AllowDynamicFluteDegree>false</AllowDynamicFluteDegree>
+    <AllowDynamicFluteDegree Condition="'$(AllowDynamicFluteDegree)' == ''">false</AllowDynamicFluteDegree>
     <DefineConstants Condition="$(AllowDynamicFluteDegree) == 'true'">$(DefineConstants);ALLOW_DYNAMIC_FLUTE_DEGREE</DefineConstants>
   </PropertyGroup>
 

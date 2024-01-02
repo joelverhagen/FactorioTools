@@ -21,14 +21,14 @@ public static class Validate
                 }
             }
 
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToLocationSet();
+            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToSet();
             var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
-            var start = goals.First();
+            var start = goals.EnumerateItems().First();
             goals.Remove(start);
             var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
             var reachedGoals = result.ReachedGoals;
             reachedGoals.Add(start);
-            var unreachedGoals = goals.Except(reachedGoals).ToLocationSet();
+            var unreachedGoals = goals.Except(reachedGoals).ToSet();
             if (unreachedGoals.Count > 0)
             {
                 // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
@@ -41,7 +41,7 @@ public static class Validate
     {
         if (context.Options.ValidateSolution)
         {
-            var missing = locationToDirection.Keys.Except(pipes).ToList();
+            var missing = locationToDirection.Keys.Except(pipes.EnumerateItems()).ToList();
             if (missing.Count > 0)
             {
                 throw new FactorioToolsException("The underground pipes should be in the pipe set.");

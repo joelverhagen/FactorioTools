@@ -9,7 +9,7 @@ public static partial class PlanBeacons
 {
     public static List<BeaconSolution> Execute(Context context, LocationSet pipes)
     {
-        foreach (var pipe in pipes)
+        foreach (var pipe in pipes.EnumerateItems())
         {
             context.Grid.AddEntity(pipe, new TemporaryEntity());
         }
@@ -37,7 +37,7 @@ public static partial class PlanBeacons
             solutions.Add(new BeaconSolution(strategy, beacons, effects));
         }
 
-        foreach (var pipe in pipes)
+        foreach (var pipe in pipes.EnumerateItems())
         {
             context.Grid.RemoveEntity(pipe);
         }

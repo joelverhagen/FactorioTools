@@ -101,7 +101,7 @@ public static class GridToBlueprintString
                         EntityNumber = GetEntityNumber(electricPole),
                         Name = context.Options.ElectricPoleEntityName,
                         Position = position,
-                        Neighbours = electricPole.Neighbors.Select(GetEntityNumber).ToArray(),
+                        Neighbours = electricPole.Neighbors.EnumerateItems().Select(GetEntityNumber).ToArray(),
                     });
                     break;
                 case ElectricPoleSide:

@@ -269,7 +269,7 @@ public static partial class AddPipes
         }
 
         var terminals = finalGroup.Entities.ToList();
-        var pipes = finalGroup.Paths.SelectMany(l => l).ToLocationSet();
+        var pipes = finalGroup.Paths.SelectMany(l => l).ToSet();
 
         return (terminals, pipes, strategy);
     }
@@ -278,7 +278,7 @@ public static partial class AddPipes
     private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
     {
         var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToLocationSet(), undergroundPipes: null, allowMultipleTerminals: true);
+        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToSet(), undergroundPipes: null, allowMultipleTerminals: true);
         Visualizer.Show(clone, addedPumpjacks.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.Center.X, x.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif

@@ -67,7 +67,7 @@ public static class PlanUndergroundPipes
             var right = (X: forward.Y, Y: forward.X);
             var left = (X: right.X * -1, Y: right.Y * -1);
 
-            foreach (var goal in pipes)
+            foreach (var goal in pipes.EnumerateItems())
             {
                 if ((pipes.Contains(goal.Translate(forward)) || pipes.Contains(goal.Translate(backward)))
                     && !pipes.Contains(goal.Translate(right))
@@ -96,7 +96,7 @@ public static class PlanUndergroundPipes
                 return;
             }
 
-            var sorted = sort(candidates).ToList();
+            var sorted = sort(candidates.EnumerateItems()).ToList();
             var currentRun = new List<Location> { sorted[0] };
             for (var i = 1; i < sorted.Count; i++)
             {

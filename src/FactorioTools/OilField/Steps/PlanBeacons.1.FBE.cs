@@ -292,7 +292,7 @@ public static partial class PlanBeacons
     {
         return entityAreas
             .SelectMany(a => a.Locations)
-            .ToLocationSet();
+            .ToSet();
     }
 
     private static List<Area> GetEntityAreas(Context context)

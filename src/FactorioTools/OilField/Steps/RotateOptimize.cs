@@ -50,7 +50,7 @@ public static class RotateOptimize
             // VisualizeIntersections(context);
 
             var shortenedPath = false;
-            foreach (var intersection in context.Intersections.ToList())
+            foreach (var intersection in context.Intersections.EnumerateItems().ToList())
             {
                 if (!context.Intersections.Contains(intersection))
                 {
@@ -90,7 +90,7 @@ public static class RotateOptimize
     {
         var clone = new PipeGrid(context.ExistingPipeGrid);
         AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes, allowMultipleTerminals: true);
-        Visualizer.Show(clone, context.Intersections.Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        Visualizer.Show(clone, context.Intersections.EnumerateItems().Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
 
@@ -439,7 +439,7 @@ public static class RotateOptimize
             Goals.Clear();
             Goals.UnionWith(LocationToTerminals.Keys);
 
-            foreach (var pipe in Pipes)
+            foreach (var pipe in Pipes.EnumerateItems())
             {
                 var neighbors = 0;
 

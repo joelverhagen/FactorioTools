@@ -58,7 +58,7 @@ public static class AddPipeEntities
                 }
             }
 
-            foreach (var pipe in pipes)
+            foreach (var pipe in pipes.EnumerateItems())
             {
                 if (addedPipes.Add(pipe))
                 {

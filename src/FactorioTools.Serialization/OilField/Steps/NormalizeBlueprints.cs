@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Knapcode.FactorioTools.OilField.Steps;
 
@@ -14,7 +15,11 @@ public static class NormalizeBlueprints
         var input = NormalizeFile(inputPath);
 
         var output = new List<string>();
+#if USE_HASHSETS
         var added = new HashSet<string>();
+#else
+        var added = new Dictionary<string, bool>();
+#endif
         var orderedInput = input
             .Concat(exclude.SelectMany(g => g))
             .Where(x => x.Valid)

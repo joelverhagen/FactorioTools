@@ -348,12 +348,12 @@ public static partial class AddPipes
 
     private static void EliminateStrandedTerminals(Context context)
     {
-        var locationsToExplore = context.LocationToTerminals.Keys.ToLocationSet();
+        var locationsToExplore = context.LocationToTerminals.Keys.ToSet();
 
         while (locationsToExplore.Count > 0)
         {
             var goals = new LocationSet(locationsToExplore);
-            var start = goals.First();
+            var start = goals.EnumerateItems().First();
             goals.Remove(start);
 
             var result = Dijkstras.GetShortestPaths(context.SharedInstances, context.Grid, start, goals, stopOnFirstGoal: false);
@@ -361,9 +361,9 @@ public static partial class AddPipes
             var reachedTerminals = result.ReachedGoals;
             reachedTerminals.Add(start);
 
-            var unreachedTerminals = goals.Except(result.ReachedGoals).ToLocationSet();
+            var unreachedTerminals = goals.EnumerateItems().Except(result.ReachedGoals.EnumerateItems()).ToSet();
 
-            var reachedPumpjacks = result.ReachedGoals.SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToLocationSet();
+            var reachedPumpjacks = result.ReachedGoals.EnumerateItems().SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToSet();
 
             LocationSet terminalsToEliminate;
             if (reachedPumpjacks.Count == context.CenterToTerminals.Count)
@@ -378,7 +378,7 @@ public static partial class AddPipes
             }
 
             Location? strandedTerminal = null;
-            foreach (var location in terminalsToEliminate)
+            foreach (var location in terminalsToEliminate.EnumerateItems())
             {
                 foreach (var terminal in context.LocationToTerminals[location])
                 {
@@ -402,7 +402,7 @@ public static partial class AddPipes
                 Visualizer.Show(clone, new[] { strandedTerminal.Value, locationsToExplore.First() }.Select(x => (IPoint)new Point(x.X, x.Y)), Array.Empty<IEdge>());
                 */
 
-                throw new NoPathBetweenTerminalsException(strandedTerminal.Value, locationsToExplore.First());
+                throw new NoPathBetweenTerminalsException(strandedTerminal.Value, locationsToExplore.EnumerateItems().First());
             }
         }
     }
@@ -452,7 +452,7 @@ public static partial class AddPipes
         {
             var hashCode = new HashCode();
 
-            foreach (var l in obj.OrderBy(p => p.X).ThenBy(p => p.Y))
+            foreach (var l in obj.EnumerateItems().OrderBy(p => p.X).ThenBy(p => p.Y))
             {
                 hashCode.Add(l);
             }
@@ -510,7 +510,7 @@ public static partial class AddPipes
             foreach ((var key, var value) in obj.OrderBy(p => p.Key.X).ThenBy(p => p.Key.Y))
             {
                 hashCode.Add(key);
-                foreach (var l in value.OrderBy(p => p.X).ThenBy(p => p.Y))
+                foreach (var l in value.EnumerateItems().OrderBy(p => p.X).ThenBy(p => p.Y))
                 {
                     hashCode.Add(l);
                 }

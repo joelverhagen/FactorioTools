@@ -56,7 +56,7 @@ public static partial class AddPipes
         {
             foreach (var (center, others) in connectedCenters)
             {
-                foreach (var other in others)
+                foreach (var other in others.EnumerateItems())
                 {
                     if (!connectedCenters[other].Contains(center))
                     {
@@ -74,26 +74,30 @@ public static partial class AddPipes
 #if DEBUG
     private static void VisualizeConnectedCenters(Context context, Dictionary<Location, LocationSet> connectedCenters)
     {
+#if USE_HASHSETS
         var edges = new HashSet<DelaunatorSharp.IEdge>();
+#else
+        var edges = new Dictionary<DelaunatorSharp.IEdge, bool>();
+#endif
 
         foreach (var (center, centers) in connectedCenters)
         {
-            foreach (var other in centers)
+            foreach (var other in centers.EnumerateItems())
             {
                 var edge = new DelaunatorSharp.Edge(e: 0, new DelaunatorSharp.Point(center.X, center.Y), new DelaunatorSharp.Point(other.X, other.Y));
                 edges.Add(edge);
             }
         }
 
-        Visualizer.Show(context.Grid, connectedCenters.Keys.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, connectedCenters.Keys.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges.EnumerateItems());
     }
 #endif
 
-    private static LocationSet FindTrunksAndConnect(Context context, Dictionary<Location, LocationSet> centerToConnectedCenters)
+        private static LocationSet FindTrunksAndConnect(Context context, Dictionary<Location, LocationSet> centerToConnectedCenters)
     {
         var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 
-        var allIncludedCenters = selectedTrunks.SelectMany(t => t.Centers).ToLocationSet();
+        var allIncludedCenters = selectedTrunks.SelectMany(t => t.Centers.EnumerateItems()).ToSet();
 
         var groups = selectedTrunks
             .Select(trunk =>
@@ -119,11 +123,12 @@ public static partial class AddPipes
             var bestGroup = groups
                 .Select(group =>
                 {
-                    var centroidX = group.Pipes.Average(l => l.X);
-                    var centroidY = group.Pipes.Average(l => l.Y);
+                    var centroidX = group.Pipes.EnumerateItems().Average(l => l.X);
+                    var centroidY = group.Pipes.EnumerateItems().Average(l => l.Y);
 
                     var bestCenter = group
                         .FrontierCenters
+                        .EnumerateItems()
                         .Select(center =>
                         {
                             var includedCenter = group
@@ -168,7 +173,7 @@ public static partial class AddPipes
 
                 /*
                 var clone2 = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToLocationSet(), allowMultipleTerminals: true);
+                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToSet(), allowMultipleTerminals: true);
                 Visualizer.Show(clone2, path.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
                 */
             }
@@ -180,7 +185,7 @@ public static partial class AddPipes
 
                 /*
                 var clone2 = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToLocationSet(), allowMultipleTerminals: true);
+                AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, groups.SelectMany(g => g.Pipes).ToSet(), allowMultipleTerminals: true);
                 Visualizer.Show(clone2, path.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
                 */
             }
@@ -203,7 +208,7 @@ public static partial class AddPipes
 
             if (aStarResultV.ReachedGoal is null)
             {
-                throw new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.First());
+                throw new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First());
             }
 
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
@@ -316,14 +321,14 @@ public static partial class AddPipes
             .ThenBy(t => t.Length)
             .ThenBy(t =>
             {
-                var neighbors = t.Centers.SelectMany(c => centerToConnectedCenters[c]).Except(t.Centers).ToLocationSet();
+                var neighbors = t.Centers.EnumerateItems().SelectMany(c => centerToConnectedCenters[c].EnumerateItems()).Except(t.Centers.EnumerateItems()).ToSet();
                 if (neighbors.Count == 0)
                 {
                     return 0;
                 }
 
-                var centroidX = neighbors.Average(l => l.X);
-                var centroidY = neighbors.Average(l => l.Y);
+                var centroidX = neighbors.EnumerateItems().Average(l => l.X);
+                var centroidY = neighbors.EnumerateItems().Average(l => l.Y);
                 return t.Start.GetEuclideanDistance(centroidX, centroidY) + t.End.GetEuclideanDistance(centroidX, centroidY);
             })
             .ToList();
@@ -335,7 +340,7 @@ public static partial class AddPipes
         foreach (var trunk in trunkCandidates)
         {
             var path = MakeStraightLine(trunk.Start, trunk.End);
-            if (!includedPipes.Intersect(path).Any() && !includedCenters.Intersect(trunk.Centers).Any())
+            if (!includedPipes.EnumerateItems().Intersect(path).Any() && !includedCenters.Intersect(trunk.Centers).Any())
             {
                 selectedTrunks.Add(trunk);
                 includedPipes.UnionWith(path);
@@ -363,7 +368,7 @@ public static partial class AddPipes
             }
         }
 
-        // Visualize(context, locationToPoint, selectedTrunks.SelectMany(t => MakeStraightLine(t.Start, t.End)).ToLocationSet());
+        // Visualize(context, locationToPoint, selectedTrunks.SelectMany(t => MakeStraightLine(t.Start, t.End)).ToSet());
 
         // Find the "child" unconnected pumpjacks of each connected pumpjack. These are pumpjacks are connected via the
         // given connected pumpjack.
@@ -381,9 +386,10 @@ public static partial class AddPipes
                     .Select(terminal =>
                     {
                         var bestTerminal = centerToConnectedCenters[center]
+                            .EnumerateItems()
                             .Select(otherCenter =>
                             {
-                                var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToLocationSet();
+                                var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToSet();
                                 var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, goals);
                                 var reachedGoal = result.ReachedGoal!.Value;
                                 var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
@@ -435,7 +441,7 @@ public static partial class AddPipes
                 continue;
             }
 
-            foreach (var other in centerToConnectedCenters[current])
+            foreach (var other in centerToConnectedCenters[current].EnumerateItems())
             {
                 if (ignoreCenters.Contains(other))
                 {
@@ -456,11 +462,11 @@ public static partial class AddPipes
         var centerToMaxX = context
             .CenterToTerminals
             .Keys
-            .ToDictionary(c => c, c => centerToConnectedCenters[c].Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
+            .ToDictionary(c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
         var centerToMaxY = context
             .CenterToTerminals
             .Keys
-            .ToDictionary(c => c, c => centerToConnectedCenters[c].Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
+            .ToDictionary(c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
 
         // Find paths that connect the most terminals of neighboring pumpjacks.
         var trunkCandidates = new List<Trunk>();
@@ -485,7 +491,7 @@ public static partial class AddPipes
                         if (context.LocationToTerminals.TryGetValue(location, out var terminals))
                         {
                             var centers = terminals.Select(t => t.Center);
-                            var matchedCenters = centers.Intersect(nextCenters).ToLocationSet();
+                            var matchedCenters = centers.Intersect(nextCenters.EnumerateItems()).ToSet();
                             if (matchedCenters.Count == 0)
                             {
                                 // The pumpjack terminal we ran into does not belong to the a pumpjack that the current
@@ -493,7 +499,7 @@ public static partial class AddPipes
                                 break;
                             }
 
-                            var nextCenter = matchedCenters.First();
+                            var nextCenter = matchedCenters.EnumerateItems().First();
 
                             if (!expandedChildCenters)
                             {
@@ -508,8 +514,8 @@ public static partial class AddPipes
                                     break;
                                 }
 
-                                maxX = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X));
-                                maxY = nextCenters.Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y));
+                                maxX = nextCenters.EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X));
+                                maxY = nextCenters.EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y));
                                 expandedChildCenters = true;
                             }
 
@@ -569,7 +575,7 @@ public static partial class AddPipes
         private readonly LocationSet _allIncludedCenters;
 
         public PumpjackGroup(Dictionary<Location, LocationSet> centerToConnectedCenters, LocationSet allIncludedCenters, Trunk trunk)
-            : this(centerToConnectedCenters, allIncludedCenters, trunk.Centers, MakeStraightLine(trunk.Start, trunk.End))
+            : this(centerToConnectedCenters, allIncludedCenters, trunk.Centers.EnumerateItems(), MakeStraightLine(trunk.Start, trunk.End))
         {
         }
 
@@ -578,12 +584,12 @@ public static partial class AddPipes
             _centerToConnectedCenters = centerToConnectedCenters;
             _allIncludedCenters = allIncludedCenters;
 
-            IncludedCenters = new LocationSet(includedCenters);
+            IncludedCenters = includedCenters.ToSet();
 
             FrontierCenters = new LocationSet();
             IncludedCenterToChildCenters = new Dictionary<Location, LocationSet>();
 
-            Pipes = new LocationSet(pipes);
+            Pipes = pipes.ToSet();
 
             UpdateFrontierCenters();
             UpdateIncludedCenterToChildCenters();
@@ -599,7 +605,7 @@ public static partial class AddPipes
             var sumX = 0;
             var sumY = 0;
             var count = 0;
-            foreach (var center in IncludedCenterToChildCenters[includedCenter])
+            foreach (var center in IncludedCenterToChildCenters[includedCenter].EnumerateItems())
             {
                 sumX += center.X;
                 sumY += center.Y;
@@ -634,7 +640,7 @@ public static partial class AddPipes
         {
             FrontierCenters.Clear();
 
-            foreach (var center in IncludedCenters)
+            foreach (var center in IncludedCenters.EnumerateItems())
             {
                 FrontierCenters.UnionWith(_centerToConnectedCenters[center]);
             }
@@ -646,7 +652,7 @@ public static partial class AddPipes
         {
             IncludedCenterToChildCenters.Clear();
 
-            foreach (var center in IncludedCenters)
+            foreach (var center in IncludedCenters.EnumerateItems())
             {
                 LocationSet visited = GetChildCenters(
                     _centerToConnectedCenters,

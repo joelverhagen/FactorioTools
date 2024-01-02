@@ -60,7 +60,7 @@ public static class Prims
                 // Make the MST bidirectional (a graph, not a digraph).
                 foreach (var center in mst.Keys.ToList())
                 {
-                    foreach (var neighbor in mst[center])
+                    foreach (var neighbor in mst[center].EnumerateItems())
                     {
                         if (!mst.TryGetValue(neighbor, out var otherNeighbors))
                         {
