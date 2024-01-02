@@ -327,7 +327,11 @@ public static class RotateOptimize
             toExplore.Enqueue(start);
             pipes.Add(start);
 
+#if USE_STACKALLOC
             Span<Location> neighbors = stackalloc Location[4];
+#else
+            Span<Location> neighbors = new Location[4];
+#endif
 
             while (toExplore.Count > 0)
             {
@@ -358,8 +362,11 @@ public static class RotateOptimize
             var cameFrom = new Dictionary<Location, Location>();
             cameFrom[start] = start;
 
-
+#if USE_STACKALLOC
             Span<Location> neighbors = stackalloc Location[4];
+#else
+            Span<Location> neighbors = new Location[4];
+#endif
 
             var reachedGoals = new List<Location>();
 

@@ -21,7 +21,11 @@ namespace Knapcode.FactorioTools.OilField.Algorithms
             {
                 toExplore.Enqueue(start);
 
+#if USE_STACKALLOC
                 Span<Location> neighbors = stackalloc Location[4];
+#else
+                Span<Location> neighbors = new Location[4];
+#endif
 
                 while (toExplore.Count > 0)
                 {

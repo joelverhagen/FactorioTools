@@ -76,7 +76,11 @@ public static class AStar
             costSoFar[start] = 0;
 
             Location? reachedGoal = null;
+#if USE_STACKALLOC
             Span<Location> neighbors = stackalloc Location[4];
+#else
+            Span<Location> neighbors = new Location[4];
+#endif
 
             while (frontier.Count > 0)
             {

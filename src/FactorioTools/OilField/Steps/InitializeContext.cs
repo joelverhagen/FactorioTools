@@ -73,7 +73,12 @@ public static class InitializeContext
     private static int[,] GetLocationToAdjacentCount(SquareGrid grid)
     {
         var locationToHasAdjacentPumpjack = new int[grid.Width, grid.Height];
-        Span<Location> adjacent = stackalloc Location[4];
+
+#if USE_STACKALLOC
+        Span<Location> neighbors = stackalloc Location[4];
+#else
+        Span<Location> neighbors = new Location[4];
+#endif
 
         foreach ((var entity, var location) in grid.EntityToLocation)
         {
@@ -82,15 +87,15 @@ public static class InitializeContext
                 continue;
             }
 
-            grid.GetAdjacent(adjacent, location);
-            for (var i = 0; i < adjacent.Length; i++)
+            grid.GetAdjacent(neighbors, location);
+            for (var i = 0; i < neighbors.Length; i++)
             {
-                if (!adjacent[i].IsValid)
+                if (!neighbors[i].IsValid)
                 {
                     continue;
                 }
 
-                locationToHasAdjacentPumpjack[adjacent[i].X, adjacent[i].Y]++;
+                locationToHasAdjacentPumpjack[neighbors[i].X, neighbors[i].Y]++;
             }
         }
 

@@ -628,7 +628,13 @@ public static class AddElectricPoles
             candidates.Enqueue(idealPoint);
             attempted.Add(idealPoint);
 
-            Span<Location> adjacent = stackalloc Location[4];
+
+#if USE_STACKALLOC
+            Span<Location> neighbors = stackalloc Location[4];
+#else
+            Span<Location> neighbors = new Location[4];
+#endif
+
             while (candidates.Count > 0)
             {
                 var candidate = candidates.Dequeue();
@@ -639,14 +645,14 @@ public static class AddElectricPoles
                     break;
                 }
 
-                context.Grid.GetAdjacent(adjacent, candidate);
-                for (var i = 0; i < adjacent.Length; i++)
+                context.Grid.GetAdjacent(neighbors, candidate);
+                for (var i = 0; i < neighbors.Length; i++)
                 {
-                    if (adjacent[i].IsValid
-                        && AreElectricPolesConnected(idealLine[0], adjacent[i], context.Options)
-                        && attempted.Add(adjacent[i]))
+                    if (neighbors[i].IsValid
+                        && AreElectricPolesConnected(idealLine[0], neighbors[i], context.Options)
+                        && attempted.Add(neighbors[i]))
                     {
-                        candidates.Enqueue(adjacent[i]);
+                        candidates.Enqueue(neighbors[i]);
                     }
                 }
             }

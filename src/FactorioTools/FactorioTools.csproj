@@ -19,6 +19,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <UseStackalloc Condition="'$(UseStackalloc)' == ''">false</UseStackalloc>
+    <DefineConstants Condition="$(UseStackalloc) == 'true'">$(DefineConstants);USE_STACKALLOC</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">true</EnableVisualizer>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
     <DefineConstants Condition="$(EnableVisualizer) == 'true'">$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>
