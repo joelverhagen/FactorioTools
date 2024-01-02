@@ -131,13 +131,8 @@ public static class InitializeContext
                     throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
                 }
 
-                if (entity.Direction is null)
-                {
-                    throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have a direction.");
-                }
-
                 var location = new Location(ToInt(x), ToInt(y));
-                centerToOriginalDirection.Add(location, entity.Direction.Value);
+                centerToOriginalDirection.Add(location, entity.Direction.GetValueOrDefault(Direction.Up));
             }
         }
 

@@ -33,6 +33,22 @@ public class PlannerFacts : BasePlannerFacts
         var ex = Assert.Throws<NoPathBetweenTerminalsException>(() => Planner.Execute(options, blueprint));
     }
 
+    [Fact]
+    public void AllowsPumpjackWithDefaultDirection()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForMediumElectricPole;
+        options.ValidateSolution = true;
+        var blueprintString = "0eNqV1OtqgzAUAOB3Ob9DMTHHJL7KKMN2YWSrqXgZE8m7Tx1mgxp6/KmYz3PNBJfbYJvW+R7KCdz17jsoXybo3Luvbsu7fmwslOB6WwMDX9XLUzPUzUd1/YTAwPk3+w0lD2cG1veud/bXWB/GVz/UF9vOHzyeZtDcu/nA3S9/mhGp+QkZjFCKPDthCOyBERTG5M+YnMSojRFmn5EEBjOM0Yh9BknR/DHFPlOQShwZmYhGkZLKIpPvM5qUlIhMIilzrMQphmckJ3YcE4PD+bFeIU84lEFGHvcBE1XmlElGEbuFKuFIUl5FdBIbwQ/OciETDmmYjd4cpROOOlZnlaqPJtUZn8ZjSEtqNkcn+i5o8xzXS6/xzHf0epOX/y5+Bl+27dZDQnOpzBy7yDmiCOEHgSfwqQ==";
+        var blueprint = ParseBlueprint.Execute(blueprintString);
+
+        // Act
+        var (_, result) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.Equal(16, result.RotatedPumpjacks);
+    }
+
     /// <summary>
     /// This blueprint found a bug in the SortedBatches class.
     /// </summary>
