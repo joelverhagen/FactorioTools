@@ -305,7 +305,7 @@ public static partial class AddPipes
 
         var lines = aLocations
             .SelectMany(al => bLocations.Where(bl => al.X == bl.X || al.Y == bl.Y).Select(bl => KeyValuePair.Create(al, bl)))
-            .Select(p => new PathAndTurns(new Endpoints(p.Key, p.Value), MakeStraightLine(p.Key, p.Value), Turns: 0))
+            .Select(p => new PathAndTurns(new Endpoints(p.Key, p.Value), MakeStraightLine(p.Key, p.Value), turns: 0))
             .Where(l => l.Path.All(x => context.Grid.IsEmpty(x)))
             .ToList();
 
@@ -359,9 +359,19 @@ public static partial class AddPipes
             a);
     }
 
-    private record TwoConnectedGroups(List<List<Location>> Lines, int MinDistance, Group FirstGroup);
+    private class TwoConnectedGroups(List<List<Location>> lines, int minDistance, Group firstGroup)
+    {
+        public List<List<Location>> Lines { get; } = lines;
+        public int MinDistance { get; } = minDistance;
+        public Group FirstGroup { get; } = firstGroup;
+    }
 
-    private record PathAndTurns(Endpoints Endpoints, List<Location> Path, int Turns);
+    private class PathAndTurns(Endpoints endpoints, List<Location> path, int turns)
+    {
+        public Endpoints Endpoints { get; } = endpoints;
+        public List<Location> Path { get; } = path;
+        public int Turns { get; } = turns;
+    }
 
     private class Group
     {
@@ -407,13 +417,20 @@ public static partial class AddPipes
         }
     }
 
-    private record PumpjackConnection(Endpoints Endpoints, List<TerminalPair> Connections)
+    private class PumpjackConnection(Endpoints Endpoints, List<TerminalPair> Connections)
     {
+        public Endpoints Endpoints { get; } = Endpoints;
+        public List<TerminalPair> Connections { get; } = Connections;
+
         public double AverageDistance => Connections.Count > 0 ? Connections.Average(x => x.Line.Count - 1) : 0;
     }
 
-    private record TerminalPair(TerminalLocation TerminalA, TerminalLocation TerminalB, List<Location> Line)
+    private class TerminalPair(TerminalLocation TerminalA, TerminalLocation TerminalB, List<Location> Line)
     {
+        public TerminalLocation TerminalA { get; } = TerminalA;
+        public TerminalLocation TerminalB { get; } = TerminalB;
+        public List<Location> Line { get; } = Line;
+
 #if ENABLE_GRID_TOSTRING
         public override string ToString()
         {

@@ -1140,7 +1140,16 @@ public static class Helpers
     /// <summary>
     /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
     /// </summary>
-    public record ProviderRecipient(Location Center, int Width, int Height);
+    public class ProviderRecipient(Location center, int width, int height)
+    {
+        public Location Center { get; } = center;
+        public int Width { get; } = width;
+        public int Height { get; } = height;
+    }
 
-    public record Endpoints(Location A, Location B);
+    public class Endpoints(Location a, Location b)
+    {
+        public Location A { get; } = a;
+        public Location B { get; } = b;
+    }
 }

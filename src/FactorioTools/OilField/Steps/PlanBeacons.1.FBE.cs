@@ -493,25 +493,26 @@ public static partial class PlanBeacons
         return pointToEntityArea;
     }
 
-    private class Area
+    private class Area(int index, bool effect, Location[] locations)
     {
-        public Area(int index, bool effect, Location[] locations)
-        {
-            Index = index;
-            Effect = effect;
-            Locations = locations;
-        }
-
-        public int Index { get; set; }
-        public bool Effect { get; }
-        public Location[] Locations { get; }
+        public int Index { get; set; } = index;
+        public bool Effect { get; } = effect;
+        public Location[] Locations { get; } = locations;
     }
 
-    private record BeaconCandidate(
-        Location Center,
-        Location[] CollisionArea,
-        int EffectsGivenCount,
-        double AverageDistanceToEntities,
-        int NumberOfOverlaps,
-        CountedBitArray? EffectsGiven);
+    private class BeaconCandidate(
+        Location center,
+        Location[] collisionArea,
+        int effectsGivenCount,
+        double averageDistanceToEntities,
+        int numberOfOverlaps,
+        CountedBitArray? effectsGiven)
+    {
+        public Location Center { get; } = center;
+        public Location[] CollisionArea { get; } = collisionArea;
+        public int EffectsGivenCount { get; } = effectsGivenCount;
+        public double AverageDistanceToEntities { get; } = averageDistanceToEntities;
+        public int NumberOfOverlaps { get; } = numberOfOverlaps;
+        public CountedBitArray? EffectsGiven { get; } = effectsGiven;
+    }
 }
