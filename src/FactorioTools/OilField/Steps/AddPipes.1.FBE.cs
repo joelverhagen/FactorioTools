@@ -33,7 +33,7 @@ public static partial class AddPipes
 
     private static (List<TerminalLocation> Terminals, LocationSet Pipes, PipeStrategy FinalStrategy) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
-        var centerDistance = new Dictionary<(Location, Location), int>();
+        var centerDistance = new Dictionary<Tuple<Location, Location>, int>();
         var centers = context.CenterToTerminals.Keys.ToList();
         for (var i = 0; i < centers.Count; i++)
         {
@@ -42,8 +42,8 @@ public static partial class AddPipes
                 var a = centers[i];
                 var b = centers[j];
                 var distance = a.GetManhattanDistance(b);
-                centerDistance.Add((a, b), distance);
-                centerDistance.Add((b, a), distance);
+                centerDistance.Add(Tuple.Create(a, b), distance);
+                centerDistance.Add(Tuple.Create(b, a), distance);
             }
         }
 
