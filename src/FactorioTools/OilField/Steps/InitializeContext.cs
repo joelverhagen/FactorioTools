@@ -136,7 +136,7 @@ public static class InitializeContext
                 }
 
                 var location = new Location(ToInt(x), ToInt(y));
-                centerToOriginalDirection.Add(location, entity.Direction.GetValueOrDefault(Direction.Up));
+                centerToOriginalDirection.Add(location, entity.Direction);
             }
         }
 
