@@ -357,18 +357,32 @@ public static partial class AddPipes
             a);
     }
 
-    private class TwoConnectedGroups(List<List<Location>> lines, int minDistance, Group firstGroup)
+    private class TwoConnectedGroups
     {
-        public List<List<Location>> Lines { get; } = lines;
-        public int MinDistance { get; } = minDistance;
-        public Group FirstGroup { get; } = firstGroup;
+        public TwoConnectedGroups(List<List<Location>> lines, int minDistance, Group firstGroup)
+        {
+            Lines = lines;
+            MinDistance = minDistance;
+            FirstGroup = firstGroup;
+        }
+
+        public List<List<Location>> Lines { get; }
+        public int MinDistance { get; }
+        public Group FirstGroup { get; }
     }
 
-    private class PathAndTurns(Endpoints endpoints, List<Location> path, int turns)
+    private class PathAndTurns
     {
-        public Endpoints Endpoints { get; } = endpoints;
-        public List<Location> Path { get; } = path;
-        public int Turns { get; } = turns;
+        public PathAndTurns(Endpoints endpoints, List<Location> path, int turns)
+        {
+            Endpoints = endpoints;
+            Path = path;
+            Turns = turns;
+        }
+
+        public Endpoints Endpoints { get; }
+        public List<Location> Path { get; }
+        public int Turns { get; }
     }
 
     private class Group
@@ -415,19 +429,32 @@ public static partial class AddPipes
         }
     }
 
-    private class PumpjackConnection(Endpoints Endpoints, List<TerminalPair> Connections)
+    private class PumpjackConnection
     {
-        public Endpoints Endpoints { get; } = Endpoints;
-        public List<TerminalPair> Connections { get; } = Connections;
+        public PumpjackConnection(Endpoints endpoints, List<TerminalPair> connections)
+        {
+            Endpoints = endpoints;
+            Connections = connections;
+        }
+
+        public Endpoints Endpoints { get; }
+        public List<TerminalPair> Connections { get; }
 
         public double AverageDistance => Connections.Count > 0 ? Connections.Average(x => x.Line.Count - 1) : 0;
     }
 
-    private class TerminalPair(TerminalLocation TerminalA, TerminalLocation TerminalB, List<Location> Line)
+    private class TerminalPair
     {
-        public TerminalLocation TerminalA { get; } = TerminalA;
-        public TerminalLocation TerminalB { get; } = TerminalB;
-        public List<Location> Line { get; } = Line;
+        public TerminalPair(TerminalLocation terminalA, TerminalLocation terminalB, List<Location> line)
+        {
+            TerminalA = terminalA;
+            TerminalB = terminalB;
+            Line = line;
+        }
+
+        public TerminalLocation TerminalA { get; }
+        public TerminalLocation TerminalB { get; }
+        public List<Location> Line { get; }
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()

@@ -492,26 +492,43 @@ public static partial class PlanBeacons
         return pointToEntityArea;
     }
 
-    private class Area(int index, bool effect, Location[] locations)
+    private class Area
     {
-        public int Index { get; set; } = index;
-        public bool Effect { get; } = effect;
-        public Location[] Locations { get; } = locations;
+        public Area(int index, bool effect, Location[] locations)
+        {
+            Index = index;
+            Effect = effect;
+            Locations = locations;
+        }
+
+        public int Index { get; set; }
+        public bool Effect { get; }
+        public Location[] Locations { get; }
     }
 
-    private class BeaconCandidate(
-        Location center,
-        Location[] collisionArea,
-        int effectsGivenCount,
-        double averageDistanceToEntities,
-        int numberOfOverlaps,
-        CountedBitArray? effectsGiven)
+    private class BeaconCandidate
     {
-        public Location Center { get; } = center;
-        public Location[] CollisionArea { get; } = collisionArea;
-        public int EffectsGivenCount { get; } = effectsGivenCount;
-        public double AverageDistanceToEntities { get; } = averageDistanceToEntities;
-        public int NumberOfOverlaps { get; } = numberOfOverlaps;
-        public CountedBitArray? EffectsGiven { get; } = effectsGiven;
+        public BeaconCandidate(
+            Location center,
+            Location[] collisionArea,
+            int effectsGivenCount,
+            double averageDistanceToEntities,
+            int numberOfOverlaps,
+            CountedBitArray? effectsGiven)
+        {
+            Center = center;
+            CollisionArea = collisionArea;
+            EffectsGivenCount = effectsGivenCount;
+            AverageDistanceToEntities = averageDistanceToEntities;
+            NumberOfOverlaps = numberOfOverlaps;
+            EffectsGiven = effectsGiven;
+        }
+
+        public Location Center { get; }
+        public Location[] CollisionArea { get; }
+        public int EffectsGivenCount { get; }
+        public double AverageDistanceToEntities { get; }
+        public int NumberOfOverlaps { get; }
+        public CountedBitArray? EffectsGiven { get; }
     }
 }
