@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseStackalloc Condition="'$(UseStackalloc)' == ''">false</UseStackalloc>
+    <UseStackalloc Condition="'$(UseStackalloc)' == ''">true</UseStackalloc>
     <DefineConstants Condition="$(UseStackalloc) == 'true'">$(DefineConstants);USE_STACKALLOC</DefineConstants>
   </PropertyGroup>
 
