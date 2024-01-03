@@ -1,6 +1,6 @@
 ﻿using Knapcode.FluteSharp;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class InitializeFLUTE
 {

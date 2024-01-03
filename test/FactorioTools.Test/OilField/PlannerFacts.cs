@@ -1,6 +1,4 @@
-﻿using Knapcode.FactorioTools.OilField.Steps;
-
-namespace Knapcode.FactorioTools.OilField;
+﻿namespace Knapcode.FactorioTools.OilField;
 
 public class PlannerFacts : BasePlannerFacts
 {

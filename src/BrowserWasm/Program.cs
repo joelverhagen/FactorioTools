@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices.JavaScript;
 using Knapcode.FactorioTools.OilField;
-using Knapcode.FactorioTools.OilField.Steps;
 
 public class Program
 {

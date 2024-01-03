@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Knapcode.FactorioTools.OilField.Grid;
+namespace Knapcode.FactorioTools.OilField;
 
 public abstract class SquareGrid
 {

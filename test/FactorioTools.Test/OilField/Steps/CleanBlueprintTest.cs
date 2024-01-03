@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public class CleanBlueprintTest : BasePlannerFacts
 {

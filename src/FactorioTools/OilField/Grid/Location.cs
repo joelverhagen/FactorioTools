@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Knapcode.FactorioTools.OilField.Grid;
+namespace Knapcode.FactorioTools.OilField;
 
 public struct Location :
 #if ENABLE_GRID_TOSTRING

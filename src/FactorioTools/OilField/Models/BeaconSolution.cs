@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
-using Knapcode.FactorioTools.OilField.Grid;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public record BeaconSolution(BeaconStrategy Strategy, List<Location> Beacons, int Effects);

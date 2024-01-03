@@ -2,10 +2,8 @@
 using System.Data;
 using System.Linq;
 using DelaunatorSharp;
-using Knapcode.FactorioTools.OilField.Algorithms;
-using Knapcode.FactorioTools.OilField.Grid;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {

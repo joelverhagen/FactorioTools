@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class NormalizeBlueprints
 {

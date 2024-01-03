@@ -2,7 +2,7 @@
 using System.Linq;
 using Knapcode.FactorioTools.Data;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class CleanBlueprint
 {

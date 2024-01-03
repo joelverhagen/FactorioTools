@@ -1,4 +1,4 @@
-﻿using Knapcode.FactorioTools.OilField.Grid;
+﻿using Knapcode.FactorioTools.OilField;
 
 namespace Knapcode.FactorioTools;
 

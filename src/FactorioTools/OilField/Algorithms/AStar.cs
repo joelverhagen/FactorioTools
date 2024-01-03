@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using Knapcode.FactorioTools.OilField.Grid;
-using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+using static Knapcode.FactorioTools.OilField.Helpers;
 
-namespace Knapcode.FactorioTools.OilField.Algorithms;
+namespace Knapcode.FactorioTools.OilField;
 
 /// <summary>
 /// Source: https://www.redblobgames.com/pathfinding/a-star/implementation.html

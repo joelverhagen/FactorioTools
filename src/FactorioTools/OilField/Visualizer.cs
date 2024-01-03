@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
 using SixLabors.ImageSharp.Drawing;
-using Knapcode.FactorioTools.OilField.Grid;
+using Knapcode.FactorioTools.OilField;
 using DelaunatorSharp;
 using System;
 using System.Collections.Generic;

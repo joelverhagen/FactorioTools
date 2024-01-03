@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using Knapcode.FactorioTools.Data;
-using Knapcode.FactorioTools.OilField.Grid;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class AddPipeEntities
 {

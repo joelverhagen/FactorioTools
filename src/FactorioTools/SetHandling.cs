@@ -1,12 +1,11 @@
 ﻿#if USE_HASHSETS
-global using LocationSet = System.Collections.Generic.HashSet<Knapcode.FactorioTools.OilField.Grid.Location>;
-global using ElectricPoleCenterSet = System.Collections.Generic.HashSet<Knapcode.FactorioTools.OilField.Grid.ElectricPoleCenter>;
+global using LocationSet = System.Collections.Generic.HashSet<Knapcode.FactorioTools.OilField.Location>;
+global using ElectricPoleCenterSet = System.Collections.Generic.HashSet<Knapcode.FactorioTools.OilField.ElectricPoleCenter>;
 #else
-global using LocationSet = System.Collections.Generic.Dictionary<Knapcode.FactorioTools.OilField.Grid.Location, bool>;
-global using ElectricPoleCenterSet = System.Collections.Generic.Dictionary<Knapcode.FactorioTools.OilField.Grid.ElectricPoleCenter, bool>;
+global using LocationSet = System.Collections.Generic.Dictionary<Knapcode.FactorioTools.OilField.Location, bool>;
+global using ElectricPoleCenterSet = System.Collections.Generic.Dictionary<Knapcode.FactorioTools.OilField.ElectricPoleCenter, bool>;
 #endif
 
-using System;
 using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools;

@@ -1,7 +1,5 @@
 ﻿using Knapcode.FactorioTools.Data;
-using Knapcode.FactorioTools.OilField.Grid;
-using Knapcode.FactorioTools.OilField.Steps;
-using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 

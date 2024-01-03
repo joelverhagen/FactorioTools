@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using Knapcode.FactorioTools.OilField.Steps;
 
 namespace Knapcode.FactorioTools.OilField;
 

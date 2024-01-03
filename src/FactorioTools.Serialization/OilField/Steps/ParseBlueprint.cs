@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using Knapcode.FactorioTools.Data;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class ParseBlueprint
 {

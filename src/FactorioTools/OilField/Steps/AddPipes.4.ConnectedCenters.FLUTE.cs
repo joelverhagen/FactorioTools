@@ -1,10 +1,9 @@
 ﻿using System.Data;
 using Knapcode.FluteSharp;
-using Knapcode.FactorioTools.OilField.Grid;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {

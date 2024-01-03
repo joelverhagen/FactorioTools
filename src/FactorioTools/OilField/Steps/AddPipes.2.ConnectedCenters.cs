@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using Knapcode.FactorioTools.OilField.Algorithms;
-using Knapcode.FactorioTools.OilField.Grid;
-using static Knapcode.FactorioTools.OilField.Steps.Helpers;
+using static Knapcode.FactorioTools.OilField.Helpers;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {

@@ -1,4 +1,4 @@
-﻿namespace Knapcode.FactorioTools.OilField.Grid;
+﻿namespace Knapcode.FactorioTools.OilField;
 
 public abstract class GridEntity
 {

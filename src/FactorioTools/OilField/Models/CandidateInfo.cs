@@ -1,4 +1,4 @@
-﻿namespace Knapcode.FactorioTools.OilField.Steps;
+﻿namespace Knapcode.FactorioTools.OilField;
 
 public class CandidateInfo
 {

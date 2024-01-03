@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using DelaunatorSharp;
 using Knapcode.FactorioTools.Data;
-using Knapcode.FactorioTools.OilField.Grid;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class Helpers
 {
@@ -128,11 +127,6 @@ public static class Helpers
             removeUnused,
             includePumpjacks: true,
             includeBeacons: true);
-    }
-
-    public interface ICandidateFactory<TInfo> where TInfo : CandidateInfo
-    {
-        TInfo Create(CountedBitArray covered);
     }
 
     private static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
@@ -437,46 +431,6 @@ public static class Helpers
         }
 
         return sum;
-    }
-
-    public class SortedBatches<TInfo>
-    {
-        private readonly bool _ascending;
-
-        public SortedBatches(IEnumerable<KeyValuePair<int, Dictionary<Location, TInfo>>> pairs, bool ascending)
-        {
-            _ascending = ascending;
-            Queue = new PriorityQueue<Dictionary<Location, TInfo>, int>();
-            Lookup = new Dictionary<int, Dictionary<Location, TInfo>>();
-
-            foreach ((var key, var candidateToInfo) in pairs)
-            {
-                Queue.Enqueue(candidateToInfo, _ascending ? key : -key);
-                Lookup.Add(key, candidateToInfo);
-            }
-        }
-
-        public PriorityQueue<Dictionary<Location, TInfo>, int> Queue { get; }
-        public Dictionary<int, Dictionary<Location, TInfo>> Lookup { get; }
-
-        public void RemoveCandidate(Location location, int oldKey)
-        {
-            Lookup[oldKey].Remove(location);
-        }
-
-        public void MoveCandidate(Location location, TInfo info, int oldKey, int newKey)
-        {
-            Lookup[oldKey].Remove(location);
-            if (Lookup.TryGetValue(newKey, out var batches))
-            {
-                batches.Add(location, info);
-            }
-            else
-            {
-                batches = new Dictionary<Location, TInfo> { { location, info } };
-                Lookup.Add(newKey, batches);
-            }
-        }
     }
 
     public static void AddProviderAndPreventMultipleProviders<TInfo>(
@@ -1135,21 +1089,5 @@ public static class Helpers
         }
 
         return lines;
-    }
-
-    /// <summary>
-    /// An entity (e.g. a pumpjack) that receives the effect of a provider entity (e.g. electric pole, beacon).
-    /// </summary>
-    public class ProviderRecipient(Location center, int width, int height)
-    {
-        public Location Center { get; } = center;
-        public int Width { get; } = width;
-        public int Height { get; } = height;
-    }
-
-    public class Endpoints(Location a, Location b)
-    {
-        public Location A { get; } = a;
-        public Location B { get; } = b;
     }
 }

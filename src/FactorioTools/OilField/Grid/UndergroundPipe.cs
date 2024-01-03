@@ -1,7 +1,7 @@
 ﻿using System;
 using Knapcode.FactorioTools.Data;
 
-namespace Knapcode.FactorioTools.OilField.Grid;
+namespace Knapcode.FactorioTools.OilField;
 
 public class UndergroundPipe : Pipe
 {

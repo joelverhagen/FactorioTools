@@ -3,13 +3,12 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using Knapcode.FactorioTools.Data;
-using Knapcode.FactorioTools.OilField.Grid;
 using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.IO;
 
-namespace Knapcode.FactorioTools.OilField.Steps;
+namespace Knapcode.FactorioTools.OilField;
 
 public static class GridToBlueprintString
 {

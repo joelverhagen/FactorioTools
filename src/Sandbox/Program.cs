@@ -1,7 +1,5 @@
 ﻿using System.Text;
 using Knapcode.FactorioTools.OilField;
-using Knapcode.FactorioTools.OilField.Grid;
-using Knapcode.FactorioTools.OilField.Steps;
 
 public partial class Program
 {
