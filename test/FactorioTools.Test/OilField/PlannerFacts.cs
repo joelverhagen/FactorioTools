@@ -64,6 +64,18 @@ public class PlannerFacts : BasePlannerFacts
     }
 
     [Fact]
+    public async Task ExecuteSample()
+    {
+        var result = Planner.ExecuteSample();
+
+#if USE_VERIFY
+        await Verify(GetGridString(result));
+#else
+        await Task.Yield();
+#endif
+    }
+
+    [Fact]
     public void CountsAllRotatedPumpjacks()
     {
         // Arrange

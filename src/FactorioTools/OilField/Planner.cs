@@ -7,6 +7,81 @@ public static class Planner
 {
     private static readonly LocationSet EmptyLocationSet = new();
 
+    public static (Context Context, OilFieldPlanSummary Summary) ExecuteSample()
+    {
+        var options = OilFieldOptions.ForMediumElectricPole;
+
+        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToList();
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
+        options.ValidateSolution = true;
+
+        var inputBlueprint = new Blueprint
+        {
+            Entities = new[]
+            {
+                new Entity
+                {
+                    EntityNumber = 1,
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position
+                    {
+                        X = -3,
+                        Y = -5,
+                    },
+                },
+                new Entity
+                {
+                    EntityNumber = 2,
+                    Direction = Direction.Down,
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position
+                    {
+                        X = 4,
+                        Y = 5,
+                    },
+                },
+                new Entity
+                {
+                    EntityNumber = 3,
+                    Direction = Direction.Right,
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position
+                    {
+                        X = 12,
+                        Y = -2,
+                    },
+                },
+                new Entity
+                {
+                    EntityNumber = 4,
+                    Direction = Direction.Down,
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position
+                    {
+                        X = -8,
+                        Y = 7,
+                    },
+                },
+            },
+            Icons = new[]
+            {
+                new Icon
+                {
+                    Index = 1,
+                    Signal = new SignalID
+                    {
+                        Name = EntityNames.Vanilla.Pumpjack,
+                        Type = SignalTypes.Vanilla.Item,
+                    }
+                }
+            },
+            Item = ItemNames.Vanilla.Blueprint,
+            Version = 0,
+        };
+
+        return Execute(options, inputBlueprint);
+    }
+
     public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, Blueprint inputBlueprint)
     {
         return Execute(options, inputBlueprint, electricPolesAvoid: EmptyLocationSet, EletricPolesMode.AddLast);
