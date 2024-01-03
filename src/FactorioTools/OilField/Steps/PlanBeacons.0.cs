@@ -15,7 +15,7 @@ public static partial class PlanBeacons
 
         var solutions = new List<BeaconSolution>(context.Options.BeaconStrategies.Count);
 
-        var completedStrategies = new BitArray((int)BeaconStrategy.Snug + 1); // max value
+        var completedStrategies = new CountedBitArray((int)BeaconStrategy.Snug + 1); // max value
         foreach (var strategy in context.Options.BeaconStrategies)
         {
             if (completedStrategies[(int)strategy])

@@ -185,7 +185,7 @@ public static partial class AddPipes
         }
         else
         {
-            var completedStrategies = new BitArray((int)PipeStrategy.ConnectedCentersFlute + 1); // max value
+            var completedStrategies = new CountedBitArray((int)PipeStrategy.ConnectedCentersFlute + 1); // max value
             foreach (var strategy in context.Options.PipeStrategies)
             {
                 if (completedStrategies[(int)strategy])
