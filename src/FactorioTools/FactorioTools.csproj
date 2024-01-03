@@ -24,6 +24,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <UseBitArray Condition="'$(UseBitArray)' == ''">true</UseBitArray>
+    <DefineConstants Condition="$(UseBitArray) == 'true'">$(DefineConstants);USE_BITARRAY</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">true</EnableVisualizer>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
     <DefineConstants Condition="$(EnableVisualizer) == 'true'">$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>
