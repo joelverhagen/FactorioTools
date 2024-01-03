@@ -87,24 +87,28 @@ public class OilFieldOptions
         }
     }
 
-    public static IReadOnlyList<PipeStrategy> AllPipeStrategies { get; } = Enum
-        .GetValues<PipeStrategy>()
-        .Order()
-        .ToList();
+    public static IReadOnlyList<PipeStrategy> AllPipeStrategies { get; } = new[]
+    {
+        PipeStrategy.FbeOriginal,
+        PipeStrategy.Fbe,
+        PipeStrategy.ConnectedCentersDelaunay,
+        PipeStrategy.ConnectedCentersDelaunayMst,
+        PipeStrategy.ConnectedCentersFlute,
+    };
 
-    public static IReadOnlyList<PipeStrategy> DefaultPipeStrategies { get; } = Enum
-        .GetValues<PipeStrategy>()
+    public static IReadOnlyList<PipeStrategy> DefaultPipeStrategies { get; } = AllPipeStrategies
         .Except(new[] { PipeStrategy.FbeOriginal })
         .Order()
         .ToList();
 
-    public static IReadOnlyList<BeaconStrategy> AllBeaconStrategies { get; } = Enum
-        .GetValues<BeaconStrategy>()
-        .Order()
-        .ToList();
+    public static IReadOnlyList<BeaconStrategy> AllBeaconStrategies { get; } = new[]
+    {
+        BeaconStrategy.FbeOriginal,
+        BeaconStrategy.Fbe,
+        BeaconStrategy.Snug,
+    };
 
-    public static IReadOnlyList<BeaconStrategy> DefaultBeaconStrategies { get; } = Enum
-        .GetValues<BeaconStrategy>()
+    public static IReadOnlyList<BeaconStrategy> DefaultBeaconStrategies { get; } = AllBeaconStrategies
         .Except(new[] { BeaconStrategy.FbeOriginal })
         .Order()
         .ToList();

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Knapcode.FactorioTools.Data;
 
@@ -7,11 +6,8 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class DijkstrasResult
 {
-    private readonly SquareGrid _grid;
-
     public DijkstrasResult(SquareGrid grid, Dictionary<Location, LocationSet> locationToPrevious, LocationSet reachedGoals)
     {
-        _grid = grid;
         LocationToPrevious = locationToPrevious;
         ReachedGoals = reachedGoals;
     }
@@ -39,7 +35,13 @@ public class DijkstrasResult
 
                 // Track the number of times each direction was used so when we have to switch directions, we can prefer a
                 // direction that's been used the most.
-                var directionHits = Enum.GetValues<Direction>().ToDictionary(x => x, x => 0);
+                var directionHits = new Dictionary<Direction, int>
+                {
+                    { Direction.Up, 0 },
+                    { Direction.Right, 0 },
+                    { Direction.Down, 0 },
+                    { Direction.Left, 0 },
+                };
 
                 var current = goal;
                 var path = new List<Location>();
