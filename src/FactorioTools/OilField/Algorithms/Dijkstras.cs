@@ -92,7 +92,7 @@ public static class Dijkstras
 #endif
         }
 
-        return new DijkstrasResult(grid, cameFrom, reachedGoals);
+        return new DijkstrasResult(cameFrom, reachedGoals);
     }
 
 }

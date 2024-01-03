@@ -6,7 +6,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class DijkstrasResult
 {
-    public DijkstrasResult(SquareGrid grid, Dictionary<Location, LocationSet> locationToPrevious, LocationSet reachedGoals)
+    public DijkstrasResult(Dictionary<Location, LocationSet> locationToPrevious, LocationSet reachedGoals)
     {
         LocationToPrevious = locationToPrevious;
         ReachedGoals = reachedGoals;
