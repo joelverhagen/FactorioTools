@@ -46,7 +46,7 @@ internal static class SetHandling
     {
         if (set.Count > array.Length)
         {
-            throw new ArgumentException("The array is not large enough to hold the set.");
+            throw new System.ArgumentException("The array is not large enough to hold the set.");
         }
 
         var index = 0;
