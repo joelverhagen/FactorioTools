@@ -377,7 +377,8 @@ public static partial class AddPipes
                 locationsToExplore = unreachedTerminals;
             }
 
-            Location? strandedTerminal = null;
+            Location strandedTerminal = default;
+            bool foundStranded = false;
             foreach (var location in terminalsToEliminate.EnumerateItems())
             {
                 foreach (var terminal in context.LocationToTerminals[location])
@@ -388,13 +389,14 @@ public static partial class AddPipes
                     if (terminals.Count == 0)
                     {
                         strandedTerminal = terminal.Terminal;
+                        foundStranded = true;
                     }
                 }
 
                 context.LocationToTerminals.Remove(location);
             }
             
-            if (strandedTerminal.HasValue)
+            if (foundStranded)
             {
                 /*
                 var clone = new PipeGrid(context.Grid);
@@ -402,7 +404,7 @@ public static partial class AddPipes
                 Visualizer.Show(clone, new[] { strandedTerminal.Value, locationsToExplore.First() }.Select(x => (IPoint)new Point(x.X, x.Y)), Array.Empty<IEdge>());
                 */
 
-                throw new NoPathBetweenTerminalsException(strandedTerminal.Value, locationsToExplore.EnumerateItems().First());
+                throw new NoPathBetweenTerminalsException(strandedTerminal, locationsToExplore.EnumerateItems().First());
             }
         }
     }

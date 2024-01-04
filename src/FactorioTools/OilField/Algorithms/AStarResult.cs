@@ -6,13 +6,15 @@ public class AStarResult
 {
     private readonly List<Location>? _path;
 
-    public AStarResult(Location? reachedGoal, List<Location>? path)
+    public AStarResult(bool success, Location reachedGoal, List<Location>? path)
     {
+        Success = success;
         ReachedGoal = reachedGoal;
         _path = path;
     }
 
-    public Location? ReachedGoal { get; }
+    public bool Success { get; }
+    public Location ReachedGoal { get; }
 
     public List<Location> Path
     {

@@ -620,7 +620,8 @@ public static class AddElectricPoles
         var attempted = new LocationSet();
 #endif
 
-        Location? selectedPoint = null;
+        Location selectedPoint = default;
+        bool matchFound = false;
         try
         {
             candidates.Enqueue(idealPoint);
@@ -640,6 +641,7 @@ public static class AddElectricPoles
                     && IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate))
                 {
                     selectedPoint = candidate;
+                    matchFound = true;
                     break;
                 }
 
@@ -663,12 +665,12 @@ public static class AddElectricPoles
 #endif
         }
 
-        if (!selectedPoint.HasValue)
+        if (!matchFound)
         {
             throw new FactorioToolsException("Could not find a pole that can be connected.");
         }
 
-        var center = AddElectricPole(context, electricPoles, selectedPoint.Value);
+        var center = AddElectricPole(context, electricPoles, selectedPoint);
         var connectedGroups = groups.Where(g => g.EnumerateItems().Intersect(center.Neighbors.EnumerateItems().Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
 
         if (connectedGroups.Count == 0)
@@ -676,7 +678,7 @@ public static class AddElectricPoles
             throw new FactorioToolsException("Could not find the group containing the selected electric pole.");
         }
 
-        connectedGroups[0].Add(selectedPoint.Value);
+        connectedGroups[0].Add(selectedPoint);
         for (var i = 1; i < connectedGroups.Count; i++)
         {
             connectedGroups[0].UnionWith(connectedGroups[i]);

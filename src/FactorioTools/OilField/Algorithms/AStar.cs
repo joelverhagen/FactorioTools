@@ -23,7 +23,7 @@ public static class AStar
                 outputList = new List<Location> { start };
             }
 
-            return new AStarResult(start, outputList);
+            return new AStarResult(success: true, start, outputList);
         }
 
 #if USE_VECTORS
@@ -74,7 +74,8 @@ public static class AStar
             cameFrom[start] = start;
             costSoFar[start] = 0;
 
-            Location? reachedGoal = null;
+            Location reachedGoal = default;
+            bool success = false;
 #if USE_STACKALLOC
             Span<Location> neighbors = stackalloc Location[4];
 #else
@@ -88,6 +89,7 @@ public static class AStar
                 if (goals.Contains(current))
                 {
                     reachedGoal = current;
+                    success = true;
                     break;
                 }
 
@@ -133,20 +135,20 @@ public static class AStar
                 }
             }
 
-            if (!reachedGoal.HasValue)
+            if (!success)
             {
                 outputList = null;
             }
             else if (outputList is not null)
             {
-                AddPath(cameFrom, reachedGoal.Value, outputList);
+                AddPath(cameFrom, reachedGoal, outputList);
             }
             else
             {
-                outputList = GetPath(cameFrom, start, reachedGoal.Value);
+                outputList = GetPath(cameFrom, start, reachedGoal);
             }
 
-            return new AStarResult(reachedGoal, outputList);
+            return new AStarResult(success, reachedGoal, outputList);
         }
         finally
         {

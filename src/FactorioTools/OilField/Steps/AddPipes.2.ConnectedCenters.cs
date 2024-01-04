@@ -204,7 +204,7 @@ public static partial class AddPipes
             var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
 #endif
 
-            if (aStarResultV.ReachedGoal is null)
+            if (!aStarResultV.Success)
             {
                 throw new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First());
             }
@@ -389,7 +389,11 @@ public static partial class AddPipes
                             {
                                 var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToSet();
                                 var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, goals);
-                                var reachedGoal = result.ReachedGoal!.Value;
+                                if (!result.Success)
+                                {
+                                    throw new NoPathBetweenTerminalsException(terminal.Terminal, goals.EnumerateItems().First());
+                                }
+                                var reachedGoal = result.ReachedGoal;
                                 var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
                                 var path = result.Path;
 

@@ -338,7 +338,7 @@ public static partial class AddPipes
                 else
                 {
                     var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new LocationSet { l.B });
-                    if (result.ReachedGoal is null)
+                    if (!result.Success)
                     {
                         // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
                         throw new NoPathBetweenTerminalsException(l.A, l.B);

@@ -144,7 +144,7 @@ public static class RotateOptimize
                 var newPath = new List<Location>();
 #endif
                 var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
-                if (result.ReachedGoal.HasValue)
+                if (result.Success)
                 {
                     var terminal = new TerminalLocation(originalTerminal.Center, terminalCandidate, direction);
                     var pathTurns = CountTurns(newPath);
