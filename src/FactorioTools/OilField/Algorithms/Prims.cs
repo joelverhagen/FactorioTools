@@ -37,7 +37,8 @@ public static class Prims
 
                 if (!mst.TryGetValue(nodeA, out var nodes))
                 {
-                    nodes = new LocationSet { nodeB };
+                    nodes = new LocationSet();
+                    nodes.Add(nodeB);
                     mst.Add(nodeA, nodes);
                 }
                 else
@@ -63,7 +64,8 @@ public static class Prims
                     {
                         if (!mst.TryGetValue(neighbor, out var otherNeighbors))
                         {
-                            otherNeighbors = new LocationSet { center };
+                            otherNeighbors = new LocationSet();
+                            otherNeighbors.Add(center);
                             mst.Add(neighbor, otherNeighbors);
                         }
                         else
