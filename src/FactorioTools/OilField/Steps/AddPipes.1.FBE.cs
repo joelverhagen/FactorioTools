@@ -73,7 +73,7 @@ public static partial class AddPipes
         while (lines.Count > 0)
         {
             var line = lines
-                .MinBy(ent => (
+                .MinBy(ent => Tuple.Create(
                     !LineContainsAnAddedPumpjack(addedPumpjacks, ent),
                     -(ent.Endpoints.A.GetManhattanDistance(middle) + ent.Endpoints.B.GetManhattanDistance(middle)),
                     ent.Connections.Count,

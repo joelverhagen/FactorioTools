@@ -159,12 +159,12 @@ public static partial class AddPipes
         }
     }
 
-    private static IEnumerable<(List<Solution> Solutions, int GroupNumber)> GetSolutionGroups(Context context)
+    private static IEnumerable<SolutionsAndGroupNumber> GetSolutionGroups(Context context)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        var pipesToSolutions = new Dictionary<LocationSet, (List<Solution> Solutions, int GroupNumber)>(LocationSetComparer.Instance);
+        var pipesToSolutions = new Dictionary<LocationSet, SolutionsAndGroupNumber>(LocationSetComparer.Instance);
         var connectedCentersToSolutions = new Dictionary<Dictionary<Location, LocationSet>, List<Solution>>(ConnectedCentersComparer.Instance);
 
         if (context.CenterToTerminals.Count == 1)
@@ -241,12 +241,12 @@ public static partial class AddPipes
 
     private static List<Solution> OptimizeAndAddSolutions(
         Context context,
-        Dictionary<LocationSet, (List<Solution> Solutions, int GroupNumber)> pipesToSolutions,
+        Dictionary<LocationSet, SolutionsAndGroupNumber> pipesToSolutions,
         PipeStrategy strategy,
         LocationSet pipes,
         Dictionary<Location, LocationSet>? centerToConnectedCenters)
     {
-        (List<Solution> Solutions, int Index) solutionsAndIndex;
+        SolutionsAndGroupNumber? solutionsAndIndex;
         if (pipesToSolutions.TryGetValue(pipes, out solutionsAndIndex))
         {
             foreach (var solution in solutionsAndIndex.Solutions)
@@ -301,10 +301,12 @@ public static partial class AddPipes
             solutions = new List<Solution> { solutionA, solutionB };
         }
 
-        pipesToSolutions.Add(pipes, (solutions, pipesToSolutions.Count + 1));
+        pipesToSolutions.Add(pipes, new SolutionsAndGroupNumber(solutions, pipesToSolutions.Count + 1));
 
         return solutions;
     }
+
+    private record SolutionsAndGroupNumber(List<Solution> Solutions, int GroupNumber);
 
     private static Solution GetSolution(
         Context context,
