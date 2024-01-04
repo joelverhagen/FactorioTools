@@ -67,7 +67,9 @@ public static class Dijkstras
                         if (!previousExists || alternateCost < neighborCost)
                         {
                             costSoFar[neighbor] = alternateCost;
-                            cameFrom[neighbor] = new LocationSet { current };
+                            var cameFromSet = new LocationSet();
+                            cameFromSet.Add(current);
+                            cameFrom[neighbor] = cameFromSet;
                         }
                         else
                         {
