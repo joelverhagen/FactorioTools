@@ -24,8 +24,8 @@ public static class PlanUndergroundPipes
         // Track underground pipes and their directions
         var locationToDirection = new Dictionary<Location, Direction>();
 
-        ConvertInOneDirection(context, pipes, locationToDirection, (X: 0, Y: 1));
-        ConvertInOneDirection(context, pipes, locationToDirection, (X: 1, Y: 0));
+        ConvertInOneDirection(context, pipes, locationToDirection, new Location(0, 1));
+        ConvertInOneDirection(context, pipes, locationToDirection, new Location(1, 0));
 
         Validate.UndergroundPipesArePipes(context, pipes, locationToDirection);
 
@@ -36,20 +36,28 @@ public static class PlanUndergroundPipes
         Context context,
         LocationSet pipes,
         Dictionary<Location, Direction> locationToDirection,
-        (int X, int Y) forward)
+        Location forward)
     {
-        (var forwardDirection, var backwardDirection) = forward switch
+        Direction forwardDirection;
+        Direction backwardDirection;
+        Func<IEnumerable<Location>, IOrderedEnumerable<Location>> sort;
+
+        if (forward.X == 1 && forward.Y == 0)
         {
-            (1, 0) => (Direction.Right, Direction.Left),
-            (0, 1) => (Direction.Down, Direction.Up),
-            _ => throw new NotImplementedException()
-        };
-        Func<IEnumerable<Location>, IOrderedEnumerable<Location>> sort = forward switch
+            forwardDirection = Direction.Right;
+            backwardDirection = Direction.Left;
+            sort = x => x.OrderBy(l => l.Y).ThenBy(l => l.X);
+        }
+        else if (forward.X == 0 && forward.Y == 1)
         {
-            (1, 0) => x => x.OrderBy(l => l.Y).ThenBy(l => l.X),
-            (0, 1) => x => x.OrderBy(l => l.X).ThenBy(l => l.Y),
-            _ => throw new NotImplementedException()
-        };
+            forwardDirection = Direction.Down;
+            backwardDirection = Direction.Up;
+            sort = x => x.OrderBy(l => l.X).ThenBy(l => l.Y);
+        }
+        else
+        {
+            throw new NotImplementedException();
+        }
 
         // Find candidates for underground pipes. These are pipes that have other pipes before and after them in
         // axis they are going and no pipes next to them.
@@ -62,9 +70,9 @@ public static class PlanUndergroundPipes
 
         try
         {
-            var backward = (X: forward.X * -1, Y: forward.Y * -1);
-            var right = (X: forward.Y, Y: forward.X);
-            var left = (X: right.X * -1, Y: right.Y * -1);
+            var backward = new Location(forward.X * -1, forward.Y * -1);
+            var right = new Location(forward.Y, forward.X);
+            var left = new Location(right.X * -1, right.Y * -1);
 
             foreach (var goal in pipes.EnumerateItems())
             {

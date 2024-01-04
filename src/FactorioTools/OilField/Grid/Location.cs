@@ -86,9 +86,9 @@ public struct Location :
         return new Location(X + deltaX, Y + deltaY);
     }
 
-    public Location Translate((int DeltaX, int DeltaY) translation)
+    public Location Translate(Location translation)
     {
-        return new Location(X + translation.DeltaX, Y + translation.DeltaY);
+        return new Location(X + translation.X, Y + translation.Y);
     }
 
     public int CompareTo(Location other)

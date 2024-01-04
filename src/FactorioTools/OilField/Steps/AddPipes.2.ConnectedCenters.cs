@@ -8,7 +8,11 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {
-    private static readonly IReadOnlyList<(int DeltaX, int DeltaY)> Translations = new[] { (1, 0), (0, 1) };
+    private static readonly IReadOnlyList<Location> Translations = new[]
+    {
+        new Location(1, 0),
+        new Location(0, 1),
+    };
 
     private static Dictionary<Location, LocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
     {

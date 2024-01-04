@@ -18,12 +18,12 @@ public static class Helpers
     /// + j j j .
     /// . + . . .
     /// </summary>
-    public static readonly IReadOnlyList<(Direction Direction, (int DeltaX, int DeltaY))> TerminalOffsets = new List<(Direction Direction, (int DeltaX, int DeltaY))>
+    public static readonly IReadOnlyList<(Direction Direction, Location Location)> TerminalOffsets = new List<(Direction, Location)>
     {
-        (Direction.Up, (1, -2)),
-        (Direction.Right, (2, -1)),
-        (Direction.Down, (-1, 2)),
-        (Direction.Left, (-2, 1)),
+        (Direction.Up, new Location(1, -2)),
+        (Direction.Right, new Location(2, -1)),
+        (Direction.Down, new Location(-1, 2)),
+        (Direction.Left, new Location(-2, 1)),
     };
 
     public static PumpjackCenter AddPumpjack(SquareGrid grid, Location center)
