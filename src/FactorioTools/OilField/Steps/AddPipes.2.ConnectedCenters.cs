@@ -152,15 +152,15 @@ public static partial class AddPipes
                                         ChildCentroidDistanceSquared = group.GetChildCentroidDistanceSquared(includedCenter, terminal.Terminal),
                                     };
                                 })
-                                .MinBy(t => (t.Path.Count, t.ChildCentroidDistanceSquared))!;
+                                .MinBy(t => Tuple.Create(t.Path.Count, t.ChildCentroidDistanceSquared))!;
 
                             return KeyValuePair.Create(bestTerminal, center);
                         })
-                        .MinBy(t => (t.Key.Path.Count, t.Key.ChildCentroidDistanceSquared))!;
+                        .MinBy(t => Tuple.Create(t.Key.Path.Count, t.Key.ChildCentroidDistanceSquared))!;
 
                     return KeyValuePair.Create(bestCenter, group);
                 })
-                .MinBy(t => (t.Key.Key.Path.Count, t.Key.Key.ChildCentroidDistanceSquared))!;
+                .MinBy(t => Tuple.Create(t.Key.Key.Path.Count, t.Key.Key.ChildCentroidDistanceSquared))!;
 
             var group = bestGroup.Value;
             var center = bestGroup.Key.Value;
