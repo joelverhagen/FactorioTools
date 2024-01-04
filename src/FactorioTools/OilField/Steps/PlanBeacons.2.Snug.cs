@@ -47,7 +47,7 @@ public static partial class PlanBeacons
             var pair = candidateToInfo
                 .MinBy(pair =>
                 {
-                    return (
+                    return Tuple.Create(
                         beacons.Count > 0 && context.Options.OverlapBeacons ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
                         -pair.Value.Covered.TrueCount,
                         -pair.Value.EntityDistance,
