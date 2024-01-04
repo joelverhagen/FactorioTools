@@ -674,15 +674,14 @@ public static class Helpers
         var hasBeacons = false;
         foreach ((var entity, var location) in context.Grid.EntityToLocation)
         {
-            switch (entity)
+            if (entity is PumpjackCenter)
             {
-                case PumpjackCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
-                    break;
-                case BeaconCenter:
-                    poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
-                    hasBeacons = true;
-                    break;
+                poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
+            }
+            else if (entity is BeaconCenter)
+            {
+                poweredEntities.Add(new ProviderRecipient(location, context.Options.BeaconWidth, context.Options.BeaconHeight));
+                hasBeacons = true;
             }
         }
 
