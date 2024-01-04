@@ -509,10 +509,16 @@ public static partial class AddPipes
 
                             if (!expandedChildCenters)
                             {
+                                var ignoreCenters = new LocationSet();
+                                ignoreCenters.Add(currentCenter);
+
+                                var shallowExploreCenters = new LocationSet();
+                                shallowExploreCenters.Add(nextCenter);
+
                                 nextCenters = GetChildCenters(
                                     centerToConnectedCenters,
-                                    ignoreCenters: new LocationSet { currentCenter },
-                                    shallowExploreCenters: new LocationSet { nextCenter },
+                                    ignoreCenters,
+                                    shallowExploreCenters,
                                     nextCenter);
 
                                 if (nextCenters.Count == 0)

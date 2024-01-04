@@ -337,7 +337,9 @@ public static partial class AddPipes
                 }
                 else
                 {
-                    var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, new LocationSet { l.B });
+                    var goals = new LocationSet();
+                    goals.Add(l.B);
+                    var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, goals);
                     if (!result.Success)
                     {
                         // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
