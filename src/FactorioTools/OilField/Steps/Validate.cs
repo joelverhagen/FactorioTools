@@ -26,7 +26,8 @@ public static class Validate
             var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
             var reachedGoals = result.ReachedGoals;
             reachedGoals.Add(start);
-            var unreachedGoals = goals.Except(reachedGoals).ToSet();
+            var unreachedGoals = goals.ToSet();
+            unreachedGoals.ExceptWith(reachedGoals);
             if (unreachedGoals.Count > 0)
             {
                 // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
