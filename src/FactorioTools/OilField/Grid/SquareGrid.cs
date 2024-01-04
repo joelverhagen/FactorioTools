@@ -22,7 +22,30 @@ public abstract class SquareGrid
         Height = existing.Height;
         Middle = new Location(Width / 2, Height / 2);
         _entityToLocation = clone ? new Dictionary<GridEntity, Location>(existing._entityToLocation) : existing._entityToLocation;
-        _grid = clone ? (GridEntity[,])existing._grid.Clone() : existing._grid;
+
+        if (clone)
+        {
+#if USE_ARRAY_CLONE
+            _grid = (GridEntity[,])existing._grid.Clone();
+#else
+            _grid = new GridEntity[Width, Height];
+            for (var i = 0; i < Width; i++)
+            {
+                for (var j = 0; j < Height; j++)
+                {
+                    var value = existing._grid[i, j];
+                    if (value is not null)
+                    {
+                        _grid[i, j] = value;
+                    }
+                }
+            }
+#endif
+        }
+        else
+        {
+            _grid = existing._grid;
+        }
     }
 
     public SquareGrid(int width, int height)
