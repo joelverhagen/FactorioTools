@@ -307,30 +307,34 @@ public static partial class PlanBeacons
                 int height;
                 bool effect;
 
-                switch (pair.Key)
+                if (pair.Key is TemporaryEntity)
                 {
-                    case TemporaryEntity:
-                        width = 1;
-                        height = 1;
-                        effect = false;
-                        break;
-                    case ElectricPoleCenter:
-                        width = context.Options.ElectricPoleWidth;
-                        height = context.Options.ElectricPoleHeight;
-                        effect = false;
-                        break;
-                    case PumpjackCenter:
-                        width = PumpjackWidth;
-                        height = PumpjackHeight;
-                        effect = true;
-                        break;
-                    case BeaconCenter:
-                    case BeaconSide:
-                    case ElectricPoleSide:
-                    case PumpjackSide:
-                        return null;
-                    default:
-                        throw new NotImplementedException();
+                    width = 1;
+                    height = 1;
+                    effect = false;
+                }
+                else if (pair.Key is ElectricPoleCenter)
+                {
+                    width = context.Options.ElectricPoleWidth;
+                    height = context.Options.ElectricPoleHeight;
+                    effect = false;
+                }
+                else if (pair.Key is PumpjackCenter)
+                {
+                    width = PumpjackWidth;
+                    height = PumpjackHeight;
+                    effect = true;
+                }
+                else if (pair.Key is BeaconCenter
+                      || pair.Key is BeaconSide
+                      || pair.Key is ElectricPoleSide
+                      || pair.Key is PumpjackSide)
+                {
+                    return null;
+                }
+                else
+                {
+                    throw new NotImplementedException();
                 }
 
                 var minX = pair.Value.X - ((width - 1) / 2);
