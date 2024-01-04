@@ -342,7 +342,7 @@ public static partial class AddPipes
         foreach (var trunk in trunkCandidates)
         {
             var path = MakeStraightLine(trunk.Start, trunk.End);
-            if (!includedPipes.EnumerateItems().Intersect(path).Any() && !includedCenters.Intersect(trunk.Centers).Any())
+            if (!includedPipes.EnumerateItems().Intersect(path).Any() && !includedCenters.EnumerateItems().Intersect(trunk.Centers.EnumerateItems()).Any())
             {
                 selectedTrunks.Add(trunk);
                 includedPipes.UnionWith(path);
