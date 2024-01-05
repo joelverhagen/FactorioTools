@@ -672,6 +672,7 @@ public static class Helpers
     {
         var poweredEntities = new List<ProviderRecipient>();
         var hasBeacons = false;
+
         foreach ((var entity, var location) in context.Grid.EntityToLocation)
         {
             if (entity is PumpjackCenter)
@@ -684,6 +685,18 @@ public static class Helpers
                 hasBeacons = true;
             }
         }
+
+        // sort the result so the above dictionary enumerator order does not impact output
+        poweredEntities.Sort((a, b) =>
+        {
+            var c = a.Center.Y.CompareTo(b.Center.Y);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.Center.X.CompareTo(b.Center.X);
+        });
 
         return (poweredEntities, hasBeacons);
     }
