@@ -80,10 +80,10 @@ I want to thank [teoxoy](https://github.com/teoxoy), author of the awesome Facto
 
 | Electric pole        | Add beacons | Overlap beacons | Pipe count        | Pole count         | Beacon count      | Effect count       |
 | -------------------- | ----------- | --------------- | ----------------- | ------------------ | ----------------- | ------------------ |
-| small-electric-pole  | yes         | yes             | 46.39344262295082 | 34.114754098360656 | 80.81967213114754 | 110.14754098360656 |
-| medium-electric-pole | yes         | yes             | 46.39344262295082 | 26.311475409836067 | 80.81967213114754 | 110.14754098360656 |
+| small-electric-pole  | yes         | yes             | 46.39344262295082 | 34.131147540983605 | 80.81967213114754 | 110.14754098360656 |
+| medium-electric-pole | yes         | yes             | 46.39344262295082 | 26.327868852459016 | 80.81967213114754 | 110.14754098360656 |
 | substation           | yes         | yes             | 46.39344262295082 | 8.049180327868852  | 80.81967213114754 | 110.14754098360656 |
-| big-electric-pole    | yes         | yes             | 49.75409836065574 | 35.26229508196721  | 77.04918032786885 | 106.24590163934427 |
+| big-electric-pole    | yes         | yes             | 49.75409836065574 | 35.278688524590166 | 77.04918032786885 | 106.24590163934427 |
 | small-electric-pole  | yes         | no              | 44.68852459016394 | 14.229508196721312 | 6.19672131147541  | 11.80327868852459  |
 | medium-electric-pole | yes         | no              | 44.68852459016394 | 11.60655737704918  | 6.19672131147541  | 11.80327868852459  |
 | substation           | yes         | no              | 44.68852459016394 | 4.377049180327869  | 6.19672131147541  | 11.80327868852459  |
@@ -105,8 +105,8 @@ AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 
 | Method                                    |     Mean |    Error |   StdDev |
 | ----------------------------------------- | -------: | -------: | -------: |
-| MediumElectricPole_NoBeacon_NoUnderground | 16.12 ms | 0.051 ms | 0.048 ms |
-| SmallElectricPole_Beacon_Underground      | 30.55 ms | 0.151 ms | 0.134 ms |
-| MediumElectricPole_Beacon_Underground     | 31.05 ms | 0.081 ms | 0.067 ms |
-| BigElectricPole_Beacon_Underground        | 69.71 ms | 0.291 ms | 0.273 ms |
-| Substation_Beacon_Underground             | 34.98 ms | 0.215 ms | 0.191 ms |
+| MediumElectricPole_NoBeacon_NoUnderground | 17.02 ms | 0.105 ms | 0.098 ms |
+| SmallElectricPole_Beacon_Underground      | 31.17 ms | 0.148 ms | 0.131 ms |
+| MediumElectricPole_Beacon_Underground     | 31.23 ms | 0.361 ms | 0.338 ms |
+| BigElectricPole_Beacon_Underground        | 71.17 ms | 0.615 ms | 0.546 ms |
+| Substation_Beacon_Underground             | 35.29 ms | 0.367 ms | 0.325 ms |
