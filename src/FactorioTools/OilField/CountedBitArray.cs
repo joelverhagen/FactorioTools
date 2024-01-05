@@ -9,7 +9,7 @@ public class CountedBitArray
 #if USE_BITARRAY
     private readonly BitArray _array;
 #else
-    private readonly bool[] _array;
+    private readonly int[] _array;
 #endif
 
     public CountedBitArray(CountedBitArray bits)
@@ -17,8 +17,9 @@ public class CountedBitArray
 #if USE_BITARRAY
         _array = new BitArray(bits._array);
 #else
-        _array = new bool[bits.Count];
-        Array.Copy(bits._array, _array, bits.Count);
+        Count = bits.Count;
+        _array = new int[bits._array.Length];
+        Array.Copy(bits._array, _array, bits._array.Length);
 #endif
         TrueCount = bits.TrueCount;
     }
@@ -28,28 +29,50 @@ public class CountedBitArray
 #if USE_BITARRAY
         _array = new BitArray(length);
 #else
-        _array = new bool[length];
+        Count = length;
+        var intLength = length / 32;
+        if (length % 32 != 0)
+        {
+            intLength++;
+        }
+        _array = new int[intLength];
 #endif
     }
 
 #if USE_BITARRAY
     public int Count => _array.Count;
 #else
-    public int Count => _array.Length;
+    public int Count { get; }
 #endif
 
     public bool this[int index]
     {
-        get => _array[index];
+        get
+        {
+            var intIndex = index / 32;
+            var bitIndex = index % 32;
+            return (_array[intIndex] & (1 << bitIndex)) != 0;
+        }
         set
         {
-            var current = _array[index];
+            var intIndex = index / 32;
+            var bitIndex = index % 32;
+            var currentInt = _array[intIndex];
+            var mask = 1 << bitIndex;
+            var current = (currentInt & mask) != 0;
             if (current != value)
             {
-                TrueCount += value ? 1 : -1;
+                if (value)
+                {
+                    _array[intIndex] = currentInt | mask;
+                    TrueCount++;
+                }
+                else
+                {
+                    _array[intIndex] = currentInt & ~mask;
+                    TrueCount--;
+                }
             }
-
-            _array[index] = value;
         }
     }
 
@@ -70,7 +93,7 @@ public class CountedBitArray
 #if USE_BITARRAY
         _array.SetAll(value);
 #else
-        Array.Fill(_array, value);
+        Array.Fill(_array, value ? -1 : 0);
 #endif
         TrueCount = value ? Count : 0;
     }
@@ -85,9 +108,9 @@ public class CountedBitArray
             throw new ArgumentException("The two bit arrays must have the same number of elements.");
         }
 
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < _array.Length; i++)
         {
-            _array[i] = _array[i] && value[i];
+            _array[i] = _array[i] & value._array[i];
         }
 #endif
         TrueCount = CountTrue();
@@ -99,9 +122,9 @@ public class CountedBitArray
 #if USE_BITARRAY
         _array.Not();
 #else
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < _array.Length; i++)
         {
-            _array[i] = !_array[i];
+            _array[i] = ~_array[i];
         }
 #endif
         TrueCount = Count - TrueCount;
@@ -118,9 +141,9 @@ public class CountedBitArray
             throw new ArgumentException("The two bit arrays must have the same number of elements.");
         }
 
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < _array.Length; i++)
         {
-            _array[i] = _array[i] || value[i];
+            _array[i] = _array[i] | value._array[i];
         }
 #endif
         TrueCount = CountTrue();
@@ -131,9 +154,9 @@ public class CountedBitArray
     {
         var count = 0;
 
-        for (var i = 0; i < _array.Length; i++)
+        for (var i = 0; i < Count; i++)
         {
-            if (_array[i])
+            if (this[i])
             {
                 count++;
             }
