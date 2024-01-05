@@ -576,7 +576,8 @@ public static class Helpers
                     continue;
                 }
 
-                foreach ((var otherCandidate, var otherInfo) in coveredToCandidates[i])
+                var currentCandidates = coveredToCandidates[i];
+                foreach ((var otherCandidate, var otherInfo) in currentCandidates)
                 {
                     if (!updated.Add(otherCandidate))
                     {
@@ -590,8 +591,13 @@ public static class Helpers
                         if (coveredEntities[j] && otherInfo.Covered[j])
                         {
                             otherInfo.Covered[j] = false;
-                            coveredToCandidates[j].Remove(otherCandidate);
                             modified = true;
+
+                            // avoid modifying the collection we are enumerating
+                            if (i != j)
+                            {
+                                coveredToCandidates[j].Remove(otherCandidate);
+                            }
                         }
                     }
 
@@ -613,6 +619,9 @@ public static class Helpers
                         otherInfo.EntityDistance = entityDistance;
                     }
                 }
+
+                // now that we're done enumerating this dictionary, we can clear it
+                currentCandidates.Clear();
 
                 if (toRemove.Count > 0)
                 {
