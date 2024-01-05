@@ -49,12 +49,19 @@ public class CountedBitArray
     {
         get
         {
+#if USE_BITARRAY
+            return _array[index];
+#else
             var intIndex = index / 32;
             var bitIndex = index % 32;
             return (_array[intIndex] & (1 << bitIndex)) != 0;
+#endif
         }
         set
         {
+#if USE_BITARRAY
+            _array[index] = value;
+#else
             var intIndex = index / 32;
             var bitIndex = index % 32;
             var currentInt = _array[intIndex];
@@ -73,6 +80,7 @@ public class CountedBitArray
                     TrueCount--;
                 }
             }
+#endif
         }
     }
 
