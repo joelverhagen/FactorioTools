@@ -60,6 +60,11 @@ public class CountedBitArray
         set
         {
 #if USE_BITARRAY
+            var current = _array[index];
+            if (current != value)
+            {
+                TrueCount += value ? 1 : -1;
+            }
             _array[index] = value;
 #else
             var intIndex = index / 32;
