@@ -14,11 +14,8 @@ public class Entity
     [JsonPropertyName("position")]
     public Position Position { get; set; } = null!;
 
-    /// <summary>
-    /// Should be nullable but is blocked by https://github.com/yanghuan/CSharp.lua/issues/465
-    /// </summary>
     [JsonPropertyName("direction")]
-    public Direction Direction { get; set; } = Direction.Up;
+    public Direction? Direction { get; set; }
 
     [JsonPropertyName("items")]
     public Dictionary<string, int>? Items { get; set; }
