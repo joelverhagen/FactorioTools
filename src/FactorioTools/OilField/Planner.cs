@@ -5,7 +5,11 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
+#if USE_HASHSETS
     private static readonly LocationSet EmptyLocationSet = new();
+#else
+    private static readonly LocationSet EmptyLocationSet = new LocationSet(0, 0);
+#endif
 
     public static (Context Context, OilFieldPlanSummary Summary) ExecuteSample()
     {
@@ -112,7 +116,7 @@ public static class Planner
                     .Values
                     .SelectMany(t => t)
                     .Select(t => t.Terminal)
-                    .ToSet();
+                    .ToSet(context);
             }
 
             poles = AddElectricPoles.Execute(context, electricPolesAvoid, allowRetries: false);
@@ -169,7 +173,7 @@ public static class Planner
                 }
                 else
                 {
-                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToSet();
+                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToSet(context);
                     return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                 }
             }

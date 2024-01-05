@@ -7,26 +7,20 @@ public static class AddPipeEntities
 {
     public static void Execute(Context context, LocationSet pipes, Dictionary<Location, Direction>? undergroundPipes)
     {
-        Execute(
-            context.Grid,
-            context.SharedInstances,
-            context.CenterToTerminals,
-            pipes,
-            undergroundPipes);
+        Execute(context, context.Grid, pipes, undergroundPipes);
     }
 
     public static void Execute(
+        Context context,
         SquareGrid grid,
-        SharedInstances sharedInstances,
-        IReadOnlyDictionary<Location, List<TerminalLocation>> centerToTerminals,
         LocationSet pipes,
         Dictionary<Location, Direction>? undergroundPipes = null,
         bool allowMultipleTerminals = false)
     {
 #if USE_SHARED_INSTANCES
-        var addedPipes = sharedInstances.LocationSetA;
+        var addedPipes = context.SharedInstances.LocationSetA;
 #else
-        var addedPipes = new LocationSet();
+        var addedPipes = context.GetLocationSet();
 #endif
 
         try
@@ -41,7 +35,7 @@ public static class AddPipeEntities
                 }
             }
 
-            foreach (var terminals in centerToTerminals.Values)
+            foreach (var terminals in context.CenterToTerminals.Values)
             {
                 if (terminals.Count != 1 && !allowMultipleTerminals)
                 {

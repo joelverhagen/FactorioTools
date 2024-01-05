@@ -6,15 +6,15 @@ namespace Knapcode.FactorioTools.OilField;
 public static class Prims
 {
     public static Dictionary<Location, LocationSet> GetMinimumSpanningTree(
-        SharedInstances sharedInstances,
+        Context context,
         Dictionary<Location, Dictionary<Location, int>> graph,
         Location firstNode,
         bool digraph)
     {
 #if USE_SHARED_INSTANCES
-        var visited = sharedInstances.LocationSetA;
+        var visited = context.SharedInstances.LocationSetA;
 #else
-        var visited = new LocationSet();
+        var visited = context.GetLocationSet();
 #endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
         var mst = new Dictionary<Location, LocationSet>();
@@ -37,8 +37,7 @@ public static class Prims
 
                 if (!mst.TryGetValue(nodeA, out var nodes))
                 {
-                    nodes = new LocationSet();
-                    nodes.Add(nodeB);
+                    nodes = context.GetLocationSet(nodeB);
                     mst.Add(nodeA, nodes);
                 }
                 else
@@ -64,8 +63,7 @@ public static class Prims
                     {
                         if (!mst.TryGetValue(neighbor, out var otherNeighbors))
                         {
-                            otherNeighbors = new LocationSet();
-                            otherNeighbors.Add(center);
+                            otherNeighbors = context.GetLocationSet(center);
                             mst.Add(neighbor, otherNeighbors);
                         }
                         else

@@ -29,7 +29,7 @@ public static partial class PlanBeacons
     private static (List<Location> Beacons, int Effects) AddBeaconsFbe(Context context, BeaconStrategy strategy)
     {
         var entityAreas = GetEntityAreas(context);
-        var occupiedPositions = GetOccupiedPositions(entityAreas);
+        var occupiedPositions = GetOccupiedPositions(context, entityAreas);
 
         // Visualizer.Show(context.Grid, occupiedPositions.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
@@ -66,7 +66,7 @@ public static partial class PlanBeacons
     {
         var beacons = new List<Location>();
         var effects = 0;
-        var collisionArea = new LocationSet();
+        var collisionArea = context.GetLocationSet();
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
         while (possibleBeacons.Count > 0)
         {
@@ -287,11 +287,11 @@ public static partial class PlanBeacons
         return (entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
-    private static LocationSet GetOccupiedPositions(List<Area> entityAreas)
+    private static LocationSet GetOccupiedPositions(Context context, List<Area> entityAreas)
     {
         return entityAreas
             .SelectMany(a => a.Locations)
-            .ToSet();
+            .ToSet(context);
     }
 
     private static List<Area> GetEntityAreas(Context context)
@@ -382,7 +382,7 @@ public static partial class PlanBeacons
 
     private static List<Location[]> GetPossibleBeaconAreas(Context context, LocationSet occupiedPositions)
     {
-        var validBeaconCenters = new LocationSet();
+        var validBeaconCenters = context.GetLocationSet();
         var possibleBeaconAreas = new List<Location[]>();
 
         var gridMinX = (context.Options.BeaconWidth - 1) / 2;

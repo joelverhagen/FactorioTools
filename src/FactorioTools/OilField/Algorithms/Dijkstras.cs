@@ -5,23 +5,23 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Dijkstras
 {
-    public static DijkstrasResult GetShortestPaths(SharedInstances sharedInstances, SquareGrid grid, Location start, LocationSet goals, bool stopOnFirstGoal)
+    public static DijkstrasResult GetShortestPaths(Context context, SquareGrid grid, Location start, LocationSet goals, bool stopOnFirstGoal)
     {
         var cameFrom = new Dictionary<Location, LocationSet>();
-        cameFrom[start] = new LocationSet();
+        cameFrom[start] = context.GetLocationSet();
         var remainingGoals = new LocationSet(goals);
 
 #if USE_SHARED_INSTANCES
-        var priorityQueue = sharedInstances.LocationPriorityQueue;
-        var costSoFar = sharedInstances.LocationToDouble;
-        var inQueue = sharedInstances.LocationSetB;
+        var priorityQueue = context.SharedInstances.LocationPriorityQueue;
+        var costSoFar = context.SharedInstances.LocationToDouble;
+        var inQueue = context.SharedInstances.LocationSetB;
 #else
         var priorityQueue = new PriorityQueue<Location, double>();
         var costSoFar = new Dictionary<Location, double>();
-        var inQueue = new LocationSet();
+        var inQueue = context.GetLocationSet();
 #endif
 
-        var reachedGoals = new LocationSet();
+        var reachedGoals = context.GetLocationSet();
         costSoFar[start] = 0;
 
         try
@@ -67,9 +67,7 @@ public static class Dijkstras
                         if (!previousExists || alternateCost < neighborCost)
                         {
                             costSoFar[neighbor] = alternateCost;
-                            var cameFromSet = new LocationSet();
-                            cameFromSet.Add(current);
-                            cameFrom[neighbor] = cameFromSet;
+                            cameFrom[neighbor] = context.GetLocationSet(current);
                         }
                         else
                         {

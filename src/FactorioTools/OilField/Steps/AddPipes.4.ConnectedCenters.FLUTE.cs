@@ -15,8 +15,8 @@ public static partial class AddPipes
         var centerToCenters = new Dictionary<Location, LocationSet>();
         foreach (var (center, terminals) in context.CenterToTerminals)
         {
-            var otherCenters = new LocationSet();
-            var visitedPoints = new LocationSet();
+            var otherCenters = context.GetLocationSet();
+            var visitedPoints = context.GetLocationSet();
             var queue = new Queue<FlutePoint>();
             foreach (var terminal in terminals)
             {
@@ -40,7 +40,7 @@ public static partial class AddPipes
                 {
                     otherCenters.UnionWith(point.Centers);
 
-                    foreach (var neighbor in point.Neighbors.EnumerateItems())
+                    foreach (var neighbor in point.Neighbors)
                     {
                         queue.Enqueue(neighbor);
                     }
@@ -56,21 +56,18 @@ public static partial class AddPipes
 
     private class FlutePoint
     {
-        public FlutePoint(Location location)
+        public FlutePoint(Context context, Location location)
         {
             Location = location;
+            Centers = context.GetLocationSet();
         }
 
         public bool IsEliminated { get; set; }
         public bool IsSteinerPoint => Centers.Count == 0;
         public Location Location { get; }
-        public LocationSet Centers { get; } = new LocationSet();
+        public LocationSet Centers { get; }
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
-#if USE_HASHSETS
         public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
-#else
-        public Dictionary<FlutePoint, bool> Neighbors { get; } = new Dictionary<FlutePoint, bool>();
-#endif
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()
@@ -94,7 +91,7 @@ public static partial class AddPipes
             var location = new Location(branch.X, branch.Y);
             if (!locationToPoint.TryGetValue(location, out var point))
             {
-                point = new FlutePoint(location);
+                point = new FlutePoint(context, location);
                 locationToPoint.Add(location, point);
             }
 

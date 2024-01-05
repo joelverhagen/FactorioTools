@@ -11,15 +11,15 @@ public class PlanUndergroundPipesTest
         [InlineData(2)]
         public void Horizontal_TooShort(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
-            var originalPipes = new LocationSet(pipes);
+            var originalPipes = pipes.ToSet(context);
 
             Run(context, pipes);
 
             Assert.All(originalPipes.EnumerateItems(), p => Assert.IsType<Pipe>(context.Grid[p]));
-            Assert.True(originalPipes.SetEquals(pipes));
+            Assert.True(originalPipes.SetEquals(pipes.ToSet(context)));
         }
 
         [Theory]
@@ -34,7 +34,7 @@ public class PlanUndergroundPipesTest
         [InlineData(11)]
         public void Horizontal_OneRun(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
@@ -55,7 +55,7 @@ public class PlanUndergroundPipesTest
         [InlineData(13)]
         public void Horizontal_OneRun_WithExtra(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
@@ -86,7 +86,7 @@ public class PlanUndergroundPipesTest
         [InlineData(22)]
         public void Horizontal_TwoRuns(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
@@ -113,7 +113,7 @@ public class PlanUndergroundPipesTest
         [InlineData(24)]
         public void Horizontal_TwoRuns_WithExtra(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
 
@@ -142,15 +142,15 @@ public class PlanUndergroundPipesTest
         [InlineData(2)]
         public void Vertical_TooShort(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
-            var originalPipes = new LocationSet(pipes);
+            var originalPipes = pipes.ToSet(context);
 
             Run(context, pipes);
 
             Assert.All(originalPipes.EnumerateItems(), p => Assert.IsType<Pipe>(context.Grid[p]));
-            Assert.True(originalPipes.SetEquals(pipes));
+            Assert.True(originalPipes.SetEquals(pipes.ToSet(context)));
         }
 
         [Theory]
@@ -165,7 +165,7 @@ public class PlanUndergroundPipesTest
         [InlineData(11)]
         public void Vertical_OneRun(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
@@ -186,7 +186,7 @@ public class PlanUndergroundPipesTest
         [InlineData(13)]
         public void Vertical_OneRun_WithExtra(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
@@ -217,7 +217,7 @@ public class PlanUndergroundPipesTest
         [InlineData(22)]
         public void Vertical_TwoRuns(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
@@ -243,7 +243,7 @@ public class PlanUndergroundPipesTest
         [InlineData(24)]
         public void Vertical_TwoRuns_WithExtra(int length)
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
 
@@ -270,7 +270,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void Intersection_Plus()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 11, minY: 6, maxY: 6);
             AddPipes(pipes, minX: 6, maxX: 6, minY: 1, maxY: 11);
             var context = GetContext(pipes);
@@ -298,7 +298,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void Intersection_T()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 11, minY: 6, maxY: 6);
             AddPipes(pipes, minX: 11, maxX: 11, minY: 1, maxY: 11);
             var context = GetContext(pipes);
@@ -323,7 +323,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void RunIsInterruptedByTerminal()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 11, minY: 4, maxY: 4);
             var context = GetContext(pipes);
             AddPumpjack(context, new Location(7, 2), Direction.Down);
@@ -344,7 +344,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void RunIsAdjacentToTerminal()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 11, minY: 4, maxY: 4);
             AddPipe(pipes, x: 5, y: 3);
             var context = GetContext(pipes);
@@ -367,7 +367,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void RunEndsWithTerminal()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 5, minY: 3, maxY: 3);
             var context = GetContext(pipes, width: 10);
             AddPumpjack(context, new Location(7, 2), Direction.Left);
@@ -383,7 +383,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void RunStartsWithTerminal()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 4, maxX: 8, minY: 1, maxY: 1);
             var context = GetContext(pipes, height: 5);
             AddPumpjack(context, new Location(2, 2), Direction.Right);
@@ -399,7 +399,7 @@ public class PlanUndergroundPipesTest
         [Fact]
         public void RunStartsAndEndsWithTerminal()
         {
-            var pipes = new LocationSet();
+            var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 4, maxX: 8, minY: 3, maxY: 3);
             var context = GetContext(pipes, width: 13, height: 7);
             AddPumpjack(context, new Location(2, 4), Direction.Right);
@@ -413,17 +413,18 @@ public class PlanUndergroundPipesTest
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(8, 3)]).Direction);
         }
 
-        private static void Run(Context context, LocationSet pipes)
+        private static void Run(Context context, HashSet<Location> pipes)
         {
-            var undergroundPipes = PlanUndergroundPipes.Execute(context, pipes);
+            var locationSet = pipes.ToSet(context);
+            var undergroundPipes = PlanUndergroundPipes.Execute(context, locationSet);
 
             Assert.Equal(0, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
             Assert.All(undergroundPipes.Keys, p => Assert.Contains(p, pipes));
 
-            AddPipeEntities.Execute(context, pipes, undergroundPipes);
+            AddPipeEntities.Execute(context, locationSet, undergroundPipes);
         }
 
-        private static void AddPipes(LocationSet pipes, int minX, int maxX, int minY, int maxY)
+        private static void AddPipes(HashSet<Location> pipes, int minX, int maxX, int minY, int maxY)
         {
             for (var x = minX; x <= maxX; x++)
             {
@@ -434,16 +435,16 @@ public class PlanUndergroundPipesTest
             }
         }
 
-        private static void AddPipe(LocationSet pipes, int x, int y)
+        private static void AddPipe(HashSet<Location> pipes, int x, int y)
         {
             var pipe = new Location(x, y);
             pipes.Add(pipe);
         }
 
-        private static Context GetContext(LocationSet pipes, int? width = null, int? height = null)
+        private static Context GetContext(HashSet<Location> pipes, int? width = null, int? height = null)
         {
-            width = width ?? (pipes.EnumerateItems().Max(l => l.X) + 2);
-            height = height ?? (pipes.EnumerateItems().Max(l => l.Y) + 2);
+            width = width ?? (pipes.Max(l => l.X) + 2);
+            height = height ?? (pipes.Max(l => l.Y) + 2);
 
             var context = InitializeContext.GetEmpty(OilFieldOptions.ForMediumElectricPole, width.Value, height.Value);
 

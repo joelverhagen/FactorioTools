@@ -20,7 +20,7 @@ public static class AddElectricPoles
         LocationSet? avoidEntities = null;
         if (avoid.Count > 0)
         {
-            avoidEntities = new LocationSet();
+            avoidEntities = context.GetLocationSet();
             foreach (var location in avoid.EnumerateItems())
             {
                 if (context.Grid.IsEmpty(location))
@@ -79,7 +79,7 @@ public static class AddElectricPoles
             }
         }
 
-        return electricPoles.Keys.ToSet();
+        return electricPoles.Keys.ToSet(context);
     }
 
     private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
@@ -91,7 +91,7 @@ public static class AddElectricPoles
             .SelectMany(p => p.Value.EnumerateItems())
             .Concat(poleCenterToCoveredCenters.Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
             .Except(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems())) // Exclude electric poles covering pumpjacks that are only covered by one pole.
-            .ToSet();
+            .ToSet(context);
 
         while (removeCandidates.Count > 0)
         {
@@ -123,7 +123,7 @@ public static class AddElectricPoles
     {
         var queue = new Queue<ElectricPoleCenter>();
         queue.Enqueue(electricPoles.Values.Where(x => x != except).First());
-        var discovered = new ElectricPoleCenterSet();
+        var discovered = new HashSet<ElectricPoleCenter>();
 
         while (queue.Count > 0)
         {
@@ -136,7 +136,7 @@ public static class AddElectricPoles
 
             if (discovered.Add(current))
             {
-                foreach (var neighbor in current.Neighbors.EnumerateItems())
+                foreach (var neighbor in current.Neighbors)
                 {
                     queue.Enqueue(neighbor);
                 }
@@ -210,7 +210,7 @@ public static class AddElectricPoles
             }
             else if (retryStrategy == RetryStrategy.RemoveUnpoweredBeacons)
             {
-                var centersToPowerFirst = new LocationSet();
+                var centersToPowerFirst = context.GetLocationSet();
                 for (var i = poweredEntities.Count - 1; i >= 0; i--)
                 {
                     var entity = poweredEntities[i];
@@ -375,8 +375,7 @@ public static class AddElectricPoles
             Validate.CandidateCoversMoreEntities(context, poweredEntities, coveredEntities, candidate, candidateInfo);
 
             AddProviderAndAllowMultipleProviders(
-                context.Grid,
-                context.SharedInstances,
+                context,
                 candidate,
                 candidateInfo,
                 context.Options.ElectricPoleWidth,
@@ -617,7 +616,7 @@ public static class AddElectricPoles
         var attempted = context.SharedInstances.LocationSetA;
 #else
         var candidates = new Queue<Location>();
-        var attempted = new LocationSet();
+        var attempted = context.GetLocationSet();
 #endif
 
         Location selectedPoint = default;
@@ -671,7 +670,7 @@ public static class AddElectricPoles
         }
 
         var center = AddElectricPole(context, electricPoles, selectedPoint);
-        var connectedGroups = groups.Where(g => g.EnumerateItems().Intersect(center.Neighbors.EnumerateItems().Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
+        var connectedGroups = groups.Where(g => g.EnumerateItems().Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
 
         if (connectedGroups.Count == 0)
         {
@@ -691,13 +690,13 @@ public static class AddElectricPoles
     private static List<LocationSet> GetElectricPoleGroups(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
         var groups = new List<LocationSet>();
-        var remaining = electricPoles.Keys.ToSet();
+        var remaining = electricPoles.Keys.ToSet(context);
         while (remaining.Count > 0)
         {
             var current = remaining.EnumerateItems().First();
             remaining.Remove(current);
 
-            var entities = new ElectricPoleCenterSet();
+            var entities = new HashSet<ElectricPoleCenter>();
             var explore = new Queue<ElectricPoleCenter>();
             explore.Enqueue(electricPoles[current]);
 
@@ -706,14 +705,14 @@ public static class AddElectricPoles
                 var entity = explore.Dequeue();
                 if (entities.Add(entity))
                 {
-                    foreach (var neighbor in entity.Neighbors.EnumerateItems())
+                    foreach (var neighbor in entity.Neighbors)
                     {
                         explore.Enqueue(neighbor);
                     }
                 }
             }
 
-            var group = entities.EnumerateItems().Select(e => context.Grid.EntityToLocation[e]).ToSet();
+            var group = entities.Select(e => context.Grid.EntityToLocation[e]).ToSet(context);
             remaining.ExceptWith(group);
             groups.Add(group);
         }

@@ -5,16 +5,16 @@ namespace Knapcode.FactorioTools.OilField
 {
     public static class BreadthFirstFinder
     {
-        public static List<Location>? GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, Location goal)
+        public static List<Location>? GetShortestPath(Context context, Location start, Location goal)
         {
 #if USE_SHARED_INSTANCES
-            var toExplore = sharedInstances.LocationQueue;
-            var parents = sharedInstances.LocationToLocation;
-            var visited = sharedInstances.LocationSetA;
+            var toExplore = context.SharedInstances.LocationQueue;
+            var parents = context.SharedInstances.LocationToLocation;
+            var visited = context.SharedInstances.LocationSetA;
 #else
             var toExplore = new Queue<Location>();
             var parents = new Dictionary<Location, Location>();
-            var visited = new LocationSet();
+            var visited = context.GetLocationSet();
 #endif
             try
             {
@@ -47,7 +47,7 @@ namespace Knapcode.FactorioTools.OilField
                         return output;
                     }
 
-                    grid.GetNeighbors(neighbors, current);
+                    context.Grid.GetNeighbors(neighbors, current);
                     for (int i = 0; i < neighbors.Length; i++)
                     {
                         Location next = neighbors[i];

@@ -152,7 +152,7 @@ public static class Helpers
             .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
             .Where(p => p.Entity is not null)
             .ToDictionary(p => p.Location, p => p.Entity!);
-        var unusedProviders = providers.Keys.ToSet();
+        var unusedProviders = providers.Keys.ToSet(context);
 
         for (int i = 0; i < recipients.Count; i++)
         {
@@ -207,7 +207,7 @@ public static class Helpers
 #if USE_SHARED_INSTANCES
             var coveredCenters = context.SharedInstances.LocationSetA;
 #else
-            var coveredCenters = new LocationSet();
+            var coveredCenters = context.GetLocationSet();
 #endif
 
             try
@@ -305,7 +305,7 @@ public static class Helpers
     }
 
     public static Dictionary<Location, LocationSet> GetProviderCenterToCoveredCenters(
-        SquareGrid grid,
+        Context context,
         int providerWidth,
         int providerHeight,
         int supplyWidth,
@@ -318,10 +318,10 @@ public static class Helpers
 
         foreach (var center in providerCenters)
         {
-            var coveredCenters = new LocationSet();
+            var coveredCenters = context.GetLocationSet();
             AddCoveredCenters(
                 coveredCenters,
-                grid,
+                context.Grid,
                 center,
                 providerWidth,
                 providerHeight,
@@ -336,12 +336,12 @@ public static class Helpers
         return poleCenterToCoveredCenters;
     }
 
-    public static Dictionary<Location, LocationSet> GetCoveredCenterToProviderCenters(Dictionary<Location, LocationSet> providerCenterToCoveredCenters)
+    public static Dictionary<Location, LocationSet> GetCoveredCenterToProviderCenters(Context context, Dictionary<Location, LocationSet> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
             .SelectMany(p => p.Value.EnumerateItems().Select(c => KeyValuePair.Create(p.Key, c)))
             .GroupBy(p => p.Value, p => p.Key)
-            .ToDictionary(g => g.Key, g => g.ToSet());
+            .ToDictionary(g => g.Key, g => g.ToSet(context));
     }
 
     private static void AddCoveredCenters(
@@ -434,8 +434,7 @@ public static class Helpers
     }
 
     public static void AddProviderAndPreventMultipleProviders<TInfo>(
-        SquareGrid grid,
-        SharedInstances sharedInstances,
+        Context context,
         Location center,
         TInfo centerInfo,
         int providerWidth,
@@ -460,7 +459,7 @@ public static class Helpers
         coveredEntities.Or(centerInfo.Covered);
 
         RemoveOverlappingCandidates(
-            grid,
+            context.Grid,
             center,
             providerWidth,
             providerHeight,
@@ -468,11 +467,11 @@ public static class Helpers
             coveredToCandidates);
 
 #if USE_SHARED_INSTANCES
-        var toRemove = sharedInstances.LocationListA;
-        var updated = sharedInstances.LocationSetA;
+        var toRemove = context.SharedInstances.LocationListA;
+        var updated = context.SharedInstances.LocationSetA;
 #else
         var toRemove = new List<Location>();
-        var updated = new LocationSet();
+        var updated = context.GetLocationSet();
 #endif
 
         try
@@ -516,8 +515,7 @@ public static class Helpers
     }
 
     public static void AddProviderAndAllowMultipleProviders<TInfo>(
-        SquareGrid grid,
-        SharedInstances sharedInstances,
+        Context context,
         Location center,
         TInfo centerInfo,
         int providerWidth,
@@ -544,7 +542,7 @@ public static class Helpers
         coveredEntities.Or(centerInfo.Covered);
 
         RemoveOverlappingCandidates(
-            grid,
+            context.Grid,
             center,
             providerWidth,
             providerHeight,
@@ -558,11 +556,11 @@ public static class Helpers
         }
 
 #if USE_SHARED_INSTANCES
-        var toRemove = sharedInstances.LocationListA;
-        var updated = sharedInstances.LocationSetA;
+        var toRemove = context.SharedInstances.LocationListA;
+        var updated = context.SharedInstances.LocationSetA;
 #else
         var toRemove = new List<Location>();
-        var updated = new LocationSet();
+        var updated = context.GetLocationSet();
 #endif
 
         try
@@ -653,7 +651,7 @@ public static class Helpers
         IEnumerable<Location> electricPoleCenters)
     {
         var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
-            context.Grid,
+            context,
             context.Options.ElectricPoleWidth,
             context.Options.ElectricPoleHeight,
             context.Options.ElectricPoleSupplyWidth,
@@ -662,7 +660,7 @@ public static class Helpers
             includePumpjacks: true,
             includeBeacons: true);
 
-        var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(poleCenterToCoveredCenters);
+        var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(context, poleCenterToCoveredCenters);
 
         if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
         {

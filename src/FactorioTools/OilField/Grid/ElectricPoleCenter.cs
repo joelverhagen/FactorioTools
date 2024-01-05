@@ -1,14 +1,16 @@
-﻿namespace Knapcode.FactorioTools.OilField;
+﻿using System.Collections.Generic;
+
+namespace Knapcode.FactorioTools.OilField;
 
 public class ElectricPoleCenter : GridEntity
 {
-    private readonly ElectricPoleCenterSet _neighbors = new();
+    private readonly HashSet<ElectricPoleCenter> _neighbors = new();
 
 #if ENABLE_GRID_TOSTRING
     public override string Label => "E";
 #endif
 
-    public ElectricPoleCenterSet Neighbors => _neighbors;
+    public HashSet<ElectricPoleCenter> Neighbors => _neighbors;
 
     public void AddNeighbor(ElectricPoleCenter neighbor)
     {
@@ -18,7 +20,7 @@ public class ElectricPoleCenter : GridEntity
 
     public void ClearNeighbors()
     {
-        foreach (var neighbor in _neighbors.EnumerateItems())
+        foreach (var neighbor in _neighbors)
         {
             neighbor._neighbors.Remove(this);
         }

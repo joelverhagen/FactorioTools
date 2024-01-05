@@ -82,8 +82,7 @@ public static partial class PlanBeacons
                 else
                 {
                     AddProviderAndPreventMultipleProviders(
-                        context.Grid,
-                        context.SharedInstances,
+                        context,
                         candidate,
                         info,
                         context.Options.BeaconWidth,

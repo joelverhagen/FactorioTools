@@ -176,7 +176,7 @@ public static partial class AddPipes
                 .OrderBy(x => x.Direction)
                 .First();
             EliminateOtherTerminals(context, terminal);
-            var pipes = new LocationSet { terminal.Terminal };
+            var pipes = context.GetLocationSet(terminal.Terminal);
             var solutions = OptimizeAndAddSolutions(context, pipesToSolutions, default, pipes, centerToConnectedCenters: null);
             foreach (var solution in solutions)
             {
@@ -348,7 +348,7 @@ public static partial class AddPipes
 
     private static void EliminateStrandedTerminals(Context context)
     {
-        var locationsToExplore = context.LocationToTerminals.Keys.ToSet();
+        var locationsToExplore = context.LocationToTerminals.Keys.ToSet(context);
 
         while (locationsToExplore.Count > 0)
         {
@@ -356,14 +356,14 @@ public static partial class AddPipes
             var start = goals.EnumerateItems().First();
             goals.Remove(start);
 
-            var result = Dijkstras.GetShortestPaths(context.SharedInstances, context.Grid, start, goals, stopOnFirstGoal: false);
+            var result = Dijkstras.GetShortestPaths(context, context.Grid, start, goals, stopOnFirstGoal: false);
 
             var reachedTerminals = result.ReachedGoals;
             reachedTerminals.Add(start);
 
-            var unreachedTerminals = goals.EnumerateItems().Except(result.ReachedGoals.EnumerateItems()).ToSet();
+            var unreachedTerminals = goals.EnumerateItems().Except(result.ReachedGoals.EnumerateItems()).ToSet(context);
 
-            var reachedPumpjacks = result.ReachedGoals.EnumerateItems().SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToSet();
+            var reachedPumpjacks = result.ReachedGoals.EnumerateItems().SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToSet(context);
 
             LocationSet terminalsToEliminate;
             if (reachedPumpjacks.Count == context.CenterToTerminals.Count)

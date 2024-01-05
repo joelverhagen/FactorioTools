@@ -132,8 +132,7 @@ public static partial class AddPipes
                         .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
                         .Select(p =>
                         {
-                            var goals = new LocationSet();
-                            goals.Add(p.B.Terminal);
+                            var goals = context.GetLocationSet(p.B.Terminal);
                             var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, p.A.Terminal, goals);
                             return new TerminalPair(p.A, p.B, result.Path);
                         })
@@ -269,7 +268,7 @@ public static partial class AddPipes
         }
 
         var terminals = finalGroup.Entities.ToList();
-        var pipes = finalGroup.Paths.SelectMany(l => l).ToSet();
+        var pipes = finalGroup.Paths.SelectMany(l => l).ToSet(context);
 
         return (terminals, pipes, strategy);
     }
@@ -278,7 +277,7 @@ public static partial class AddPipes
     private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
     {
         var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToSet(), undergroundPipes: null, allowMultipleTerminals: true);
+        AddPipeEntities.Execute(context, clone, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToSet(context), undergroundPipes: null, allowMultipleTerminals: true);
         Visualizer.Show(clone, addedPumpjacks.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.Center.X, x.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
@@ -328,7 +327,7 @@ public static partial class AddPipes
                 List<Location>? path;
                 if (strategy == PipeStrategy.FbeOriginal)
                 {
-                    path = BreadthFirstFinder.GetShortestPath(context.SharedInstances, context.Grid, l.B, l.A);
+                    path = BreadthFirstFinder.GetShortestPath(context, l.B, l.A);
                     if (path is null)
                     {
                         // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
@@ -337,8 +336,7 @@ public static partial class AddPipes
                 }
                 else
                 {
-                    var goals = new LocationSet();
-                    goals.Add(l.B);
+                    var goals = context.GetLocationSet(l.B);
                     var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, goals);
                     if (!result.Success)
                     {

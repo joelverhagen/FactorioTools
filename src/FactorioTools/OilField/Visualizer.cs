@@ -75,15 +75,11 @@ public static class Visualizer
                 }
             }
 
-#if USE_HASHSETS
             var pairs = new HashSet<(Location A, Location B)>();
-#else
-            var pairs = new Dictionary<(Location A, Location B), bool>();
-#endif
             foreach ((var pole, var location) in grid.EntityToLocation.Where(p => p.Key is ElectricPoleCenter))
             {
                 var center = (ElectricPoleCenter)pole;
-                foreach (var neighbor in center.Neighbors.EnumerateItems())
+                foreach (var neighbor in center.Neighbors)
                 {
                     var pair = new[] { location, grid.EntityToLocation[neighbor] }.Order().ToList();
                     if (pairs.Add((pair[0], pair[1])))

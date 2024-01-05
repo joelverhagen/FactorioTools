@@ -87,7 +87,7 @@ public static class RotateOptimize
     private static void VisualizeIntersections(ChildContext context)
     {
         var clone = new PipeGrid(context.ExistingPipeGrid);
-        AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes, allowMultipleTerminals: true);
+        AddPipeEntities.Execute(context.ParentContext, clone, context.Pipes, allowMultipleTerminals: true);
         Visualizer.Show(clone, context.Intersections.EnumerateItems().Select(l => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(l.X, l.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
@@ -229,7 +229,7 @@ public static class RotateOptimize
         var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
 #else
         var originalPath = new List<Location>();
-        var connectionPoints = new LocationSet(context.Pipes.Count);
+        var connectionPoints = context.ParentContext.GetLocationSet(context.Pipes.Count);
 #endif
 
         try
@@ -421,8 +421,8 @@ public static class RotateOptimize
         {
             ParentContext = parentContext;
             Pipes = pipes;
-            Intersections = new LocationSet(pipes.Count);
-            Goals = new LocationSet(pipes.Count);
+            Intersections = parentContext.GetLocationSet(pipes.Count);
+            Goals = parentContext.GetLocationSet(pipes.Count);
             ExistingPipeGrid = new ExistingPipeGrid(parentContext.Grid, pipes);
 
             UpdateIntersectionsAndGoals();

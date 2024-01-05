@@ -19,14 +19,14 @@ public static class Validate
                 }
             }
 
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToSet();
+            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToSet(context);
             var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
             var start = goals.EnumerateItems().First();
             goals.Remove(start);
-            var result = Dijkstras.GetShortestPaths(context.SharedInstances, clone, start, goals, stopOnFirstGoal: false);
+            var result = Dijkstras.GetShortestPaths(context, clone, start, goals, stopOnFirstGoal: false);
             var reachedGoals = result.ReachedGoals;
             reachedGoals.Add(start);
-            var unreachedGoals = goals.ToSet();
+            var unreachedGoals = new LocationSet(goals);
             unreachedGoals.ExceptWith(reachedGoals);
             if (unreachedGoals.Count > 0)
             {
@@ -71,7 +71,7 @@ public static class Validate
             foreach (var solution in solutions)
             {
                 var beaconCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
-                    context.Grid,
+                    context,
                     context.Options.BeaconWidth,
                     context.Options.BeaconHeight,
                     context.Options.BeaconSupplyWidth,
@@ -80,7 +80,7 @@ public static class Validate
                     includePumpjacks: true,
                     includeBeacons: false);
 
-                var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(beaconCenterToCoveredCenters);
+                var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(context, beaconCenterToCoveredCenters);
 
                 foreach ((var pumpjackCenter, var beaconCenters) in coveredCenterToPoleCenters)
                 {
@@ -112,14 +112,14 @@ public static class Validate
             if (beaconSolutions is null)
             {
                 var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, context.SharedInstances, context.CenterToTerminals, optimizedPipes, undergroundPipes);
+                AddPipeEntities.Execute(context, clone, optimizedPipes, undergroundPipes);
             }
             else
             {
                 foreach (var solution in beaconSolutions)
                 {
                     var clone = new PipeGrid(context.Grid);
-                    AddPipeEntities.Execute(clone, context.SharedInstances, context.CenterToTerminals, optimizedPipes, undergroundPipes);
+                    AddPipeEntities.Execute(context, clone, optimizedPipes, undergroundPipes);
                     AddBeaconsToGrid(clone, context.Options, solution.Beacons);
                 }
             }

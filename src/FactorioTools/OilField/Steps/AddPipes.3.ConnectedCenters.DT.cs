@@ -7,10 +7,10 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {
-    private static Dictionary<Location, LocationSet> GetConnectedPumpjacksWithDelaunay(List<Location> centers)
+    private static Dictionary<Location, LocationSet> GetConnectedPumpjacksWithDelaunay(Context context, List<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
-        var dlGraph = centers.ToDictionary(c => c, c => new LocationSet());
+        var dlGraph = centers.ToDictionary(c => c, c => context.GetLocationSet());
 
         for (var e = 0; e < delaunator.Triangles.Length; e++)
         {
@@ -46,7 +46,7 @@ public static partial class AddPipes
         }
 
         var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistanceSquared);
-        var mst = Prims.GetMinimumSpanningTree(context.SharedInstances, dlGraph, closestToMiddle, digraph: false);
+        var mst = Prims.GetMinimumSpanningTree(context, dlGraph, closestToMiddle, digraph: false);
 
         return mst;
     }

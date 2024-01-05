@@ -65,7 +65,7 @@ public static class InitializeContext
             CenterToOriginalDirection = centerToOriginalDirection,
             LocationToTerminals = GetLocationToTerminals(centerToTerminals),
             LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
-            SharedInstances = new SharedInstances(),
+            SharedInstances = new SharedInstances(grid),
         };
     }
 

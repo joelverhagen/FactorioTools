@@ -1,7 +1,11 @@
 <Project>
+
+  <PropertyGroup>
+    <UseDefines Condition="'$(UseDefines)' == ''">true</UseDefines>
+  </PropertyGroup>
   
   <PropertyGroup>
-    <UseHashSets Condition="'$(UseHashSets)' == ''">true</UseHashSets>
+    <UseHashSets Condition="'$(UseHashSets)' == ''">$(UseDefines)</UseHashSets>
     <DefineConstants Condition="$(UseHashSets) == 'true'">$(DefineConstants);USE_HASHSETS</DefineConstants>
   </PropertyGroup>
   
