@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Linq;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -140,4 +141,11 @@ public class CountedBitArray
 
         return count;
     }
+
+#if ENABLE_GRID_TOSTRING
+    public override string ToString()
+    {
+        return string.Join("", Enumerable.Range(0, Count).Select(i => this[i] ? '1' : '0'));
+    }
+#endif
 }
