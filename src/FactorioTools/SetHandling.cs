@@ -4,6 +4,12 @@ global using LocationSet = System.Collections.Generic.HashSet<Knapcode.FactorioT
 global using LocationSet = Knapcode.FactorioTools.OilField.LocationIntSet;
 #endif
 
+#if USE_BITARRAY
+global using CountedBitArray = Knapcode.FactorioTools.OilField.WrapperCountedBitArray;
+#else
+global using CountedBitArray = Knapcode.FactorioTools.OilField.CustomCountedBitArray;
+#endif
+
 using System.Collections.Generic;
 using Knapcode.FactorioTools.OilField;
 

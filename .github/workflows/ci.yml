@@ -92,10 +92,19 @@ jobs:
       - name: Build debug, no grid ToString
         run: dotnet build --configuration Debug /p:EnableGridToString=false
 
-      - name: Build release
+      - name: Build debug, no defines at all
+        run: dotnet build --configuration Debug /p:UseDefines=false
+
+      - name: Build release without defines
+        run: dotnet build --configuration Release /p:UseDefines=false
+
+      - name: Test without defines
+        run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
+
+      - name: Build release with defines
         run: dotnet build --configuration Release
 
-      - name: Test
+      - name: Test with defines
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
 
       - name: Publish

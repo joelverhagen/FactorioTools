@@ -1,34 +1,22 @@
 ﻿using System;
-using System.Collections;
 using System.Linq;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class CountedBitArray
+public class CustomCountedBitArray
 {
-#if USE_BITARRAY
-    private readonly BitArray _array;
-#else
     private readonly int[] _array;
-#endif
 
-    public CountedBitArray(CountedBitArray bits)
+    public CustomCountedBitArray(CustomCountedBitArray bits)
     {
-#if USE_BITARRAY
-        _array = new BitArray(bits._array);
-#else
         Count = bits.Count;
         _array = new int[bits._array.Length];
         Array.Copy(bits._array, _array, bits._array.Length);
-#endif
         TrueCount = bits.TrueCount;
     }
 
-    public CountedBitArray(int length)
+    public CustomCountedBitArray(int length)
     {
-#if USE_BITARRAY
-        _array = new BitArray(length);
-#else
         Count = length;
         var intLength = length / 32;
         if (length % 32 != 0)
@@ -36,40 +24,23 @@ public class CountedBitArray
             intLength++;
         }
         _array = new int[intLength];
-#endif
     }
 
-#if USE_BITARRAY
-    public int Count => _array.Count;
-#else
     public int Count { get; }
-#endif
 
     public bool this[int index]
     {
         get
         {
-#if USE_BITARRAY
-            return _array[index];
-#else
             var intIndex = index / 32;
             var bitIndex = index % 32;
             return (_array[intIndex] & (1 << bitIndex)) != 0;
-#endif
         }
         set => Set(index, value);
     }
 
     public bool Set(int index, bool value)
     {
-#if USE_BITARRAY
-        var current = _array[index];
-        if (current != value)
-        {
-            TrueCount += value ? 1 : -1;
-        }
-        _array[index] = value;
-#else
         var intIndex = index / 32;
         var bitIndex = index % 32;
         var currentInt = _array[intIndex];
@@ -88,8 +59,6 @@ public class CountedBitArray
                 TrueCount--;
             }
         }
-#endif
-
         return current;
     }
 
@@ -107,19 +76,12 @@ public class CountedBitArray
 
     public void SetAll(bool value)
     {
-#if USE_BITARRAY
-        _array.SetAll(value);
-#else
         Array.Fill(_array, value ? -1 : 0);
-#endif
         TrueCount = value ? Count : 0;
     }
 
-    public CountedBitArray And(CountedBitArray value)
+    public CustomCountedBitArray And(CustomCountedBitArray value)
     {
-#if USE_BITARRAY
-        _array.And(value._array);
-#else
         if (value.Count != Count)
         {
             throw new ArgumentException("The two bit arrays must have the same number of elements.");
@@ -129,30 +91,22 @@ public class CountedBitArray
         {
             _array[i] = _array[i] & value._array[i];
         }
-#endif
         TrueCount = CountTrue();
         return this;
     }
 
-    public CountedBitArray Not()
+    public CustomCountedBitArray Not()
     {
-#if USE_BITARRAY
-        _array.Not();
-#else
         for (var i = 0; i < _array.Length; i++)
         {
             _array[i] = ~_array[i];
         }
-#endif
         TrueCount = Count - TrueCount;
         return this;
     }
 
-    public CountedBitArray Or(CountedBitArray value)
+    public CustomCountedBitArray Or(CustomCountedBitArray value)
     {
-#if USE_BITARRAY
-        _array.Or(value._array);
-#else
         if (value.Count != Count)
         {
             throw new ArgumentException("The two bit arrays must have the same number of elements.");
@@ -162,7 +116,6 @@ public class CountedBitArray
         {
             _array[i] = _array[i] | value._array[i];
         }
-#endif
         TrueCount = CountTrue();
         return this;
     }

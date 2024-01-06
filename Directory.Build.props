@@ -8,5 +8,10 @@
     <UseHashSets Condition="'$(UseHashSets)' == ''">$(UseDefines)</UseHashSets>
     <DefineConstants Condition="$(UseHashSets) == 'true'">$(DefineConstants);USE_HASHSETS</DefineConstants>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <UseBitArray Condition="'$(UseBitArray)' == ''">$(UseDefines)</UseBitArray>
+    <DefineConstants Condition="$(UseBitArray) == 'true'">$(DefineConstants);USE_BITARRAY</DefineConstants>
+  </PropertyGroup>
   
 </Project>

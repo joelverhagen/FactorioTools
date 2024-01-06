@@ -24,11 +24,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseBitArray Condition="'$(UseBitArray)' == ''">$(UseDefines)</UseBitArray>
-    <DefineConstants Condition="$(UseBitArray) == 'true'">$(DefineConstants);USE_BITARRAY</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <UseArrayClone Condition="'$(UseArrayClone)' == ''">$(UseDefines)</UseArrayClone>
     <DefineConstants Condition="$(UseArrayClone) == 'true'">$(DefineConstants);USE_ARRAY_CLONE</DefineConstants>
   </PropertyGroup>
