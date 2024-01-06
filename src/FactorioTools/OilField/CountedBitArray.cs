@@ -57,36 +57,40 @@ public class CountedBitArray
             return (_array[intIndex] & (1 << bitIndex)) != 0;
 #endif
         }
-        set
-        {
+        set => Set(index, value);
+    }
+
+    public bool Set(int index, bool value)
+    {
 #if USE_BITARRAY
-            var current = _array[index];
-            if (current != value)
-            {
-                TrueCount += value ? 1 : -1;
-            }
-            _array[index] = value;
-#else
-            var intIndex = index / 32;
-            var bitIndex = index % 32;
-            var currentInt = _array[intIndex];
-            var mask = 1 << bitIndex;
-            var current = (currentInt & mask) != 0;
-            if (current != value)
-            {
-                if (value)
-                {
-                    _array[intIndex] = currentInt | mask;
-                    TrueCount++;
-                }
-                else
-                {
-                    _array[intIndex] = currentInt & ~mask;
-                    TrueCount--;
-                }
-            }
-#endif
+        var current = _array[index];
+        if (current != value)
+        {
+            TrueCount += value ? 1 : -1;
         }
+        _array[index] = value;
+#else
+        var intIndex = index / 32;
+        var bitIndex = index % 32;
+        var currentInt = _array[intIndex];
+        var mask = 1 << bitIndex;
+        var current = (currentInt & mask) != 0;
+        if (current != value)
+        {
+            if (value)
+            {
+                _array[intIndex] = currentInt | mask;
+                TrueCount++;
+            }
+            else
+            {
+                _array[intIndex] = currentInt & ~mask;
+                TrueCount--;
+            }
+        }
+#endif
+
+        return current;
     }
 
     public int TrueCount { get; private set; }
