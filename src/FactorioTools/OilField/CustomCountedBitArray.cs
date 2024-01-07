@@ -158,6 +158,18 @@ public class CustomCountedBitArray
         return true;
     }
 
+    public override int GetHashCode()
+    {
+        var hashCode = 23;
+
+        for (var i = 0; i < _array.Length; i++)
+        {
+            hashCode = hashCode * 31 + _array[i];
+        }
+
+        return hashCode;
+    }
+
     public int GetInt(int index)
     {
         if (index >= _array.Length)
