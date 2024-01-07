@@ -32,6 +32,11 @@ public class CustomCountedBitArray
     {
         get
         {
+            if (index >= Count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
             var intIndex = index / 32;
             var bitIndex = index % 32;
             return (_array[intIndex] & (1 << bitIndex)) != 0;
@@ -41,6 +46,11 @@ public class CustomCountedBitArray
 
     public bool Set(int index, bool value)
     {
+        if (index >= Count)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
         var intIndex = index / 32;
         var bitIndex = index % 32;
         var currentInt = _array[intIndex];
@@ -77,6 +87,12 @@ public class CustomCountedBitArray
     public void SetAll(bool value)
     {
         Array.Fill(_array, value ? -1 : 0);
+
+        if (value)
+        {
+            ClearUnusedBits();
+        }
+
         TrueCount = value ? Count : 0;
     }
 
@@ -91,6 +107,7 @@ public class CustomCountedBitArray
         {
             _array[i] = _array[i] & value._array[i];
         }
+
         TrueCount = CountTrue();
         return this;
     }
@@ -101,8 +118,54 @@ public class CustomCountedBitArray
         {
             _array[i] = ~_array[i];
         }
+
+        ClearUnusedBits();
+
         TrueCount = Count - TrueCount;
         return this;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as CustomCountedBitArray);
+    }
+
+    public bool Equals(CustomCountedBitArray? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        if (Count != other.Count)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < _array.Length; i++)
+        {
+            if (_array[i] != other._array[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public int GetInt(int index)
+    {
+        if (index >= _array.Length)
+        {
+            throw new IndexOutOfRangeException();
+        }
+
+        return _array[index];
     }
 
     public CustomCountedBitArray Or(CustomCountedBitArray value)
@@ -116,6 +179,7 @@ public class CustomCountedBitArray
         {
             _array[i] = _array[i] | value._array[i];
         }
+
         TrueCount = CountTrue();
         return this;
     }
@@ -133,6 +197,23 @@ public class CustomCountedBitArray
         }
 
         return count;
+    }
+
+    private void ClearUnusedBits()
+    {
+        var lastIntIndex = _array.Length - 1;
+        var currentInt = _array[lastIntIndex];
+        if (currentInt == 0)
+        {
+            return;
+        }
+
+        for (var i = Count % 32; i < 32; i++)
+        {
+            currentInt &= ~(1 << i);
+        }
+
+        _array[lastIntIndex] = currentInt;
     }
 
 #if ENABLE_GRID_TOSTRING

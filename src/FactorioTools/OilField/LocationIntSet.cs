@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class LocationIntSet
+public class LocationIntSet : ILocationSet
 {
     private readonly HashSet<int> _set;
 
@@ -55,41 +55,27 @@ public class LocationIntSet
         _set.UnionWith(other.Select(GetIndex));
     }
 
-    public void UnionWith(LocationIntSet other)
+    public void UnionWith(ILocationSet other)
     {
-        ValidateSameDimensions(other);
-        _set.UnionWith(other._set);
+        var otherSet = ValidateSameDimensions(other);
+        _set.UnionWith(otherSet._set);
     }
 
-    public void ExceptWith(LocationIntSet other)
+    public void ExceptWith(ILocationSet other)
     {
-        ValidateSameDimensions(other);
-        _set.ExceptWith(other._set);
+        var otherSet = ValidateSameDimensions(other);
+        _set.ExceptWith(otherSet._set);
     }
 
-    public bool SetEquals(LocationIntSet other)
+    public bool SetEquals(ILocationSet other)
     {
-        ValidateSameDimensions(other);
-        return _set.SetEquals(other._set);
+        var otherSet = ValidateSameDimensions(other);
+        return _set.SetEquals(otherSet._set);
     }
 
     public bool Overlaps(IEnumerable<Location> other)
     {
         return _set.Overlaps(other.Select(GetIndex));
-    }
-
-    private void ValidateSameDimensions(LocationIntSet other)
-    {
-        if (other.Width != Width || other.Height != Height)
-        {
-            throw new ArgumentException("The location set dimensions must be the same.");
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int GetIndex(Location location)
-    {
-        return location.Y * Width + location.X;
     }
 
     public void Clear()
@@ -113,5 +99,22 @@ public class LocationIntSet
         {
             yield return new Location(item % Width, item / Width);
         }
+    }
+
+    private LocationIntSet ValidateSameDimensions(ILocationSet other)
+    {
+        var otherSet = (LocationIntSet)other;
+        if (other.Width != Width || other.Height != Height)
+        {
+            throw new ArgumentException("The location set dimensions must be the same.");
+        }
+
+        return otherSet;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int GetIndex(Location location)
+    {
+        return location.Y * Width + location.X;
     }
 }
