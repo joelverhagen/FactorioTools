@@ -20,7 +20,7 @@ namespace Knapcode.FactorioTools;
 /// </summary>
 internal static class SetHandling
 {
-    public static LocationSet ToSet(this IEnumerable<Location> items, Context context)
+    public static ILocationSet ToSet(this IEnumerable<Location> items, Context context)
     {
         var set = context.GetLocationSet();
         foreach (var item in items)

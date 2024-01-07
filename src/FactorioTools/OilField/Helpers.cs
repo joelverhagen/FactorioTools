@@ -304,7 +304,7 @@ public static class Helpers
         return (candidateToInfo, coveredEntities, providers);
     }
 
-    public static Dictionary<Location, LocationSet> GetProviderCenterToCoveredCenters(
+    public static Dictionary<Location, ILocationSet> GetProviderCenterToCoveredCenters(
         Context context,
         int providerWidth,
         int providerHeight,
@@ -314,7 +314,7 @@ public static class Helpers
         bool includePumpjacks,
         bool includeBeacons)
     {
-        var poleCenterToCoveredCenters = new Dictionary<Location, LocationSet>();
+        var poleCenterToCoveredCenters = new Dictionary<Location, ILocationSet>();
 
         foreach (var center in providerCenters)
         {
@@ -336,7 +336,7 @@ public static class Helpers
         return poleCenterToCoveredCenters;
     }
 
-    public static Dictionary<Location, LocationSet> GetCoveredCenterToProviderCenters(Context context, Dictionary<Location, LocationSet> providerCenterToCoveredCenters)
+    public static Dictionary<Location, ILocationSet> GetCoveredCenterToProviderCenters(Context context, Dictionary<Location, ILocationSet> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
             .SelectMany(p => p.Value.EnumerateItems().Select(c => KeyValuePair.Create(p.Key, c)))
@@ -345,7 +345,7 @@ public static class Helpers
     }
 
     private static void AddCoveredCenters(
-        LocationSet coveredCenters,
+        ILocationSet coveredCenters,
         SquareGrid grid,
         Location center,
         int providerWidth,
@@ -645,7 +645,7 @@ public static class Helpers
         }
     }
 
-    public static (Dictionary<Location, LocationSet> PoleCenterToCoveredCenters, Dictionary<Location, LocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
+    public static (Dictionary<Location, ILocationSet> PoleCenterToCoveredCenters, Dictionary<Location, ILocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
         Context context,
         List<ProviderRecipient> poweredEntities,
         IEnumerable<Location> electricPoleCenters)

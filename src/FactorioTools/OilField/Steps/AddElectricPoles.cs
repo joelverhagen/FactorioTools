@@ -15,9 +15,9 @@ public static class AddElectricPoles
         PreferUncoveredEntities = 3,
     }
 
-    public static LocationSet? Execute(Context context, LocationSet avoid, bool allowRetries)
+    public static ILocationSet? Execute(Context context, ILocationSet avoid, bool allowRetries)
     {
-        LocationSet? avoidEntities = null;
+        ILocationSet? avoidEntities = null;
         if (avoid.Count > 0)
         {
             avoidEntities = context.GetLocationSet();
@@ -600,7 +600,7 @@ public static class AddElectricPoles
         }
     }
 
-    private static void AddSinglePoleForConnection(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, List<LocationSet> groups, double distance, Endpoints endpoints)
+    private static void AddSinglePoleForConnection(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, List<ILocationSet> groups, double distance, Endpoints endpoints)
     {
         var segments = (int)Math.Ceiling(distance / context.Options.ElectricPoleWireReach);
         var idealLine = BresenhamsLine.GetPath(endpoints.A, endpoints.B);
@@ -687,9 +687,9 @@ public static class AddElectricPoles
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
     }
 
-    private static List<LocationSet> GetElectricPoleGroups(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    private static List<ILocationSet> GetElectricPoleGroups(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
-        var groups = new List<LocationSet>();
+        var groups = new List<ILocationSet>();
         var remaining = electricPoles.Keys.ToSet(context);
         while (remaining.Count > 0)
         {

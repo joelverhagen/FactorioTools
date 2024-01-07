@@ -23,8 +23,8 @@ public class SharedInstances
     public PriorityQueue<Location, double> LocationPriorityQueue = new();
     public List<Location> LocationListA = new();
     public List<Location> LocationListB = new();
-    public LocationSet LocationSetA;
-    public LocationSet LocationSetB;
+    public ILocationSet LocationSetA;
+    public ILocationSet LocationSetB;
 
     public T[] GetArray<T>(ref T[] array, int length) where T : struct
     {

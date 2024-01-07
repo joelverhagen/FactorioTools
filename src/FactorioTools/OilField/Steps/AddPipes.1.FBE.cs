@@ -15,7 +15,7 @@ namespace Knapcode.FactorioTools.OilField;
 /// </summary>
 public static partial class AddPipes
 {
-    public static (LocationSet Pipes, PipeStrategy FinalStrategy) ExecuteWithFbe(Context context, PipeStrategy strategy)
+    public static (ILocationSet Pipes, PipeStrategy FinalStrategy) ExecuteWithFbe(Context context, PipeStrategy strategy)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
@@ -31,7 +31,7 @@ public static partial class AddPipes
         return (pipes, finalStrategy);
     }
 
-    private static (List<TerminalLocation> Terminals, LocationSet Pipes, PipeStrategy FinalStrategy) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
+    private static (List<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         var centerDistance = new Dictionary<Tuple<Location, Location>, int>();
         var centers = context.CenterToTerminals.Keys.ToList();

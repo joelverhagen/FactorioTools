@@ -19,7 +19,7 @@ public static class PlanUndergroundPipes
     /// </summary>
     private const int MaxUnderground = 11;
 
-    public static Dictionary<Location, Direction> Execute(Context context, LocationSet pipes)
+    public static Dictionary<Location, Direction> Execute(Context context, ILocationSet pipes)
     {
         // Track underground pipes and their directions
         var locationToDirection = new Dictionary<Location, Direction>();
@@ -34,7 +34,7 @@ public static class PlanUndergroundPipes
 
     private static void ConvertInOneDirection(
         Context context,
-        LocationSet pipes,
+        ILocationSet pipes,
         Dictionary<Location, Direction> locationToDirection,
         Location forward)
     {
@@ -134,7 +134,7 @@ public static class PlanUndergroundPipes
     }
 
     private static void AddRunAndClear(
-        LocationSet pipes,
+        ILocationSet pipes,
         Dictionary<Location, Direction> locationToDirection,
         Direction forwardDirection,
         Direction backwardDirection,

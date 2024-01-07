@@ -7,12 +7,12 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {
-    private static Dictionary<Location, LocationSet> GetConnectedPumpjacksWithFLUTE(Context context)
+    private static Dictionary<Location, ILocationSet> GetConnectedPumpjacksWithFLUTE(Context context)
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 
         // Determine which terminals should be connected to each other either directly or via only Steiner points.
-        var centerToCenters = new Dictionary<Location, LocationSet>();
+        var centerToCenters = new Dictionary<Location, ILocationSet>();
         foreach (var (center, terminals) in context.CenterToTerminals)
         {
             var otherCenters = context.GetLocationSet();
@@ -65,7 +65,7 @@ public static partial class AddPipes
         public bool IsEliminated { get; set; }
         public bool IsSteinerPoint => Centers.Count == 0;
         public Location Location { get; }
-        public LocationSet Centers { get; }
+        public ILocationSet Centers { get; }
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
         public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
 

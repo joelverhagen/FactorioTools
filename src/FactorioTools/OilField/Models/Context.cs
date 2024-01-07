@@ -15,36 +15,41 @@ public class Context
 
     public required SharedInstances SharedInstances { get; set; }
 
-    public LocationSet GetLocationSet()
+    public ILocationSet GetLocationSet(ILocationSet other)
+    {
+        return new LocationSet((LocationSet)other);
+    }
+
+    public ILocationSet GetLocationSet()
     {
         return new LocationSet(Grid.Width, Grid.Height);
     }
 
-    public LocationSet GetLocationSet(int capacity)
+    public ILocationSet GetLocationSet(int capacity)
     {
         return new LocationSet(Grid.Width, Grid.Height, capacity);
     }
 
-    public LocationSet GetLocationSet(Location location)
+    public ILocationSet GetLocationSet(Location location)
     {
         var set = GetLocationSet();
         set.Add(location);
         return set;
     }
 
-    public LocationSet GetLocationSet(Location location, int capacity)
+    public ILocationSet GetLocationSet(Location location, int capacity)
     {
         var set = GetLocationSet(capacity);
         set.Add(location);
         return set;
     }
 
-    public LocationBitSet GetLocationBitSet()
+    public ILocationSet GetLocationBitSet()
     {
         return new LocationBitSet(Grid.Width, Grid.Height);
     }
 
-    public LocationBitSet GetLocationBitSet(Location location)
+    public ILocationSet GetLocationBitSet(Location location)
     {
         var set = GetLocationBitSet();
         set.Add(location);

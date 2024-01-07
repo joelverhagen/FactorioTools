@@ -287,7 +287,7 @@ public static partial class PlanBeacons
         return (entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
-    private static LocationSet GetOccupiedPositions(Context context, List<Area> entityAreas)
+    private static ILocationSet GetOccupiedPositions(Context context, List<Area> entityAreas)
     {
         return entityAreas
             .SelectMany(a => a.Locations)
@@ -380,7 +380,7 @@ public static partial class PlanBeacons
         return effectEntityArea;
     }
 
-    private static List<Location[]> GetPossibleBeaconAreas(Context context, LocationSet occupiedPositions)
+    private static List<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
     {
         var validBeaconCenters = context.GetLocationSet();
         var possibleBeaconAreas = new List<Location[]>();

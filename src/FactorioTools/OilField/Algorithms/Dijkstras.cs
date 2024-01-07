@@ -5,11 +5,11 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Dijkstras
 {
-    public static DijkstrasResult GetShortestPaths(Context context, SquareGrid grid, Location start, LocationSet goals, bool stopOnFirstGoal)
+    public static DijkstrasResult GetShortestPaths(Context context, SquareGrid grid, Location start, ILocationSet goals, bool stopOnFirstGoal)
     {
-        var cameFrom = new Dictionary<Location, LocationSet>();
+        var cameFrom = new Dictionary<Location, ILocationSet>();
         cameFrom[start] = context.GetLocationSet();
-        var remainingGoals = new LocationSet(goals);
+        var remainingGoals = context.GetLocationSet(goals);
 
 #if USE_SHARED_INSTANCES
         var priorityQueue = context.SharedInstances.LocationPriorityQueue;

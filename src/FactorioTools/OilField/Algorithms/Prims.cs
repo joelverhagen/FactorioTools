@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Prims
 {
-    public static Dictionary<Location, LocationSet> GetMinimumSpanningTree(
+    public static Dictionary<Location, ILocationSet> GetMinimumSpanningTree(
         Context context,
         Dictionary<Location, Dictionary<Location, int>> graph,
         Location firstNode,
@@ -17,7 +17,7 @@ public static class Prims
         var visited = context.GetLocationSet();
 #endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
-        var mst = new Dictionary<Location, LocationSet>();
+        var mst = new Dictionary<Location, ILocationSet>();
 
         try
         {

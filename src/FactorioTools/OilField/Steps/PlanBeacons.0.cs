@@ -6,7 +6,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static partial class PlanBeacons
 {
-    public static List<BeaconSolution> Execute(Context context, LocationSet pipes)
+    public static List<BeaconSolution> Execute(Context context, ILocationSet pipes)
     {
         foreach (var pipe in pipes.EnumerateItems())
         {

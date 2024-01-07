@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
-    private static readonly LocationSet EmptyLocationSet = new LocationSet(0, 0);
+    private static readonly ILocationSet EmptyLocationSet = new LocationSet(0, 0);
 
     public static (Context Context, OilFieldPlanSummary Summary) ExecuteSample()
     {
@@ -90,7 +90,7 @@ public static class Planner
     private static (Context Context, OilFieldPlanSummary Summary) Execute(
         OilFieldOptions options,
         Blueprint blueprint,
-        LocationSet electricPolesAvoid,
+        ILocationSet electricPolesAvoid,
         EletricPolesMode electricPolesMode)
     {
         var context = InitializeContext.Execute(options, blueprint);
@@ -102,7 +102,7 @@ public static class Planner
             throw new FactorioToolsException("The must be at least one pumpjack in the blueprint.", badInput: true);
         }
 
-        LocationSet? poles;
+        ILocationSet? poles;
         if (addElectricPolesFirst)
         {
             if (electricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)

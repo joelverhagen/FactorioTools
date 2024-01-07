@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class RotateOptimize
 {
-    public static void Execute(Context parentContext, LocationSet pipes)
+    public static void Execute(Context parentContext, ILocationSet pipes)
     {
         if (parentContext.LocationToTerminals.Count < 2)
         {
@@ -317,7 +317,7 @@ public static class RotateOptimize
         }
     }
 
-    private static void ExplorePipes(ChildContext context, Location start, LocationSet pipes)
+    private static void ExplorePipes(ChildContext context, Location start, ILocationSet pipes)
     {
         var toExplore = GetQueue(context);
         try
@@ -417,7 +417,7 @@ public static class RotateOptimize
 
     private class ChildContext
     {
-        public ChildContext(Context parentContext, LocationSet pipes)
+        public ChildContext(Context parentContext, ILocationSet pipes)
         {
             ParentContext = parentContext;
             Pipes = pipes;
@@ -432,9 +432,9 @@ public static class RotateOptimize
         public SquareGrid Grid => ParentContext.Grid;
         public Dictionary<Location, List<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
         public IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
-        public LocationSet Pipes { get; }
-        public LocationSet Intersections { get; }
-        public LocationSet Goals { get; }
+        public ILocationSet Pipes { get; }
+        public ILocationSet Intersections { get; }
+        public ILocationSet Goals { get; }
         public ExistingPipeGrid ExistingPipeGrid { get; }
 
         public void UpdateIntersectionsAndGoals()

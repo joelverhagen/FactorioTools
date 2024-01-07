@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Validate
 {
-    public static void PipesAreConnected(Context context, LocationSet optimizedPipes)
+    public static void PipesAreConnected(Context context, ILocationSet optimizedPipes)
     {
         if (context.Options.ValidateSolution)
         {
@@ -26,7 +26,7 @@ public static class Validate
             var result = Dijkstras.GetShortestPaths(context, clone, start, goals, stopOnFirstGoal: false);
             var reachedGoals = result.ReachedGoals;
             reachedGoals.Add(start);
-            var unreachedGoals = new LocationSet(goals);
+            var unreachedGoals = context.GetLocationSet(goals);
             unreachedGoals.ExceptWith(reachedGoals);
             if (unreachedGoals.Count > 0)
             {
@@ -36,7 +36,7 @@ public static class Validate
         }
     }
 
-    public static void UndergroundPipesArePipes(Context context, LocationSet pipes, Dictionary<Location, Direction> locationToDirection)
+    public static void UndergroundPipesArePipes(Context context, ILocationSet pipes, Dictionary<Location, Direction> locationToDirection)
     {
         if (context.Options.ValidateSolution)
         {
@@ -50,9 +50,9 @@ public static class Validate
 
     public static void PipesDoNotMatch(
         Context context,
-        LocationSet pipes1,
+        ILocationSet pipes1,
         Dictionary<Location, Direction>? undergroundPipes1,
-        LocationSet pipes2,
+        ILocationSet pipes2,
         Dictionary<Location, Direction>? undergroundPipes2)
     {
         if (context.Options.ValidateSolution)
@@ -103,7 +103,7 @@ public static class Validate
 
     public static void NoOverlappingEntities(
         Context context,
-        LocationSet optimizedPipes,
+        ILocationSet optimizedPipes,
         Dictionary<Location, Direction>? undergroundPipes,
         List<BeaconSolution>? beaconSolutions)
     {
