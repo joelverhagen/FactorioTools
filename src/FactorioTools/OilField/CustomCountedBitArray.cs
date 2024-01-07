@@ -201,6 +201,11 @@ public class CustomCountedBitArray
 
     private void ClearUnusedBits()
     {
+        if (Count % 32 == 0)
+        {
+            return;
+        }
+
         var lastIntIndex = _array.Length - 1;
         var currentInt = _array[lastIntIndex];
         if (currentInt == 0)
