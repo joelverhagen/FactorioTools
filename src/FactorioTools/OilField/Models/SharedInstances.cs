@@ -5,19 +5,11 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class SharedInstances
 {
-    private readonly SquareGrid _grid;
-
     public SharedInstances(SquareGrid grid)
     {
-        _grid = grid;
 #if USE_SHARED_INSTANCES
-#if USE_HASHSETS
-        LocationSetA = new LocationSet();
-        LocationSetB = new LocationSet();
-#else
         LocationSetA = new LocationSet(grid.Width, grid.Height);
         LocationSetB = new LocationSet(grid.Width, grid.Height);
-#endif
 #endif
     }
 

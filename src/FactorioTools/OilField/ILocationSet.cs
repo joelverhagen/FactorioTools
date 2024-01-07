@@ -5,8 +5,6 @@ namespace Knapcode.FactorioTools.OilField
     public interface ILocationSet
     {
         int Count { get; }
-        int Height { get; }
-        int Width { get; }
 
         bool Add(Location location);
         void Clear();

@@ -6,25 +6,22 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class LocationBitSet : ILocationSet
 {
+    private readonly int _width;
     private readonly CustomCountedBitArray _set;
 
     public LocationBitSet(LocationBitSet existing)
     {
-        Width = existing.Width;
-        Height = existing.Height;
+        _width = existing._width;
         _set = new CustomCountedBitArray(existing._set);
     }
 
     public LocationBitSet(int width, int height)
     {
-        Width = width;
-        Height = height;
+        _width = width;
         _set = new CustomCountedBitArray(width * height);
     }
 
     public int Count => _set.TrueCount;
-    public int Height { get; }
-    public int Width { get; }
 
     public bool Add(Location location)
     {
@@ -99,7 +96,7 @@ public class LocationBitSet : ILocationSet
     private LocationBitSet ValidateSameDimensions(ILocationSet other)
     {
         var otherSet = (LocationBitSet)other;
-        if (other.Width != Width || other.Height != Height)
+        if (otherSet._width != _width)
         {
             throw new ArgumentException("The location set dimensions must be the same.");
         }
@@ -110,6 +107,6 @@ public class LocationBitSet : ILocationSet
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GetIndex(Location location)
     {
-        return location.Y * Width + location.X;
+        return location.Y * _width + location.X;
     }
 }

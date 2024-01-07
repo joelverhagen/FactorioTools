@@ -7,31 +7,26 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class LocationIntSet : ILocationSet
 {
+    private readonly int _width;
     private readonly HashSet<int> _set;
 
     public LocationIntSet(LocationIntSet existing)
     {
-        Width = existing.Width;
-        Height = existing.Height;
+        _width = existing._width;
         _set = new HashSet<int>(existing._set);
     }
 
     public LocationIntSet(int width, int height)
     {
-        Width = width;
-        Height = height;
+        _width = width;
         _set = new HashSet<int>();
     }
 
     public LocationIntSet(int width, int height, int capacity)
     {
-        Width = width;
-        Height = height;
+        _width = width;
         _set = new HashSet<int>(capacity);
     }
-
-    public int Width { get; }
-    public int Height { get; }
 
     public int Count => _set.Count;
 
@@ -97,14 +92,14 @@ public class LocationIntSet : ILocationSet
     {
         foreach (var item in _set)
         {
-            yield return new Location(item % Width, item / Width);
+            yield return new Location(item % _width, item / _width);
         }
     }
 
     private LocationIntSet ValidateSameDimensions(ILocationSet other)
     {
         var otherSet = (LocationIntSet)other;
-        if (other.Width != Width || other.Height != Height)
+        if (otherSet._width != _width)
         {
             throw new ArgumentException("The location set dimensions must be the same.");
         }
@@ -115,6 +110,6 @@ public class LocationIntSet : ILocationSet
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int GetIndex(Location location)
     {
-        return location.Y * Width + location.X;
+        return location.Y * _width + location.X;
     }
 }

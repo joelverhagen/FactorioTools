@@ -5,11 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
-#if USE_HASHSETS
-    private static readonly LocationSet EmptyLocationSet = new();
-#else
     private static readonly LocationSet EmptyLocationSet = new LocationSet(0, 0);
-#endif
 
     public static (Context Context, OilFieldPlanSummary Summary) ExecuteSample()
     {

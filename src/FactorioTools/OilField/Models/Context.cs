@@ -17,20 +17,12 @@ public class Context
 
     public LocationSet GetLocationSet()
     {
-#if USE_HASHSETS
-        return new LocationSet();
-#else
         return new LocationSet(Grid.Width, Grid.Height);
-#endif
     }
 
     public LocationSet GetLocationSet(int capacity)
     {
-#if USE_HASHSETS
-        return new LocationSet();
-#else
         return new LocationSet(Grid.Width, Grid.Height, capacity);
-#endif
     }
 
     public LocationSet GetLocationSet(Location location)
@@ -43,6 +35,18 @@ public class Context
     public LocationSet GetLocationSet(Location location, int capacity)
     {
         var set = GetLocationSet(capacity);
+        set.Add(location);
+        return set;
+    }
+
+    public LocationBitSet GetLocationBitSet()
+    {
+        return new LocationBitSet(Grid.Width, Grid.Height);
+    }
+
+    public LocationBitSet GetLocationBitSet(Location location)
+    {
+        var set = GetLocationBitSet();
         set.Add(location);
         return set;
     }
