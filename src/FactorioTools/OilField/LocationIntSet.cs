@@ -16,13 +16,13 @@ public class LocationIntSet : ILocationSet
         _set = new HashSet<int>(existing._set);
     }
 
-    public LocationIntSet(int width, int height)
+    public LocationIntSet(int width)
     {
         _width = width;
         _set = new HashSet<int>();
     }
 
-    public LocationIntSet(int width, int height, int capacity)
+    public LocationIntSet(int width, int capacity)
     {
         _width = width;
         _set = new HashSet<int>(capacity);

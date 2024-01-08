@@ -9,15 +9,15 @@ public class SharedInstances
     {
 #if USE_SHARED_INSTANCES
 #if USE_HASHSETS
-        LocationSetA = new LocationHashSet(grid.Width, grid.Height);
-        LocationSetB = new LocationHashSet(grid.Width, grid.Height);
-        LocationToLocation = new LocationHashDictionary<Location>(grid.Width, grid.Height);
-        LocationToDouble = new LocationHashDictionary<double>(grid.Width, grid.Height);
+        LocationSetA = new LocationHashSet();
+        LocationSetB = new LocationHashSet();
+        LocationToLocation = new LocationHashDictionary<Location>();
+        LocationToDouble = new LocationHashDictionary<double>();
 #else
-        LocationSetA = new LocationIntSet(grid.Width, grid.Height);
-        LocationSetB = new LocationIntSet(grid.Width, grid.Height);
-        LocationToLocation = new LocationIntDictionary<Location>(grid.Width, grid.Height);
-        LocationToDouble = new LocationIntDictionary<double>(grid.Width, grid.Height);
+        LocationSetA = new LocationIntSet(grid.Width);
+        LocationSetB = new LocationIntSet(grid.Width);
+        LocationToLocation = new LocationIntDictionary<Location>(grid.Width);
+        LocationToDouble = new LocationIntDictionary<double>(grid.Width);
 #endif
 #endif
     }

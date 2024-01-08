@@ -12,12 +12,12 @@ public class LocationHashSet : ILocationSet
         _set = new HashSet<Location>(existing._set);
     }
 
-    public LocationHashSet(int width, int height)
+    public LocationHashSet()
     {
         _set = new HashSet<Location>();
     }
 
-    public LocationHashSet(int width, int height, int capacity)
+    public LocationHashSet(int capacity)
     {
         _set = new HashSet<Location>(capacity);
     }

@@ -57,13 +57,13 @@ public static class InitializeContext
         var grid = InitializeGrid(centerAndOriginalDirections, marginX, marginY);
 
 #if USE_HASHSETS
-        var centerToOriginalDirection = new LocationHashDictionary<Direction>(grid.Width, grid.Height);
-        var centerToTerminals = new LocationHashDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
-        var locationToTerminals = new LocationHashDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
+        var centerToOriginalDirection = new LocationHashDictionary<Direction>();
+        var centerToTerminals = new LocationHashDictionary<List<TerminalLocation>>();
+        var locationToTerminals = new LocationHashDictionary<List<TerminalLocation>>();
 #else
-        var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width, grid.Height);
-        var centerToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
-        var locationToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
+        var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width);
+        var centerToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width);
+        var locationToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width);
 #endif
 
         PopulateCenterToOriginalDirection(centerAndOriginalDirections, centerToOriginalDirection);

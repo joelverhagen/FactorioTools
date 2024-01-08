@@ -7,17 +7,12 @@ public class LocationHashDictionary<T> : ILocationDictionary<T>
 {
     private readonly Dictionary<Location, T> _dictionary;
 
-    public LocationHashDictionary(LocationHashDictionary<T> existing)
-    {
-        _dictionary = new Dictionary<Location, T>(existing._dictionary);
-    }
-
-    public LocationHashDictionary(int width, int height)
+    public LocationHashDictionary()
     {
         _dictionary = new Dictionary<Location, T>();
     }
 
-    public LocationHashDictionary(int width, int height, int capacity)
+    public LocationHashDictionary(int capacity)
     {
         _dictionary = new Dictionary<Location, T>(capacity);
     }

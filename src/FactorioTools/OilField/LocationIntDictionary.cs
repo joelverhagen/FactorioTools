@@ -9,18 +9,13 @@ public class LocationIntDictionary<T> : ILocationDictionary<T>
     private readonly int _width;
     private readonly Dictionary<int, T> _dictionary;
 
-    public LocationIntDictionary(LocationIntDictionary<T> existing)
-    {
-        _dictionary = new Dictionary<int, T>(existing._dictionary);
-    }
-
-    public LocationIntDictionary(int width, int height)
+    public LocationIntDictionary(int width)
     {
         _width = width;
         _dictionary = new Dictionary<int, T>();
     }
 
-    public LocationIntDictionary(int width, int height, int capacity)
+    public LocationIntDictionary(int width, int capacity)
     {
         _width = width;
         _dictionary = new Dictionary<int, T>(capacity);

@@ -19,18 +19,18 @@ public class Context
     public ILocationDictionary<T> GetLocationDictionary<T>()
     {
 #if USE_HASHSETS
-        return new LocationHashDictionary<T>(Grid.Width, Grid.Height);
+        return new LocationHashDictionary<T>();
 #else
-        return new LocationIntDictionary<T>(Grid.Width, Grid.Height);
+        return new LocationIntDictionary<T>(Grid.Width);
 #endif
     }
 
     public ILocationDictionary<T> GetLocationDictionary<T>(int capacity)
     {
 #if USE_HASHSETS
-        return new LocationHashDictionary<T>(Grid.Width, Grid.Height, capacity);
+        return new LocationHashDictionary<T>(capacity);
 #else
-        return new LocationIntDictionary<T>(Grid.Width, Grid.Height, capacity);
+        return new LocationIntDictionary<T>(Grid.Width, capacity);
 #endif
     }
 
@@ -60,9 +60,9 @@ public class Context
     {
         return allowEnumerate
 #if USE_HASHSETS
-            ? new LocationHashSet(Grid.Width, Grid.Height)
+            ? new LocationHashSet()
 #else
-            ? new LocationIntSet(Grid.Width, Grid.Height)
+            ? new LocationIntSet(Grid.Width)
 #endif
             : new LocationBitSet(Grid.Width, Grid.Height);
     }
@@ -88,9 +88,9 @@ public class Context
     {
         return allowEnumerate
 #if USE_HASHSETS
-            ? new LocationHashSet(Grid.Width, Grid.Height, capacity)
+            ? new LocationHashSet(capacity)
 #else
-            ? new LocationIntSet(Grid.Width, Grid.Height, capacity)
+            ? new LocationIntSet(Grid.Width, capacity)
 #endif
             : new LocationBitSet(Grid.Width, Grid.Height);
     }
