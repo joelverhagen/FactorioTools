@@ -35,10 +35,14 @@ public struct Location :
 
     public override int GetHashCode()
     {
+#if USE_HASHSETS
         var hash = 23;
         hash = hash * 31 + X;
         hash = hash * 31 + Y;
         return hash;
+#else
+        throw new NotSupportedException();
+#endif
     }
 
     public int GetManhattanDistance(Location other)

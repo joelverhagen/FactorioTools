@@ -473,11 +473,11 @@ public static partial class AddPipes
         var centerToMaxX = context
             .CenterToTerminals
             .Keys
-            .ToDictionary(c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
+            .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
         var centerToMaxY = context
             .CenterToTerminals
             .Keys
-            .ToDictionary(c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
+            .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
 
         // Find paths that connect the most terminals of neighboring pumpjacks.
         var trunkCandidates = new List<Trunk>();

@@ -458,7 +458,8 @@ public static partial class AddPipes
 
             foreach (var l in obj.EnumerateItems().OrderBy(p => p.X).ThenBy(p => p.Y))
             {
-                hashCode.Add(l);
+                hashCode.Add(l.X);
+                hashCode.Add(l.Y);
             }
 
             return hashCode.ToHashCode();
@@ -513,10 +514,13 @@ public static partial class AddPipes
 
             foreach ((var key, var value) in obj.EnumeratePairs().OrderBy(p => p.Key.X).ThenBy(p => p.Key.Y))
             {
-                hashCode.Add(key);
+                hashCode.Add(key.X);
+                hashCode.Add(key.Y);
+
                 foreach (var l in value.EnumerateItems().OrderBy(p => p.X).ThenBy(p => p.Y))
                 {
-                    hashCode.Add(l);
+                    hashCode.Add(l.X);
+                    hashCode.Add(l.Y);
                 }
             }
 

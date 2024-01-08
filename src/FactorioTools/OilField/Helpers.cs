@@ -346,11 +346,23 @@ public static class Helpers
 
     public static ILocationDictionary<ILocationSet> GetCoveredCenterToProviderCenters(Context context, ILocationDictionary<ILocationSet> providerCenterToCoveredCenters)
     {
-        return providerCenterToCoveredCenters
-            .EnumeratePairs()
-            .SelectMany(p => p.Value.EnumerateItems().Select(c => KeyValuePair.Create(p.Key, c)))
-            .GroupBy(p => p.Value, p => p.Key)
-            .ToDictionary(context, g => g.Key, g => g.ToReadOnlySet(context, allowEnumerate: true));
+        var output = context.GetLocationDictionary<ILocationSet>();
+
+        foreach ((var center, var covered) in providerCenterToCoveredCenters.EnumeratePairs())
+        {
+            foreach (var otherCenter in covered.EnumerateItems())
+            {
+                if (!output.TryGetValue(otherCenter, out var centers))
+                {
+                    centers = context.GetLocationSet(allowEnumerate: true);
+                    output.Add(otherCenter, centers);
+                }
+
+                centers.Add(center);
+            }
+        }
+
+        return output;
     }
 
     private static void AddCoveredCenters(
