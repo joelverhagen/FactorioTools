@@ -202,7 +202,7 @@ public static partial class AddPipes
             }
         }
 
-        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct(context).Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
     }
 #endif
 }

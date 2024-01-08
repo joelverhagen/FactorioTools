@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -112,7 +113,7 @@ public static partial class AddPipes
 
         /*
         var clone = new PipeGrid(context.Grid);
-        Visualizer.Show(clone, groups.SelectMany(g => g.Pipes).Distinct().Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+        Visualizer.Show(clone, groups.SelectMany(g => g.Pipes).Distinct(context).Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
         */
 
         while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
@@ -318,7 +319,14 @@ public static partial class AddPipes
             .ThenBy(t => t.Length)
             .ThenBy(t =>
             {
-                var neighbors = t.Centers.EnumerateItems().SelectMany(c => centerToConnectedCenters[c].EnumerateItems()).Except(t.Centers.EnumerateItems()).ToReadOnlySet(context, allowEnumerate: true);
+                var neighbors = t
+                    .Centers
+                    .EnumerateItems()
+                    .SelectMany(c => centerToConnectedCenters[c].EnumerateItems())
+                    .ToSet(context, allowEnumerate: true);
+
+                neighbors.ExceptWith(t.Centers);
+
                 if (neighbors.Count == 0)
                 {
                     return 0;
@@ -331,13 +339,13 @@ public static partial class AddPipes
             .ToList();
 
         // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
-        var includedPipes = context.GetLocationSet(allowEnumerate: true);
+        var includedPipes = context.GetLocationSet();
         var includedCenters = context.GetLocationSet(allowEnumerate: true);
         var selectedTrunks = new List<Trunk>();
         foreach (var trunk in trunkCandidates)
         {
             var path = MakeStraightLine(trunk.Start, trunk.End);
-            if (!includedPipes.EnumerateItems().Intersect(path).Any() && !includedCenters.EnumerateItems().Intersect(trunk.Centers.EnumerateItems()).Any())
+            if (!path.Any(includedPipes.Contains) && !includedCenters.Overlaps(trunk.Centers.EnumerateItems()))
             {
                 selectedTrunks.Add(trunk);
                 includedPipes.UnionWith(path);
@@ -348,7 +356,7 @@ public static partial class AddPipes
         /*
         for (var i = 1; i <= selectedTrunks.Count; i++)
         {
-            Visualizer.Show(context.Grid, selectedTrunks.Take(i).SelectMany(t => t.Centers).Distinct().Select(l => (IPoint)new Point(l.X, l.Y)), selectedTrunks
+            Visualizer.Show(context.Grid, selectedTrunks.Take(i).SelectMany(t => t.Centers).Distinct(context).Select(l => (IPoint)new Point(l.X, l.Y)), selectedTrunks
                 .Take(i)
                 .Select(t => (IEdge)new Edge(0, new Point(t.Start.X, t.Start.Y), new Point(t.End.X, t.End.Y)))
                 .ToList());
@@ -493,16 +501,24 @@ public static partial class AddPipes
                     {
                         if (context.LocationToTerminals.TryGetValue(location, out var terminals))
                         {
-                            var centers = terminals.Select(t => t.Center);
-                            var matchedCenters = centers.Intersect(nextCenters.EnumerateItems()).ToReadOnlySet(context, allowEnumerate: true);
-                            if (matchedCenters.Count == 0)
+                            Location nextCenter = default;
+                            bool hasMatch = false;
+                            foreach (var nextTerminal in terminals)
+                            {
+                                if (nextCenters.Contains(nextTerminal.Center))
+                                {
+                                    nextCenter = nextTerminal.Center;
+                                    hasMatch = true;
+                                    break;
+                                }
+                            }
+
+                            if (!hasMatch)
                             {
                                 // The pumpjack terminal we ran into does not belong to the a pumpjack that the current
                                 // pumpjack should be connected to.
                                 break;
                             }
-
-                            var nextCenter = matchedCenters.EnumerateItems().First();
 
                             if (!expandedChildCenters)
                             {
@@ -530,7 +546,10 @@ public static partial class AddPipes
 
                             trunk.Terminals.AddRange(terminals);
                             trunk.TerminalLocations.UnionWith(terminals.Select(t => t.Terminal));
-                            trunk.Centers.UnionWith(centers);
+                            foreach (var nextTerminal in terminals)
+                            {
+                                trunk.Centers.Add(nextTerminal.Center);
+                            }
 
                             currentCenter = nextCenter;
                         }

@@ -361,7 +361,8 @@ public static partial class AddPipes
             var reachedTerminals = result.ReachedGoals;
             reachedTerminals.Add(start);
 
-            var unreachedTerminals = goals.EnumerateItems().Except(result.ReachedGoals.EnumerateItems()).ToReadOnlySet(context, allowEnumerate: true);
+            var unreachedTerminals = context.GetLocationSet(goals);
+            unreachedTerminals.ExceptWith(result.ReachedGoals);
 
             var reachedPumpjacks = result.ReachedGoals.EnumerateItems().SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToReadOnlySet(context);
 

@@ -20,6 +20,34 @@ namespace Knapcode.FactorioTools;
 /// </summary>
 internal static class SetHandling
 {
+    public static IEnumerable<Location> Distinct(this IEnumerable<Location> locations, Context context)
+    {
+        var set = context.GetLocationSet();
+        foreach (var location in locations)
+        {
+            if (set.Add(location))
+            {
+                yield return location;
+            }
+        }
+    }
+
+    public static IEnumerable<Location> Except(this IEnumerable<Location> locations, IEnumerable<Location> other, Context context)
+    {
+        return locations.ExceptSet(other, context, allowEnumerate: true).EnumerateItems();
+    }
+
+    public static ILocationSet ExceptSet(this IEnumerable<Location> locations, IEnumerable<Location> other, Context context, bool allowEnumerate)
+    {
+        var set = context.GetLocationSet(locations, allowEnumerate);
+        foreach (var item in other)
+        {
+            set.Remove(item);
+        }
+
+        return set;
+    }
+
     public static ILocationSet ToSet(this IEnumerable<Location> locations, Context context)
     {
         return context.GetLocationSet(locations);

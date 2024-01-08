@@ -40,7 +40,9 @@ public static class Validate
     {
         if (context.Options.ValidateSolution)
         {
-            var missing = locationToDirection.Keys.Except(pipes.EnumerateItems()).ToList();
+            var missing = locationToDirection.Keys.ToSet(context, allowEnumerate: true);
+            missing.ExceptWith(pipes);
+
             if (missing.Count > 0)
             {
                 throw new FactorioToolsException("The underground pipes should be in the pipe set.");

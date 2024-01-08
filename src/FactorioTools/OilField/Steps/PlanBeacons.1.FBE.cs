@@ -35,7 +35,7 @@ public static partial class PlanBeacons
 
         var possibleBeaconAreas = GetPossibleBeaconAreas(context, occupiedPositions);
 
-        // Visualizer.Show(context.Grid, possibleBeaconAreas.SelectMany(l => l).Distinct().Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
+        // Visualizer.Show(context.Grid, possibleBeaconAreas.SelectMany(l => l).Distinct(context).Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
         var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
         var effectEntityAreas = GetEffectEntityAreas(entityAreas);

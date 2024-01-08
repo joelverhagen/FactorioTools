@@ -664,11 +664,6 @@ public static class Helpers
 
         if (coveredCenterToPoleCenters.Count != poweredEntities.Count)
         {
-            var uncoveredCenters = poweredEntities
-                .Select(e => e.Center)
-                .Except(coveredCenterToPoleCenters.Keys)
-                .ToList();
-            // Visualizer.Show(context.Grid, uncoveredCenters.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
             throw new FactorioToolsException("Not all powered entities are covered by an electric pole.");
         }
 
@@ -1066,10 +1061,10 @@ public static class Helpers
     /// <summary>
     /// Source: https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts#L62
     /// </summary>
-    public static List<Endpoints> PointsToLines(IEnumerable<Location> nodes)
+    public static List<Endpoints> PointsToLines(Context context, IEnumerable<Location> nodes)
     {
         var filteredNodes = nodes
-            .Distinct()
+            .Distinct(context)
             .OrderBy(x => x.X)
             .ThenBy(x => x.Y)
             .ToList();

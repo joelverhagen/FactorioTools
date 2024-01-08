@@ -52,7 +52,7 @@ public static partial class AddPipes
             .ToDictionary(x => x.Key, x => x.Min(y => y.Value));
 
         // GENERATE LINES
-        var lines = PointsToLines(context.CenterToTerminals.Keys)
+        var lines = PointsToLines(context, context.CenterToTerminals.Keys)
             .Select(line =>
             {
                 var connections = context.CenterToTerminals[line.A]
@@ -125,7 +125,7 @@ public static partial class AddPipes
         // this will only happen when only a few pumpjacks need to be connected
         if (groups.Count == 0)
         {
-            var connection = PointsToLines(context.CenterToTerminals.Keys)
+            var connection = PointsToLines(context, context.CenterToTerminals.Keys)
                 .Select(line =>
                 {
                     return context.CenterToTerminals[line.A]
@@ -174,7 +174,7 @@ public static partial class AddPipes
             var locationToGroup = groups.ToDictionary(x => x.Location, x => x);
             locationToGroup.Add(group.Location, group);
 
-            var par = PointsToLines(locationToGroup.Keys)
+            var par = PointsToLines(context, locationToGroup.Keys)
                 .Where(l => l.A == group.Location || l.B == group.Location)
                 .Select(l => l.A == group.Location ? l.B : l.A)
                 .Select(l => locationToGroup[l])
@@ -221,7 +221,7 @@ public static partial class AddPipes
         var leftoverPumpjacks = context
             .CenterToTerminals
             .Keys
-            .Except(addedPumpjacks.Select(x => x.Center))
+            .Except(addedPumpjacks.Select(x => x.Center), context)
             .OrderBy(l => l.GetManhattanDistance(true ? middle : context.Grid.Middle));
 
         foreach (var center in leftoverPumpjacks)
@@ -318,7 +318,7 @@ public static partial class AddPipes
             bLocationsOptimized = bLocations;
         }
 
-        lines.AddRange(PointsToLines(aLocations.Concat(bLocationsOptimized))
+        lines.AddRange(PointsToLines(context, aLocations.Concat(bLocationsOptimized))
             .Where(p => !((aLocations.Contains(p.A) && aLocations.Contains(p.B)) || (bLocations.Contains(p.A) && bLocations.Contains(p.B))))
             .OrderBy(p => p.A.GetManhattanDistance(p.B))
             .Take(5)

@@ -105,8 +105,8 @@ AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 
 | Method                                    |     Mean |    Error |   StdDev |
 | ----------------------------------------- | -------: | -------: | -------: |
-| MediumElectricPole_NoBeacon_NoUnderground | 17.01 ms | 0.128 ms | 0.120 ms |
-| SmallElectricPole_Beacon_Underground      | 31.23 ms | 0.206 ms | 0.193 ms |
-| MediumElectricPole_Beacon_Underground     | 31.48 ms | 0.189 ms | 0.168 ms |
-| BigElectricPole_Beacon_Underground        | 71.60 ms | 0.338 ms | 0.283 ms |
-| Substation_Beacon_Underground             | 35.32 ms | 0.270 ms | 0.239 ms |
+| MediumElectricPole_NoBeacon_NoUnderground | 17.47 ms | 0.045 ms | 0.042 ms |
+| SmallElectricPole_Beacon_Underground      | 29.83 ms | 0.247 ms | 0.219 ms |
+| MediumElectricPole_Beacon_Underground     | 30.67 ms | 0.039 ms | 0.033 ms |
+| BigElectricPole_Beacon_Underground        | 70.03 ms | 0.218 ms | 0.204 ms |
+| Substation_Beacon_Underground             | 34.05 ms | 0.167 ms | 0.140 ms |

@@ -90,8 +90,7 @@ public static class AddElectricPoles
             .Where(p => p.Value.Count > 2) // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
             .SelectMany(p => p.Value.EnumerateItems())
             .Concat(poleCenterToCoveredCenters.Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
-            .Except(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems())) // Exclude electric poles covering pumpjacks that are only covered by one pole.
-            .ToSet(context, allowEnumerate: true);
+            .ExceptSet(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems()), context, allowEnumerate: true); // Exclude electric poles covering pumpjacks that are only covered by one pole.
 
         while (removeCandidates.Count > 0)
         {
@@ -398,24 +397,6 @@ public static class AddElectricPoles
                 candidateToInfo = null;
                 continue;
             }
-
-            /*
-            var test = GetCandidateToOthersConnected(context, candidateToCovered, electricPoleList);
-
-            var keysOnlyInTest = test.Keys.Except(candidateToOthersConnected.Keys).ToList();
-            var keysOnlyInRunning = candidateToOthersConnected.Keys.Except(test.Keys).ToList();
-            var keysInBoth = test.Keys.Intersect(candidateToOthersConnected.Keys).ToList();
-            var keysWithDifferentValues = keysInBoth.Where(x => candidateToOthersConnected[x] != test[x]).ToList();
-            var testDiff = keysWithDifferentValues.ToDictionary(x => x, x => test[x]);
-            var runningDiff = keysWithDifferentValues.ToDictionary(x => x, x => candidateToOthersConnected[x]);
-
-            if (keysOnlyInTest.Count > 0 || keysWithDifferentValues.Count > 0)
-            {
-                throw new FactorioToolsException("The mapping from candidate to others connected count was not updated properly.");
-            }
-            */
-
-            // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
         }
 
         return (electricPoleList, coveredEntities);
@@ -579,7 +560,7 @@ public static class AddElectricPoles
 
         while (groups.Count > 1)
         {
-            var closest = PointsToLines(electricPoles.Keys)
+            var closest = PointsToLines(context, electricPoles.Keys)
                 .Select(e => new
                 {
                     Endpoints = e,
@@ -670,7 +651,7 @@ public static class AddElectricPoles
         }
 
         var center = AddElectricPole(context, electricPoles, selectedPoint);
-        var connectedGroups = groups.Where(g => g.EnumerateItems().Intersect(center.Neighbors.Select(n => context.Grid.EntityToLocation[n])).Any()).ToList();
+        var connectedGroups = groups.Where(g => center.Neighbors.Select(n => context.Grid.EntityToLocation[n]).Any(l => g.Contains(l))).ToList();
 
         if (connectedGroups.Count == 0)
         {
