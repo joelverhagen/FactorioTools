@@ -508,10 +508,10 @@ public static class AddElectricPoles
         int roundedReach,
         Location candidate)
     {
-        var minX = candidate.X - roundedReach;
-        var maxX = candidate.X + roundedReach;
-        var minY = candidate.Y - roundedReach;
-        var maxY = candidate.Y + roundedReach;
+        var minX = Math.Max(0, candidate.X - roundedReach);
+        var maxX = Math.Min(context.Grid.Width - 1, candidate.X + roundedReach);
+        var minY = Math.Max(0, candidate.Y - roundedReach);
+        var maxY = Math.Min(context.Grid.Height - 1, candidate.Y + roundedReach);
 
         for (var x = minX; x <= maxX; x++)
         {
