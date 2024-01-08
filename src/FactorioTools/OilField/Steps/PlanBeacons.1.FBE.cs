@@ -404,10 +404,6 @@ public static partial class PlanBeacons
 
         foreach (var center in context.CenterToTerminals.Keys)
         {
-            if (center == new Location(47, 13))
-            {
-            }
-
             var supplyMinX = Math.Max(gridMinX, center.X - supplyLeft);
             var supplyMinY = Math.Max(gridMinY, center.Y - supplyUp);
             var supplyMaxX = Math.Min(gridMaxX, center.X + supplyRight);
