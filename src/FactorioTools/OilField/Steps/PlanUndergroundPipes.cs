@@ -65,7 +65,7 @@ public static class PlanUndergroundPipes
 #if USE_SHARED_INSTANCES
         var candidates = context.SharedInstances.LocationSetA;
 #else
-        var candidates = context.GetLocationSet();
+        var candidates = context.GetLocationSet(allowEnumerate: true);
 #endif
 
         try

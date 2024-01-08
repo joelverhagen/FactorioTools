@@ -27,8 +27,8 @@ public static partial class AddPipes
         {
             return new Dictionary<Location, ILocationSet>
             {
-                { centers[0], context.GetLocationSet(centers[1]) },
-                { centers[1], context.GetLocationSet(centers[0]) },
+                { centers[0], context.GetSingleLocationSet(centers[1]) },
+                { centers[1], context.GetSingleLocationSet(centers[0]) },
             };
         }
 
@@ -318,7 +318,7 @@ public static partial class AddPipes
             .ThenBy(t => t.Length)
             .ThenBy(t =>
             {
-                var neighbors = t.Centers.EnumerateItems().SelectMany(c => centerToConnectedCenters[c].EnumerateItems()).Except(t.Centers.EnumerateItems()).ToSet(context);
+                var neighbors = t.Centers.EnumerateItems().SelectMany(c => centerToConnectedCenters[c].EnumerateItems()).Except(t.Centers.EnumerateItems()).ToReadOnlySet(context, allowEnumerate: true);
                 if (neighbors.Count == 0)
                 {
                     return 0;
@@ -331,8 +331,8 @@ public static partial class AddPipes
             .ToList();
 
         // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
-        var includedPipes = context.GetLocationSet();
-        var includedCenters = context.GetLocationSet();
+        var includedPipes = context.GetLocationSet(allowEnumerate: true);
+        var includedCenters = context.GetLocationSet(allowEnumerate: true);
         var selectedTrunks = new List<Trunk>();
         foreach (var trunk in trunkCandidates)
         {
@@ -386,7 +386,7 @@ public static partial class AddPipes
                             .EnumerateItems()
                             .Select(otherCenter =>
                             {
-                                var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToSet(context);
+                                var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToReadOnlySet(context, allowEnumerate: true);
                                 var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, goals);
                                 if (!result.Success)
                                 {
@@ -433,7 +433,7 @@ public static partial class AddPipes
         Location startingCenter)
     {
         var queue = new Queue<(Location Location, bool ShouldRecurse)>();
-        var visited = context.GetLocationSet();
+        var visited = context.GetLocationSet(allowEnumerate: true);
         queue.Enqueue((startingCenter, ShouldRecurse: true));
 
         while (queue.Count > 0)
@@ -494,7 +494,7 @@ public static partial class AddPipes
                         if (context.LocationToTerminals.TryGetValue(location, out var terminals))
                         {
                             var centers = terminals.Select(t => t.Center);
-                            var matchedCenters = centers.Intersect(nextCenters.EnumerateItems()).ToSet(context);
+                            var matchedCenters = centers.Intersect(nextCenters.EnumerateItems()).ToReadOnlySet(context, allowEnumerate: true);
                             if (matchedCenters.Count == 0)
                             {
                                 // The pumpjack terminal we ran into does not belong to the a pumpjack that the current
@@ -509,8 +509,8 @@ public static partial class AddPipes
                                 nextCenters = GetChildCenters(
                                     context,
                                     centerToConnectedCenters,
-                                    ignoreCenters: context.GetLocationSet(currentCenter),
-                                    shallowExploreCenters: context.GetLocationSet(nextCenter),
+                                    ignoreCenters: context.GetSingleLocationSet(currentCenter),
+                                    shallowExploreCenters: context.GetSingleLocationSet(nextCenter),
                                     nextCenter);
 
                                 if (nextCenters.Count == 0)
@@ -553,9 +553,9 @@ public static partial class AddPipes
     {
         public Trunk(Context context, TerminalLocation startingTerminal, Location center)
         {
-            TerminalLocations = context.GetLocationSet(startingTerminal.Terminal, 2);
+            TerminalLocations = context.GetLocationSet(startingTerminal.Terminal, capacity: 2);
             Terminals.Add(startingTerminal);
-            Centers = context.GetLocationSet(center, 2);
+            Centers = context.GetLocationSet(center, capacity: 2, allowEnumerate: true);
         }
 
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>(2);
@@ -590,12 +590,12 @@ public static partial class AddPipes
             _centerToConnectedCenters = centerToConnectedCenters;
             _allIncludedCenters = allIncludedCenters;
 
-            IncludedCenters = includedCenters.ToSet(context);
+            IncludedCenters = includedCenters.ToReadOnlySet(context, allowEnumerate: true);
 
-            FrontierCenters = context.GetLocationSet();
+            FrontierCenters = context.GetLocationSet(allowEnumerate: true);
             IncludedCenterToChildCenters = new Dictionary<Location, ILocationSet>();
 
-            Pipes = pipes.ToSet(context);
+            Pipes = pipes.ToSet(context, allowEnumerate: true);
 
             UpdateFrontierCenters();
             UpdateIncludedCenterToChildCenters();

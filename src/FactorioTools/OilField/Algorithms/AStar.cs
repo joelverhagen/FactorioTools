@@ -26,10 +26,6 @@ public static class AStar
             return new AStarResult(success: true, start, outputList);
         }
 
-#if USE_VECTORS
-        var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
-#endif
-
 #if USE_SHARED_INSTANCES
         var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
 #else
@@ -38,6 +34,8 @@ public static class AStar
         goals.CopyTo(goalsArray);
 
 #if USE_VECTORS
+        var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
+
         int[]? xs = null;
         int[]? ys = null;
         if (useVector)

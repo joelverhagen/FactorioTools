@@ -229,7 +229,7 @@ public static class RotateOptimize
         var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
 #else
         var originalPath = new List<Location>();
-        var connectionPoints = context.ParentContext.GetLocationSet(context.Pipes.Count);
+        var connectionPoints = context.ParentContext.GetLocationSet(context.Pipes.Count, allowEnumerate: true);
 #endif
 
         try
@@ -421,7 +421,7 @@ public static class RotateOptimize
         {
             ParentContext = parentContext;
             Pipes = pipes;
-            Intersections = parentContext.GetLocationSet(pipes.Count);
+            Intersections = parentContext.GetLocationSet(pipes.Count, allowEnumerate: true);
             Goals = parentContext.GetLocationSet(pipes.Count);
             ExistingPipeGrid = new ExistingPipeGrid(parentContext.Grid, pipes);
 

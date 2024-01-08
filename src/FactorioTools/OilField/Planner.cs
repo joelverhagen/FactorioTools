@@ -5,8 +5,6 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Planner
 {
-    private static readonly ILocationSet EmptyLocationSet = new LocationSet(0, 0);
-
     public static (Context Context, OilFieldPlanSummary Summary) ExecuteSample()
     {
         var options = OilFieldOptions.ForMediumElectricPole;
@@ -84,7 +82,7 @@ public static class Planner
 
     public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, Blueprint inputBlueprint)
     {
-        return Execute(options, inputBlueprint, electricPolesAvoid: EmptyLocationSet, EletricPolesMode.AddLast);
+        return Execute(options, inputBlueprint, electricPolesAvoid: EmptyLocationSet.Instance, EletricPolesMode.AddLast);
     }
 
     private static (Context Context, OilFieldPlanSummary Summary) Execute(
@@ -112,7 +110,7 @@ public static class Planner
                     .Values
                     .SelectMany(t => t)
                     .Select(t => t.Terminal)
-                    .ToSet(context);
+                    .ToReadOnlySet(context, allowEnumerate: true);
             }
 
             poles = AddElectricPoles.Execute(context, electricPolesAvoid, allowRetries: false);
@@ -127,7 +125,7 @@ public static class Planner
                         badInput: true);
                 }
 
-                return Execute(options, blueprint, EmptyLocationSet, EletricPolesMode.AddFirstAndAvoidAllTerminals);
+                return Execute(options, blueprint, EmptyLocationSet.Instance, EletricPolesMode.AddFirstAndAvoidAllTerminals);
             }
             else
             {
@@ -156,7 +154,7 @@ public static class Planner
 
         if (!addElectricPolesFirst || context.Options.AddBeacons)
         {
-            poles = AddElectricPoles.Execute(context, avoid: EmptyLocationSet, allowRetries: addElectricPolesFirst);
+            poles = AddElectricPoles.Execute(context, avoid: EmptyLocationSet.Instance, allowRetries: addElectricPolesFirst);
             if (poles is null)
             {
                 if (addElectricPolesFirst)
@@ -169,7 +167,7 @@ public static class Planner
                 }
                 else
                 {
-                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToSet(context);
+                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToReadOnlySet(context, allowEnumerate: true);
                     return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                 }
             }

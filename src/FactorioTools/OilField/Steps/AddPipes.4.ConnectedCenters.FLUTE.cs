@@ -15,7 +15,7 @@ public static partial class AddPipes
         var centerToCenters = new Dictionary<Location, ILocationSet>();
         foreach (var (center, terminals) in context.CenterToTerminals)
         {
-            var otherCenters = context.GetLocationSet();
+            var otherCenters = context.GetLocationSet(allowEnumerate: true);
             var visitedPoints = context.GetLocationSet();
             var queue = new Queue<FlutePoint>();
             foreach (var terminal in terminals)
@@ -59,7 +59,7 @@ public static partial class AddPipes
         public FlutePoint(Context context, Location location)
         {
             Location = location;
-            Centers = context.GetLocationSet();
+            Centers = context.GetLocationSet(allowEnumerate: true);
         }
 
         public bool IsEliminated { get; set; }

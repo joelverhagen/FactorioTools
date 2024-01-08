@@ -20,14 +20,23 @@ namespace Knapcode.FactorioTools;
 /// </summary>
 internal static class SetHandling
 {
-    public static ILocationSet ToSet(this IEnumerable<Location> items, Context context)
+    public static ILocationSet ToSet(this IEnumerable<Location> locations, Context context)
     {
-        var set = context.GetLocationSet();
-        foreach (var item in items)
-        {
-            set.Add(item);
-        }
+        return context.GetLocationSet(locations);
+    }
 
-        return set;
+    public static ILocationSet ToSet(this IEnumerable<Location> locations, Context context, bool allowEnumerate)
+    {
+        return context.GetLocationSet(locations, allowEnumerate);
+    }
+
+    public static ILocationSet ToReadOnlySet(this IEnumerable<Location> locations, Context context)
+    {
+        return context.GetReadOnlyLocationSet(locations);
+    }
+
+    public static ILocationSet ToReadOnlySet(this IEnumerable<Location> locations, Context context, bool allowEnumerate)
+    {
+        return context.GetReadOnlyLocationSet(locations, allowEnumerate);
     }
 }

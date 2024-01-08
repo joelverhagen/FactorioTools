@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Dijkstras
 {
-    public static DijkstrasResult GetShortestPaths(Context context, SquareGrid grid, Location start, ILocationSet goals, bool stopOnFirstGoal)
+    public static DijkstrasResult GetShortestPaths(Context context, SquareGrid grid, Location start, ILocationSet goals, bool stopOnFirstGoal, bool allowGoalEnumerate)
     {
         var cameFrom = new Dictionary<Location, ILocationSet>();
         cameFrom[start] = context.GetLocationSet();
@@ -21,7 +21,7 @@ public static class Dijkstras
         var inQueue = context.GetLocationSet();
 #endif
 
-        var reachedGoals = context.GetLocationSet();
+        var reachedGoals = context.GetLocationSet(allowEnumerate: allowGoalEnumerate);
         costSoFar[start] = 0;
 
         try

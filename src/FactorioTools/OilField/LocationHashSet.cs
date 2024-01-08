@@ -53,8 +53,17 @@ public class LocationHashSet : ILocationSet
 
     public void ExceptWith(ILocationSet other)
     {
-        var otherSet = (LocationHashSet)other;
-        _set.ExceptWith(otherSet._set);
+        if (other.Count == 0)
+        {
+            return;
+        }
+        else
+        {
+            foreach (var item in other.EnumerateItems())
+            {
+                _set.Remove(item);
+            }
+        }
     }
 
     public bool Overlaps(IEnumerable<Location> other)
@@ -80,7 +89,21 @@ public class LocationHashSet : ILocationSet
 
     public void UnionWith(ILocationSet other)
     {
-        var otherSet = (LocationHashSet)other;
-        _set.UnionWith(otherSet._set);
+        if (other.Count == 0)
+        {
+            return;
+        }
+        else if (other.Count == 1)
+        {
+            foreach (var item in other.EnumerateItems())
+            {
+                _set.Add(item);
+            }
+        }
+        else
+        {
+            var otherSet = (LocationHashSet)other;
+            _set.UnionWith(otherSet._set);
+        }
     }
 }

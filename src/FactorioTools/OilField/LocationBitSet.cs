@@ -45,7 +45,7 @@ public class LocationBitSet : ILocationSet
 
     public IEnumerable<Location> EnumerateItems()
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 
     public void ExceptWith(ILocationSet other)

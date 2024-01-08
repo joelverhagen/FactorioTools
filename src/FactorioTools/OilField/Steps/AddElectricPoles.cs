@@ -20,7 +20,7 @@ public static class AddElectricPoles
         ILocationSet? avoidEntities = null;
         if (avoid.Count > 0)
         {
-            avoidEntities = context.GetLocationSet();
+            avoidEntities = context.GetLocationSet(allowEnumerate: true);
             foreach (var location in avoid.EnumerateItems())
             {
                 if (context.Grid.IsEmpty(location))
@@ -79,7 +79,7 @@ public static class AddElectricPoles
             }
         }
 
-        return electricPoles.Keys.ToSet(context);
+        return electricPoles.Keys.ToReadOnlySet(context);
     }
 
     private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
@@ -91,7 +91,7 @@ public static class AddElectricPoles
             .SelectMany(p => p.Value.EnumerateItems())
             .Concat(poleCenterToCoveredCenters.Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
             .Except(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems())) // Exclude electric poles covering pumpjacks that are only covered by one pole.
-            .ToSet(context);
+            .ToSet(context, allowEnumerate: true);
 
         while (removeCandidates.Count > 0)
         {
@@ -690,7 +690,7 @@ public static class AddElectricPoles
     private static List<ILocationSet> GetElectricPoleGroups(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
     {
         var groups = new List<ILocationSet>();
-        var remaining = electricPoles.Keys.ToSet(context);
+        var remaining = electricPoles.Keys.ToSet(context, allowEnumerate: true);
         while (remaining.Count > 0)
         {
             var current = remaining.EnumerateItems().First();
@@ -712,7 +712,7 @@ public static class AddElectricPoles
                 }
             }
 
-            var group = entities.Select(e => context.Grid.EntityToLocation[e]).ToSet(context);
+            var group = entities.Select(e => context.Grid.EntityToLocation[e]).ToSet(context, allowEnumerate: true);
             remaining.ExceptWith(group);
             groups.Add(group);
         }

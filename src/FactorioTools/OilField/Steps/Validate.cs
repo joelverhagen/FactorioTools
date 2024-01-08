@@ -19,11 +19,11 @@ public static class Validate
                 }
             }
 
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToSet(context);
+            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToReadOnlySet(context, allowEnumerate: true);
             var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
             var start = goals.EnumerateItems().First();
             goals.Remove(start);
-            var result = Dijkstras.GetShortestPaths(context, clone, start, goals, stopOnFirstGoal: false);
+            var result = Dijkstras.GetShortestPaths(context, clone, start, goals, stopOnFirstGoal: false, allowGoalEnumerate: true);
             var reachedGoals = result.ReachedGoals;
             reachedGoals.Add(start);
             var unreachedGoals = context.GetLocationSet(goals);

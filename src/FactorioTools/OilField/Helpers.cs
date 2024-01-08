@@ -152,7 +152,7 @@ public static class Helpers
             .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
             .Where(p => p.Entity is not null)
             .ToDictionary(p => p.Location, p => p.Entity!);
-        var unusedProviders = providers.Keys.ToSet(context);
+        var unusedProviders = providers.Keys.ToReadOnlySet(context, allowEnumerate: removeUnused);
 
         for (int i = 0; i < recipients.Count; i++)
         {
@@ -318,7 +318,7 @@ public static class Helpers
 
         foreach (var center in providerCenters)
         {
-            var coveredCenters = context.GetLocationSet();
+            var coveredCenters = context.GetLocationSet(allowEnumerate: true);
             AddCoveredCenters(
                 coveredCenters,
                 context.Grid,
@@ -341,7 +341,7 @@ public static class Helpers
         return providerCenterToCoveredCenters
             .SelectMany(p => p.Value.EnumerateItems().Select(c => KeyValuePair.Create(p.Key, c)))
             .GroupBy(p => p.Value, p => p.Key)
-            .ToDictionary(g => g.Key, g => g.ToSet(context));
+            .ToDictionary(g => g.Key, g => g.ToReadOnlySet(context, allowEnumerate: true));
     }
 
     private static void AddCoveredCenters(

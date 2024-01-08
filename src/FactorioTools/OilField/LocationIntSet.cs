@@ -52,8 +52,22 @@ public class LocationIntSet : ILocationSet
 
     public void UnionWith(ILocationSet other)
     {
-        var otherSet = ValidateSameDimensions(other);
-        _set.UnionWith(otherSet._set);
+        if (other.Count == 0)
+        {
+            return;
+        }
+        else if (other.Count == 1)
+        {
+            foreach (var item in other.EnumerateItems())
+            {
+                _set.Add(GetIndex(item));
+            }
+        }
+        else
+        {
+            var otherSet = ValidateSameDimensions(other);
+            _set.UnionWith(otherSet._set);
+        }
     }
 
     public void ExceptWith(ILocationSet other)

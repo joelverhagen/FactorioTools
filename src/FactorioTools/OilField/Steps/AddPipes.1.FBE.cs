@@ -132,7 +132,7 @@ public static partial class AddPipes
                         .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
                         .Select(p =>
                         {
-                            var goals = context.GetLocationSet(p.B.Terminal);
+                            var goals = context.GetSingleLocationSet(p.B.Terminal);
                             var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, p.A.Terminal, goals);
                             return new TerminalPair(p.A, p.B, result.Path);
                         })
@@ -268,7 +268,7 @@ public static partial class AddPipes
         }
 
         var terminals = finalGroup.Entities.ToList();
-        var pipes = finalGroup.Paths.SelectMany(l => l).ToSet(context);
+        var pipes = finalGroup.Paths.SelectMany(l => l).ToReadOnlySet(context, allowEnumerate: true);
 
         return (terminals, pipes, strategy);
     }
@@ -277,7 +277,7 @@ public static partial class AddPipes
     private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
     {
         var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(context, clone, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToSet(context), undergroundPipes: null, allowMultipleTerminals: true);
+        AddPipeEntities.Execute(context, clone, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToReadOnlySet(context), undergroundPipes: null, allowMultipleTerminals: true);
         Visualizer.Show(clone, addedPumpjacks.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.Center.X, x.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
@@ -336,7 +336,7 @@ public static partial class AddPipes
                 }
                 else
                 {
-                    var goals = context.GetLocationSet(l.B);
+                    var goals = context.GetSingleLocationSet(l.B);
                     var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, goals);
                     if (!result.Success)
                     {

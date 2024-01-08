@@ -14,12 +14,12 @@ public class PlanUndergroundPipesTest
             var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: length, minY: 1, maxY: 1);
             var context = GetContext(pipes);
-            var originalPipes = pipes.ToSet(context);
+            var originalPipes = pipes.ToReadOnlySet(context, allowEnumerate: true);
 
             Run(context, pipes);
 
             Assert.All(originalPipes.EnumerateItems(), p => Assert.IsType<Pipe>(context.Grid[p]));
-            Assert.True(originalPipes.SetEquals(pipes.ToSet(context)));
+            Assert.True(originalPipes.SetEquals(pipes.ToReadOnlySet(context, allowEnumerate: true)));
         }
 
         [Theory]
@@ -145,12 +145,12 @@ public class PlanUndergroundPipesTest
             var pipes = new HashSet<Location>();
             AddPipes(pipes, minX: 1, maxX: 1, minY: 1, maxY: length);
             var context = GetContext(pipes);
-            var originalPipes = pipes.ToSet(context);
+            var originalPipes = pipes.ToReadOnlySet(context, allowEnumerate: true);
 
             Run(context, pipes);
 
             Assert.All(originalPipes.EnumerateItems(), p => Assert.IsType<Pipe>(context.Grid[p]));
-            Assert.True(originalPipes.SetEquals(pipes.ToSet(context)));
+            Assert.True(originalPipes.SetEquals(pipes.ToReadOnlySet(context, allowEnumerate: true)));
         }
 
         [Theory]
@@ -415,7 +415,7 @@ public class PlanUndergroundPipesTest
 
         private static void Run(Context context, HashSet<Location> pipes)
         {
-            var locationSet = pipes.ToSet(context);
+            var locationSet = pipes.ToReadOnlySet(context, allowEnumerate: true);
             var undergroundPipes = PlanUndergroundPipes.Execute(context, locationSet);
 
             Assert.Equal(0, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));

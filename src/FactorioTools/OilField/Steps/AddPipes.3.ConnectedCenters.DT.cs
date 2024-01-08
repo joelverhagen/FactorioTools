@@ -10,7 +10,7 @@ public static partial class AddPipes
     private static Dictionary<Location, ILocationSet> GetConnectedPumpjacksWithDelaunay(Context context, List<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
-        var dlGraph = centers.ToDictionary(c => c, c => context.GetLocationSet());
+        var dlGraph = centers.ToDictionary(c => c, c => context.GetLocationSet(allowEnumerate: true));
 
         for (var e = 0; e < delaunator.Triangles.Length; e++)
         {
