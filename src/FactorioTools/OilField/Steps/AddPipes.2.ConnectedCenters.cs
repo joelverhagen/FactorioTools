@@ -77,7 +77,7 @@ public static partial class AddPipes
     private static void VisualizeConnectedCenters(Context context, ILocationDictionary<ILocationSet> connectedCenters)
     {
         var edges = new HashSet<DelaunatorSharp.IEdge>();
-        foreach (var (center, centers) in connectedCenters)
+        foreach (var (center, centers) in connectedCenters.EnumeratePairs())
         {
             foreach (var other in centers.EnumerateItems())
             {
