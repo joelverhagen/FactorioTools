@@ -41,9 +41,15 @@ public static class Helpers
         return centerEntity;
     }
 
-    public static Dictionary<Location, List<TerminalLocation>> GetCenterToTerminals(SquareGrid grid, IEnumerable<Location> centers)
+    public static ILocationDictionary<List<TerminalLocation>> GetCenterToTerminals(Context context, SquareGrid grid, IEnumerable<Location> centers)
     {
-        var centerToTerminals = new Dictionary<Location, List<TerminalLocation>>();
+        var centerToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
+        PopulateCenterToTerminals(context.GetLocationDictionary<List<TerminalLocation>>(), grid, centers);
+        return centerToTerminals;
+    }
+
+    public static void PopulateCenterToTerminals(ILocationDictionary<List<TerminalLocation>> centerToTerminals, SquareGrid grid, IEnumerable<Location> centers)
+    {
         foreach (var center in centers)
         {
             var candidateTerminals = new List<TerminalLocation>();
@@ -65,13 +71,17 @@ public static class Helpers
 
             centerToTerminals.Add(center, candidateTerminals);
         }
-
-        return centerToTerminals;
     }
 
-    public static Dictionary<Location, List<TerminalLocation>> GetLocationToTerminals(Dictionary<Location, List<TerminalLocation>> centerToTerminals)
+    public static ILocationDictionary<List<TerminalLocation>> GetLocationToTerminals(Context context, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
     {
-        var locationToTerminals = new Dictionary<Location, List<TerminalLocation>>();
+        var locationToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
+        PopulateLocationToTerminals(context.GetLocationDictionary<List<TerminalLocation>>(), centerToTerminals);
+        return locationToTerminals;
+    }
+
+    public static void PopulateLocationToTerminals(ILocationDictionary<List<TerminalLocation>> locationToTerminals, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
+    {
         foreach (var terminals in centerToTerminals.Values)
         {
             foreach (var terminal in terminals)
@@ -85,11 +95,9 @@ public static class Helpers
                 list.Add(terminal);
             }
         }
-
-        return locationToTerminals;
     }
 
-    public static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
+    public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -109,7 +117,7 @@ public static class Helpers
             includeBeacons: false);
     }
 
-    public static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
+    public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -129,7 +137,7 @@ public static class Helpers
             includeBeacons: true);
     }
 
-    private static (Dictionary<Location, TInfo> CandidateToInfo, CountedBitArray CoveredEntities, Dictionary<Location, TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
+    private static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -143,7 +151,7 @@ public static class Helpers
         where TProvider : GridEntity
         where TInfo : CandidateInfo
     {
-        var candidateToInfo = new Dictionary<Location, TInfo>();
+        var candidateToInfo = context.GetLocationDictionary<TInfo>();
         var coveredEntities = new CountedBitArray(recipients.Count);
 
         var providers = context
@@ -151,7 +159,7 @@ public static class Helpers
             .EntityToLocation
             .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
             .Where(p => p.Entity is not null)
-            .ToDictionary(p => p.Location, p => p.Entity!);
+            .ToDictionary(context, p => p.Location, p => p.Entity!);
         var unusedProviders = providers.Keys.ToReadOnlySet(context, allowEnumerate: removeUnused);
 
         for (int i = 0; i < recipients.Count; i++)
@@ -284,7 +292,7 @@ public static class Helpers
         {
             // Remove candidates that only cover recipients that are already covered.
             var toRemove = new List<Location>();
-            foreach ((var candidate, var info) in candidateToInfo)
+            foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
             {
                 var subset = new CountedBitArray(info.Covered);
                 subset.Not();
@@ -304,7 +312,7 @@ public static class Helpers
         return (candidateToInfo, coveredEntities, providers);
     }
 
-    public static Dictionary<Location, ILocationSet> GetProviderCenterToCoveredCenters(
+    public static ILocationDictionary<ILocationSet> GetProviderCenterToCoveredCenters(
         Context context,
         int providerWidth,
         int providerHeight,
@@ -314,7 +322,7 @@ public static class Helpers
         bool includePumpjacks,
         bool includeBeacons)
     {
-        var poleCenterToCoveredCenters = new Dictionary<Location, ILocationSet>();
+        var poleCenterToCoveredCenters = context.GetLocationDictionary<ILocationSet>();
 
         foreach (var center in providerCenters)
         {
@@ -336,12 +344,13 @@ public static class Helpers
         return poleCenterToCoveredCenters;
     }
 
-    public static Dictionary<Location, ILocationSet> GetCoveredCenterToProviderCenters(Context context, Dictionary<Location, ILocationSet> providerCenterToCoveredCenters)
+    public static ILocationDictionary<ILocationSet> GetCoveredCenterToProviderCenters(Context context, ILocationDictionary<ILocationSet> providerCenterToCoveredCenters)
     {
         return providerCenterToCoveredCenters
+            .EnumeratePairs()
             .SelectMany(p => p.Value.EnumerateItems().Select(c => KeyValuePair.Create(p.Key, c)))
             .GroupBy(p => p.Value, p => p.Key)
-            .ToDictionary(g => g.Key, g => g.ToReadOnlySet(context, allowEnumerate: true));
+            .ToDictionary(context, g => g.Key, g => g.ToReadOnlySet(context, allowEnumerate: true));
     }
 
     private static void AddCoveredCenters(
@@ -441,8 +450,8 @@ public static class Helpers
         int providerHeight,
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
-        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates,
-        Dictionary<Location, TInfo> candidateToInfo)
+        Dictionary<int, ILocationDictionary<TInfo>> coveredToCandidates,
+        ILocationDictionary<TInfo> candidateToInfo)
         where TInfo : CandidateInfo
     {
         // Console.WriteLine("adding " + center);
@@ -483,7 +492,7 @@ public static class Helpers
                     continue;
                 }
 
-                foreach ((var otherCandidate, var otherInfo) in coveredToCandidates[i])
+                foreach ((var otherCandidate, var otherInfo) in coveredToCandidates[i].EnumeratePairs())
                 {
                     if (!updated.Add(otherCandidate))
                     {
@@ -522,9 +531,9 @@ public static class Helpers
         int providerHeight,
         List<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
-        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates,
-        Dictionary<Location, TInfo> candidateToInfo,
-        Dictionary<Location, TInfo> scopedCandidateToInfo,
+        Dictionary<int, ILocationDictionary<TInfo>> coveredToCandidates,
+        ILocationDictionary<TInfo> candidateToInfo,
+        ILocationDictionary<TInfo> scopedCandidateToInfo,
         SortedBatches<TInfo> coveredCountBatches)
         where TInfo : CandidateInfo
     {
@@ -575,7 +584,7 @@ public static class Helpers
                 }
 
                 var currentCandidates = coveredToCandidates[i];
-                foreach ((var otherCandidate, var otherInfo) in currentCandidates)
+                foreach ((var otherCandidate, var otherInfo) in currentCandidates.EnumeratePairs())
                 {
                     if (!updated.Add(otherCandidate))
                     {
@@ -606,7 +615,7 @@ public static class Helpers
                     }
                     else if (modified)
                     {
-                        coveredCountBatches.MoveCandidate(otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount);
+                        coveredCountBatches.MoveCandidate(context, otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount);
 
                         double entityDistance = 0;
                         for (var j = 0; j < recipients.Count; j++)
@@ -645,7 +654,7 @@ public static class Helpers
         }
     }
 
-    public static (Dictionary<Location, ILocationSet> PoleCenterToCoveredCenters, Dictionary<Location, ILocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
+    public static (ILocationDictionary<ILocationSet> PoleCenterToCoveredCenters, ILocationDictionary<ILocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
         Context context,
         List<ProviderRecipient> poweredEntities,
         IEnumerable<Location> electricPoleCenters)
@@ -703,16 +712,17 @@ public static class Helpers
         return (poweredEntities, hasBeacons);
     }
 
-    public static Dictionary<int, Dictionary<Location, TInfo>> GetCoveredToCandidates<TInfo>(
-        Dictionary<Location, TInfo> allCandidateToInfo,
+    public static Dictionary<int, ILocationDictionary<TInfo>> GetCoveredToCandidates<TInfo>(
+        Context context,
+        ILocationDictionary<TInfo> allCandidateToInfo,
         CountedBitArray coveredEntities)
         where TInfo : CandidateInfo
     {
-        var coveredToCandidates = new Dictionary<int, Dictionary<Location, TInfo>>(coveredEntities.Count);
+        var coveredToCandidates = new Dictionary<int, ILocationDictionary<TInfo>>(coveredEntities.Count);
         for (var i = 0; i < coveredEntities.Count; i++)
         {
-            var candidates = new Dictionary<Location, TInfo>();
-            foreach ((var candidate, var info) in allCandidateToInfo)
+            var candidates = context.GetLocationDictionary<TInfo>();
+            foreach ((var candidate, var info) in allCandidateToInfo.EnumeratePairs())
             {
                 if (info.Covered[i])
                 {
@@ -760,7 +770,7 @@ public static class Helpers
         Location center,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo)
+        ILocationDictionary<TInfo> candidateToInfo)
         where TInfo : CandidateInfo
     {
         var (
@@ -785,8 +795,8 @@ public static class Helpers
         Location center,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo,
-        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates)
+        ILocationDictionary<TInfo> candidateToInfo,
+        Dictionary<int, ILocationDictionary<TInfo>> coveredToCandidates)
         where TInfo : CandidateInfo
     {
         var (
@@ -821,9 +831,9 @@ public static class Helpers
         Location center,
         int providerWidth,
         int providerHeight,
-        Dictionary<Location, TInfo> candidateToInfo,
-        Dictionary<Location, TInfo> scopedCandidateToInfo,
-        Dictionary<int, Dictionary<Location, TInfo>> coveredToCandidates)
+        ILocationDictionary<TInfo> candidateToInfo,
+        ILocationDictionary<TInfo> scopedCandidateToInfo,
+        Dictionary<int, ILocationDictionary<TInfo>> coveredToCandidates)
         where TInfo : CandidateInfo
     {
         var (
@@ -957,7 +967,7 @@ public static class Helpers
         terminalOptions.Add(selectedTerminal);
     }
 
-    public static List<Location> GetPath(Dictionary<Location, Location> cameFrom, Location start, Location reachedGoal)
+    public static List<Location> GetPath(ILocationDictionary<Location> cameFrom, Location start, Location reachedGoal)
     {
         var sizeEstimate = 2 * start.GetManhattanDistance(reachedGoal);
         var path = new List<Location>(sizeEstimate);
@@ -965,7 +975,7 @@ public static class Helpers
         return path;
     }
 
-    public static void AddPath(Dictionary<Location, Location> cameFrom, Location reachedGoal, List<Location> outputList)
+    public static void AddPath(ILocationDictionary<Location> cameFrom, Location reachedGoal, List<Location> outputList)
     {
         var current = reachedGoal;
         while (true)

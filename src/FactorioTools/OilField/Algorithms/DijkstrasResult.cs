@@ -6,13 +6,13 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class DijkstrasResult
 {
-    public DijkstrasResult(Dictionary<Location, ILocationSet> locationToPrevious, ILocationSet reachedGoals)
+    public DijkstrasResult(ILocationDictionary<ILocationSet> locationToPrevious, ILocationSet reachedGoals)
     {
         LocationToPrevious = locationToPrevious;
         ReachedGoals = reachedGoals;
     }
 
-    public Dictionary<Location, ILocationSet> LocationToPrevious { get; }
+    public ILocationDictionary<ILocationSet> LocationToPrevious { get; }
     public ILocationSet ReachedGoals { get; }
 
     public List<List<Location>> GetStraightPaths(Location goal)

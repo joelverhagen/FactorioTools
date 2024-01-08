@@ -8,8 +8,17 @@ public class SharedInstances
     public SharedInstances(SquareGrid grid)
     {
 #if USE_SHARED_INSTANCES
-        LocationSetA = new LocationSet(grid.Width, grid.Height);
-        LocationSetB = new LocationSet(grid.Width, grid.Height);
+#if USE_HASHSETS
+        LocationSetA = new LocationHashSet(grid.Width, grid.Height);
+        LocationSetB = new LocationHashSet(grid.Width, grid.Height);
+        LocationToLocation = new LocationHashDictionary<Location>(grid.Width, grid.Height);
+        LocationToDouble = new LocationHashDictionary<double>(grid.Width, grid.Height);
+#else
+        LocationSetA = new LocationIntSet(grid.Width, grid.Height);
+        LocationSetB = new LocationIntSet(grid.Width, grid.Height);
+        LocationToLocation = new LocationIntDictionary<Location>(grid.Width, grid.Height);
+        LocationToDouble = new LocationIntDictionary<double>(grid.Width, grid.Height);
+#endif
 #endif
     }
 
@@ -18,8 +27,8 @@ public class SharedInstances
     public Location[] LocationArray = Array.Empty<Location>();
     public int[] IntArrayX = Array.Empty<int>();
     public int[] IntArrayY = Array.Empty<int>();
-    public Dictionary<Location, Location> LocationToLocation = new();
-    public Dictionary<Location, double> LocationToDouble = new();
+    public ILocationDictionary<Location> LocationToLocation;
+    public ILocationDictionary<double> LocationToDouble;
     public PriorityQueue<Location, double> LocationPriorityQueue = new();
     public List<Location> LocationListA = new();
     public List<Location> LocationListB = new();

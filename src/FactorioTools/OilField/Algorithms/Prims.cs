@@ -5,9 +5,9 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class Prims
 {
-    public static Dictionary<Location, ILocationSet> GetMinimumSpanningTree(
+    public static ILocationDictionary<ILocationSet> GetMinimumSpanningTree(
         Context context,
-        Dictionary<Location, Dictionary<Location, int>> graph,
+        ILocationDictionary<ILocationDictionary<int>> graph,
         Location firstNode,
         bool digraph)
     {
@@ -17,12 +17,12 @@ public static class Prims
         var visited = context.GetLocationSet();
 #endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
-        var mst = new Dictionary<Location, ILocationSet>();
+        var mst = context.GetLocationDictionary<ILocationSet>();
 
         try
         {
             visited.Add(firstNode);
-            foreach ((var otherNode, var cost) in graph[firstNode])
+            foreach ((var otherNode, var cost) in graph[firstNode].EnumeratePairs())
             {
                 priority.Enqueue((firstNode, otherNode), cost);
             }
@@ -45,7 +45,7 @@ public static class Prims
                     nodes.Add(nodeB);
                 }
 
-                foreach ((var neighbor, var cost) in graph[nodeB])
+                foreach ((var neighbor, var cost) in graph[nodeB].EnumeratePairs())
                 {
                     if (!visited.Contains(neighbor))
                     {

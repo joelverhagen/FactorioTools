@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class AddPipeEntities
 {
-    public static void Execute(Context context, ILocationSet pipes, Dictionary<Location, Direction>? undergroundPipes)
+    public static void Execute(Context context, ILocationSet pipes, ILocationDictionary<Direction>? undergroundPipes)
     {
         Execute(context, context.Grid, pipes, undergroundPipes);
     }
@@ -14,7 +14,7 @@ public static class AddPipeEntities
         Context context,
         SquareGrid grid,
         ILocationSet pipes,
-        Dictionary<Location, Direction>? undergroundPipes = null,
+        ILocationDictionary<Direction>? undergroundPipes = null,
         bool allowMultipleTerminals = false)
     {
 #if USE_SHARED_INSTANCES
@@ -28,7 +28,7 @@ public static class AddPipeEntities
 
             if (undergroundPipes is not null)
             {
-                foreach ((var location, var direction) in undergroundPipes)
+                foreach ((var location, var direction) in undergroundPipes.EnumeratePairs())
                 {
                     addedPipes.Add(location);
                     grid.AddEntity(location, new UndergroundPipe(direction));

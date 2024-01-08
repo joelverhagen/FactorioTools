@@ -41,7 +41,7 @@ public static class AddElectricPoles
             return null;
         }
 
-        var electricPoles = new Dictionary<Location, ElectricPoleCenter>();
+        var electricPoles = context.GetLocationDictionary<ElectricPoleCenter>();
         for (var i = 0; i < electricPoleList.Count; i++)
         {
             var center = electricPoleList[i];
@@ -82,15 +82,16 @@ public static class AddElectricPoles
         return electricPoles.Keys.ToReadOnlySet(context);
     }
 
-    private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, ILocationDictionary<ElectricPoleCenter> electricPoles)
     {
         (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetElectricPoleCoverage(context, poweredEntities, electricPoles.Keys);
 
         var removeCandidates = coveredCenterToPoleCenters
+            .EnumeratePairs()
             .Where(p => p.Value.Count > 2) // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
             .SelectMany(p => p.Value.EnumerateItems())
-            .Concat(poleCenterToCoveredCenters.Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
-            .ExceptSet(coveredCenterToPoleCenters.Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems()), context, allowEnumerate: true); // Exclude electric poles covering pumpjacks that are only covered by one pole.
+            .Concat(poleCenterToCoveredCenters.EnumeratePairs().Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
+            .ExceptSet(coveredCenterToPoleCenters.EnumeratePairs().Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems()), context, allowEnumerate: true); // Exclude electric poles covering pumpjacks that are only covered by one pole.
 
         while (removeCandidates.Count > 0)
         {
@@ -118,7 +119,7 @@ public static class AddElectricPoles
         }
     }
 
-    private static bool ArePolesConnectedWithout(Dictionary<Location, ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
+    private static bool ArePolesConnectedWithout(ILocationDictionary<ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
     {
         var queue = new Queue<ElectricPoleCenter>();
         queue.Enqueue(electricPoles.Values.Where(x => x != except).First());
@@ -145,9 +146,9 @@ public static class AddElectricPoles
         return discovered.Count == electricPoles.Count - 1;
     }
 
-    private static void ConnectExistingElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, Location center, ElectricPoleCenter centerEntity)
+    private static void ConnectExistingElectricPoles(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles, Location center, ElectricPoleCenter centerEntity)
     {
-        foreach ((var other, var otherCenter) in electricPoles)
+        foreach ((var other, var otherCenter) in electricPoles.EnumeratePairs())
         {
             if (center == other)
             {
@@ -299,7 +300,7 @@ public static class AddElectricPoles
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
-        var coveredToCandidates = GetCoveredToCandidates(allCandidateToInfo, coveredEntities);
+        var coveredToCandidates = GetCoveredToCandidates(context, allCandidateToInfo, coveredEntities);
 
         var allSubsets = new Queue<SortedBatches<ElectricPoleCandidateInfo>>();
 
@@ -313,21 +314,23 @@ public static class AddElectricPoles
             sorter = CandidateComparerForSamePriorityPowered.Instance;
             allSubsets.Enqueue(new SortedBatches<ElectricPoleCandidateInfo>(
                 allCandidateToInfo
+                    .EnumeratePairs()
                     .GroupBy(p => p.Value.PriorityPowered)
-                    .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(p => p.Key, p => p.Value))),
+                    .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(context, p => p.Key, p => p.Value))),
                 ascending: false));
         }
 
         var coveredCountBatches = new SortedBatches<ElectricPoleCandidateInfo>(
             allCandidateToInfo
+                .EnumeratePairs()
                 .GroupBy(p => p.Value.Covered.TrueCount)
-                .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(p => p.Key, p => p.Value))),
+                .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(context, p => p.Key, p => p.Value))),
             ascending: false);
 
         allSubsets.Enqueue(coveredCountBatches);
 
         var roundedReach = (int)Math.Ceiling(context.Options.ElectricPoleWireReach);
-        Dictionary<Location, ElectricPoleCandidateInfo>? candidateToInfo = null;
+        ILocationDictionary<ElectricPoleCandidateInfo>? candidateToInfo = null;
 
         while (coveredEntities.Any(false))
         {
@@ -357,7 +360,7 @@ public static class AddElectricPoles
                 }
             }
 
-            (var candidate, var candidateInfo) = candidateToInfo.MinBy(x => x.Value, sorter)!;
+            (var candidate, var candidateInfo) = candidateToInfo.EnumeratePairs().MinBy(x => x.Value, sorter)!;
 
             if (!allCandidateToInfo.ContainsKey(candidate))
             {
@@ -404,12 +407,12 @@ public static class AddElectricPoles
 
     private static void PopulateCandidateToInfo(
         Context context,
-        Dictionary<Location, ElectricPoleCandidateInfo> candidateToInfo,
+        ILocationDictionary<ElectricPoleCandidateInfo> candidateToInfo,
         CountedBitArray? entitiesToPowerFirst,
         List<ProviderRecipient> poweredEntities,
         List<Location> electricPoleList)
     {
-        foreach ((var candidate, var info) in candidateToInfo)
+        foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
         {
             if (entitiesToPowerFirst is not null)
             {
@@ -501,7 +504,7 @@ public static class AddElectricPoles
 
     private static void UpdateCandidateInfo(
         Context context,
-        Dictionary<Location, ElectricPoleCandidateInfo> candidateToInfo,
+        ILocationDictionary<ElectricPoleCandidateInfo> candidateToInfo,
         int roundedReach,
         Location candidate)
     {
@@ -535,7 +538,7 @@ public static class AddElectricPoles
 
     private static ElectricPoleCenter AddElectricPole(
         Context context,
-        Dictionary<Location, ElectricPoleCenter> electricPoles,
+        ILocationDictionary<ElectricPoleCenter> electricPoles,
         Location center)
     {
         var centerEntity = new ElectricPoleCenter();
@@ -554,7 +557,7 @@ public static class AddElectricPoles
         return centerEntity;
     }
 
-    private static void ConnectElectricPoles(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    private static void ConnectElectricPoles(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles)
     {
         var groups = GetElectricPoleGroups(context, electricPoles);
 
@@ -581,7 +584,7 @@ public static class AddElectricPoles
         }
     }
 
-    private static void AddSinglePoleForConnection(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles, List<ILocationSet> groups, double distance, Endpoints endpoints)
+    private static void AddSinglePoleForConnection(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles, List<ILocationSet> groups, double distance, Endpoints endpoints)
     {
         var segments = (int)Math.Ceiling(distance / context.Options.ElectricPoleWireReach);
         var idealLine = BresenhamsLine.GetPath(endpoints.A, endpoints.B);
@@ -668,7 +671,7 @@ public static class AddElectricPoles
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
     }
 
-    private static List<ILocationSet> GetElectricPoleGroups(Context context, Dictionary<Location, ElectricPoleCenter> electricPoles)
+    private static List<ILocationSet> GetElectricPoleGroups(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles)
     {
         var groups = new List<ILocationSet>();
         var remaining = electricPoles.Keys.ToSet(context, allowEnumerate: true);

@@ -31,12 +31,12 @@ public static partial class PlanBeacons
         var sorter = new SnugCandidateSorter();
 
         var scopedCandidates = new List<KeyValuePair<Location, BeaconCandidateInfo>>();
-        var scopedCandidatesSet = new Dictionary<Location, BeaconCandidateInfo>();
+        var scopedCandidatesSet = context.GetLocationDictionary<BeaconCandidateInfo>();
 
-        Dictionary<int, Dictionary<Location, BeaconCandidateInfo>>? coveredToCandidates = null;
+        Dictionary<int, ILocationDictionary<BeaconCandidateInfo>>? coveredToCandidates = null;
         if (!context.Options.OverlapBeacons)
         {
-            coveredToCandidates = GetCoveredToCandidates(candidateToInfo, coveredEntities);
+            coveredToCandidates = GetCoveredToCandidates(context, candidateToInfo, coveredEntities);
         }
 
         var beacons = new List<Location>();
@@ -45,6 +45,7 @@ public static partial class PlanBeacons
         while (candidateToInfo.Count > 0)
         {
             var pair = candidateToInfo
+                .EnumeratePairs()
                 .MinBy(pair =>
                 {
                     return Tuple.Create(
@@ -138,10 +139,10 @@ public static partial class PlanBeacons
 
     private static void PopulateCandidateToInfo(
         Context context,
-        Dictionary<Location, BeaconCandidateInfo> candidateToInfo,
+        ILocationDictionary<BeaconCandidateInfo> candidateToInfo,
         List<ProviderRecipient> poweredEntities)
     {
-        foreach ((var candidate, var info) in candidateToInfo)
+        foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
         {
             info.EntityDistance = GetEntityDistance(poweredEntities, candidate, info.Covered);
             info.MiddleDistance = candidate.GetEuclideanDistanceSquared(context.Grid.Middle);
@@ -161,9 +162,9 @@ public static partial class PlanBeacons
 
     private static void AddNeighborsAndSort(
         Context context,
-        Dictionary<Location, BeaconCandidateInfo> candidateToInfo,
+        ILocationDictionary<BeaconCandidateInfo> candidateToInfo,
         List<KeyValuePair<Location, BeaconCandidateInfo>> scopedCandidates,
-        Dictionary<Location, BeaconCandidateInfo> scopedCandidatesSet,
+        ILocationDictionary<BeaconCandidateInfo> scopedCandidatesSet,
         SnugCandidateSorter sorter,
         Location candidate)
     {

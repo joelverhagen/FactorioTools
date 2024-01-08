@@ -32,7 +32,7 @@ public class HelpersTest
                 includePumpjacks: true,
                 includeBeacons: true);
 
-            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.Single();
+            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.EnumeratePairs().Single();
             Assert.Equal(center, providerCenter);
             Assert.Equal(4, coveredCenters.Count);
             Assert.Contains(new Location(11, 12), coveredCenters.EnumerateItems());
@@ -69,7 +69,7 @@ public class HelpersTest
                 includePumpjacks: true,
                 includeBeacons: true);
 
-            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.Single();
+            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.EnumeratePairs().Single();
             Assert.Equal(center, providerCenter);
             Assert.Equal(7, coveredCenters.Count);
             Assert.Contains(new Location(12, 9), coveredCenters.EnumerateItems());
@@ -123,7 +123,7 @@ public class HelpersTest
             Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), pair.Value.Select(p => (DelaunatorSharp.IEdge)new DelaunatorSharp.Edge(0, new DelaunatorSharp.Point(p.X, p.Y), new DelaunatorSharp.Point(pair.Key.X, pair.Key.Y))));
             */
 
-            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.Single();
+            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.EnumeratePairs().Single();
             Assert.Equal(center, providerCenter);
             Assert.Equal(13, coveredCenters.Count);
             Assert.Contains(new Location(11, 15), coveredCenters.EnumerateItems());
@@ -170,7 +170,7 @@ public class HelpersTest
             Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), pair.Value.Select(p => (DelaunatorSharp.IEdge)new DelaunatorSharp.Edge(0, new DelaunatorSharp.Point(p.X, p.Y), new DelaunatorSharp.Point(pair.Key.X, pair.Key.Y))));
             */
 
-            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.Single();
+            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.EnumeratePairs().Single();
             Assert.Equal(center, providerCenter);
             Assert.Equal(3, coveredCenters.Count);
             Assert.Contains(new Location(10, 13), coveredCenters.EnumerateItems());
@@ -213,7 +213,7 @@ public class HelpersTest
             Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), pair.Value.Select(p => (DelaunatorSharp.IEdge)new DelaunatorSharp.Edge(0, new DelaunatorSharp.Point(p.X, p.Y), new DelaunatorSharp.Point(pair.Key.X, pair.Key.Y))));
             */
 
-            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.Single();
+            (var providerCenter, var coveredCenters) = providerCenterToCoveredCenters.EnumeratePairs().Single();
             Assert.Equal(center, providerCenter);
             Assert.Equal(8, coveredCenters.Count);
             Assert.Contains(new Location(15, 15), coveredCenters.EnumerateItems());
@@ -304,7 +304,7 @@ public class HelpersTest
             // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
             Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.True(e is PumpjackSide || e is PumpjackCenter));
-            Assert.Empty(providers);
+            Assert.Equal(0, providers.Count);
 
             // These are positions that should become candidates after unused substations are removed.
             Assert.Contains(new Location(9, 11), candidateToInfo.Keys);

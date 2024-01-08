@@ -133,7 +133,7 @@ public static partial class AddPipes
                         .Select(p =>
                         {
                             var goals = context.GetSingleLocationSet(p.B.Terminal);
-                            var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, p.A.Terminal, goals);
+                            var result = AStar.GetShortestPath(context, context.Grid, p.A.Terminal, goals);
                             return new TerminalPair(p.A, p.B, result.Path);
                         })
                         .MinBy(x => x.Line.Count)!;
@@ -337,7 +337,7 @@ public static partial class AddPipes
                 else
                 {
                     var goals = context.GetSingleLocationSet(l.B);
-                    var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, l.A, goals);
+                    var result = AStar.GetShortestPath(context, context.Grid, l.A, goals);
                     if (!result.Success)
                     {
                         // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());

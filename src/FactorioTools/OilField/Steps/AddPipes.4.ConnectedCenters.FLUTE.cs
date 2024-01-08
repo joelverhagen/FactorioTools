@@ -7,13 +7,13 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static partial class AddPipes
 {
-    private static Dictionary<Location, ILocationSet> GetConnectedPumpjacksWithFLUTE(Context context)
+    private static ILocationDictionary<ILocationSet> GetConnectedPumpjacksWithFLUTE(Context context)
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 
         // Determine which terminals should be connected to each other either directly or via only Steiner points.
-        var centerToCenters = new Dictionary<Location, ILocationSet>();
-        foreach (var (center, terminals) in context.CenterToTerminals)
+        var centerToCenters = context.GetLocationDictionary<ILocationSet>();
+        foreach (var (center, terminals) in context.CenterToTerminals.EnumeratePairs())
         {
             var otherCenters = context.GetLocationSet(allowEnumerate: true);
             var visitedPoints = context.GetLocationSet();
@@ -77,16 +77,16 @@ public static partial class AddPipes
 #endif
     }
 
-    private static Dictionary<Location, FlutePoint> GetLocationToFlutePoint(Context context)
+    private static ILocationDictionary<FlutePoint> GetLocationToFlutePoint(Context context)
     {
         var fluteTree = GetFluteTree(context);
 
         // VisualizeFLUTE(context, context.CenterToTerminals.SelectMany(p => p.Value).Select(l => (IPoint)new Point(l.Terminal.X, l.Terminal.Y)), fluteTree);
 
         // Map the FLUTE tree into a more useful object graph.
-        var locationToPoint = new Dictionary<Location, FlutePoint>();
+        var locationToPoint = context.GetLocationDictionary<FlutePoint>();
 
-        FlutePoint GetOrAddPoint(Dictionary<Location, FlutePoint> locationToPoint, Branch branch)
+        FlutePoint GetOrAddPoint(ILocationDictionary<FlutePoint> locationToPoint, Branch branch)
         {
             var location = new Location(branch.X, branch.Y);
             if (!locationToPoint.TryGetValue(location, out var point))
@@ -128,7 +128,7 @@ public static partial class AddPipes
         }
 
         // Add in pumpjack information
-        foreach ((var center, var terminals) in context.CenterToTerminals)
+        foreach ((var center, var terminals) in context.CenterToTerminals.EnumeratePairs())
         {
             foreach (var terminal in terminals)
             {

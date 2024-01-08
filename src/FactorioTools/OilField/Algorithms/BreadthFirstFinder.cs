@@ -13,7 +13,7 @@ namespace Knapcode.FactorioTools.OilField
             var visited = context.SharedInstances.LocationSetA;
 #else
             var toExplore = new Queue<Location>();
-            var parents = new Dictionary<Location, Location>();
+            var parents = context.GetLocationDictionary<Location>();
             var visited = context.GetLocationSet();
 #endif
             try

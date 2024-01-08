@@ -52,9 +52,23 @@ public static class InitializeContext
 
     private static Context Execute(OilFieldOptions options, Blueprint blueprint, int marginX, int marginY)
     {
-        var centerToOriginalDirection = GetPumpjackCenterToOriginalDirection(blueprint, marginX, marginY);
-        var grid = InitializeGrid(centerToOriginalDirection.Keys, marginX, marginY);
-        var centerToTerminals = GetCenterToTerminals(grid, centerToOriginalDirection.Keys);
+        var centerAndOriginalDirections = GetCenterAndOriginalDirections(blueprint, marginX, marginY);
+
+        var grid = InitializeGrid(centerAndOriginalDirections, marginX, marginY);
+
+#if USE_HASHSETS
+        var centerToOriginalDirection = new LocationHashDictionary<Direction>(grid.Width, grid.Height);
+        var centerToTerminals = new LocationHashDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
+        var locationToTerminals = new LocationHashDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
+#else
+        var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width, grid.Height);
+        var centerToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
+        var locationToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width, grid.Height);
+#endif
+
+        PopulateCenterToOriginalDirection(centerAndOriginalDirections, centerToOriginalDirection);
+        PopulateCenterToTerminals(centerToTerminals, grid, centerToOriginalDirection.Keys);
+        PopulateLocationToTerminals(locationToTerminals, centerToTerminals);
 
         return new Context
         {
@@ -63,10 +77,18 @@ public static class InitializeContext
             Grid = grid,
             CenterToTerminals = centerToTerminals,
             CenterToOriginalDirection = centerToOriginalDirection,
-            LocationToTerminals = GetLocationToTerminals(centerToTerminals),
+            LocationToTerminals = locationToTerminals,
             LocationToAdjacentCount = GetLocationToAdjacentCount(grid),
             SharedInstances = new SharedInstances(grid),
         };
+    }
+
+    private static void PopulateCenterToOriginalDirection(List<(Location Center, Direction OriginalDirection)> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
+    {
+        foreach ((var center, var originalDirection) in centerAndOriginalDirections)
+        {
+            centerToOriginalDirection.Add(center, originalDirection);
+        }
     }
 
     private static int[,] GetLocationToAdjacentCount(SquareGrid grid)
@@ -101,7 +123,7 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static Dictionary<Location, Direction> GetPumpjackCenterToOriginalDirection(Blueprint blueprint, int marginX, int marginY)
+    private static List<(Location Center, Direction OriginalDirection)> GetCenterAndOriginalDirections(Blueprint blueprint, int marginX, int marginY)
     {
         var pumpjacks = blueprint
             .Entities
@@ -114,7 +136,7 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centerToOriginalDirection = new Dictionary<Location, Direction>();
+        var centerAndOriginalDirections = new List<(Location Center, Direction OriginalDirection)>();
 
         if (pumpjacks.Count > 0)
         {
@@ -135,12 +157,13 @@ public static class InitializeContext
                     throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
                 }
 
-                var location = new Location(ToInt(x), ToInt(y));
-                centerToOriginalDirection.Add(location, entity.Direction.GetValueOrDefault(Direction.Up));
+                var center = new Location(ToInt(x), ToInt(y));
+                var originalDireciton = entity.Direction.GetValueOrDefault(Direction.Up);
+                centerAndOriginalDirections.Add((center, originalDireciton));
             }
         }
 
-        return centerToOriginalDirection;
+        return centerAndOriginalDirections;
     }
 
     private static int ToInt(float x)
@@ -153,12 +176,12 @@ public static class InitializeContext
         return Math.Abs(value % 1) > float.Epsilon * 100;
     }
 
-    private static SquareGrid InitializeGrid(IReadOnlyCollection<Location> pumpjackCenters, int marginX, int marginY)
+    private static SquareGrid InitializeGrid(List<(Location Center, Direction OriginalDirection)> centerAndOriginalDirections, int marginX, int marginY)
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.
-        var width = pumpjackCenters.Select(p => p.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
-        var height = pumpjackCenters.Select(p => p.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
+        var width = centerAndOriginalDirections.Select(p => p.Center.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
+        var height = centerAndOriginalDirections.Select(p => p.Center.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
 
         const int maxWidth = 1000;
         const int maxHeight = 1000;
@@ -174,9 +197,9 @@ public static class InitializeContext
         SquareGrid grid = new PipeGrid(width, height);
 
         // Fill the grid with the pumpjacks
-        foreach (var center in pumpjackCenters)
+        foreach (var pair in centerAndOriginalDirections)
         {
-            AddPumpjack(grid, center);
+            AddPumpjack(grid, pair.Center);
         }
 
         return grid;

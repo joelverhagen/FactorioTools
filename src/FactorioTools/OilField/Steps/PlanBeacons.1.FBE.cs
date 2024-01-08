@@ -37,9 +37,9 @@ public static partial class PlanBeacons
 
         // Visualizer.Show(context.Grid, possibleBeaconAreas.SelectMany(l => l).Distinct(context).Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-        var pointToBeaconCount = GetPointToBeaconCount(possibleBeaconAreas);
+        var pointToBeaconCount = GetPointToBeaconCount(context, possibleBeaconAreas);
         var effectEntityAreas = GetEffectEntityAreas(entityAreas);
-        var pointToEntityArea = GetPointToEntityArea(effectEntityAreas);
+        var pointToEntityArea = GetPointToEntityArea(context, effectEntityAreas);
 
         // GENERATE POSSIBLE BEACONS
         var possibleBeacons = GetPossibleBeacons(
@@ -185,8 +185,8 @@ public static partial class PlanBeacons
         Context context,
         List<Area> effectEntityAreas,
         List<Location[]> possibleBeaconAreas,
-        Dictionary<Location, int> pointToBeaconCount,
-        Dictionary<Location, Area> pointToEntityArea)
+        ILocationDictionary<int> pointToBeaconCount,
+        ILocationDictionary<Area> pointToEntityArea)
     {
         (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) = GetBounds(pointToEntityArea.Keys);
 
@@ -255,7 +255,7 @@ public static partial class PlanBeacons
         return possibleBeacons;
     }
 
-    private static (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) GetBounds(IReadOnlyCollection<Location> locations)
+    private static (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) GetBounds(IEnumerable<Location> locations)
     {
         var entityMinX = int.MaxValue;
         var entityMinY = int.MaxValue;
@@ -458,9 +458,9 @@ public static partial class PlanBeacons
         return possibleBeaconAreas;
     }
 
-    private static Dictionary<Location, int> GetPointToBeaconCount(List<Location[]> possibleBeaconAreas)
+    private static ILocationDictionary<int> GetPointToBeaconCount(Context context, List<Location[]> possibleBeaconAreas)
     {
-        var pointToBeaconCount = new Dictionary<Location, int>();
+        var pointToBeaconCount = context.GetLocationDictionary<int>();
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
         {
             var areas = possibleBeaconAreas[i];
@@ -481,9 +481,9 @@ public static partial class PlanBeacons
         return pointToBeaconCount;
     }
 
-    private static Dictionary<Location, Area> GetPointToEntityArea(List<Area> effectEntityAreas)
+    private static ILocationDictionary<Area> GetPointToEntityArea(Context context, List<Area> effectEntityAreas)
     {
-        var pointToEntityArea = new Dictionary<Location, Area>();
+        var pointToEntityArea = context.GetLocationDictionary<Area>();
         for (var i = 0; i < effectEntityAreas.Count; i++)
         {
             var area = effectEntityAreas[i];

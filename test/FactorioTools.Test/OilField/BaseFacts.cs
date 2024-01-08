@@ -41,10 +41,10 @@ public abstract class BaseFacts
 
         var previousCenterToTerminals = context.CenterToTerminals;
 
-        context.CenterToTerminals = GetCenterToTerminals(context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct(context)));
-        context.LocationToTerminals = GetLocationToTerminals(context.CenterToTerminals);
+        context.CenterToTerminals = GetCenterToTerminals(context, context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct(context)));
+        context.LocationToTerminals = GetLocationToTerminals(context, context.CenterToTerminals);
 
-        foreach ((var otherCenter, var terminals) in context.CenterToTerminals.ToList())
+        foreach ((var otherCenter, var terminals) in context.CenterToTerminals.EnumeratePairs().ToList())
         {
             var selectedDirection = center == otherCenter ? direction.GetValueOrDefault() : previousCenterToTerminals[otherCenter].First().Direction;
             var selectedTerminal = terminals.OrderByDescending(t => t.Direction == selectedDirection).First();

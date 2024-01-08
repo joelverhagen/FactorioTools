@@ -6,11 +6,11 @@ public class SortedBatches<TInfo>
 {
     private readonly bool _ascending;
 
-    public SortedBatches(IEnumerable<KeyValuePair<int, Dictionary<Location, TInfo>>> pairs, bool ascending)
+    public SortedBatches(IEnumerable<KeyValuePair<int, ILocationDictionary<TInfo>>> pairs, bool ascending)
     {
         _ascending = ascending;
-        Queue = new PriorityQueue<Dictionary<Location, TInfo>, int>();
-        Lookup = new Dictionary<int, Dictionary<Location, TInfo>>();
+        Queue = new PriorityQueue<ILocationDictionary<TInfo>, int>();
+        Lookup = new Dictionary<int, ILocationDictionary<TInfo>>();
 
         foreach ((var key, var candidateToInfo) in pairs)
         {
@@ -19,15 +19,15 @@ public class SortedBatches<TInfo>
         }
     }
 
-    public PriorityQueue<Dictionary<Location, TInfo>, int> Queue { get; }
-    public Dictionary<int, Dictionary<Location, TInfo>> Lookup { get; }
+    public PriorityQueue<ILocationDictionary<TInfo>, int> Queue { get; }
+    public Dictionary<int, ILocationDictionary<TInfo>> Lookup { get; }
 
     public void RemoveCandidate(Location location, int oldKey)
     {
         Lookup[oldKey].Remove(location);
     }
 
-    public void MoveCandidate(Location location, TInfo info, int oldKey, int newKey)
+    public void MoveCandidate(Context context, Location location, TInfo info, int oldKey, int newKey)
     {
         Lookup[oldKey].Remove(location);
         if (Lookup.TryGetValue(newKey, out var batches))
@@ -36,7 +36,8 @@ public class SortedBatches<TInfo>
         }
         else
         {
-            batches = new Dictionary<Location, TInfo> { { location, info } };
+            batches = context.GetLocationDictionary<TInfo>();
+            batches.Add(location, info);
             Lookup.Add(newKey, batches);
         }
     }

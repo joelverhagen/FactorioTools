@@ -15,7 +15,7 @@ public static partial class AddPipes
         new Location(0, 1),
     };
 
-    private static Dictionary<Location, ILocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
+    private static ILocationDictionary<ILocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
     {
         var centers = context
             .CenterToTerminals
@@ -26,17 +26,16 @@ public static partial class AddPipes
 
         if (centers.Count == 2)
         {
-            return new Dictionary<Location, ILocationSet>
-            {
-                { centers[0], context.GetSingleLocationSet(centers[1]) },
-                { centers[1], context.GetSingleLocationSet(centers[0]) },
-            };
+            var simpleConnectedCenters = context.GetLocationDictionary<ILocationSet>();
+            simpleConnectedCenters.Add(centers[0], context.GetSingleLocationSet(centers[1]));
+            simpleConnectedCenters.Add(centers[1], context.GetSingleLocationSet(centers[0]));
+            return simpleConnectedCenters;
         }
 
         // Check that nodes are not collinear
         if (AreLocationsCollinear(centers))
         {
-            var connected = centers.ToDictionary(c => c, c => context.GetLocationSet());
+            var connected = centers.ToDictionary(context, c => c, c => context.GetLocationSet());
             for (var j = 1; j < centers.Count; j++)
             {
                 connected[centers[j - 1]].Add(centers[j]);
@@ -57,7 +56,7 @@ public static partial class AddPipes
         // check if all connected centers have edges in both directions
         if (context.Options.ValidateSolution)
         {
-            foreach (var (center, others) in connectedCenters)
+            foreach (var (center, others) in connectedCenters.EnumeratePairs())
             {
                 foreach (var other in others.EnumerateItems())
                 {
@@ -75,7 +74,7 @@ public static partial class AddPipes
     }
 
 #if ENABLE_VISUALIZER
-    private static void VisualizeConnectedCenters(Context context, Dictionary<Location, ILocationSet> connectedCenters)
+    private static void VisualizeConnectedCenters(Context context, ILocationDictionary<ILocationSet> connectedCenters)
     {
         var edges = new HashSet<DelaunatorSharp.IEdge>();
         foreach (var (center, centers) in connectedCenters)
@@ -91,7 +90,7 @@ public static partial class AddPipes
     }
 #endif
 
-    private static ILocationSet FindTrunksAndConnect(Context context, Dictionary<Location, ILocationSet> centerToConnectedCenters)
+    private static ILocationSet FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 
@@ -131,6 +130,7 @@ public static partial class AddPipes
                         {
                             var includedCenter = group
                                 .IncludedCenterToChildCenters
+                                .EnumeratePairs()
                                 .First(p => p.Value.Contains(center))
                                 .Key;
 
@@ -197,11 +197,11 @@ public static partial class AddPipes
         try
         {
 #if USE_SHARED_INSTANCES
-            var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2, outputList: context.SharedInstances.LocationListA);
-            var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2, outputList: context.SharedInstances.LocationListB);
+            var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2, outputList: context.SharedInstances.LocationListA);
+            var aStarResultH = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2, outputList: context.SharedInstances.LocationListB);
 #else
-            var aStarResultV = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
-            var aStarResultH = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
+            var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
+            var aStarResultH = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
 #endif
 
             if (!aStarResultV.Success)
@@ -225,7 +225,7 @@ public static partial class AddPipes
 #if USE_SHARED_INSTANCES
             var locationToCentroidDistanceSquared = context.SharedInstances.LocationToDouble;
 #else
-            var locationToCentroidDistanceSquared = new Dictionary<Location, double>(sizeEstimate);
+            var locationToCentroidDistanceSquared = context.GetLocationDictionary<double>(sizeEstimate);
 #endif
 
             try
@@ -291,7 +291,7 @@ public static partial class AddPipes
     private static double GetCentroidDistanceSquared(
         double groupCentroidX,
         double groupCentroidY,
-        Dictionary<Location, double> locationToCentroidDistanceSquared,
+        ILocationDictionary<double> locationToCentroidDistanceSquared,
         Location location)
     {
         if (!locationToCentroidDistanceSquared.TryGetValue(location, out var centroidDistanceSquared))
@@ -303,7 +303,7 @@ public static partial class AddPipes
         return centroidDistanceSquared;
     }
 
-    private static List<Trunk> FindTrunks(Context context, Dictionary<Location, ILocationSet> centerToConnectedCenters)
+    private static List<Trunk> FindTrunks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         /*
         Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
@@ -380,7 +380,7 @@ public static partial class AddPipes
         return selectedTrunks;
     }
 
-    private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, Dictionary<Location, ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters)
+    private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters)
     {
         var bestConnection = centerToConnectedCenters
             .Keys
@@ -395,7 +395,7 @@ public static partial class AddPipes
                             .Select(otherCenter =>
                             {
                                 var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToReadOnlySet(context, allowEnumerate: true);
-                                var result = AStar.GetShortestPath(context.SharedInstances, context.Grid, terminal.Terminal, goals);
+                                var result = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, goals);
                                 if (!result.Success)
                                 {
                                     throw new NoPathBetweenTerminalsException(terminal.Terminal, goals.EnumerateItems().First());
@@ -435,7 +435,7 @@ public static partial class AddPipes
 
     private static ILocationSet GetChildCenters(
         Context context,
-        Dictionary<Location, ILocationSet> centerToConnectedCenters,
+        ILocationDictionary<ILocationSet> centerToConnectedCenters,
         ILocationSet ignoreCenters,
         ILocationSet shallowExploreCenters,
         Location startingCenter)
@@ -468,7 +468,7 @@ public static partial class AddPipes
         return visited;
     }
 
-    private static List<Trunk> GetTrunkCandidates(Context context, Dictionary<Location, ILocationSet> centerToConnectedCenters)
+    private static List<Trunk> GetTrunkCandidates(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var centerToMaxX = context
             .CenterToTerminals
@@ -595,15 +595,15 @@ public static partial class AddPipes
     private class PumpjackGroup
     {
         private readonly Context _context;
-        private readonly Dictionary<Location, ILocationSet> _centerToConnectedCenters;
+        private readonly ILocationDictionary<ILocationSet> _centerToConnectedCenters;
         private readonly ILocationSet _allIncludedCenters;
 
-        public PumpjackGroup(Context context, Dictionary<Location, ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, Trunk trunk)
+        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, Trunk trunk)
             : this(context, centerToConnectedCenters, allIncludedCenters, trunk.Centers.EnumerateItems(), MakeStraightLine(trunk.Start, trunk.End))
         {
         }
 
-        public PumpjackGroup(Context context, Dictionary<Location, ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IEnumerable<Location> includedCenters, IEnumerable<Location> pipes)
+        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IEnumerable<Location> includedCenters, IEnumerable<Location> pipes)
         {
             _context = context;
             _centerToConnectedCenters = centerToConnectedCenters;
@@ -612,7 +612,7 @@ public static partial class AddPipes
             IncludedCenters = includedCenters.ToReadOnlySet(context, allowEnumerate: true);
 
             FrontierCenters = context.GetLocationSet(allowEnumerate: true);
-            IncludedCenterToChildCenters = new Dictionary<Location, ILocationSet>();
+            IncludedCenterToChildCenters = context.GetLocationDictionary<ILocationSet>();
 
             Pipes = pipes.ToSet(context, allowEnumerate: true);
 
@@ -622,7 +622,7 @@ public static partial class AddPipes
 
         public ILocationSet IncludedCenters { get; }
         public ILocationSet FrontierCenters { get; }
-        public Dictionary<Location, ILocationSet> IncludedCenterToChildCenters { get; }
+        public ILocationDictionary<ILocationSet> IncludedCenterToChildCenters { get; }
         public ILocationSet Pipes { get; }
 
         public double GetChildCentroidDistanceSquared(Location includedCenter, Location terminalCandidate)

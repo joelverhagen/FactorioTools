@@ -10,7 +10,7 @@ namespace Knapcode.FactorioTools.OilField;
 /// </summary>
 public static class AStar
 {
-    public static AStarResult GetShortestPath(SharedInstances sharedInstances, SquareGrid grid, Location start, ILocationSet goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1, List<Location>? outputList = null)
+    public static AStarResult GetShortestPath(Context context, SquareGrid grid, Location start, ILocationSet goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1, List<Location>? outputList = null)
     {
         if (goals.Contains(start))
         {
@@ -27,7 +27,7 @@ public static class AStar
         }
 
 #if USE_SHARED_INSTANCES
-        var goalsArray = sharedInstances.GetArray(ref sharedInstances.LocationArray, goals.Count);
+        var goalsArray = context.SharedInstances.GetArray(ref context.SharedInstances.LocationArray, goals.Count);
 #else
         var goalsArray = new Location[goals.Count];
 #endif
@@ -41,8 +41,8 @@ public static class AStar
         if (useVector)
         {
 #if USE_SHARED_INSTANCES
-            xs = sharedInstances.GetArray(ref sharedInstances.IntArrayX, goals.Count);
-            ys = sharedInstances.GetArray(ref sharedInstances.IntArrayY, goals.Count);
+            xs = context.SharedInstances.GetArray(ref context.SharedInstances.IntArrayX, goals.Count);
+            ys = context.SharedInstances.GetArray(ref context.SharedInstances.IntArrayY, goals.Count);
 #else
             xs = new int[goals.Count];
             ys = new int[goals.Count];
@@ -56,12 +56,12 @@ public static class AStar
 #endif
 
 #if USE_SHARED_INSTANCES
-        var cameFrom = sharedInstances.LocationToLocation;
-        var costSoFar = sharedInstances.LocationToDouble;
-        var frontier = sharedInstances.LocationPriorityQueue;
+        var cameFrom = context.SharedInstances.LocationToLocation;
+        var costSoFar = context.SharedInstances.LocationToDouble;
+        var frontier = context.SharedInstances.LocationPriorityQueue;
 #else
-        var cameFrom = new Dictionary<Location, Location>();
-        var costSoFar = new Dictionary<Location, double>();
+        var cameFrom = context.GetLocationDictionary<Location>();
+        var costSoFar = context.GetLocationDictionary<double>();
         var frontier = new PriorityQueue<Location, double>();
 #endif
 

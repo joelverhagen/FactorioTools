@@ -7,7 +7,7 @@ public static class Dijkstras
 {
     public static DijkstrasResult GetShortestPaths(Context context, SquareGrid grid, Location start, ILocationSet goals, bool stopOnFirstGoal, bool allowGoalEnumerate)
     {
-        var cameFrom = new Dictionary<Location, ILocationSet>();
+        var cameFrom = context.GetLocationDictionary<ILocationSet>();
         cameFrom[start] = context.GetLocationSet();
         var remainingGoals = context.GetLocationSet(goals);
 
@@ -17,7 +17,7 @@ public static class Dijkstras
         var inQueue = context.SharedInstances.LocationSetB;
 #else
         var priorityQueue = new PriorityQueue<Location, double>();
-        var costSoFar = new Dictionary<Location, double>();
+        var costSoFar = context.GetLocationDictionary<double>();
         var inQueue = context.GetLocationSet();
 #endif
 

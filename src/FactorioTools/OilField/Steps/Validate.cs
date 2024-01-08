@@ -36,7 +36,7 @@ public static class Validate
         }
     }
 
-    public static void UndergroundPipesArePipes(Context context, ILocationSet pipes, Dictionary<Location, Direction> locationToDirection)
+    public static void UndergroundPipesArePipes(Context context, ILocationSet pipes, ILocationDictionary<Direction> locationToDirection)
     {
         if (context.Options.ValidateSolution)
         {
@@ -53,9 +53,9 @@ public static class Validate
     public static void PipesDoNotMatch(
         Context context,
         ILocationSet pipes1,
-        Dictionary<Location, Direction>? undergroundPipes1,
+        ILocationDictionary<Direction>? undergroundPipes1,
         ILocationSet pipes2,
-        Dictionary<Location, Direction>? undergroundPipes2)
+        ILocationDictionary<Direction>? undergroundPipes2)
     {
         if (context.Options.ValidateSolution)
         {
@@ -84,7 +84,7 @@ public static class Validate
 
                 var coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(context, beaconCenterToCoveredCenters);
 
-                foreach ((var pumpjackCenter, var beaconCenters) in coveredCenterToPoleCenters)
+                foreach ((var pumpjackCenter, var beaconCenters) in coveredCenterToPoleCenters.EnumeratePairs())
                 {
                     if (beaconCenters.Count > 1)
                     {
@@ -95,7 +95,7 @@ public static class Validate
         }
     }
 
-    public static void NoExistingBeacons(Context context, Dictionary<Location, BeaconCenter> existingBeacons)
+    public static void NoExistingBeacons(Context context, ILocationDictionary<BeaconCenter> existingBeacons)
     {
         if (context.Options.ValidateSolution && existingBeacons.Count > 0)
         {
@@ -106,7 +106,7 @@ public static class Validate
     public static void NoOverlappingEntities(
         Context context,
         ILocationSet optimizedPipes,
-        Dictionary<Location, Direction>? undergroundPipes,
+        ILocationDictionary<Direction>? undergroundPipes,
         List<BeaconSolution>? beaconSolutions)
     {
         if (context.Options.ValidateSolution)

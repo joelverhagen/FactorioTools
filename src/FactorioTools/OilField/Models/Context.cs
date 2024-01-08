@@ -9,19 +9,44 @@ public class Context
     public required OilFieldOptions Options { get; set; }
     public required Blueprint InputBlueprint { get; set; }
     public required SquareGrid Grid { get; set; }
-    public required Dictionary<Location, List<TerminalLocation>> CenterToTerminals { get; set; }
-    public required Dictionary<Location, Direction> CenterToOriginalDirection { get; set; }
-    public required Dictionary<Location, List<TerminalLocation>> LocationToTerminals { get; set; }
+    public required ILocationDictionary<List<TerminalLocation>> CenterToTerminals { get; set; }
+    public required ILocationDictionary<Direction> CenterToOriginalDirection { get; set; }
+    public required ILocationDictionary<List<TerminalLocation>> LocationToTerminals { get; set; }
     public required int[,] LocationToAdjacentCount { get; set; }
 
     public required SharedInstances SharedInstances { get; set; }
 
+    public ILocationDictionary<T> GetLocationDictionary<T>()
+    {
+#if USE_HASHSETS
+        return new LocationHashDictionary<T>(Grid.Width, Grid.Height);
+#else
+        return new LocationIntDictionary<T>(Grid.Width, Grid.Height);
+#endif
+    }
+
+    public ILocationDictionary<T> GetLocationDictionary<T>(int capacity)
+    {
+#if USE_HASHSETS
+        return new LocationHashDictionary<T>(Grid.Width, Grid.Height, capacity);
+#else
+        return new LocationIntDictionary<T>(Grid.Width, Grid.Height, capacity);
+#endif
+    }
+
     public ILocationSet GetLocationSet(ILocationSet other)
     {
-        if (other is LocationSet enumerateSet)
+#if USE_HASHSETS
+        if (other is LocationHashSet enumerateSet)
         {
-            return new LocationSet(enumerateSet);
+            return new LocationHashSet(enumerateSet);
         }
+#else
+        if (other is LocationIntSet enumerateSet)
+        {
+            return new LocationIntSet(enumerateSet);
+        }
+#endif
 
         return new LocationBitSet((LocationBitSet)other);
     }
@@ -33,7 +58,13 @@ public class Context
 
     public ILocationSet GetLocationSet(bool allowEnumerate)
     {
-        return allowEnumerate ? new LocationSet(Grid.Width, Grid.Height) : new LocationBitSet(Grid.Width, Grid.Height);
+        return allowEnumerate
+#if USE_HASHSETS
+            ? new LocationHashSet(Grid.Width, Grid.Height)
+#else
+            ? new LocationIntSet(Grid.Width, Grid.Height)
+#endif
+            : new LocationBitSet(Grid.Width, Grid.Height);
     }
 
     public ILocationSet GetLocationSet(Location location)
@@ -55,7 +86,13 @@ public class Context
 
     public ILocationSet GetLocationSet(int capacity, bool allowEnumerate)
     {
-        return allowEnumerate ? new LocationSet(Grid.Width, Grid.Height, capacity) : new LocationBitSet(Grid.Width, Grid.Height);
+        return allowEnumerate
+#if USE_HASHSETS
+            ? new LocationHashSet(Grid.Width, Grid.Height, capacity)
+#else
+            ? new LocationIntSet(Grid.Width, Grid.Height, capacity)
+#endif
+            : new LocationBitSet(Grid.Width, Grid.Height);
     }
 
     public ILocationSet GetLocationSet(Location location, int capacity)

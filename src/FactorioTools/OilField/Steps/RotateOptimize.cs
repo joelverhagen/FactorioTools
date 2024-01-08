@@ -143,7 +143,7 @@ public static class RotateOptimize
 #else
                 var newPath = new List<Location>();
 #endif
-                var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
+                var result = AStar.GetShortestPath(context.ParentContext, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
                 if (result.Success)
                 {
                     var terminal = new TerminalLocation(originalTerminal.Center, terminalCandidate, direction);
@@ -264,9 +264,9 @@ public static class RotateOptimize
             ExplorePipes(context, originalGoal, connectionPoints);
 
 #if USE_SHARED_INSTANCES
-            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
+            var result = AStar.GetShortestPath(context.ParentContext, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
 #else
-            var result = AStar.GetShortestPath(context.ParentContext.SharedInstances, context.Grid, start, connectionPoints);
+            var result = AStar.GetShortestPath(context.ParentContext, context.Grid, start, connectionPoints);
 #endif
 
             /*
@@ -357,7 +357,7 @@ public static class RotateOptimize
         try
         {
             toExplore.Enqueue(start);
-            var cameFrom = new Dictionary<Location, Location>();
+            var cameFrom = context.ParentContext.GetLocationDictionary<Location>();
             cameFrom[start] = start;
 
 #if USE_STACKALLOC
@@ -430,8 +430,8 @@ public static class RotateOptimize
 
         public Context ParentContext { get; }
         public SquareGrid Grid => ParentContext.Grid;
-        public Dictionary<Location, List<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
-        public IReadOnlyDictionary<Location, List<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
+        public ILocationDictionary<List<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
+        public ILocationDictionary<List<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
         public ILocationSet Pipes { get; }
         public ILocationSet Intersections { get; }
         public ILocationSet Goals { get; }
@@ -479,7 +479,7 @@ public static class RotateOptimize
 
     private class ExploredPaths
     {
-        public ExploredPaths(Location start, Dictionary<Location, Location> cameFrom, List<Location> reachedGoals)
+        public ExploredPaths(Location start, ILocationDictionary<Location> cameFrom, List<Location> reachedGoals)
         {
             Start = start;
             CameFrom = cameFrom;
@@ -487,7 +487,7 @@ public static class RotateOptimize
         }
 
         public Location Start { get; }
-        public Dictionary<Location, Location> CameFrom { get; }
+        public ILocationDictionary<Location> CameFrom { get; }
         public List<Location> ReachedGoals { get; }
 
         public void AddPath(Location goal, List<Location> outputList)

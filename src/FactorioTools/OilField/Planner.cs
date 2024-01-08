@@ -167,7 +167,7 @@ public static class Planner
                 }
                 else
                 {
-                    electricPolesAvoid = context.CenterToTerminals.SelectMany(t => t.Value.Select(l => l.Terminal)).ToReadOnlySet(context, allowEnumerate: true);
+                    electricPolesAvoid = context.CenterToTerminals.EnumeratePairs().SelectMany(t => t.Value.Select(l => l.Terminal)).ToReadOnlySet(context, allowEnumerate: true);
                     return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                 }
             }
@@ -182,7 +182,7 @@ public static class Planner
         }
 
         var rotatedPumpjacks = 0;
-        foreach ((var location, var originalDirection) in context.CenterToOriginalDirection)
+        foreach ((var location, var originalDirection) in context.CenterToOriginalDirection.EnumeratePairs())
         {
             var finalDirection = context.CenterToTerminals[location].Single().Direction;
             if (originalDirection != finalDirection)
