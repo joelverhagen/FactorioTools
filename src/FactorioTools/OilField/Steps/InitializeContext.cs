@@ -83,7 +83,7 @@ public static class InitializeContext
         };
     }
 
-    private static void PopulateCenterToOriginalDirection(List<(Location Center, Direction OriginalDirection)> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
+    private static void PopulateCenterToOriginalDirection(List<Tuple<Location, Direction>> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
     {
         foreach ((var center, var originalDirection) in centerAndOriginalDirections)
         {
@@ -123,7 +123,7 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static List<(Location Center, Direction OriginalDirection)> GetCenterAndOriginalDirections(Blueprint blueprint, int marginX, int marginY)
+    private static List<Tuple<Location, Direction>> GetCenterAndOriginalDirections(Blueprint blueprint, int marginX, int marginY)
     {
         var pumpjacks = blueprint
             .Entities
@@ -136,7 +136,7 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centerAndOriginalDirections = new List<(Location Center, Direction OriginalDirection)>();
+        var centerAndOriginalDirections = new List<Tuple<Location, Direction>>();
 
         if (pumpjacks.Count > 0)
         {
@@ -159,7 +159,7 @@ public static class InitializeContext
 
                 var center = new Location(ToInt(x), ToInt(y));
                 var originalDireciton = entity.Direction.GetValueOrDefault(Direction.Up);
-                centerAndOriginalDirections.Add((center, originalDireciton));
+                centerAndOriginalDirections.Add(Tuple.Create(center, originalDireciton));
             }
         }
 
@@ -176,12 +176,12 @@ public static class InitializeContext
         return Math.Abs(value % 1) > float.Epsilon * 100;
     }
 
-    private static SquareGrid InitializeGrid(List<(Location Center, Direction OriginalDirection)> centerAndOriginalDirections, int marginX, int marginY)
+    private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, int marginX, int marginY)
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.
-        var width = centerAndOriginalDirections.Select(p => p.Center.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
-        var height = centerAndOriginalDirections.Select(p => p.Center.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
+        var width = centerAndOriginalDirections.Select(p => p.Item1.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
+        var height = centerAndOriginalDirections.Select(p => p.Item1.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
 
         const int maxWidth = 1000;
         const int maxHeight = 1000;
@@ -199,7 +199,7 @@ public static class InitializeContext
         // Fill the grid with the pumpjacks
         foreach (var pair in centerAndOriginalDirections)
         {
-            AddPumpjack(grid, pair.Center);
+            AddPumpjack(grid, pair.Item1);
         }
 
         return grid;
