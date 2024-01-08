@@ -44,7 +44,7 @@ public static class Helpers
     public static ILocationDictionary<List<TerminalLocation>> GetCenterToTerminals(Context context, SquareGrid grid, IEnumerable<Location> centers)
     {
         var centerToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
-        PopulateCenterToTerminals(context.GetLocationDictionary<List<TerminalLocation>>(), grid, centers);
+        PopulateCenterToTerminals(centerToTerminals, grid, centers);
         return centerToTerminals;
     }
 
@@ -76,7 +76,7 @@ public static class Helpers
     public static ILocationDictionary<List<TerminalLocation>> GetLocationToTerminals(Context context, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
     {
         var locationToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
-        PopulateLocationToTerminals(context.GetLocationDictionary<List<TerminalLocation>>(), centerToTerminals);
+        PopulateLocationToTerminals(locationToTerminals, centerToTerminals);
         return locationToTerminals;
     }
 
