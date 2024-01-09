@@ -23,9 +23,8 @@ public class LocationIntDictionary<T> : ILocationDictionary<T>
 
     public T this[Location index]
     {
-        // should use GetIndex, but blocked by https://github.com/yanghuan/CSharp.lua/issues/485
-        get => _dictionary[index.Y * _width + index.X];
-        set => _dictionary[index.Y * _width + index.X] = value;
+        get => _dictionary[GetIndex(index)];
+        set => _dictionary[GetIndex(index)] = value;
     }
 
     public int Count => _dictionary.Count;
