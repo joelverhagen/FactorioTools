@@ -24,8 +24,8 @@ public class LocationHashDictionary<T> : ILocationDictionary<T>
     }
 
     public int Count => _dictionary.Count;
-    public IEnumerable<Location> Keys => _dictionary.Keys;
-    public IEnumerable<T> Values => _dictionary.Values;
+    public IReadOnlyCollection<Location> Keys => _dictionary.Keys;
+    public IReadOnlyCollection<T> Values => _dictionary.Values;
 
     public void Add(Location key, T value)
     {
@@ -42,7 +42,7 @@ public class LocationHashDictionary<T> : ILocationDictionary<T>
         return _dictionary.ContainsKey(key);
     }
 
-    public IEnumerable<KeyValuePair<Location, T>> EnumeratePairs()
+    public IReadOnlyCollection<KeyValuePair<Location, T>> EnumeratePairs()
     {
         return _dictionary;
     }

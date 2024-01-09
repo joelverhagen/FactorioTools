@@ -104,10 +104,12 @@ public class LocationIntSet : ILocationSet
 
     public IEnumerable<Location> EnumerateItems()
     {
+        var items = new List<Location>(_set.Count);
         foreach (var item in _set)
         {
-            yield return new Location(item % _width, item / _width);
+            items.Add(new Location(item % _width, item / _width));
         }
+        return items;
     }
 
     private LocationIntSet ValidateSameDimensions(ILocationSet other)

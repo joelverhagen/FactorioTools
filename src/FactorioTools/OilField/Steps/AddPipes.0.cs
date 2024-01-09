@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -61,7 +60,7 @@ public static partial class AddPipes
             .ThenBy(x => x.Plan.BeaconStrategy)
             .ThenBy(x => x.GroupNumber);
 
-        (int GroupNumber, int GroupSize, OilFieldPlan Plan, Solution Pipes, BeaconSolution? Beacons)? bestPlanInfo = null;
+        PlanInfo? bestPlanInfo = null;
         var noMoreAlternates = false;
         var selectedPlans = new List<OilFieldPlan>();
         var alternatePlans = new List<OilFieldPlan>();
@@ -81,7 +80,7 @@ public static partial class AddPipes
                 continue;
             }
 
-            var (bestGroupNumber, _, bestPlan, _, _) = bestPlanInfo.Value;
+            var (bestGroupNumber, _, bestPlan, _, _) = bestPlanInfo;
             if (planInfo.Plan.IsEquivalent(bestPlan))
             {
                 if (planInfo.GroupNumber == bestGroupNumber)
@@ -105,13 +104,14 @@ public static partial class AddPipes
             throw new FactorioToolsException("At least one pipe strategy must be used.");
         }
 
-        return (selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Value.Pipes, bestPlanInfo.Value.Beacons);
+        return (selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Pipes, bestPlanInfo.Beacons);
     }
 
 
-    private static IEnumerable<(int GroupNumber, int GroupSize, OilFieldPlan Plan, Solution Pipes, BeaconSolution? Beacons)> GetAllPlans(Context context)
+    private static List<PlanInfo> GetAllPlans(Context context)
     {
         var solutionGroups = GetSolutionGroups(context);
+        var plans = new List<PlanInfo>();
         foreach ((var solutionGroup, var groupNumber) in solutionGroups)
         {
             foreach (var solution in solutionGroup)
@@ -130,7 +130,7 @@ public static partial class AddPipes
                                 BeaconCount: 0,
                                 solution.Pipes.Count);
 
-                            yield return (groupNumber, solutionGroup.Count, plan, solution, null);
+                            plans.Add(new PlanInfo(groupNumber, solutionGroup.Count, plan, solution, null));
                         }
                     }
                 }
@@ -150,13 +150,15 @@ public static partial class AddPipes
                                     beacons.Beacons.Count,
                                     solution.Pipes.Count);
 
-                                yield return (groupNumber, solutionGroup.Count, plan, solution, beacons);
+                                plans.Add(new PlanInfo(groupNumber, solutionGroup.Count, plan, solution, beacons));
                             }
                         }
                     }
                 }
             }
         }
+
+        return plans;
     }
 
     private static IEnumerable<SolutionsAndGroupNumber> GetSolutionGroups(Context context)
@@ -527,4 +529,6 @@ public static partial class AddPipes
             return hashCode.ToHashCode();
         }
     }
+
+    private record PlanInfo(int GroupNumber, int GroupSize, OilFieldPlan Plan, Solution Pipes, BeaconSolution? Beacons);
 }

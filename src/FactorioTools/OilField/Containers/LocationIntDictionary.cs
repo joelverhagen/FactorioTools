@@ -29,19 +29,31 @@ public class LocationIntDictionary<T> : ILocationDictionary<T>
 
     public int Count => _dictionary.Count;
 
-    public IEnumerable<Location> Keys
+    public IReadOnlyCollection<Location> Keys
     {
         get
         {
+            var keys = new List<Location>(_dictionary.Count);
             foreach (var item in _dictionary.Keys)
             {
-                yield return new Location(item % _width, item / _width);
+                keys.Add(new Location(item % _width, item / _width));
             }
+            return keys;
         }
     }
 
-    public IEnumerable<T> Values => _dictionary.Values;
-
+    public IReadOnlyCollection<T> Values
+    {
+        get
+        {
+            var values = new List<T>(_dictionary.Count);
+            foreach (var item in _dictionary.Values)
+            {
+                values.Add(item);
+            }
+            return values;
+        }
+    }
 
     public void Add(Location key, T value)
     {
@@ -58,12 +70,14 @@ public class LocationIntDictionary<T> : ILocationDictionary<T>
         return _dictionary.ContainsKey(GetIndex(key));
     }
 
-    public IEnumerable<KeyValuePair<Location, T>> EnumeratePairs()
+    public IReadOnlyCollection<KeyValuePair<Location, T>> EnumeratePairs()
     {
+        var pairs = new List<KeyValuePair<Location, T>>(_dictionary.Count);
         foreach (var pair in _dictionary)
         {
-            yield return new KeyValuePair<Location, T>(new Location(pair.Key % _width, pair.Key / _width), pair.Value);
+            pairs.Add(new KeyValuePair<Location, T>(new Location(pair.Key % _width, pair.Key / _width), pair.Value));
         }
+        return pairs;
     }
 
     public bool Remove(Location key)

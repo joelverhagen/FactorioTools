@@ -30,16 +30,18 @@ internal static class SetHandling
         return dictionary;
     }
 
-    public static IEnumerable<Location> Distinct(this IEnumerable<Location> locations, Context context)
+    public static List<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
     {
         var set = context.GetLocationSet();
+        var output = new List<Location>(locations.Count);
         foreach (var location in locations)
         {
             if (set.Add(location))
             {
-                yield return location;
+                output.Add(location);
             }
         }
+        return output;
     }
 
     public static IEnumerable<Location> Except(this IEnumerable<Location> locations, IEnumerable<Location> other, Context context)

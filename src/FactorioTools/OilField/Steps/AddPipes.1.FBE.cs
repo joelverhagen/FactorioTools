@@ -300,7 +300,7 @@ public static partial class AddPipes
             bLocationsOptimized = bLocations;
         }
 
-        lines.AddRange(PointsToLines(context, aLocations.Concat(bLocationsOptimized))
+        lines.AddRange(PointsToLines(context, aLocations.Concat(bLocationsOptimized).ToList())
             .Where(p => !((aLocations.Contains(p.A) && aLocations.Contains(p.B)) || (bLocations.Contains(p.A) && bLocations.Contains(p.B))))
             .OrderBy(p => p.A.GetManhattanDistance(p.B))
             .Take(5)
