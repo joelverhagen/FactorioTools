@@ -83,9 +83,6 @@ jobs:
       - name: Build debug, no bit array
         run: dotnet build --configuration Debug /p:UseBitArray=false
 
-      - name: Build debug, no array clone
-        run: dotnet build --configuration Debug /p:UseArrayClone=false
-
       - name: Build debug, allow dynamic FLUTE degree
         run: dotnet build --configuration Debug /p:AllowDynamicFluteDegree=true
 

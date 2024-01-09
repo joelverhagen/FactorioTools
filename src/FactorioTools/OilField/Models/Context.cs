@@ -12,7 +12,7 @@ public class Context
     public required ILocationDictionary<List<TerminalLocation>> CenterToTerminals { get; set; }
     public required ILocationDictionary<Direction> CenterToOriginalDirection { get; set; }
     public required ILocationDictionary<List<TerminalLocation>> LocationToTerminals { get; set; }
-    public required int[,] LocationToAdjacentCount { get; set; }
+    public required int[] LocationToAdjacentCount { get; set; }
 
     public required SharedInstances SharedInstances { get; set; }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -14,7 +15,7 @@ public abstract class SquareGrid
 #endif
 
     private readonly Dictionary<GridEntity, Location> _entityToLocation;
-    private readonly GridEntity?[,] _grid;
+    private readonly GridEntity?[] _grid;
 
     public SquareGrid(SquareGrid existing, bool clone)
     {
@@ -25,22 +26,7 @@ public abstract class SquareGrid
 
         if (clone)
         {
-#if USE_ARRAY_CLONE
-            _grid = (GridEntity[,])existing._grid.Clone();
-#else
-            _grid = new GridEntity[Width, Height];
-            for (var i = 0; i < Width; i++)
-            {
-                for (var j = 0; j < Height; j++)
-                {
-                    var value = existing._grid[i, j];
-                    if (value is not null)
-                    {
-                        _grid[i, j] = value;
-                    }
-                }
-            }
-#endif
+            _grid = (GridEntity?[])existing._grid.Clone();
         }
         else
         {
@@ -54,7 +40,7 @@ public abstract class SquareGrid
         Height = height;
         Middle = new Location(Width / 2, Height / 2);
         _entityToLocation = new Dictionary<GridEntity, Location>();
-        _grid = new GridEntity?[width, height];
+        _grid = new GridEntity?[width * height];
     }
 
     public int Width { get; }
@@ -65,7 +51,7 @@ public abstract class SquareGrid
     {
         get
         {
-            return _grid[id.X, id.Y];
+            return _grid[GetIndex(id)];
         }
     }
 
@@ -73,26 +59,29 @@ public abstract class SquareGrid
 
     public bool IsEmpty(Location id)
     {
-        return _grid[id.X, id.Y] is null;
+        return _grid[GetIndex(id)] is null;
     }
 
     public void AddEntity(Location id, GridEntity entity)
     {
-        if (_grid[id.X, id.Y] is not null)
+        var index = GetIndex(id);
+
+        if (_grid[index] is not null)
         {
             throw new FactorioToolsException($"There is already an entity at {id}.");
         }
 
-        _grid[id.X, id.Y] = entity;
+        _grid[index] = entity;
         _entityToLocation.Add(entity, id);
     }
 
     public void RemoveEntity(Location id)
     {
-        var entity = _grid[id.X, id.Y];
+        var index = GetIndex(id);
+        var entity = _grid[index];
         if (entity is not null)
         {
-            _grid[id.X, id.Y] = null;
+            _grid[index] = null;
             _entityToLocation.Remove(entity);
             entity.Unlink();
         }
@@ -100,7 +89,7 @@ public abstract class SquareGrid
 
     public bool IsEntityType<T>(Location id) where T : GridEntity
     {
-        return _grid[id.X, id.Y] is T;
+        return _grid[GetIndex(id)] is T;
     }
 
     public bool IsInBounds(Location id)
@@ -125,6 +114,12 @@ public abstract class SquareGrid
         adjacent[3] = IsInBounds(d) ? d : Location.Invalid;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int GetIndex(Location location)
+    {
+        return location.Y * Width + location.X;
+    }
+
 #if ENABLE_GRID_TOSTRING
     public override string ToString()
     {
@@ -142,7 +137,7 @@ public abstract class SquareGrid
             for (var x = 0; x < Width; x++)
             {
                 var location = new Location(x, y);
-                var entity = _grid[x, y];
+                var entity = _grid[y * Width + x];
                 if (entity is not null)
                 {
                     builder.Append(entity.Label.PadRight(maxLabelLength));

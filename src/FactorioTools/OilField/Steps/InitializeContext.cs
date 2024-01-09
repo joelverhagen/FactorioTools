@@ -91,9 +91,9 @@ public static class InitializeContext
         }
     }
 
-    private static int[,] GetLocationToAdjacentCount(SquareGrid grid)
+    private static int[] GetLocationToAdjacentCount(SquareGrid grid)
     {
-        var locationToHasAdjacentPumpjack = new int[grid.Width, grid.Height];
+        var locationToHasAdjacentPumpjack = new int[grid.Width * grid.Height];
 
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
         Span<Location> neighbors = stackalloc Location[4];
@@ -116,7 +116,7 @@ public static class InitializeContext
                     continue;
                 }
 
-                locationToHasAdjacentPumpjack[neighbors[i].X, neighbors[i].Y]++;
+                locationToHasAdjacentPumpjack[neighbors[i].Y * grid.Width + neighbors[i].X]++;
             }
         }
 

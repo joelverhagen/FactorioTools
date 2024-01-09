@@ -230,12 +230,13 @@ public static partial class AddPipes
 
             try
             {
+                var width = context.Grid.Width;
                 for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
                 {
                     if (i < aStarResultV.Path.Count)
                     {
                         var location = aStarResultV.Path[i];
-                        if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                        if (context.LocationToAdjacentCount[location.Y * width + location.X] > 0)
                         {
                             adjacentPipesV++;
                         }
@@ -246,7 +247,7 @@ public static partial class AddPipes
                     if (i < aStarResultH.Path.Count)
                     {
                         var location = aStarResultH.Path[i];
-                        if (context.LocationToAdjacentCount[location.X, location.Y] > 0)
+                        if (context.LocationToAdjacentCount[location.Y * width + location.X] > 0)
                         {
                             adjacentPipesH++;
                         }
