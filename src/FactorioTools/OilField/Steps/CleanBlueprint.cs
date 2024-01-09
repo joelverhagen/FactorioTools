@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -13,7 +12,17 @@ public static class CleanBlueprint
         var entities = new List<Entity>();
 
         // Pumpjacks are sorted by their Y coordinate, then their X coordinate.
-        var sortedCenters = context.CenterToTerminals.Keys.OrderBy(c => c.Y).ThenBy(c => c.X);
+        var sortedCenters = context.CenterToTerminals.Keys.ToList();
+        sortedCenters.Sort((a, b) =>
+        {
+            var c = a.Y.CompareTo(b.Y);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.X.CompareTo(b.X);
+        });
 
         foreach (var center in sortedCenters)
         {

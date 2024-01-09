@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -17,12 +16,17 @@ public static partial class AddPipes
 
     private static ILocationDictionary<ILocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
     {
-        var centers = context
-            .CenterToTerminals
-            .Keys
-            .OrderBy(c => c.X)
-            .ThenBy(c => c.Y)
-            .ToList();
+        var centers = context.CenterToTerminals.Keys.ToList();
+        centers.Sort((a, b) =>
+        {
+            var c = a.X.CompareTo(b.X);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.Y.CompareTo(b.Y);
+        });
 
         if (centers.Count == 2)
         {
@@ -86,22 +90,35 @@ public static partial class AddPipes
             }
         }
 
-        Visualizer.Show(context.Grid, connectedCenters.Keys.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
+        Visualizer.Show(context.Grid, connectedCenters.ToDelaunatorPoints(), edges);
     }
 #endif
+
+    private record GroupCandidate(
+        PumpjackGroup Group,
+        Location Center,
+        Location IncludedCenter,
+        TerminalLocation Terminal,
+        List<Location> Path);
 
     private static ILocationSet FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 
-        var allIncludedCenters = selectedTrunks.SelectMany(t => t.Centers.EnumerateItems()).ToSet(context);
-
-        var groups = selectedTrunks
-            .Select(trunk =>
+        var allIncludedCenters = context.GetLocationSet(selectedTrunks.Count * 2);
+        for (var i = 0; i < selectedTrunks.Count; i++)
+        {
+            foreach (var center in selectedTrunks[i].Centers.EnumerateItems())
             {
-                return new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, trunk);
-            })
-            .ToList();
+                allIncludedCenters.Add(center);
+            }
+        }
+
+        var groups = new List<PumpjackGroup>(selectedTrunks.Count);
+        for (var i = 0; i < selectedTrunks.Count; i++)
+        {
+            groups.Add(new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, selectedTrunks[i]));
+        }
 
         if (groups.Count == 0)
         {
@@ -117,56 +134,72 @@ public static partial class AddPipes
 
         while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
         {
-            var bestGroup = groups
-                .Select(group =>
-                {
-                    var centroidX = group.Pipes.EnumerateItems().Average(l => l.X);
-                    var centroidY = group.Pipes.EnumerateItems().Average(l => l.Y);
+            double? shortestDistance = null;
+            GroupCandidate? candidate = null;
 
-                    var bestCenter = group
-                        .FrontierCenters
-                        .EnumerateItems()
-                        .Select(center =>
-                        {
-                            var includedCenter = group
-                                .IncludedCenterToChildCenters
-                                .EnumeratePairs()
-                                .First(p => p.Value.Contains(center))
-                                .Key;
-
-                            // Prefer the terminal that has the shortest path, then prefer the terminal closer to the centroid
-                            // of the child (unconnected) pumpjacks.
-                            var bestTerminal = context
-                                .CenterToTerminals[center]
-                                .Select(terminal =>
-                                {
-                                    List<Location> path = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
-                                    return new
-                                    {
-                                        Terminal = terminal,
-                                        Path = path,
-                                        ChildCentroidDistanceSquared = group.GetChildCentroidDistanceSquared(includedCenter, terminal.Terminal),
-                                    };
-                                })
-                                .MinBy(t => Tuple.Create(t.Path.Count, t.ChildCentroidDistanceSquared))!;
-
-                            return KeyValuePair.Create(bestTerminal, center);
-                        })
-                        .MinBy(t => Tuple.Create(t.Key.Path.Count, t.Key.ChildCentroidDistanceSquared))!;
-
-                    return KeyValuePair.Create(bestCenter, group);
-                })
-                .MinBy(t => Tuple.Create(t.Key.Key.Path.Count, t.Key.Key.ChildCentroidDistanceSquared))!;
-
-            var group = bestGroup.Value;
-            var center = bestGroup.Key.Value;
-            var terminal = bestGroup.Key.Key.Terminal;
-            var path = bestGroup.Key.Key.Path;
-
-            if (allIncludedCenters.Contains(terminal.Center))
+            foreach (var group in groups)
             {
-                var otherGroup = groups.Single(g => g.IncludedCenters.Contains(terminal.Center));
-                group.MergeGroup(otherGroup, path);
+                var centroidX = group.Pipes.EnumerateItems().Average(l => l.X);
+                var centroidY = group.Pipes.EnumerateItems().Average(l => l.Y);
+
+                foreach (var center in group.FrontierCenters.EnumerateItems())
+                {
+                    var includedCenter = group
+                        .IncludedCenterToChildCenters
+                        .EnumeratePairs()
+                        .First(p => p.Value.Contains(center))
+                        .Key;
+
+                    // Prefer the terminal that has the shortest path, then prefer the terminal closer to the centroid
+                    // of the child (unconnected) pumpjacks.
+                    foreach (var terminal in context.CenterToTerminals[center])
+                    {
+                        var path = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
+
+                        if (candidate is null)
+                        {
+                            candidate = new GroupCandidate(group, center, includedCenter, terminal, path);
+                            continue;
+                        }
+
+                        var comparison = path.Count.CompareTo(candidate.Path.Count);
+                        if (comparison < 0)
+                        {
+                            candidate = new GroupCandidate(group, center, includedCenter, terminal, path);
+                            shortestDistance = null;
+                            continue;
+                        }
+                        
+                        if (comparison > 0)
+                        {
+                            continue;
+                        }
+
+                        if (!shortestDistance.HasValue)
+                        {
+                            shortestDistance = candidate.Group.GetChildCentroidDistanceSquared(candidate.IncludedCenter, candidate.Terminal.Terminal);
+                        }
+
+                        var distance = group.GetChildCentroidDistanceSquared(includedCenter, terminal.Terminal);
+                        comparison = distance.CompareTo(shortestDistance.Value);
+                        if (comparison < 0)
+                        {
+                            candidate = new GroupCandidate(group, center, includedCenter, terminal, path);
+                            shortestDistance = distance;
+                        }
+                    }
+                }
+            }
+
+            if (candidate is null)
+            {
+                throw new FactorioToolsException("No group candidate was found.");
+            }
+
+            if (allIncludedCenters.Contains(candidate.Terminal.Center))
+            {
+                var otherGroup = groups.Single(g => g.IncludedCenters.Contains(candidate.Terminal.Center));
+                candidate.Group.MergeGroup(otherGroup, candidate.Path);
                 groups.Remove(otherGroup);
 
                 /*
@@ -178,8 +211,8 @@ public static partial class AddPipes
             else
             {
                 // Add the newly connected pumpjack to the current group.
-                group.ConnectPumpjack(center, path);
-                EliminateOtherTerminals(context, terminal);
+                candidate.Group.ConnectPumpjack(candidate.Center, candidate.Path);
+                EliminateOtherTerminals(context, candidate.Terminal);
 
                 /*
                 var clone2 = new PipeGrid(context.Grid);
@@ -315,29 +348,30 @@ public static partial class AddPipes
 
         var trunkCandidates = GetTrunkCandidates(context, centerToConnectedCenters);
 
-        trunkCandidates = trunkCandidates
-            .OrderByDescending(t => t.TerminalLocations.Count)
-            .ThenBy(t => t.Length)
-            .ThenBy(t =>
+        trunkCandidates.Sort((a, b) =>
+        {
+            var c = b.TerminalLocations.Count.CompareTo(a.TerminalLocations.Count);
+            if (c != 0)
             {
-                var neighbors = t
-                    .Centers
-                    .EnumerateItems()
-                    .SelectMany(c => centerToConnectedCenters[c].EnumerateItems())
-                    .ToSet(context, allowEnumerate: true);
+                return c;
+            }
 
-                neighbors.ExceptWith(t.Centers);
+            c = a.Length.CompareTo(b.Length);
+            if (c != 0)
+            {
+                return c;
+            }
 
-                if (neighbors.Count == 0)
-                {
-                    return 0;
-                }
+            var aC = a.GetTrunkEndDistance(centerToConnectedCenters);
+            var bC = b.GetTrunkEndDistance(centerToConnectedCenters);
+            c = aC.CompareTo(bC);
+            if (c != 0)
+            {
+                return c;
+            }
 
-                var centroidX = neighbors.EnumerateItems().Average(l => l.X);
-                var centroidY = neighbors.EnumerateItems().Average(l => l.Y);
-                return t.Start.GetEuclideanDistance(centroidX, centroidY) + t.End.GetEuclideanDistance(centroidX, centroidY);
-            })
-            .ToList();
+            return a.OriginalIndex.CompareTo(b.OriginalIndex);
+        });
 
         // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
         var includedPipes = context.GetLocationSet();
@@ -560,6 +594,7 @@ public static partial class AddPipes
 
                     if (trunk is not null && trunk.Centers.Count > 1)
                     {
+                        trunk.OriginalIndex = trunkCandidates.Count;
                         trunkCandidates.Add(trunk);
                     }
                 }
@@ -571,19 +606,54 @@ public static partial class AddPipes
 
     private class Trunk
     {
+        private readonly Context _context;
+        private double? _trunkEndDistance;
+
         public Trunk(Context context, TerminalLocation startingTerminal, Location center)
         {
+            _context = context;
             TerminalLocations = context.GetLocationSet(startingTerminal.Terminal, capacity: 2);
             Terminals.Add(startingTerminal);
             Centers = context.GetLocationSet(center, capacity: 2, allowEnumerate: true);
         }
 
+        public int OriginalIndex { get; set; }
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>(2);
         public ILocationSet TerminalLocations { get; }
         public ILocationSet Centers { get; }
         public int Length => Start.GetManhattanDistance(End) + 1;
         public Location Start => Terminals[0].Terminal;
         public Location End => Terminals.Last().Terminal;
+
+        public double GetTrunkEndDistance(ILocationDictionary<ILocationSet> centerToConnectedCenters)
+        {
+            if (_trunkEndDistance.HasValue)
+            {
+                return _trunkEndDistance.Value;
+            }
+
+            var neighbors = _context.GetLocationSet(allowEnumerate: true);
+            foreach (var center in Centers.EnumerateItems())
+            {
+                foreach (var otherCenter in centerToConnectedCenters[center].EnumerateItems())
+                {
+                    neighbors.Add(otherCenter);
+                }
+            }
+
+            neighbors.ExceptWith(Centers);
+
+            if (neighbors.Count == 0)
+            {
+                _trunkEndDistance = 0;
+                return _trunkEndDistance.Value;
+            }
+
+            var centroidX = neighbors.EnumerateItems().Average(l => l.X);
+            var centroidY = neighbors.EnumerateItems().Average(l => l.Y);
+            _trunkEndDistance = Start.GetEuclideanDistance(centroidX, centroidY) + End.GetEuclideanDistance(centroidX, centroidY);
+            return _trunkEndDistance.Value;
+        }
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()

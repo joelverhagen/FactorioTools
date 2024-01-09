@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Knapcode.FactorioTools.Data;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
@@ -19,7 +18,15 @@ public static class Validate
                 }
             }
 
-            var goals = context.CenterToTerminals.Values.SelectMany(ts => ts).Select(t => t.Terminal).ToReadOnlySet(context, allowEnumerate: true);
+            var goals = context.GetLocationSet(allowEnumerate: true);
+            foreach (var terminals in context.CenterToTerminals.Values)
+            {
+                for (var i = 0; i < terminals.Count; i++)
+                {
+                    goals.Add(terminals[i].Terminal);
+                }
+            }
+
             var clone = new ExistingPipeGrid(context.Grid, optimizedPipes);
             var start = goals.EnumerateItems().First();
             goals.Remove(start);

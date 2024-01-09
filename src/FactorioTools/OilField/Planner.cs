@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Knapcode.FactorioTools.Data;
+﻿using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -105,12 +104,7 @@ public static class Planner
         {
             if (electricPolesMode == EletricPolesMode.AddFirstAndAvoidAllTerminals)
             {
-                electricPolesAvoid = context
-                    .CenterToTerminals
-                    .Values
-                    .SelectMany(t => t)
-                    .Select(t => t.Terminal)
-                    .ToReadOnlySet(context, allowEnumerate: true);
+                electricPolesAvoid = GetElectricPolesAvoid(context);
             }
 
             poles = AddElectricPoles.Execute(context, electricPolesAvoid, allowRetries: false);
@@ -167,7 +161,7 @@ public static class Planner
                 }
                 else
                 {
-                    electricPolesAvoid = context.CenterToTerminals.EnumeratePairs().SelectMany(t => t.Value.Select(l => l.Terminal)).ToReadOnlySet(context, allowEnumerate: true);
+                    electricPolesAvoid = GetElectricPolesAvoid(context);
                     return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                 }
             }
@@ -199,6 +193,20 @@ public static class Planner
             unusedPlans);
 
         return (context, planSummary);
+    }
+
+    private static ILocationSet GetElectricPolesAvoid(Context context)
+    {
+        var electricPolesAvoid = context.GetLocationSet(allowEnumerate: true);
+        foreach (var terminals in context.CenterToTerminals.Values)
+        {
+            for (int i = 0; i < terminals.Count; i++)
+            {
+                electricPolesAvoid.Add(terminals[i].Terminal);
+            }
+        }
+
+        return electricPolesAvoid;
     }
 
     private enum EletricPolesMode

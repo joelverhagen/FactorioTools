@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -40,19 +39,37 @@ public static class PlanUndergroundPipes
     {
         Direction forwardDirection;
         Direction backwardDirection;
-        Func<IEnumerable<Location>, IOrderedEnumerable<Location>> sort;
+        Comparison<Location> sort;
 
         if (forward.X == 1 && forward.Y == 0)
         {
             forwardDirection = Direction.Right;
             backwardDirection = Direction.Left;
-            sort = x => x.OrderBy(l => l.Y).ThenBy(l => l.X);
+            sort = static (a, b) =>
+            {
+                var c = a.Y.CompareTo(b.Y);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                return a.X.CompareTo(b.X);
+            };
         }
         else if (forward.X == 0 && forward.Y == 1)
         {
             forwardDirection = Direction.Down;
             backwardDirection = Direction.Up;
-            sort = x => x.OrderBy(l => l.X).ThenBy(l => l.Y);
+            sort = static (a, b) =>
+            {
+                var c = a.X.CompareTo(b.X);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                return a.Y.CompareTo(b.Y);
+            };
         }
         else
         {
@@ -103,7 +120,9 @@ public static class PlanUndergroundPipes
                 return;
             }
 
-            var sorted = sort(candidates.EnumerateItems()).ToList();
+            var sorted = candidates.EnumerateItems().ToList();
+            sorted.Sort(sort);
+
             var currentRun = new List<Location> { sorted[0] };
             for (var i = 1; i < sorted.Count; i++)
             {

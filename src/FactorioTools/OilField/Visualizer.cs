@@ -5,11 +5,9 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
 using SixLabors.ImageSharp.Drawing;
-using Knapcode.FactorioTools.OilField;
 using DelaunatorSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -76,15 +74,25 @@ public static class Visualizer
             }
 
             var pairs = new HashSet<(Location A, Location B)>();
-            foreach ((var pole, var location) in grid.EntityToLocation.Where(p => p.Key is ElectricPoleCenter))
+            foreach ((var pole, var location) in grid.EntityToLocation)
             {
-                var center = (ElectricPoleCenter)pole;
+                var center = pole as ElectricPoleCenter;
+                if (center is null)
+                {
+                    continue;
+                }
+
                 foreach (var neighbor in center.Neighbors)
                 {
-                    var pair = new[] { location, grid.EntityToLocation[neighbor] }.Order().ToList();
-                    if (pairs.Add((pair[0], pair[1])))
+                    var (a, b) = (location, grid.EntityToLocation[neighbor]);
+                    if (a > b)
                     {
-                        c.DrawLines(Color.Chocolate, thickness: 4, new PointF(pair[0].X * CellSize + CellSize / 2, pair[0].Y * CellSize + CellSize / 2), new PointF(pair[1].X * CellSize + CellSize / 2, pair[1].Y * CellSize + CellSize / 2));
+                        (a, b) = (b, a);
+                    }
+
+                    if (pairs.Add((a, b)))
+                    {
+                        c.DrawLines(Color.Chocolate, thickness: 4, new PointF(a.X * CellSize + CellSize / 2, a.Y * CellSize + CellSize / 2), new PointF(b.X * CellSize + CellSize / 2, b.Y * CellSize + CellSize / 2));
                     }
                 }
             }

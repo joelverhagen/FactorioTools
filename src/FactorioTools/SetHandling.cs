@@ -79,4 +79,28 @@ internal static class SetHandling
     {
         return context.GetReadOnlyLocationSet(locations, allowEnumerate);
     }
+
+#if ENABLE_VISUALIZER
+    public static List<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
+    {
+        var points = new List<DelaunatorSharp.IPoint>();
+        foreach (var item in set.EnumerateItems())
+        {
+            points.Add(new DelaunatorSharp.Point(item.X, item.Y));
+        }
+
+        return points;
+    }
+    
+    public static List<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
+    {
+        var points = new List<DelaunatorSharp.IPoint>();
+        foreach (var item in dictionary.Keys)
+        {
+            points.Add(new DelaunatorSharp.Point(item.X, item.Y));
+        }
+
+        return points;
+    }
+#endif
 }

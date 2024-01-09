@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using Knapcode.FluteSharp;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -151,11 +150,15 @@ public static partial class AddPipes
             .ToList();
         */
 
-        var terminalPoints = context
-            .CenterToTerminals
-            .Values
-            .SelectMany(ts => ts.Select(t => new FluteSharp.Point(t.Terminal.X, t.Terminal.Y)))
-            .ToList();
+        var terminalPoints = new List<Point>();
+        foreach (var terminals in context.CenterToTerminals.Values)
+        {
+            for (var i = 0; i < terminals.Count; i++)
+            {
+                var terminal = terminals[i];
+                terminalPoints.Add(new Point(terminal.Terminal.X, terminal.Terminal.Y));
+            }
+        }
 
         /*
         var pumpjackPoints = context
@@ -175,6 +178,7 @@ public static partial class AddPipes
 #if ENABLE_VISUALIZER
     private static void VisualizeFLUTE(Context context, IEnumerable<DelaunatorSharp.IPoint> terminalPoints, Tree fluteTree)
     {
+        /*
         var steinerPoints = fluteTree
             .Branch
             .Select(b => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(b.X, b.Y))
@@ -203,6 +207,7 @@ public static partial class AddPipes
         }
 
         Visualizer.Show(context.Grid, steinerPoints.Concat(terminalPoints).Distinct().Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.X, x.Y)), edges);
+        */
     }
 #endif
 }

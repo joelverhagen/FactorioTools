@@ -1,6 +1,5 @@
 ﻿#if USE_BITARRAY
 using System.Collections;
-using System.Linq;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -95,7 +94,12 @@ public class WrapperCountedBitArray
 #if ENABLE_GRID_TOSTRING
     public override string ToString()
     {
-        return string.Join("", Enumerable.Range(0, Count).Select(i => this[i] ? '1' : '0'));
+        var chars = new char[Count];
+        for (var i = 0; i < Count; i++)
+        {
+            chars[i] = _array[i] ? '1' : '0';
+        }
+        return new string(chars);
     }
 #endif
 }

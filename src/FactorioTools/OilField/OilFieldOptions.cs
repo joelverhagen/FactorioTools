@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -96,10 +94,13 @@ public class OilFieldOptions
         PipeStrategy.ConnectedCentersFlute,
     };
 
-    public static IReadOnlyList<PipeStrategy> DefaultPipeStrategies { get; } = AllPipeStrategies
-        .Except(new[] { PipeStrategy.FbeOriginal })
-        .Order()
-        .ToList();
+    public static IReadOnlyList<PipeStrategy> DefaultPipeStrategies { get; } = new[]
+    {
+        PipeStrategy.Fbe,
+        PipeStrategy.ConnectedCentersDelaunay,
+        PipeStrategy.ConnectedCentersDelaunayMst,
+        PipeStrategy.ConnectedCentersFlute,
+    };
 
     public static IReadOnlyList<BeaconStrategy> AllBeaconStrategies { get; } = new[]
     {
@@ -108,10 +109,11 @@ public class OilFieldOptions
         BeaconStrategy.Snug,
     };
 
-    public static IReadOnlyList<BeaconStrategy> DefaultBeaconStrategies { get; } = AllBeaconStrategies
-        .Except(new[] { BeaconStrategy.FbeOriginal })
-        .Order()
-        .ToList();
+    public static IReadOnlyList<BeaconStrategy> DefaultBeaconStrategies { get; } = new[]
+    {
+        BeaconStrategy.Fbe,
+        BeaconStrategy.Snug,
+    };
 
     /// <summary>
     /// Whether or not underground pipes (pipe-to-ground) should be used.

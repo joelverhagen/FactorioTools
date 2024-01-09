@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -9,11 +8,11 @@ public static partial class PlanBeacons
 {
     private static (List<Location> Beacons, int Effects) AddBeaconsSnug(Context context)
     {
-        var poweredEntities = context
-            .CenterToTerminals
-            .Keys
-            .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
-            .ToList();
+        var poweredEntities = new List<ProviderRecipient>(context.CenterToTerminals.Count);
+        foreach (var center in context.CenterToTerminals.Keys)
+        {
+            poweredEntities.Add(new ProviderRecipient(center, PumpjackWidth, PumpjackHeight));
+        }
 
         // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
         (var candidateToInfo, var coveredEntities, var existingBeacons) = GetBeaconCandidateToCovered(

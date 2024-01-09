@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -107,12 +106,47 @@ public static partial class PlanBeacons
 
     private static List<BeaconCandidate> SortPossibleBeacons(Context context, List<BeaconCandidate> possibleBeacons)
     {
-        possibleBeacons = possibleBeacons
-            .OrderByDescending(b => b.EffectsGivenCount)
-            .ThenBy(b => b.EffectsGivenCount == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps)
-            .ThenByDescending(b => b.Center.GetEuclideanDistance(context.Grid.Middle))
-            .ToList();
+        var candidateToDistance = context.GetLocationDictionary<double>();
+
+        possibleBeacons.Sort((a, b) =>
+        {
+            var c = b.EffectsGivenCount.CompareTo(a.EffectsGivenCount);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            var aC = a.EffectsGivenCount == 1 ? -a.AverageDistanceToEntities : a.NumberOfOverlaps;
+            var bC = b.EffectsGivenCount == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps;
+            c = aC.CompareTo(bC);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            if (!candidateToDistance.TryGetValue(a.Center, out aC))
+            {
+                aC = a.Center.GetEuclideanDistance(context.Grid.Middle);
+                candidateToDistance.Add(a.Center, aC);
+            }
+
+            if (!candidateToDistance.TryGetValue(b.Center, out bC))
+            {
+                bC = b.Center.GetEuclideanDistance(context.Grid.Middle);
+                candidateToDistance.Add(b.Center, bC);
+            }
+
+            c = bC.CompareTo(aC);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.OriginalIndex.CompareTo(b.OriginalIndex);
+        });
+
         possibleBeacons.Reverse();
+
         return possibleBeacons;
     }
 
@@ -241,7 +275,9 @@ public static partial class PlanBeacons
                 numberOfOverlaps += pointToBeaconCount[collisionArea[j]];
             }
 
+            var originalIndex = possibleBeacons.Count;
             possibleBeacons.Add(new BeaconCandidate(
+                originalIndex,
                 center,
                 collisionArea,
                 effectsGiven.TrueCount,
@@ -289,75 +325,81 @@ public static partial class PlanBeacons
 
     private static ILocationSet GetOccupiedPositions(Context context, List<Area> entityAreas)
     {
-        return entityAreas
-            .SelectMany(a => a.Locations)
-            .ToReadOnlySet(context);
+        var occupiedPositions = context.GetLocationSet();
+        for (int i = 0; i < entityAreas.Count; i++)
+        {
+            var area = entityAreas[i];
+            for (int j = 0; j < area.Locations.Length; j++)
+            {
+                occupiedPositions.Add(area.Locations[j]);
+            }
+        }
+
+        return occupiedPositions;
     }
 
     private static List<Area> GetEntityAreas(Context context)
     {
         GridEntity pipe = new Pipe();
 
-        return context
-            .Grid
-            .EntityToLocation
-            .Select(pair =>
+        var areas = new List<Area>(context.Grid.EntityToLocation.Count);
+
+        foreach (var (entity, location) in context.Grid.EntityToLocation)
+        {
+            int width;
+            int height;
+            bool effect;
+
+            if (entity is TemporaryEntity)
             {
-                int width;
-                int height;
-                bool effect;
+                width = 1;
+                height = 1;
+                effect = false;
+            }
+            else if (entity is ElectricPoleCenter)
+            {
+                width = context.Options.ElectricPoleWidth;
+                height = context.Options.ElectricPoleHeight;
+                effect = false;
+            }
+            else if (entity is PumpjackCenter)
+            {
+                width = PumpjackWidth;
+                height = PumpjackHeight;
+                effect = true;
+            }
+            else if (entity is BeaconCenter
+                  || entity is BeaconSide
+                  || entity is ElectricPoleSide
+                  || entity is PumpjackSide)
+            {
+                continue;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
 
-                if (pair.Key is TemporaryEntity)
-                {
-                    width = 1;
-                    height = 1;
-                    effect = false;
-                }
-                else if (pair.Key is ElectricPoleCenter)
-                {
-                    width = context.Options.ElectricPoleWidth;
-                    height = context.Options.ElectricPoleHeight;
-                    effect = false;
-                }
-                else if (pair.Key is PumpjackCenter)
-                {
-                    width = PumpjackWidth;
-                    height = PumpjackHeight;
-                    effect = true;
-                }
-                else if (pair.Key is BeaconCenter
-                      || pair.Key is BeaconSide
-                      || pair.Key is ElectricPoleSide
-                      || pair.Key is PumpjackSide)
-                {
-                    return null;
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
+            var minX = location.X - ((width - 1) / 2);
+            var maxX = location.X + (width / 2);
+            var minY = location.Y - ((height - 1) / 2);
+            var maxY = location.Y + (height / 2);
 
-                var minX = pair.Value.X - ((width - 1) / 2);
-                var maxX = pair.Value.X + (width / 2);
-                var minY = pair.Value.Y - ((height - 1) / 2);
-                var maxY = pair.Value.Y + (height / 2);
-
-                var area = new Location[width * height];
-                var i = 0;
-                for (var x = minX; x <= maxX; x++)
+            var area = new Location[width * height];
+            var i = 0;
+            for (var x = minX; x <= maxX; x++)
+            {
+                for (var y = minY; y <= maxY; y++)
                 {
-                    for (var y = minY; y <= maxY; y++)
-                    {
-                        area[i++] = new Location(x, y);
-                    }
+                    area[i++] = new Location(x, y);
                 }
+            }
 
-                return new { Locations = area, Effect = effect };
-            })
-            .Where(a => a is not null)
-            .Select(a => a!)
-            .Select((a, i) => new Area(i, a.Effect, a.Locations))
-            .ToList();
+            var index = areas.Count;
+            areas.Add(new Area(index, effect, area));
+        }
+
+        return areas;
     }
 
     private static List<Area> GetEffectEntityAreas(List<Area> entityAreas)
@@ -509,6 +551,7 @@ public static partial class PlanBeacons
     private class BeaconCandidate
     {
         public BeaconCandidate(
+            int originalIndex,
             Location center,
             Location[] collisionArea,
             int effectsGivenCount,
@@ -516,6 +559,7 @@ public static partial class PlanBeacons
             int numberOfOverlaps,
             CountedBitArray? effectsGiven)
         {
+            OriginalIndex = originalIndex;
             Center = center;
             CollisionArea = collisionArea;
             EffectsGivenCount = effectsGivenCount;
@@ -524,6 +568,7 @@ public static partial class PlanBeacons
             EffectsGiven = effectsGiven;
         }
 
+        public int OriginalIndex { get; }
         public Location Center { get; }
         public Location[] CollisionArea { get; }
         public int EffectsGivenCount { get; }

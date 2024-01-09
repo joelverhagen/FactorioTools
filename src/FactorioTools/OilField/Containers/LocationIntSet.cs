@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -47,7 +46,10 @@ public class LocationIntSet : ILocationSet
 
     public void UnionWith(IEnumerable<Location> other)
     {
-        _set.UnionWith(other.Select(GetIndex));
+        foreach (Location location in other)
+        {
+            _set.Add(GetIndex(location));
+        }
     }
 
     public void UnionWith(ILocationSet other)
@@ -84,7 +86,20 @@ public class LocationIntSet : ILocationSet
 
     public bool Overlaps(IEnumerable<Location> other)
     {
-        return _set.Overlaps(other.Select(GetIndex));
+        if (Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var location in other)
+        {
+            if (_set.Contains(GetIndex(location)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void Clear()

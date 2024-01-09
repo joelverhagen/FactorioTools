@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using DelaunatorSharp;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -53,7 +52,12 @@ public static partial class AddPipes
 
     private static Delaunator GetDelauntator(List<Location> centers)
     {
-        var points = centers.Select(p => (IPoint)new Point(p.X, p.Y)).ToArray();
+        var points = new IPoint[centers.Count];
+        for (var i = 0; i < centers.Count; i++)
+        {
+            var center = centers[i];
+            points[i] = new Point(center.X, center.Y);
+        }
         var delaunator = new Delaunator(points);
         return delaunator;
     }

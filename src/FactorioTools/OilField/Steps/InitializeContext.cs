@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Knapcode.FactorioTools.Data;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
@@ -125,10 +124,15 @@ public static class InitializeContext
 
     private static List<Tuple<Location, Direction>> GetCenterAndOriginalDirections(Blueprint blueprint, int marginX, int marginY)
     {
-        var pumpjacks = blueprint
-            .Entities
-            .Where(e => e.Name == EntityNames.Vanilla.Pumpjack)
-            .ToList();
+        var pumpjacks = new List<Entity>();
+        for (var i = 0; i < blueprint.Entities.Length; i++)
+        {
+            var entity = blueprint.Entities[i];
+            if (entity.Name == EntityNames.Vanilla.Pumpjack)
+            {
+                pumpjacks.Add(entity);
+            }
+        }
 
         const int maxPumpjacks = 150;
         if (pumpjacks.Count > maxPumpjacks)
@@ -180,8 +184,13 @@ public static class InitializeContext
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.
-        var width = centerAndOriginalDirections.Select(p => p.Item1.X).DefaultIfEmpty(-1).Max() + 1 + marginX;
-        var height = centerAndOriginalDirections.Select(p => p.Item1.Y).DefaultIfEmpty(-1).Max() + 1 + marginY;
+        int width = marginX;
+        int height = marginY;
+        if (centerAndOriginalDirections.Count > 0)
+        {
+            width += 1 + centerAndOriginalDirections.Max(p => p.Item1.X);
+            height += 1 + centerAndOriginalDirections.Max(p => p.Item1.Y);
+        }
 
         const int maxWidth = 1000;
         const int maxHeight = 1000;
