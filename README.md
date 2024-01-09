@@ -110,3 +110,10 @@ AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 | MediumElectricPole_Beacon_Underground     | 31.90 ms | 0.206 ms | 0.192 ms |
 | BigElectricPole_Beacon_Underground        | 72.05 ms | 0.639 ms | 0.598 ms |
 | Substation_Beacon_Underground             | 35.00 ms | 0.188 ms | 0.167 ms |
+
+### Lua performance log
+
+This is the time to run the planner sample with Lua 5.2 on my desktop machine.
+
+- Original working implementation (3cf596f5849211a98a37aa87bd5c182fff13e28e): 6.3 seconds
+- Use int-based hash set (6c1537e175b3b45879fe02d4b37ccce7ff349188): 4.5 seconds
