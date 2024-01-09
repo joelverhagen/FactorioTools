@@ -29,7 +29,7 @@ public static class Dijkstras
             priorityQueue.Enqueue(start, 0);
             inQueue.Add(start);
 
-#if USE_STACKALLOC
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];

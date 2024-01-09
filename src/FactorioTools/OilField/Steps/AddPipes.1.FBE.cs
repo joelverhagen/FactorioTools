@@ -384,7 +384,7 @@ public static partial class AddPipes
 
         public IReadOnlyList<TerminalLocation> Entities => _entities;
         public List<List<Location>> Paths { get; }
-        public Location Location { get; private set; }
+        public Location Location { get; private set; } = Location.Invalid;
 
         public void Add(TerminalLocation entity)
         {

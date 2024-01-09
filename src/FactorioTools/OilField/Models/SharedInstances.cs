@@ -35,7 +35,7 @@ public class SharedInstances
     public ILocationSet LocationSetA;
     public ILocationSet LocationSetB;
 
-    public T[] GetArray<T>(ref T[] array, int length) where T : struct
+    public T[] GetArray<T>(ref T[] array, int length)
     {
         if (array.Length < length)
         {

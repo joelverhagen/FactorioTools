@@ -130,7 +130,7 @@ public class Context
 
     public ILocationSet GetReadOnlyLocationSet(IEnumerable<Location> locations, bool allowEnumerate)
     {
-        Location firstLocation = default;
+        Location firstLocation = Location.Invalid;
         int itemCount = 0;
         ILocationSet? set = null;
         foreach (var location in locations)

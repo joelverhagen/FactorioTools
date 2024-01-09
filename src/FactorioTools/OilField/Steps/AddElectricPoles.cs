@@ -603,7 +603,7 @@ public static class AddElectricPoles
         var attempted = context.GetLocationSet();
 #endif
 
-        Location selectedPoint = default;
+        Location selectedPoint = Location.Invalid;
         bool matchFound = false;
         try
         {
@@ -611,7 +611,7 @@ public static class AddElectricPoles
             attempted.Add(idealPoint);
 
 
-#if USE_STACKALLOC
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];

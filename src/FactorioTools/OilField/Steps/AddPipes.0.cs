@@ -379,7 +379,7 @@ public static partial class AddPipes
                 locationsToExplore = unreachedTerminals;
             }
 
-            Location strandedTerminal = default;
+            Location strandedTerminal = Location.Invalid;
             bool foundStranded = false;
             foreach (var location in terminalsToEliminate.EnumerateItems())
             {

@@ -72,9 +72,9 @@ public static class AStar
             cameFrom[start] = start;
             costSoFar[start] = 0;
 
-            Location reachedGoal = default;
+            Location reachedGoal = Location.Invalid;
             bool success = false;
-#if USE_STACKALLOC
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];

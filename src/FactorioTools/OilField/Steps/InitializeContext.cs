@@ -95,7 +95,7 @@ public static class InitializeContext
     {
         var locationToHasAdjacentPumpjack = new int[grid.Width, grid.Height];
 
-#if USE_STACKALLOC
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
         Span<Location> neighbors = stackalloc Location[4];
 #else
         Span<Location> neighbors = new Location[4];

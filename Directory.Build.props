@@ -13,5 +13,10 @@
     <UseBitArray Condition="'$(UseBitArray)' == ''">$(UseDefines)</UseBitArray>
     <DefineConstants Condition="$(UseBitArray) == 'true'">$(DefineConstants);USE_BITARRAY</DefineConstants>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <LocationAsStruct Condition="'$(LocationAsStruct)' == ''">$(UseDefines)</LocationAsStruct>
+    <DefineConstants Condition="$(LocationAsStruct) == 'true'">$(DefineConstants);LOCATION_AS_STRUCT</DefineConstants>
+  </PropertyGroup>
   
 </Project>

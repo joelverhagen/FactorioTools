@@ -2,7 +2,13 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public struct Location :
+public
+#if LOCATION_AS_STRUCT
+    struct
+#else
+    class
+#endif
+    Location :
 #if ENABLE_GRID_TOSTRING
     IFormattable,
 #endif
@@ -27,10 +33,27 @@ public struct Location :
         return obj is Location location && Equals(location);
     }
 
+#if LOCATION_AS_STRUCT
     public bool Equals(Location other)
     {
-        return X == other.X &&
-               Y == other.Y;
+#else
+    public bool Equals(Location? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+#endif
+
+        return
+            X == other.X &&
+            Y == other.Y;
     }
 
     public override int GetHashCode()
@@ -95,8 +118,18 @@ public struct Location :
         return new Location(X + translation.X, Y + translation.Y);
     }
 
+#if LOCATION_AS_STRUCT
     public int CompareTo(Location other)
     {
+#else
+    public int CompareTo(Location? other)
+    {
+        if (other is null)
+        {
+            return 1;
+        }
+#endif
+
         var x = X.CompareTo(other.X);
         if (x != 0)
         {

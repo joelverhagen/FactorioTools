@@ -325,7 +325,7 @@ public static class RotateOptimize
             toExplore.Enqueue(start);
             pipes.Add(start);
 
-#if USE_STACKALLOC
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
@@ -360,7 +360,7 @@ public static class RotateOptimize
             var cameFrom = context.ParentContext.GetLocationDictionary<Location>();
             cameFrom[start] = start;
 
-#if USE_STACKALLOC
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];

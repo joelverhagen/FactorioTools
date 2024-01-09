@@ -501,7 +501,7 @@ public static partial class AddPipes
                     {
                         if (context.LocationToTerminals.TryGetValue(location, out var terminals))
                         {
-                            Location nextCenter = default;
+                            Location nextCenter = Location.Invalid;
                             bool hasMatch = false;
                             foreach (var nextTerminal in terminals)
                             {
