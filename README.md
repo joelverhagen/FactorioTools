@@ -121,3 +121,4 @@ Reproduced using commit `3822074caaff18d11fa56961707d41a7ebca68b3` of [CSharp.lu
 - `6c1537e175b3b45879fe02d4b37ccce7ff349188`: 5.20 seconds (int based Location hash set, struct hash set is slow)
 - `8964b81944476f3f76a55186fdadabbf4a357230`: 2.20 seconds (int based Location dictionary, struct dictionary key is slow)
 - `fd55e01fd688e6bee033f96cbca7e24d3570de09`: 0.82 seconds (class instead struct for Location, struct does lots of copies)
+- `362caba6117438e27693289e76baeaea3ac9bb5f`: 0.74 seconds (don't use yield return, reduce Lua coroutines)
