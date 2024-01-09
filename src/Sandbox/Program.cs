@@ -16,6 +16,11 @@ public partial class Program
         {
             Measure();
         }
+        else if (args.Length > 0 && args[0] == "sample")
+        {
+            var (context, summary) = Planner.ExecuteSample();
+            Console.WriteLine(context.Grid.ToString());
+        }
         else
         {
             Sandbox();
