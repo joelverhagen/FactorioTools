@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cathei.LinqGen;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -35,6 +36,7 @@ public static partial class AddPipes
     {
         // GENERATE LINES
         var lines = PointsToLines(context, context.CenterToTerminals.Keys)
+            .Gen()
             .Select(line =>
             {
                 var connections = context.CenterToTerminals[line.A]
@@ -55,6 +57,7 @@ public static partial class AddPipes
         while (lines.Count > 0)
         {
             var line = lines
+                .Gen()
                 .MinBy(ent => Tuple.Create(
                     !LineContainsAnAddedPumpjack(addedPumpjacks, ent),
                     -(ent.Endpoints.A.GetManhattanDistance(middle) + ent.Endpoints.B.GetManhattanDistance(middle)),
@@ -157,6 +160,7 @@ public static partial class AddPipes
             locationToGroup.Add(group.Location, group);
 
             var par = PointsToLines(context, locationToGroup.Keys)
+                .Gen()
                 .Where(l => l.A == group.Location || l.B == group.Location)
                 .Select(l => l.A == group.Location ? l.B : l.A)
                 .Select(l => locationToGroup[l])
@@ -369,7 +373,7 @@ public static partial class AddPipes
         public int Turns { get; }
     }
 
-    private class Group
+    internal class Group
     {
         private readonly List<TerminalLocation> _entities;
         private double _sumX = 0;
@@ -413,7 +417,7 @@ public static partial class AddPipes
         }
     }
 
-    private class PumpjackConnection
+    internal class PumpjackConnection
     {
         public PumpjackConnection(Endpoints endpoints, List<TerminalPair> connections)
         {
@@ -427,7 +431,7 @@ public static partial class AddPipes
         public double AverageDistance => Connections.Count > 0 ? Connections.Average(x => x.Line.Count - 1) : 0;
     }
 
-    private class TerminalPair
+    internal class TerminalPair
     {
         public TerminalPair(TerminalLocation terminalA, TerminalLocation terminalB, List<Location> line)
         {

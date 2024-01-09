@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using Cathei.LinqGen;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -20,6 +20,7 @@ public static partial class AddPipes
         var centers = context
             .CenterToTerminals
             .Keys
+            .Gen()
             .OrderBy(c => c.X)
             .ThenBy(c => c.Y)
             .ToList();
@@ -97,6 +98,7 @@ public static partial class AddPipes
         var allIncludedCenters = selectedTrunks.SelectMany(t => t.Centers.EnumerateItems()).ToSet(context);
 
         var groups = selectedTrunks
+            .Gen()
             .Select(trunk =>
             {
                 return new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, trunk);
@@ -118,6 +120,7 @@ public static partial class AddPipes
         while (groups.Count > 1 || groups[0].IncludedCenters.Count < context.CenterToTerminals.Count)
         {
             var bestGroup = groups
+                .Gen()
                 .Select(group =>
                 {
                     var centroidX = group.Pipes.EnumerateItems().Average(l => l.X);
@@ -126,6 +129,7 @@ public static partial class AddPipes
                     var bestCenter = group
                         .FrontierCenters
                         .EnumerateItems()
+                        .Gen()
                         .Select(center =>
                         {
                             var includedCenter = group
@@ -138,6 +142,7 @@ public static partial class AddPipes
                             // of the child (unconnected) pumpjacks.
                             var bestTerminal = context
                                 .CenterToTerminals[center]
+                                .Gen()
                                 .Select(terminal =>
                                 {
                                     List<Location> path = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
@@ -315,6 +320,7 @@ public static partial class AddPipes
         var trunkCandidates = GetTrunkCandidates(context, centerToConnectedCenters);
 
         trunkCandidates = trunkCandidates
+            .Gen()
             .OrderByDescending(t => t.TerminalLocations.Count)
             .ThenBy(t => t.Length)
             .ThenBy(t =>
@@ -384,10 +390,12 @@ public static partial class AddPipes
     {
         var bestConnection = centerToConnectedCenters
             .Keys
+            .Gen()
             .Select(center =>
             {
                 return context
                     .CenterToTerminals[center]
+                    .Gen()
                     .Select(terminal =>
                     {
                         var bestTerminal = centerToConnectedCenters[center]
@@ -483,7 +491,7 @@ public static partial class AddPipes
         var trunkCandidates = new List<Trunk>();
         foreach (var translation in Translations)
         {
-            foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.Y).ThenBy(c => c.X))
+            foreach (var startingCenter in context.CenterToTerminals.Keys.Gen().OrderBy(c => c.Y).ThenBy(c => c.X))
             {
                 foreach (var terminal in context.CenterToTerminals[startingCenter])
                 {
@@ -568,7 +576,7 @@ public static partial class AddPipes
         return trunkCandidates;
     }
 
-    private class Trunk
+    internal class Trunk
     {
         public Trunk(Context context, TerminalLocation startingTerminal, Location center)
         {
@@ -582,7 +590,7 @@ public static partial class AddPipes
         public ILocationSet Centers { get; }
         public int Length => Start.GetManhattanDistance(End) + 1;
         public Location Start => Terminals[0].Terminal;
-        public Location End => Terminals.Last().Terminal;
+        public Location End => Terminals.Gen().Last().Terminal;
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()
@@ -592,7 +600,7 @@ public static partial class AddPipes
 #endif
     }
 
-    private class PumpjackGroup
+    internal class PumpjackGroup
     {
         private readonly Context _context;
         private readonly ILocationDictionary<ILocationSet> _centerToConnectedCenters;

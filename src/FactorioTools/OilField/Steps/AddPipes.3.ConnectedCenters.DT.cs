@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
-using System.Linq;
+using Cathei.LinqGen;
 using DelaunatorSharp;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -45,7 +45,7 @@ public static partial class AddPipes
             }
         }
 
-        var closestToMiddle = centers.MinBy(context.Grid.Middle.GetEuclideanDistanceSquared);
+        var closestToMiddle = centers.Gen().MinBy(context.Grid.Middle.GetEuclideanDistanceSquared);
         var mst = Prims.GetMinimumSpanningTree(context, dlGraph, closestToMiddle, digraph: false);
 
         return mst;
@@ -53,7 +53,7 @@ public static partial class AddPipes
 
     private static Delaunator GetDelauntator(List<Location> centers)
     {
-        var points = centers.Select(p => (IPoint)new Point(p.X, p.Y)).ToArray();
+        var points = centers.Gen().Select(p => (IPoint)new Point(p.X, p.Y)).ToArray();
         var delaunator = new Delaunator(points);
         return delaunator;
     }

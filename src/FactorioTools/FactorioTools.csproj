@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -50,6 +52,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="LinqGen" Version="0.3.1" />
+    <PackageReference Include="LinqGen.Generator" Version="0.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Generated\**\*.cs" />
+    <Compile Remove="GeneratedSupport\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Generated\**\*.cs" />
+    <None Include="GeneratedSupport\**\*.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\..\submodules\delaunator-sharp\DelaunatorSharp\DelaunatorSharp.csproj" />
     <ProjectReference Include="..\..\submodules\FluteSharp\src\FluteSharp\FluteSharp.csproj" />
   </ItemGroup>
@@ -62,6 +79,10 @@
   <ItemGroup Condition="'$(EnableVisualizer)' == 'true'">
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Generated\LinqGen.Generator\" />
   </ItemGroup>
 
 </Project>

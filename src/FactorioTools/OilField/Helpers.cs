@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cathei.LinqGen;
 using DelaunatorSharp;
 using Knapcode.FactorioTools.Data;
 
@@ -159,6 +160,7 @@ public static class Helpers
             .EntityToLocation
             .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
             .Where(p => p.Entity is not null)
+            .AsEnumerable()
             .ToDictionary(context, p => p.Location, p => p.Entity!);
         var unusedProviders = providers.Keys.ToReadOnlySet(context, allowEnumerate: removeUnused);
 
@@ -1087,6 +1089,7 @@ public static class Helpers
     {
         var filteredNodes = nodes
             .Distinct(context)
+            .Gen()
             .OrderBy(x => x.X)
             .ThenBy(x => x.Y)
             .ToList();
@@ -1103,14 +1106,14 @@ public static class Helpers
         // Check that nodes are not collinear
         if (AreLocationsCollinear(filteredNodes))
         {
-            return Enumerable
-            .Range(1, filteredNodes.Count - 1)
-                .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
-                .ToList();
+            return Enumerable.Range(1, filteredNodes.Count - 1)
+                    .Gen()
+                    .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
+                    .ToList();
         }
 
 
-        var points = filteredNodes.Select<Location, IPoint>(x => new Point(x.X, x.Y)).ToArray();
+        var points = filteredNodes.Gen().Select(x => (IPoint)new Point(x.X, x.Y)).ToArray();
         var delaunator = new Delaunator(points);
 
         var lines = new List<Endpoints>();
