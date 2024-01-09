@@ -27,7 +27,7 @@ public class EmptyLocationSet : ILocationSet
     {
     }
 
-    public IEnumerable<Location> EnumerateItems()
+    public IReadOnlyCollection<Location> EnumerateItems()
     {
         return Array.Empty<Location>();
     }

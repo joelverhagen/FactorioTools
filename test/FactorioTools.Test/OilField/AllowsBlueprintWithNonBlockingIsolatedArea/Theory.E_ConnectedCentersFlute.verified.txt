@@ -1,7 +1,7 @@
-﻿= CC-FLUTE -> optimize -> FBE* (effects: 116, beacons: 64, pipes: 81)
-- CC-FLUTE -> FBE* (effects: 116, beacons: 64, pipes: 93)
-- CC-FLUTE -> snug (effects: 112, beacons: 61, pipes: 93)
-- CC-FLUTE -> optimize -> snug (effects: 106, beacons: 58, pipes: 81)
+﻿  CC-FLUTE -> FBE* (effects: 116, beacons: 64, pipes: 93)
+  CC-FLUTE -> snug (effects: 112, beacons: 61, pipes: 93)
+S CC-FLUTE -> optimize -> FBE* (effects: 116, beacons: 64, pipes: 81)
+  CC-FLUTE -> optimize -> snug (effects: 106, beacons: 58, pipes: 81)
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 

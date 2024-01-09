@@ -9,7 +9,7 @@ public static partial class PlanBeacons
     private static (List<Location> Beacons, int Effects) AddBeaconsSnug(Context context)
     {
         var poweredEntities = new List<ProviderRecipient>(context.CenterToTerminals.Count);
-        foreach (var center in context.CenterToTerminals.Keys)
+        foreach (var center in context.Centers)
         {
             poweredEntities.Add(new ProviderRecipient(center, PumpjackWidth, PumpjackHeight));
         }

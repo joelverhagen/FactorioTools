@@ -10,14 +10,16 @@ namespace Knapcode.FactorioTools.OilField;
 /// <param name="BeaconStrategy">Which beacon strategy, if any, was used.</param>
 /// <param name="BeaconEffectCount">The number of effects the beacons provided to pumpjacks. Higher is better.</param>
 /// <param name="BeaconCount">The number of beacons in the plan. For the same number of beacon effects, lower is better.</param>
-/// <param name="PipeCount">The number of pipes in the plan. For the same number of beacon effects and beacons, lower is better.</param>
+/// <param name="PipeCount">The number of pipes in the plan. For the same number of beacon effects and beacons, lower is better. If underground pipes are used, this only counts the upwards and downwards connections for the underground stretches of pipes.</param>
+/// <param name="PipeCountWithoutUnderground">The number of pipes before beacons or underground pipes are placed.</param>
 public record OilFieldPlan(
     PipeStrategy PipeStrategy,
     bool OptimizePipes,
     BeaconStrategy? BeaconStrategy,
     int BeaconEffectCount,
     int BeaconCount,
-    int PipeCount)
+    int PipeCount,
+    int PipeCountWithoutUnderground)
 {
     public bool IsEquivalent(OilFieldPlan other)
     {

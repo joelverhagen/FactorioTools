@@ -1003,7 +1003,7 @@ public static class Helpers
         }
     }
 
-    public static bool AreLocationsCollinear(List<Location> locations)
+    public static bool AreLocationsCollinear(IReadOnlyList<Location> locations)
     {
         double lastSlope = 0;
         for (var i = 0; i < locations.Count; i++)
@@ -1080,16 +1080,36 @@ public static class Helpers
         throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
     }
 
+    public static List<Endpoints> PointsToLines(IReadOnlyCollection<Location> nodes)
+    {
+        return PointsToLines(nodes.ToList(), sort: true);
+    }
+
     /// <summary>
     /// Source: https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts#L62
     /// </summary>
-    public static List<Endpoints> PointsToLines(Context context, IReadOnlyCollection<Location> nodes)
+    public static List<Endpoints> PointsToLines(IReadOnlyList<Location> nodes, bool sort)
     {
-        var filteredNodes = nodes
-            .Distinct(context)
-            .OrderBy(x => x.X)
-            .ThenBy(x => x.Y)
-            .ToList();
+        IReadOnlyList<Location> filteredNodes;
+        if (sort)
+        {
+            var sortedXY = nodes.ToList();
+            sortedXY.Sort((a, b) =>
+            {
+                var c = a.X.CompareTo(b.X);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                return a.Y.CompareTo(b.Y);
+            });
+            filteredNodes = sortedXY;
+        }
+        else
+        {
+            filteredNodes = nodes;
+        }
 
         if (filteredNodes.Count == 1)
         {
@@ -1104,7 +1124,7 @@ public static class Helpers
         if (AreLocationsCollinear(filteredNodes))
         {
             return Enumerable
-            .Range(1, filteredNodes.Count - 1)
+                .Range(1, filteredNodes.Count - 1)
                 .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
                 .ToList();
         }

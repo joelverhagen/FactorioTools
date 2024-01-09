@@ -128,7 +128,8 @@ public static partial class AddPipes
                                 BeaconStrategy: null,
                                 BeaconEffectCount: 0,
                                 BeaconCount: 0,
-                                solution.Pipes.Count);
+                                solution.Pipes.Count,
+                                solution.PipeCountWithoutUnderground);
 
                             plans.Add(new PlanInfo(groupNumber, solutionGroup.Count, plan, solution, null));
                         }
@@ -148,7 +149,8 @@ public static partial class AddPipes
                                     beacons.Strategy,
                                     beacons.Effects,
                                     beacons.Beacons.Count,
-                                    solution.Pipes.Count);
+                                    solution.Pipes.Count,
+                                    solution.PipeCountWithoutUnderground);
 
                                 plans.Add(new PlanInfo(groupNumber, solutionGroup.Count, plan, solution, beacons));
                             }
@@ -320,6 +322,8 @@ public static partial class AddPipes
     {
         Validate.PipesAreConnected(context, optimizedPipes);
 
+        var pipeCountBeforeUnderground = optimizedPipes.Count;
+
         ILocationDictionary<Direction>? undergroundPipes = null;
         if (context.Options.UseUndergroundPipes)
         {
@@ -343,6 +347,7 @@ public static partial class AddPipes
             CenterToConnectedCenters = centerToConnectedCenters,
             CenterToTerminals = context.CenterToTerminals,
             LocationToTerminals = context.LocationToTerminals,
+            PipeCountWithoutUnderground = pipeCountBeforeUnderground,
             Pipes = optimizedPipes,
             UndergroundPipes = undergroundPipes,
             BeaconSolutions = beaconSolutions,
@@ -420,6 +425,7 @@ public static partial class AddPipes
         public required ILocationDictionary<ILocationSet>? CenterToConnectedCenters { get; set; }
         public required ILocationDictionary<List<TerminalLocation>> CenterToTerminals { get; set; }
         public required ILocationDictionary<List<TerminalLocation>> LocationToTerminals { get; set; }
+        public required int PipeCountWithoutUnderground { get; set; }
         public required ILocationSet Pipes { get; set; }
         public required ILocationDictionary<Direction>? UndergroundPipes { get; set; }
         public required List<BeaconSolution>? BeaconSolutions { get; set; }

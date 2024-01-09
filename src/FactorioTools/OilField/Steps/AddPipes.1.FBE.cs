@@ -34,7 +34,7 @@ public static partial class AddPipes
     private static (List<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         // GENERATE LINES
-        var lines = PointsToLines(context, context.CenterToTerminals.Keys)
+        var lines = PointsToLines(context.Centers, sort: false)
             .Select(line =>
             {
                 var connections = context.CenterToTerminals[line.A]
@@ -107,7 +107,7 @@ public static partial class AddPipes
         // this will only happen when only a few pumpjacks need to be connected
         if (groups.Count == 0)
         {
-            var connection = PointsToLines(context, context.CenterToTerminals.Keys)
+            var connection = PointsToLines(context.Centers, sort: false)
                 .Select(line =>
                 {
                     return context.CenterToTerminals[line.A]
@@ -156,7 +156,7 @@ public static partial class AddPipes
             var locationToGroup = groups.ToDictionary(context, x => x.Location, x => x);
             locationToGroup.Add(group.Location, group);
 
-            var par = PointsToLines(context, locationToGroup.Keys)
+            var par = PointsToLines(locationToGroup.Keys)
                 .Where(l => l.A == group.Location || l.B == group.Location)
                 .Select(l => l.A == group.Location ? l.B : l.A)
                 .Select(l => locationToGroup[l])
@@ -201,8 +201,7 @@ public static partial class AddPipes
         }
 
         var leftoverPumpjacks = context
-            .CenterToTerminals
-            .Keys
+            .Centers
             .Except(addedPumpjacks.Select(x => x.Center), context)
             .OrderBy(l => l.GetManhattanDistance(true ? middle : context.Grid.Middle));
 
@@ -300,7 +299,18 @@ public static partial class AddPipes
             bLocationsOptimized = bLocations;
         }
 
-        lines.AddRange(PointsToLines(context, aLocations.Concat(bLocationsOptimized).ToList())
+        var aPlusB = context.GetLocationSet(aLocations.Count + bLocationsOptimized.Count, allowEnumerate: true);
+        for (var i = 0; i < aLocations.Count; i++)
+        {
+            aPlusB.Add(aLocations[i]);
+        }
+
+        for (var i = 0; i < bLocationsOptimized.Count; i++)
+        {
+            aPlusB.Add(bLocationsOptimized[i]);
+        }
+
+        lines.AddRange(PointsToLines(aPlusB.EnumerateItems())
             .Where(p => !((aLocations.Contains(p.A) && aLocations.Contains(p.B)) || (bLocations.Contains(p.A) && bLocations.Contains(p.B))))
             .OrderBy(p => p.A.GetManhattanDistance(p.B))
             .Take(5)

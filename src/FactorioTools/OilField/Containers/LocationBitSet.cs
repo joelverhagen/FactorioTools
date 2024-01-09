@@ -43,7 +43,7 @@ public class LocationBitSet : ILocationSet
         throw new NotSupportedException();
     }
 
-    public IEnumerable<Location> EnumerateItems()
+    public IReadOnlyCollection<Location> EnumerateItems()
     {
         throw new NotSupportedException();
     }

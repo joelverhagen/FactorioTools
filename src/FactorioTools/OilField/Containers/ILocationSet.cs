@@ -11,7 +11,7 @@ namespace Knapcode.FactorioTools.OilField
         void Clear();
         bool Contains(Location location);
         void CopyTo(Location[] array);
-        IEnumerable<Location> EnumerateItems();
+        IReadOnlyCollection<Location> EnumerateItems();
         void ExceptWith(ILocationSet other);
         bool Overlaps(IEnumerable<Location> other);
         bool Remove(Location location);

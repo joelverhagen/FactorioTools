@@ -55,18 +55,31 @@ public static class InitializeContext
 
         var grid = InitializeGrid(centerAndOriginalDirections, marginX, marginY);
 
+        var centers = new List<Location>(centerAndOriginalDirections.Count);
+        PopulateCenters(centerAndOriginalDirections, centers);
+        centers.Sort((a, b) =>
+        {
+            var c = a.Y.CompareTo(b.Y);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.X.CompareTo(b.X);
+        });
+
 #if USE_HASHSETS
-        var centerToOriginalDirection = new LocationHashDictionary<Direction>();
-        var centerToTerminals = new LocationHashDictionary<List<TerminalLocation>>();
+        var centerToOriginalDirection = new LocationHashDictionary<Direction>(centerAndOriginalDirections.Count);
+        var centerToTerminals = new LocationHashDictionary<List<TerminalLocation>>(centerAndOriginalDirections.Count);
         var locationToTerminals = new LocationHashDictionary<List<TerminalLocation>>();
 #else
-        var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width);
-        var centerToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width);
+        var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width, centerAndOriginalDirections.Count);
+        var centerToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width, centerAndOriginalDirections.Count);
         var locationToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width);
 #endif
 
         PopulateCenterToOriginalDirection(centerAndOriginalDirections, centerToOriginalDirection);
-        PopulateCenterToTerminals(centerToTerminals, grid, centerToOriginalDirection.Keys);
+        PopulateCenterToTerminals(centerToTerminals, grid, centers);
         PopulateLocationToTerminals(locationToTerminals, centerToTerminals);
 
         return new Context
@@ -74,6 +87,7 @@ public static class InitializeContext
             Options = options,
             InputBlueprint = blueprint,
             Grid = grid,
+            Centers = centers,
             CenterToTerminals = centerToTerminals,
             CenterToOriginalDirection = centerToOriginalDirection,
             LocationToTerminals = locationToTerminals,
@@ -82,11 +96,20 @@ public static class InitializeContext
         };
     }
 
+    private static void PopulateCenters(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> centers)
+    {
+        for (int i = 0; i < centerAndOriginalDirections.Count; i++)
+        {
+            centers.Add(centerAndOriginalDirections[i].Item1);
+        }
+    }
+
     private static void PopulateCenterToOriginalDirection(List<Tuple<Location, Direction>> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
     {
-        foreach ((var center, var originalDirection) in centerAndOriginalDirections)
+        for (int i = 0; i < centerAndOriginalDirections.Count; i++)
         {
-            centerToOriginalDirection.Add(center, originalDirection);
+            var pair = centerAndOriginalDirections[i];
+            centerToOriginalDirection.Add(pair.Item1, pair.Item2);
         }
     }
 

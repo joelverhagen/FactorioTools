@@ -38,22 +38,19 @@ public class BasePlannerFacts : BaseFacts
     {
         var builder = new StringBuilder();
 
-        foreach (var plan in result.Summary.SelectedPlans)
-        {
-            builder.Append("= ");
-            builder.AppendLine(plan.ToString(includeCounts: true));
-        }
+        var plans = Enumerable
+            .Empty<(char Prefix, OilFieldPlan Plan)>()
+            .Concat(result.Summary.SelectedPlans.Select(x => (Prefix: 'S', Plan: x)))
+            .Concat(result.Summary.AlternatePlans.Select(x => (Prefix: 'A', Plan: x)))
+            .Concat(result.Summary.UnusedPlans.Select(x => (Prefix: ' ', Plan: x)))
+            .OrderBy(x => x.Plan.PipeStrategy)
+            .ThenBy(x => x.Plan.OptimizePipes)
+            .ThenBy(x => x.Plan.BeaconStrategy)
+            .Select(x => $"{x.Prefix} {x.Plan.ToString(includeCounts: true)}");
 
-        foreach (var plan in result.Summary.AlternatePlans)
+        foreach (var plan in plans)
         {
-            builder.Append("* ");
-            builder.AppendLine(plan.ToString(includeCounts: true));
-        }
-
-        foreach (var plan in result.Summary.UnusedPlans)
-        {
-            builder.Append("- ");
-            builder.AppendLine(plan.ToString(includeCounts: true));
+            builder.AppendLine(plan);
         }
 
         builder.AppendLine();

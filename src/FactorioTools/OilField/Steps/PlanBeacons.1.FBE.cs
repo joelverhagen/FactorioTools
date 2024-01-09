@@ -110,7 +110,7 @@ public static partial class PlanBeacons
 
         possibleBeacons.Sort((a, b) =>
         {
-            var c = b.EffectsGivenCount.CompareTo(a.EffectsGivenCount);
+            var c = a.EffectsGivenCount.CompareTo(b.EffectsGivenCount);
             if (c != 0)
             {
                 return c;
@@ -118,7 +118,7 @@ public static partial class PlanBeacons
 
             var aC = a.EffectsGivenCount == 1 ? -a.AverageDistanceToEntities : a.NumberOfOverlaps;
             var bC = b.EffectsGivenCount == 1 ? -b.AverageDistanceToEntities : b.NumberOfOverlaps;
-            c = aC.CompareTo(bC);
+            c = bC.CompareTo(aC);
             if (c != 0)
             {
                 return c;
@@ -136,16 +136,14 @@ public static partial class PlanBeacons
                 candidateToDistance.Add(b.Center, bC);
             }
 
-            c = bC.CompareTo(aC);
+            c = aC.CompareTo(bC);
             if (c != 0)
             {
                 return c;
             }
 
-            return a.OriginalIndex.CompareTo(b.OriginalIndex);
+            return b.OriginalIndex.CompareTo(a.OriginalIndex);
         });
-
-        possibleBeacons.Reverse();
 
         return possibleBeacons;
     }
@@ -182,19 +180,25 @@ public static partial class PlanBeacons
         possibleBeacons
             .Sort((a, b) =>
             {
-                var c = b.EffectsGivenCount.CompareTo(a.EffectsGivenCount);
+                var c = a.EffectsGivenCount.CompareTo(b.EffectsGivenCount);
                 if (c != 0)
                 {
                     return c;
                 }
 
-                c = a.NumberOfOverlaps.CompareTo(b.NumberOfOverlaps);
+                c = b.NumberOfOverlaps.CompareTo(a.NumberOfOverlaps);
                 if (c != 0)
                 {
                     return c;
                 }
 
-                return b.AverageDistanceToEntities.CompareTo(a.AverageDistanceToEntities);
+                c = a.AverageDistanceToEntities.CompareTo(b.AverageDistanceToEntities);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                return a.OriginalIndex.CompareTo(b.OriginalIndex);
             });
 
         /*
@@ -212,7 +216,7 @@ public static partial class PlanBeacons
         possibleBeacons.Sort((a, b) => b.EffectsGivenCount.CompareTo(a.EffectsGivenCount));
         */
 
-        possibleBeacons.Reverse();
+        // possibleBeacons.Reverse();
     }
 
     private static List<BeaconCandidate> GetPossibleBeacons(
@@ -444,7 +448,7 @@ public static partial class PlanBeacons
 
         var area = new Location[context.Options.BeaconWidth * context.Options.BeaconHeight];
 
-        foreach (var center in context.CenterToTerminals.Keys)
+        foreach (var center in context.Centers)
         {
             var supplyMinX = Math.Max(gridMinX, center.X - supplyLeft);
             var supplyMinY = Math.Max(gridMinY, center.Y - supplyUp);

@@ -563,7 +563,7 @@ public static class AddElectricPoles
 
         while (groups.Count > 1)
         {
-            var closest = PointsToLines(context, electricPoles.Keys)
+            var closest = PointsToLines(electricPoles.Keys)
                 .Select(e => new
                 {
                     Endpoints = e,

@@ -11,20 +11,7 @@ public static class CleanBlueprint
 
         var entities = new List<Entity>();
 
-        // Pumpjacks are sorted by their Y coordinate, then their X coordinate.
-        var sortedCenters = context.CenterToTerminals.Keys.ToList();
-        sortedCenters.Sort((a, b) =>
-        {
-            var c = a.Y.CompareTo(b.Y);
-            if (c != 0)
-            {
-                return c;
-            }
-
-            return a.X.CompareTo(b.X);
-        });
-
-        foreach (var center in sortedCenters)
+        foreach (var center in context.Centers)
         {
             // Pumpjacks are given a direction that doesn't overlap with another pumpjack, preferring the direction
             // starting at the top then proceeding clockwise.

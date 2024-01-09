@@ -1,7 +1,7 @@
-﻿= FBE -> FBE* (effects: 106, beacons: 60, pipes: 81)
-- FBE -> optimize -> FBE* (effects: 103, beacons: 60, pipes: 83)
-- FBE -> optimize -> snug (effects: 101, beacons: 57, pipes: 83)
-- FBE -> snug (effects: 96, beacons: 55, pipes: 81)
+﻿S FBE -> FBE* (effects: 106, beacons: 60, pipes: 81)
+  FBE -> snug (effects: 96, beacons: 55, pipes: 81)
+  FBE -> optimize -> FBE* (effects: 103, beacons: 60, pipes: 83)
+  FBE -> optimize -> snug (effects: 101, beacons: 57, pipes: 83)
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 

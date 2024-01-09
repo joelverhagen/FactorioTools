@@ -16,17 +16,7 @@ public static partial class AddPipes
 
     private static ILocationDictionary<ILocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
     {
-        var centers = context.CenterToTerminals.Keys.ToList();
-        centers.Sort((a, b) =>
-        {
-            var c = a.X.CompareTo(b.X);
-            if (c != 0)
-            {
-                return c;
-            }
-
-            return a.Y.CompareTo(b.Y);
-        });
+        var centers = context.Centers;
 
         if (centers.Count == 2)
         {
@@ -380,7 +370,7 @@ public static partial class AddPipes
         foreach (var trunk in trunkCandidates)
         {
             var path = MakeStraightLine(trunk.Start, trunk.End);
-            if (!path.Any(includedPipes.Contains) && !includedCenters.Overlaps(trunk.Centers.EnumerateItems()))
+            if (!includedPipes.Overlaps(path) && !includedCenters.Overlaps(trunk.Centers.EnumerateItems()))
             {
                 selectedTrunks.Add(trunk);
                 includedPipes.UnionWith(path);
@@ -417,8 +407,8 @@ public static partial class AddPipes
 
     private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters)
     {
-        var bestConnection = centerToConnectedCenters
-            .Keys
+        var bestConnection = context
+            .Centers
             .Select(center =>
             {
                 return context
@@ -506,19 +496,17 @@ public static partial class AddPipes
     private static List<Trunk> GetTrunkCandidates(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var centerToMaxX = context
-            .CenterToTerminals
-            .Keys
+            .Centers
             .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
         var centerToMaxY = context
-            .CenterToTerminals
-            .Keys
+            .Centers
             .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
 
         // Find paths that connect the most terminals of neighboring pumpjacks.
         var trunkCandidates = new List<Trunk>();
         foreach (var translation in Translations)
         {
-            foreach (var startingCenter in context.CenterToTerminals.Keys.OrderBy(c => c.Y).ThenBy(c => c.X))
+            foreach (var startingCenter in context.Centers)
             {
                 foreach (var terminal in context.CenterToTerminals[startingCenter])
                 {
@@ -580,7 +568,10 @@ public static partial class AddPipes
                             }
 
                             trunk.Terminals.AddRange(terminals);
-                            trunk.TerminalLocations.UnionWith(terminals.Select(t => t.Terminal));
+                            foreach (var other in terminals)
+                            {
+                                trunk.TerminalLocations.Add(other.Terminal);
+                            }
                             foreach (var nextTerminal in terminals)
                             {
                                 trunk.Centers.Add(nextTerminal.Center);
@@ -623,7 +614,7 @@ public static partial class AddPipes
         public ILocationSet Centers { get; }
         public int Length => Start.GetManhattanDistance(End) + 1;
         public Location Start => Terminals[0].Terminal;
-        public Location End => Terminals.Last().Terminal;
+        public Location End => Terminals[Terminals.Count - 1].Terminal;
 
         public double GetTrunkEndDistance(ILocationDictionary<ILocationSet> centerToConnectedCenters)
         {

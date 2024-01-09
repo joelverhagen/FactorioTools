@@ -69,7 +69,7 @@ public class SingleLocationSet : ILocationSet
         array[0] = new Location(_x, _y);
     }
 
-    public IEnumerable<Location> EnumerateItems()
+    public IReadOnlyCollection<Location> EnumerateItems()
     {
         return _hasItem ? new[] { new Location(_x, _y) } : Array.Empty<Location>();
     }

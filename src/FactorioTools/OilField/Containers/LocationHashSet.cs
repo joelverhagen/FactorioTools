@@ -46,7 +46,7 @@ public class LocationHashSet : ILocationSet
         _set.CopyTo(array);
     }
 
-    public IEnumerable<Location> EnumerateItems()
+    public IReadOnlyCollection<Location> EnumerateItems()
     {
         return _set;
     }

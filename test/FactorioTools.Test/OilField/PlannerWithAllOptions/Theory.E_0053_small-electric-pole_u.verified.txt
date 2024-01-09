@@ -1,11 +1,11 @@
-﻿= CC-FLUTE (pipes: 52)
-- CC-FLUTE -> optimize (pipes: 54)
-- FBE* -> optimize (pipes: 55)
-- CC-DT -> optimize (pipes: 55)
-- CC-DT-MST -> optimize (pipes: 55)
-- FBE* (pipes: 57)
-- CC-DT (pipes: 60)
-- CC-DT-MST (pipes: 60)
+﻿  FBE* (pipes: 57)
+  FBE* -> optimize (pipes: 55)
+  CC-DT (pipes: 60)
+  CC-DT -> optimize (pipes: 55)
+  CC-DT-MST (pipes: 60)
+  CC-DT-MST -> optimize (pipes: 55)
+S CC-FLUTE (pipes: 52)
+  CC-FLUTE -> optimize (pipes: 54)
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 

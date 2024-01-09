@@ -1,7 +1,7 @@
-﻿= CC-DT -> optimize -> FBE* (effects: 114, beacons: 62, pipes: 77)
-- CC-DT -> FBE* (effects: 112, beacons: 62, pipes: 82)
-- CC-DT -> snug (effects: 105, beacons: 58, pipes: 82)
-- CC-DT -> optimize -> snug (effects: 101, beacons: 57, pipes: 77)
+﻿  CC-DT -> FBE* (effects: 112, beacons: 62, pipes: 82)
+  CC-DT -> snug (effects: 105, beacons: 58, pipes: 82)
+S CC-DT -> optimize -> FBE* (effects: 114, beacons: 62, pipes: 77)
+  CC-DT -> optimize -> snug (effects: 101, beacons: 57, pipes: 77)
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 

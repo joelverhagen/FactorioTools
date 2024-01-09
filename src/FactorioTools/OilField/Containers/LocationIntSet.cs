@@ -117,7 +117,7 @@ public class LocationIntSet : ILocationSet
         }
     }
 
-    public IEnumerable<Location> EnumerateItems()
+    public IReadOnlyCollection<Location> EnumerateItems()
     {
         var items = new List<Location>(_set.Count);
         foreach (var item in _set)
