@@ -113,7 +113,11 @@ AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 
 ### Lua performance log
 
-This is the time to run the planner sample with Lua 5.2 on my desktop machine.
+This is the time to run the planner sample with Lua 5.2.4 on my desktop machine. System specs are the same as the .NET performance benchmark above.
 
-- Original working implementation (3cf596f5849211a98a37aa87bd5c182fff13e28e): 6.3 seconds
-- Use int-based hash set (6c1537e175b3b45879fe02d4b37ccce7ff349188): 4.5 seconds
+Reproduced using commit `3822074caaff18d11fa56961707d41a7ebca68b3` of [CSharp.lua](https://github.com/yanghuan/CSharp.lua).
+
+- `b984d3c050b8f16135197e457bc461b662ac04e3`: 7.08 seconds (original working implementation)
+- `6c1537e175b3b45879fe02d4b37ccce7ff349188`: 5.20 seconds (int based Location hash set, struct hash set is slow)
+- `8964b81944476f3f76a55186fdadabbf4a357230`: 2.20 seconds (int based Location dictionary, struct dictionary key is slow)
+- `fd55e01fd688e6bee033f96cbca7e24d3570de09`: 0.82 seconds (class instead struct for Location, struct does lots of copies)
