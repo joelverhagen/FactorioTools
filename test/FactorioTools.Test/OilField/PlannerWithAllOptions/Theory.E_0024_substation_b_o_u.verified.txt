@@ -1,19 +1,19 @@
-﻿  FBE* -> FBE* (effects: 35, beacons: 30, pipes: 13)
+﻿S FBE* -> FBE* (effects: 35, beacons: 30, pipes: 13)
   FBE* -> snug (effects: 34, beacons: 29, pipes: 13)
-  FBE* -> optimize -> FBE* (effects: 35, beacons: 30, pipes: 13)
+S FBE* -> optimize -> FBE* (effects: 35, beacons: 30, pipes: 13)
   FBE* -> optimize -> snug (effects: 34, beacons: 29, pipes: 13)
-S CC-DT -> FBE* (effects: 35, beacons: 30, pipes: 12)
-  CC-DT -> snug (effects: 34, beacons: 29, pipes: 12)
-S CC-DT -> optimize -> FBE* (effects: 35, beacons: 30, pipes: 12)
-  CC-DT -> optimize -> snug (effects: 34, beacons: 29, pipes: 12)
-S CC-DT-MST -> FBE* (effects: 35, beacons: 30, pipes: 12)
-  CC-DT-MST -> snug (effects: 34, beacons: 29, pipes: 12)
-S CC-DT-MST -> optimize -> FBE* (effects: 35, beacons: 30, pipes: 12)
-  CC-DT-MST -> optimize -> snug (effects: 34, beacons: 29, pipes: 12)
-S CC-FLUTE -> FBE* (effects: 35, beacons: 30, pipes: 12)
-  CC-FLUTE -> snug (effects: 34, beacons: 29, pipes: 12)
-S CC-FLUTE -> optimize -> FBE* (effects: 35, beacons: 30, pipes: 12)
-  CC-FLUTE -> optimize -> snug (effects: 34, beacons: 29, pipes: 12)
+  CC-DT -> FBE* (effects: 33, beacons: 30, pipes: 14)
+  CC-DT -> snug (effects: 31, beacons: 28, pipes: 14)
+  CC-DT -> optimize -> FBE* (effects: 32, beacons: 29, pipes: 13)
+  CC-DT -> optimize -> snug (effects: 31, beacons: 28, pipes: 13)
+  CC-DT-MST -> FBE* (effects: 33, beacons: 30, pipes: 14)
+  CC-DT-MST -> snug (effects: 31, beacons: 28, pipes: 14)
+  CC-DT-MST -> optimize -> FBE* (effects: 32, beacons: 29, pipes: 13)
+  CC-DT-MST -> optimize -> snug (effects: 31, beacons: 28, pipes: 13)
+  CC-FLUTE -> FBE* (effects: 33, beacons: 30, pipes: 14)
+  CC-FLUTE -> snug (effects: 31, beacons: 28, pipes: 14)
+  CC-FLUTE -> optimize -> FBE* (effects: 32, beacons: 29, pipes: 13)
+  CC-FLUTE -> optimize -> snug (effects: 31, beacons: 28, pipes: 13)
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -41,10 +41,10 @@ S CC-FLUTE -> optimize -> FBE* (effects: 35, beacons: 30, pipes: 12)
 . . . . . . . . . . . . . . . . . . . . . . . . b B b b B b . b B b b B b . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . b b b b b b . b b b b b b . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . v . b b b E e . . . . . b b b . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . o < b B b e e . > + . . b B b . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . ^ . b B b e e . . . . . b B b . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . b b b . . j j j . . b b b . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . j J j . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . b b b . . j j j . . b b b . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . v . . . . . . j J j . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . . . . o < b b b . > j j j . . b b b . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . b B b . . . . . . . b B b . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . b b b . . . . . . . b b b . . . . . . . . 
 . . . . . . . . . . . . . . . . . . . . . . . . b b b b b b . b b b b b b . . . . . . . . 

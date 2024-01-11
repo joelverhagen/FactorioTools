@@ -1,44 +1,44 @@
 ﻿Wins with beacons
 -----------------
+    CC-DT -> optimize -> snug : 112
       FBE -> optimize -> snug : 112
-    CC-DT -> optimize -> snug : 108
 CC-DT-MST -> optimize -> snug : 83
                   FBE -> snug : 79
      FBE* -> optimize -> snug : 75
- CC-FLUTE -> optimize -> snug : 62
+ CC-FLUTE -> optimize -> snug : 66
                  FBE* -> snug : 59
                 CC-DT -> snug : 55
                  FBE* -> FBE* : 40
-             CC-FLUTE -> FBE* : 37
  CC-FLUTE -> optimize -> FBE* : 37
-                  FBE -> FBE* : 37
+      FBE* -> optimize -> FBE : 37
+     FBE* -> optimize -> FBE* : 37
+                  FBE -> FBE* : 36
+      FBE -> optimize -> FBE* : 36
             CC-DT-MST -> snug : 35
              CC-FLUTE -> snug : 35
-                CC-DT -> FBE* : 34
     CC-DT -> optimize -> FBE* : 34
-      FBE* -> optimize -> FBE : 33
-     FBE* -> optimize -> FBE* : 33
-      FBE -> optimize -> FBE* : 32
+             CC-FLUTE -> FBE* : 34
+                CC-DT -> FBE* : 30
      CC-DT -> optimize -> FBE : 29
 CC-DT-MST -> optimize -> FBE* : 29
   CC-FLUTE -> optimize -> FBE : 27
-                 CC-DT -> FBE : 22
+       FBE -> optimize -> FBE : 23
  CC-DT-MST -> optimize -> FBE : 21
-              CC-FLUTE -> FBE : 20
                   FBE* -> FBE : 20
-            CC-DT-MST -> FBE* : 19
-       FBE -> optimize -> FBE : 19
-             CC-DT-MST -> FBE : 17
+                 CC-DT -> FBE : 18
+              CC-FLUTE -> FBE : 16
+            CC-DT-MST -> FBE* : 15
                    FBE -> FBE : 14
+             CC-DT-MST -> FBE : 13
 
 Wins without beacons
 --------------------
+    CC-DT -> optimize : 84
                   FBE : 83
       FBE -> optimize : 83
-    CC-DT -> optimize : 80
 CC-DT-MST -> optimize : 77
      FBE* -> optimize : 63
- CC-FLUTE -> optimize : 56
+ CC-FLUTE -> optimize : 60
                  FBE* : 55
                 CC-DT : 40
             CC-DT-MST : 24
@@ -46,10 +46,10 @@ CC-DT-MST -> optimize : 77
 
 | Electric pole        | Add beacons | Overlap beacons | Effects            | Beacons           | Pipes (UG)         | Pipes (no UG)     | Poles              |
 | -------------------- | ----------- | --------------- | ------------------ | ----------------- | ------------------ | ----------------- | ------------------ |
-| small-electric-pole  | yes         | yes             | 110.39344262295081 | 80.8688524590164  | 46.36065573770492  | 92.26229508196721 | 33.73770491803279  |
-| medium-electric-pole | yes         | yes             | 110.39344262295081 | 80.8688524590164  | 46.36065573770492  | 92.26229508196721 | 26.278688524590162 |
-| substation           | yes         | yes             | 110.39344262295081 | 80.8688524590164  | 46.36065573770492  | 92.26229508196721 | 8.131147540983607  |
-| big-electric-pole    | yes         | yes             | 106.39344262295081 | 78.65573770491804 | 49.68852459016394  | 95.47540983606558 | 35.21311475409836  |
+| small-electric-pole  | yes         | yes             | 110.37704918032787 | 80.8688524590164  | 46.34426229508197  | 92.21311475409836 | 33.75409836065574  |
+| medium-electric-pole | yes         | yes             | 110.37704918032787 | 80.8688524590164  | 46.34426229508197  | 92.21311475409836 | 26.262295081967213 |
+| substation           | yes         | yes             | 110.37704918032787 | 80.8688524590164  | 46.34426229508197  | 92.21311475409836 | 8.131147540983607  |
+| big-electric-pole    | yes         | yes             | 106.39344262295081 | 78.65573770491804 | 49.60655737704918  | 95.34426229508196 | 35.26229508196721  |
 | small-electric-pole  | yes         | no              | 11.80327868852459  | 6.180327868852459 | 44.557377049180324 | 91.01639344262296 | 14.245901639344263 |
 | medium-electric-pole | yes         | no              | 11.80327868852459  | 6.180327868852459 | 44.557377049180324 | 91.01639344262296 | 11.59016393442623  |
 | substation           | yes         | no              | 11.80327868852459  | 6.180327868852459 | 44.557377049180324 | 91.01639344262296 | 4.377049180327869  |

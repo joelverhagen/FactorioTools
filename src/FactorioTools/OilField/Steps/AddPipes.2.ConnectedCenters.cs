@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -405,55 +403,167 @@ public static partial class AddPipes
         return selectedTrunks;
     }
 
+    private record BestConnection(List<Location> Path, TerminalLocation Terminal, TerminalLocation BestTerminal);
+
     private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters)
     {
-        var bestConnection = context
-            .Centers
-            .Select(center =>
+        var centerToGoals = context.GetLocationDictionary<ILocationSet>();
+        BestConnection? bestConnection = null;
+        int bestConnectedCentersCount = default;
+        int? bestOtherConnectedCentersCount = null;
+        double? bestTerminalDistance = null;
+        double? bestOtherTerminalDistance = null;
+
+        for (var i = 0; i < context.Centers.Count; i++)
+        {
+            var center = context.Centers[i];
+            var terminals = context.CenterToTerminals[center];
+
+            for (var j = 0; j < terminals.Count; j++)
             {
-                return context
-                    .CenterToTerminals[center]
-                    .Select(terminal =>
+                var terminal = terminals[j];
+                var connectedCenters = centerToConnectedCenters[center];
+
+                foreach (var otherCenter in connectedCenters.EnumerateItems())
+                {
+                    var otherTerminals = context.CenterToTerminals[otherCenter];
+
+                    if (!centerToGoals.TryGetValue(otherCenter, out var goals))
                     {
-                        var bestTerminal = centerToConnectedCenters[center]
-                            .EnumerateItems()
-                            .Select(otherCenter =>
-                            {
-                                var goals = context.CenterToTerminals[otherCenter].Select(t => t.Terminal).ToReadOnlySet(context, allowEnumerate: true);
-                                var result = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, goals);
-                                if (!result.Success)
-                                {
-                                    throw new NoPathBetweenTerminalsException(terminal.Terminal, goals.EnumerateItems().First());
-                                }
-                                var reachedGoal = result.ReachedGoal;
-                                var closestTerminal = context.CenterToTerminals[otherCenter].Single(t => t.Terminal == reachedGoal);
-                                var path = result.Path;
+                        goals = context.GetLocationSet(allowEnumerate: true);
+                        for (var k = 0; k < otherTerminals.Count; k++)
+                        {
+                            goals.Add(otherTerminals[k].Terminal);
+                        }
 
-                                return new { Terminal = closestTerminal, Path = path };
-                            })
-                            .MinBy(t => t.Path.Count)!;
+                        centerToGoals.Add(otherCenter, goals);
+                    }
 
-                        return new { Terminal = terminal, BestTerminal = bestTerminal };
-                    })
-                    .MinBy(t => t.BestTerminal.Path.Count)!;
-            })
-            .MinBy(t => (
-                t.BestTerminal.Path.Count,
-                -centerToConnectedCenters[t.Terminal.Center].Count,
-                -centerToConnectedCenters[t.BestTerminal.Terminal.Center].Count,
-                t.Terminal.Terminal.GetEuclideanDistanceSquared(context.Grid.Middle),
-                t.BestTerminal.Terminal.Terminal.GetEuclideanDistanceSquared(context.Grid.Middle)
-            ))!;
+                    var result = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, goals);
+                    if (!result.Success)
+                    {
+                        throw new NoPathBetweenTerminalsException(terminal.Terminal, goals.EnumerateItems().First());
+                    }
+
+                    var reachedGoal = result.ReachedGoal;
+                    var closestTerminal = otherTerminals.Single(t => t.Terminal == reachedGoal);
+                    var path = result.Path;
+
+                    if (bestConnection is null)
+                    {
+                        bestConnection = new BestConnection(path, terminal, closestTerminal);
+                        bestConnectedCentersCount = connectedCenters.Count;
+                        bestOtherConnectedCentersCount = null;
+                        bestTerminalDistance = null;
+                        bestOtherTerminalDistance = null;
+                        continue;
+                    }
+
+                    var c = path.Count.CompareTo(bestConnection.Path.Count);
+                    if (c < 0)
+                    {
+                        bestConnection = new BestConnection(path, terminal, closestTerminal);
+                        bestConnectedCentersCount = connectedCenters.Count;
+                        bestOtherConnectedCentersCount = null;
+                        bestTerminalDistance = null;
+                        bestOtherTerminalDistance = null;
+                        continue;
+                    }
+                    else if (c > 0)
+                    {
+                        continue;
+                    }
+
+                    c = connectedCenters.Count.CompareTo(bestConnectedCentersCount);
+                    if (c > 0)
+                    {
+                        bestConnection = new BestConnection(path, terminal, closestTerminal);
+                        bestConnectedCentersCount = connectedCenters.Count;
+                        bestOtherConnectedCentersCount = null;
+                        bestTerminalDistance = null;
+                        bestOtherTerminalDistance = null;
+                        continue;
+                    }
+                    else if (c < 0)
+                    {
+                        continue;
+                    }
+
+                    if (!bestOtherConnectedCentersCount.HasValue)
+                    {
+                        bestOtherConnectedCentersCount = centerToConnectedCenters[bestConnection.BestTerminal.Center].Count;
+                    }
+
+                    var otherConnectedCentersCount = centerToConnectedCenters[otherCenter].Count;
+                    c = otherConnectedCentersCount.CompareTo(bestOtherConnectedCentersCount.Value);
+                    if (c > 0)
+                    {
+                        bestConnection = new BestConnection(path, terminal, closestTerminal);
+                        bestConnectedCentersCount = connectedCenters.Count;
+                        bestOtherConnectedCentersCount = otherConnectedCentersCount;
+                        bestTerminalDistance = null;
+                        bestOtherTerminalDistance = null;
+                        continue;
+                    }
+                    else if (c < 0)
+                    {
+                        continue;
+                    }
+
+                    if (!bestTerminalDistance.HasValue)
+                    {
+                        bestTerminalDistance = bestConnection.Terminal.Terminal.GetEuclideanDistanceSquared(context.Grid.Middle);
+                    }
+
+                    var terminalDistance = terminal.Terminal.GetEuclideanDistance(context.Grid.Middle);
+                    c = terminalDistance.CompareTo(bestTerminalDistance.Value);
+                    if (c < 0)
+                    {
+                        bestConnection = new BestConnection(path, terminal, closestTerminal);
+                        bestConnectedCentersCount = connectedCenters.Count;
+                        bestOtherConnectedCentersCount = otherConnectedCentersCount;
+                        bestTerminalDistance = terminalDistance;
+                        bestOtherTerminalDistance = null;
+                        continue;
+                    }
+                    else if (c > 0)
+                    {
+                        continue;
+                    }
+                    
+                    if (!bestOtherTerminalDistance.HasValue)
+                    {
+                        bestOtherTerminalDistance = bestConnection.BestTerminal.Terminal.GetEuclideanDistanceSquared(context.Grid.Middle);
+                    }
+
+                    var otherTerminalDistance = closestTerminal.Terminal.GetEuclideanDistance(context.Grid.Middle);
+                    c = otherTerminalDistance.CompareTo(bestOtherTerminalDistance.Value);
+                    if (c < 0)
+                    {
+                        bestConnection = new BestConnection(path, terminal, closestTerminal);
+                        bestConnectedCentersCount = connectedCenters.Count;
+                        bestOtherConnectedCentersCount = otherConnectedCentersCount;
+                        bestTerminalDistance = terminalDistance;
+                        bestOtherTerminalDistance = otherTerminalDistance;
+                    }
+                }
+            }
+        }
+
+        if (bestConnection is null)
+        {
+            throw new FactorioToolsException("A new connection should have been found.");
+        }
 
         EliminateOtherTerminals(context, bestConnection.Terminal);
-        EliminateOtherTerminals(context, bestConnection.BestTerminal.Terminal);
+        EliminateOtherTerminals(context, bestConnection.BestTerminal);
 
         var group = new PumpjackGroup(
             context,
             centerToConnectedCenters,
             allIncludedCenters,
-            new[] { bestConnection.Terminal.Center, bestConnection.BestTerminal.Terminal.Center },
-            bestConnection.BestTerminal.Path);
+            new[] { bestConnection.Terminal.Center, bestConnection.BestTerminal.Center },
+            bestConnection.Path);
 
         return group;
     }
