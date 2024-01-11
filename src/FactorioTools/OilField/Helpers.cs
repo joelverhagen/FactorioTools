@@ -1051,6 +1051,45 @@ public static class Helpers
         return turns;
     }
 
+    public static List<Location>? MakeStraightLineOnEmpty(SquareGrid grid, Location a, Location b)
+    {
+        if (a.X == b.X)
+        {
+            (var min, var max) = a.Y < b.Y ? (a.Y, b.Y) : (b.Y, a.Y);
+            var line = new List<Location>(max - min + 1);
+            for (var y = min; y <= max; y++)
+            {
+                if (!grid.IsEmpty(new Location(a.X, y)))
+                {
+                    return null;
+                }
+
+                line.Add(new Location(a.X, y));
+            }
+
+            return line;
+        }
+
+        if (a.Y == b.Y)
+        {
+            (var min, var max) = a.X < b.X ? (a.X, b.X) : (b.X, a.X);
+            var line = new List<Location>(max - min + 1);
+            for (var x = min; x <= max; x++)
+            {
+                if (!grid.IsEmpty(new Location(x, a.Y)))
+                {
+                    return null;
+                }
+
+                line.Add(new Location(x, a.Y));
+            }
+
+            return line;
+        }
+
+        throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
+    }
+
     public static List<Location> MakeStraightLine(Location a, Location b)
     {
         if (a.X == b.X)

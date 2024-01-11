@@ -38,7 +38,7 @@ public class LocationBitSet : ILocationSet
         return _set[GetIndex(location)];
     }
 
-    public void CopyTo(Location[] array)
+    public void CopyTo(Span<Location> array)
     {
         throw new NotSupportedException();
     }

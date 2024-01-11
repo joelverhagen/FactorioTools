@@ -51,6 +51,11 @@ public static class AllowedLinq
         return Enumerable.First(source, predicate);
     }
 
+    public static TSource? FirstOrDefault<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate)
+    {
+        return Enumerable.FirstOrDefault(source, predicate);
+    }
+
     public static double Average<TSource>(this IEnumerable<TSource> source, Func<TSource, int> selector)
     {
         return Enumerable.Average(source, selector);
@@ -59,5 +64,10 @@ public static class AllowedLinq
     public static bool SequenceEqual<TSource>(this IEnumerable<TSource> first, IEnumerable<TSource> second)
     {
         return Enumerable.SequenceEqual(first, second);
+    }
+
+    public static int Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, int> selector)
+    {
+        return Enumerable.Sum(source, selector);
     }
 }

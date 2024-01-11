@@ -107,7 +107,7 @@ public class LocationIntSet : ILocationSet
         _set.Clear();
     }
 
-    public void CopyTo(Location[] array)
+    public void CopyTo(Span<Location> array)
     {
         var index = 0;
         foreach (var location in EnumerateItems())

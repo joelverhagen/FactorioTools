@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.WebSockets;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -41,9 +42,14 @@ public class LocationHashSet : ILocationSet
         return _set.Contains(location);
     }
 
-    public void CopyTo(Location[] array)
+    public void CopyTo(Span<Location> array)
     {
-        _set.CopyTo(array);
+        var index = 0;
+        foreach (var item in _set)
+        {
+            array[index] = item;
+            index++;
+        }
     }
 
     public IReadOnlyCollection<Location> EnumerateItems()

@@ -54,7 +54,7 @@ public class SingleLocationSet : ILocationSet
         return _hasItem && location.X == _x && location.Y == _y;
     }
 
-    public void CopyTo(Location[] array)
+    public void CopyTo(Span<Location> array)
     {
         if (!_hasItem)
         {

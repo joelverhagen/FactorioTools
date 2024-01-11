@@ -31,73 +31,96 @@ public static partial class AddPipes
         return (pipes, finalStrategy);
     }
 
-    private static (List<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy) DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
+    private static (IReadOnlyList<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy)
+        DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         // GENERATE LINES
-        var lines = PointsToLines(context.Centers, sort: false)
-            .Select(line =>
-            {
-                var connections = context.CenterToTerminals[line.A]
-                    .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
-                    .Where(p => p.A.Terminal.X == p.B.Terminal.X || p.A.Terminal.Y == p.B.Terminal.Y)
-                    .Select(p => new TerminalPair(p.A, p.B, MakeStraightLine(p.A.Terminal, p.B.Terminal)))
-                    .Where(p => p.Line.All(l => context.Grid.IsEmpty(l)))
-                    .ToList();
+        var lines = new List<PumpjackConnection>();
+        var allLines = PointsToLines(context.Centers, sort: false);
+        for (var i = 0; i < allLines.Count; i++)
+        {
+            var line = allLines[i];
+            var connections = new List<TerminalPair>();
 
-                return new PumpjackConnection(new Endpoints(line.A, line.B), connections);
-            })
-            .Where(x => x.Connections.Count > 0)
-            .ToList();
+            foreach (var tA in context.CenterToTerminals[line.A])
+            {
+                foreach (var tB in context.CenterToTerminals[line.B])
+                {
+                    if (tA.Terminal.X != tB.Terminal.X && tA.Terminal.Y != tB.Terminal.Y)
+                    {
+                        continue;
+                    }
+
+                    var straightLine = MakeStraightLineOnEmpty(context.Grid, tA.Terminal, tB.Terminal);
+                    if (straightLine is null)
+                    {
+                        continue;
+                    }
+
+                    connections.Add(new TerminalPair(tA, tB, straightLine, middle));
+                }
+            }
+
+            if (connections.Count == 0)
+            {
+                continue;
+            }
+
+            lines.Add(new PumpjackConnection(new Endpoints(line.A, line.B), connections, middle));
+        }
 
         // GENERATE GROUPS
         var groups = new List<Group>();
         var addedPumpjacks = new List<TerminalLocation>();
+        var leftoverPumpjacks = context.Centers.ToSet(context, allowEnumerate: true);
         while (lines.Count > 0)
         {
-            var line = lines
-                .MinBy(ent => Tuple.Create(
-                    !LineContainsAnAddedPumpjack(addedPumpjacks, ent),
-                    -(ent.Endpoints.A.GetManhattanDistance(middle) + ent.Endpoints.B.GetManhattanDistance(middle)),
-                    ent.Connections.Count,
-                    ent.AverageDistance
-                ))!;
-            lines.Remove(line);
+            var line = GetNextLine(lines, addedPumpjacks);
 
             var addedA = addedPumpjacks.FirstOrDefault(x => x.Center == line.Endpoints.A);
             var addedB = addedPumpjacks.FirstOrDefault(x => x.Center == line.Endpoints.B);
 
-            var sortedConnections = line.Connections
-                .OrderBy(x => x.TerminalA.Terminal.GetManhattanDistance(true ? middle : context.Grid.Middle))
-                .ThenBy(x => x.Line.Count)
-                .ToList();
+            line.Connections.Sort((a, b) =>
+            {
+                var c = a.CenterDistance.CompareTo(b.CenterDistance);
+                if (c != 0)
+                {
+                    return c;
+                }
 
-            foreach (var connection in sortedConnections)
+                return a.Line.Count.CompareTo(b.Line.Count);
+            });
+
+            foreach (var connection in line.Connections)
             {
                 if (addedA is null && addedB is null)
                 {
-                    groups.Add(new Group(
-                        new List<TerminalLocation> { connection.TerminalA, connection.TerminalB },
-                        new List<List<Location>> { connection.Line }));
+                    var group = new Group(context, connection, new List<List<Location>> { connection.Line });
+                    groups.Add(group);
                     addedPumpjacks.Add(connection.TerminalA);
                     addedPumpjacks.Add(connection.TerminalB);
+                    leftoverPumpjacks.Remove(connection.TerminalA.Center);
+                    leftoverPumpjacks.Remove(connection.TerminalB.Center);
                     break;
                 }
 
                 if (addedA is null && addedB is not null && addedB.Direction == connection.TerminalB.Direction)
                 {
-                    var group = groups.First(g => g.Entities.Contains(addedB));
+                    var group = groups.First(g => g.HasTerminal(addedB));
                     group.Add(connection.TerminalA);
                     group.Paths.Add(connection.Line);
                     addedPumpjacks.Add(connection.TerminalA);
+                    leftoverPumpjacks.Remove(connection.TerminalA.Center);
                     break;
                 }
 
                 if (addedA is not null && addedB is null && addedA.Direction == connection.TerminalA.Direction)
                 {
-                    var group = groups.First(g => g.Entities.Contains(addedA));
+                    var group = groups.First(g => g.HasTerminal(addedA));
                     group.Add(connection.TerminalB);
                     group.Paths.Add(connection.Line);
                     addedPumpjacks.Add(connection.TerminalB);
+                    leftoverPumpjacks.Remove(connection.TerminalB.Center);
                     break;
                 }
             }
@@ -107,24 +130,54 @@ public static partial class AddPipes
         // this will only happen when only a few pumpjacks need to be connected
         if (groups.Count == 0)
         {
-            var connection = PointsToLines(context.Centers, sort: false)
-                .Select(line =>
+            TerminalPair? connection = null;
+            for (var i = 0; i < allLines.Count; i++)
+            {
+                var line = allLines[i];
+                var terminalsA = context.CenterToTerminals[line.A];
+                for (var j = 0; j < terminalsA.Count; j++)
                 {
-                    return context.CenterToTerminals[line.A]
-                        .SelectMany(t => context.CenterToTerminals[line.B].Select(t2 => (A: t, B: t2)))
-                        .Select(p =>
-                        {
-                            var goals = context.GetSingleLocationSet(p.B.Terminal);
-                            var result = AStar.GetShortestPath(context, context.Grid, p.A.Terminal, goals);
-                            return new TerminalPair(p.A, p.B, result.Path);
-                        })
-                        .MinBy(x => x.Line.Count)!;
-                })
-                .MinBy(x => x.Line.Count)!;
+                    var tA = terminalsA[j];
+                    var terminalsB = context.CenterToTerminals[line.B];
+                    for (var k = 0; k < terminalsB.Count; k++)
+                    {
+                        var tB = terminalsB[k];
+                        var goals = context.GetSingleLocationSet(tB.Terminal);
 
-            groups.Add(new Group(
-                new List<TerminalLocation> { connection.TerminalA, connection.TerminalB },
-                new List<List<Location>> { connection.Line }));
+                        if (connection is not null)
+                        {
+                            // don't perform a shortest path search if the Manhattan distance (minimum possible) is longer than the best.
+                            var minDistance = tA.Terminal.GetManhattanDistance(tB.Terminal);
+                            if (minDistance >= connection.Line.Count)
+                            {
+                                continue;
+                            }
+                        }
+
+                        var result = AStar.GetShortestPath(context, context.Grid, tA.Terminal, goals);
+
+                        if (connection is null)
+                        {
+                            connection = new TerminalPair(tA, tB, result.Path, middle);
+                            continue;
+                        }
+
+                        var c = result.Path.Count.CompareTo(connection.Line.Count);
+                        if (c < 0)
+                        {
+                            connection = new TerminalPair(tA, tB, result.Path, middle);
+                        }
+                    }
+                }
+            }
+
+            if (connection is null)
+            {
+                throw new FactorioToolsException("A connection between terminals should have been found.");
+            }
+
+            var group = new Group(context, connection, new List<List<Location>> { connection.Line });
+            groups.Add(group);
         }
 
         // CONNECT GROUPS
@@ -156,11 +209,20 @@ public static partial class AddPipes
             var locationToGroup = groups.ToDictionary(context, x => x.Location, x => x);
             locationToGroup.Add(group.Location, group);
 
-            var par = PointsToLines(locationToGroup.Keys)
-                .Where(l => l.A == group.Location || l.B == group.Location)
-                .Select(l => l.A == group.Location ? l.B : l.A)
-                .Select(l => locationToGroup[l])
-                .ToList();
+            var groupLines = PointsToLines(locationToGroup.Keys);
+            var par = new List<Group>(groupLines.Count);
+            for (var i = 0; i < groupLines.Count; i++)
+            {
+                var line = groupLines[i];
+                if (line.A == group.Location)
+                {
+                    par.Add(locationToGroup[line.B]);
+                }
+                else if (line.B == group.Location)
+                {
+                    par.Add(locationToGroup[line.A]);
+                }
+            }
 
             var connection = GetPathBetweenGroups(
                 context,
@@ -171,7 +233,7 @@ public static partial class AddPipes
 
             if (connection is not null)
             {
-                connection.FirstGroup.AddRange(group.Entities);
+                connection.FirstGroup.AddRange(group);
                 connection.FirstGroup.Paths.AddRange(group.Paths);
                 connection.FirstGroup.Paths.Add(connection.Lines[0]);
             }
@@ -200,17 +262,41 @@ public static partial class AddPipes
             throw new FactorioToolsException("There should be no more alone groups at this point.");
         }
 
-        var leftoverPumpjacks = context
-            .Centers
-            .Except(addedPumpjacks.Select(x => x.Center), context)
-            .OrderBy(l => l.GetManhattanDistance(true ? middle : context.Grid.Middle));
 
-        foreach (var center in leftoverPumpjacks)
+#if USE_STACKALLOC && LOCATION_AS_STRUCT
+        var sortedLeftoverPumpjacks =
+            leftoverPumpjacks.Count < 256
+            ? stackalloc Location[leftoverPumpjacks.Count]
+            : new Location[leftoverPumpjacks.Count];
+        leftoverPumpjacks.CopyTo(sortedLeftoverPumpjacks);
+        MemoryExtensions.Sort(sortedLeftoverPumpjacks, (a, b) =>
         {
-            var terminalGroups = context
-                .CenterToTerminals[center]
-                .Select(t => new Group(new List<TerminalLocation> { t }, new List<List<Location>> { new List<Location> { t.Terminal } }))
-                .ToList();
+            var aC = a.GetManhattanDistance(middle);
+            var bC = b.GetManhattanDistance(middle);
+            return aC.CompareTo(bC);
+        });
+#else
+        var sortedLeftoverPumpjacks = new Location[leftoverPumpjacks.Count];
+        leftoverPumpjacks.CopyTo(sortedLeftoverPumpjacks);
+        Array.Sort(sortedLeftoverPumpjacks, (a, b) =>
+        {
+            var aC = a.GetManhattanDistance(middle);
+            var bC = b.GetManhattanDistance(middle);
+            return aC.CompareTo(bC);
+        });
+#endif
+
+        for (var i = 0; i < sortedLeftoverPumpjacks.Length; i++)
+        {
+            var center = sortedLeftoverPumpjacks[i];
+            var centerTerminals = context.CenterToTerminals[center];
+            var terminalGroups = new List<Group>(centerTerminals.Count);
+            for (var j = 0; j < centerTerminals.Count; j++)
+            {
+                var terminal = centerTerminals[j];
+                var group = new Group(context, terminal, new List<List<Location>> { new List<Location> { terminal.Terminal } });
+                terminalGroups.Add(group);
+            }
 
             var maxTurns = 2;
             while (true)
@@ -248,10 +334,103 @@ public static partial class AddPipes
 
         }
 
-        var terminals = finalGroup.Entities.ToList();
-        var pipes = finalGroup.Paths.SelectMany(l => l).ToReadOnlySet(context, allowEnumerate: true);
+        var terminals = finalGroup.Entities;
+        var pipes = context.GetLocationSet(allowEnumerate: true);
+        for (var i = 0; i < finalGroup.Paths.Count; i++)
+        {
+            var path = finalGroup.Paths[i];
+            for (var j = 0; j < path.Count; j++)
+            {
+                pipes.Add(path[j]);
+            }
+        }
 
         return (terminals, pipes, strategy);
+    }
+
+    private static PumpjackConnection GetNextLine(List<PumpjackConnection> lines, List<TerminalLocation> addedPumpjacks)
+    {
+        PumpjackConnection? next = null;
+        int nextIndex = 0;
+        bool? nextContainsAddedPumpjack = default;
+        double? nextAverageDistance = default;
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            if (next is null)
+            {
+                next = line;          
+                continue;
+            }
+
+            if (!nextContainsAddedPumpjack.HasValue)
+            {
+                nextContainsAddedPumpjack = LineContainsAnAddedPumpjack(addedPumpjacks, next);
+            }
+
+            var containsAddedPumpjack = LineContainsAnAddedPumpjack(addedPumpjacks, line);
+            var c = containsAddedPumpjack.CompareTo(nextContainsAddedPumpjack.Value);
+            if (c > 0)
+            {
+                next = line;
+                nextIndex = i;
+                nextContainsAddedPumpjack = containsAddedPumpjack;
+                nextAverageDistance = default;
+                continue;
+            }
+            else if (c < 0)
+            {
+                continue;
+            }
+
+            c = line.EndpointDistance.CompareTo(next.EndpointDistance);
+            if (c > 0)
+            {
+                next = line;
+                nextIndex = i;
+                nextContainsAddedPumpjack = containsAddedPumpjack;
+                nextAverageDistance = default;
+                continue;
+            }
+            else if (c < 0)
+            {
+                continue;
+            }
+
+            c = line.Connections.Count.CompareTo(next.Connections.Count);
+            if (c < 0)
+            {
+                next = line;
+                nextIndex = i;
+                nextContainsAddedPumpjack = containsAddedPumpjack;
+                nextAverageDistance = null;
+                continue;
+            }
+            else if (c > 0)
+            {
+                continue;
+            }
+
+            if (!nextAverageDistance.HasValue)
+            {
+                nextAverageDistance = next.GetAverageDistance();
+            }
+
+            var averageDistance = line.GetAverageDistance();
+            c = averageDistance.CompareTo(nextAverageDistance);
+            if (c < 0)
+            {
+                next = line;
+                nextIndex = i;
+                nextContainsAddedPumpjack = containsAddedPumpjack;
+                nextAverageDistance = averageDistance;
+            }
+        }
+
+        lines.RemoveAt(nextIndex);
+
+        return next!;
     }
 
 #if ENABLE_VISUALIZER
@@ -265,17 +444,53 @@ public static partial class AddPipes
 
     private static bool LineContainsAnAddedPumpjack(List<TerminalLocation> addedPumpjacks, PumpjackConnection ent)
     {
-        return addedPumpjacks.Any(e =>
-            (ent.Endpoints.A == e.Center || ent.Endpoints.B == e.Center)
-            && ent.Connections.Any(t => t.TerminalA.Direction == e.Direction || t.TerminalB.Direction == e.Direction));
+        for (var i = 0; i < addedPumpjacks.Count; i++)
+        {
+            var terminal = addedPumpjacks[i];
+            if (ent.Endpoints.A != terminal.Center && ent.Endpoints.B != terminal.Center)
+            {
+                continue;
+            }
+
+            for (var j = 0; j < ent.Connections.Count; j++)
+            {
+                var pair = ent.Connections[j];
+                if (pair.TerminalA.Direction == terminal.Direction || pair.TerminalB.Direction == terminal.Direction)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static TwoConnectedGroups? GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns, PipeStrategy strategy)
     {
-        return groups
-            .Select(g => ConnectTwoGroups(context, g, group, maxTurns, strategy))
-            .Where(g => g.Lines.Count > 0)
-            .MinBy(g => g.MinDistance);
+        TwoConnectedGroups? best = null;
+        for (var i = 0; i < groups.Count; i++)
+        {
+            var g = groups[i];
+            var connection = ConnectTwoGroups(context, g, group, maxTurns, strategy);
+            if (connection.Lines.Count == 0)
+            {
+                continue;
+            }
+
+            if (best is null)
+            {
+                best = connection;
+                continue;
+            }
+
+            var c = connection.MinDistance.CompareTo(best.MinDistance);
+            if (c < 0)
+            {
+                best = connection;
+            }
+        }
+
+        return best;
     }
 
     private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns, PipeStrategy strategy)
@@ -285,8 +500,9 @@ public static partial class AddPipes
 
         var lines = aLocations
             .SelectMany(al => bLocations.Where(bl => al.X == bl.X || al.Y == bl.Y).Select(bl => KeyValuePair.Create(al, bl)))
-            .Select(p => new PathAndTurns(new Endpoints(p.Key, p.Value), MakeStraightLine(p.Key, p.Value), turns: 0))
-            .Where(l => l.Path.All(x => context.Grid.IsEmpty(x)))
+            .Select(p => MakeStraightLineOnEmpty(context.Grid, p.Key, p.Value))
+            .Where(p => p is not null)
+            .Select(p => new PathAndTurns(new Endpoints(p![0], p[p.Count - 1]), p, turns: 0))
             .ToList();
 
         List<Location> bLocationsOptimized;
@@ -381,14 +597,28 @@ public static partial class AddPipes
 
     private class Group
     {
+        private readonly ILocationSet _terminals;
         private readonly List<TerminalLocation> _entities;
         private double _sumX = 0;
         private double _sumY = 0;
 
-        public Group(List<TerminalLocation> entities, List<List<Location>> paths)
+        public Group(Context context, TerminalLocation terminal, List<List<Location>> paths) : this(context, paths)
         {
-            _entities = entities;
-            UpdateLocation(0);
+            Add(terminal);
+            UpdateLocation();
+        }
+
+        public Group(Context context, TerminalPair pair, List<List<Location>> paths) : this(context, paths)
+        {
+            Add(pair.TerminalA);
+            Add(pair.TerminalB);
+            UpdateLocation();
+        }
+
+        private Group(Context context, List<List<Location>> paths) 
+        {
+            _terminals = context.GetLocationSet();
+            _entities = new List<TerminalLocation>();
             Paths = paths;
         }
 
@@ -396,27 +626,35 @@ public static partial class AddPipes
         public List<List<Location>> Paths { get; }
         public Location Location { get; private set; } = Location.Invalid;
 
+        public bool HasTerminal(TerminalLocation location)
+        {
+            return _terminals.Contains(location.Terminal);
+        }
+
         public void Add(TerminalLocation entity)
         {
             _entities.Add(entity);
-            UpdateLocation(_entities.Count - 1);
+            _terminals.Add(entity.Terminal);
+            _sumX += entity.Center.X;
+            _sumY += entity.Center.Y;
+            UpdateLocation();
         }
 
-        public void AddRange(IEnumerable<TerminalLocation> entities)
+        public void AddRange(Group group)
         {
-            var countBefore = _entities.Count;
-            _entities.AddRange(entities);
-            UpdateLocation(countBefore);
-        }
-
-        private void UpdateLocation(int countBefore)
-        {
-            for (var i = countBefore; i < _entities.Count; i++)
+            _entities.AddRange(group.Entities);
+            _terminals.UnionWith(group._terminals);
+            for (var i = 0; i < group.Entities.Count; i++)
             {
-                _sumX += _entities[i].Center.X;
-                _sumY += _entities[i].Center.Y;
+                var entity = group.Entities[i];
+                _sumX += entity.Center.X;
+                _sumY += entity.Center.Y;
             }
+            UpdateLocation();
+        }
 
+        private void UpdateLocation()
+        {
             Location = new Location(
                 (int)Math.Round(_sumX / _entities.Count, 0),
                 (int)Math.Round(_sumY / _entities.Count, 0));
@@ -425,30 +663,37 @@ public static partial class AddPipes
 
     private class PumpjackConnection
     {
-        public PumpjackConnection(Endpoints endpoints, List<TerminalPair> connections)
+        public PumpjackConnection(Endpoints endpoints, List<TerminalPair> connections, Location middle)
         {
             Endpoints = endpoints;
             Connections = connections;
+            EndpointDistance = endpoints.A.GetManhattanDistance(middle) + endpoints.B.GetManhattanDistance(middle);
         }
 
         public Endpoints Endpoints { get; }
         public List<TerminalPair> Connections { get; }
+        public int EndpointDistance { get; }
 
-        public double AverageDistance => Connections.Count > 0 ? Connections.Average(x => x.Line.Count - 1) : 0;
+        public double GetAverageDistance()
+        {
+            return Connections.Count > 0 ? Connections.Average(x => x.Line.Count - 1) : 0;
+        }
     }
 
     private class TerminalPair
     {
-        public TerminalPair(TerminalLocation terminalA, TerminalLocation terminalB, List<Location> line)
+        public TerminalPair(TerminalLocation terminalA, TerminalLocation terminalB, List<Location> line, Location middle)
         {
             TerminalA = terminalA;
             TerminalB = terminalB;
             Line = line;
+            CenterDistance = terminalA.Terminal.GetManhattanDistance(middle);
         }
 
         public TerminalLocation TerminalA { get; }
         public TerminalLocation TerminalB { get; }
         public List<Location> Line { get; }
+        public int CenterDistance { get; }
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()

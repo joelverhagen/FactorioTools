@@ -23,7 +23,7 @@ public class EmptyLocationSet : ILocationSet
         return false;
     }
 
-    public void CopyTo(Location[] array)
+    public void CopyTo(Span<Location> array)
     {
     }
 
