@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -495,76 +494,157 @@ public static partial class AddPipes
 
     private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns, PipeStrategy strategy)
     {
-        var aLocations = a.Paths.SelectMany(x => x).ToList();
-        var bLocations = b.Paths.SelectMany(x => x).ToList();
-
-        var lines = aLocations
-            .SelectMany(al => bLocations.Where(bl => al.X == bl.X || al.Y == bl.Y).Select(bl => KeyValuePair.Create(al, bl)))
-            .Select(p => MakeStraightLineOnEmpty(context.Grid, p.Key, p.Value))
-            .Where(p => p is not null)
-            .Select(p => new PathAndTurns(new Endpoints(p![0], p[p.Count - 1]), p, turns: 0))
-            .ToList();
-
-        List<Location> bLocationsOptimized;
-        if (aLocations.Count == 1)
+        var aLocations = new List<Location>();
+        for (var i = 0; i < a.Paths.Count; i++)
         {
-            bLocationsOptimized = bLocations.OrderBy(b => aLocations[0].GetManhattanDistance(b)).Take(20).ToList();
-        }
-        else
-        {
-            bLocationsOptimized = bLocations;
+            aLocations.AddRange(a.Paths[i]);
         }
 
-        var aPlusB = context.GetLocationSet(aLocations.Count + bLocationsOptimized.Count, allowEnumerate: true);
+        var bLocations = new List<Location>();
+        for (var i = 0; i < b.Paths.Count; i++)
+        {
+            bLocations.AddRange(b.Paths[i]);
+        }
+
+        var lineInfo = new List<PathAndTurns>();
         for (var i = 0; i < aLocations.Count; i++)
         {
-            aPlusB.Add(aLocations[i]);
-        }
-
-        for (var i = 0; i < bLocationsOptimized.Count; i++)
-        {
-            aPlusB.Add(bLocationsOptimized[i]);
-        }
-
-        lines.AddRange(PointsToLines(aPlusB.EnumerateItems())
-            .Where(p => !((aLocations.Contains(p.A) && aLocations.Contains(p.B)) || (bLocations.Contains(p.A) && bLocations.Contains(p.B))))
-            .OrderBy(p => p.A.GetManhattanDistance(p.B))
-            .Take(5)
-            .Select(l =>
+            var al = aLocations[i];
+            for (var j = 0; j < bLocations.Count; j++)
             {
-                List<Location>? path;
-                if (strategy == PipeStrategy.FbeOriginal)
+                var bl = bLocations[j];
+                if (al.X != bl.X && al.Y != bl.Y)
                 {
-                    path = BreadthFirstFinder.GetShortestPath(context, l.B, l.A);
-                    if (path is null)
-                    {
-                        // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                        throw new NoPathBetweenTerminalsException(l.A, l.B);
-                    }
-                }
-                else
-                {
-                    var goals = context.GetSingleLocationSet(l.B);
-                    var result = AStar.GetShortestPath(context, context.Grid, l.A, goals);
-                    if (!result.Success)
-                    {
-                        // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                        throw new NoPathBetweenTerminalsException(l.A, l.B);
-                    }
-
-                    path = result.Path;
+                    continue;
                 }
 
-                var turns = CountTurns(path);
-                return new PathAndTurns(l, path, turns);
-            })
-            .Where(l => l.Turns > 0 && l.Turns <= maxTurns)
-            .ToList());
+                var line = MakeStraightLineOnEmpty(context.Grid, al, bl);
+                if (line is null)
+                {
+                    continue;
+                }
 
-        return new TwoConnectedGroups(
-            lines.OrderBy(x => x.Path.Count).Select(x => x.Path).ToList(),
-            lines.Count > 0 ? lines.Min(x => x.Path.Count) : 0,
-            a);
+                lineInfo.Add(new PathAndTurns(new Endpoints(line[0], line[line.Count - 1]), line, turns: 0, lineInfo.Count));
+            }
+        }
+
+        if (aLocations.Count == 1)
+        {
+            var locationToIndex = context.GetLocationDictionary<int>(bLocations.Count);
+            for (var i = 0; i < bLocations.Count; i++)
+            {
+                locationToIndex.TryAdd(bLocations[i], i);
+            }
+
+            bLocations.Sort((a, b) =>
+            {
+                var aC = aLocations[0].GetManhattanDistance(a);
+                var bC = aLocations[0].GetManhattanDistance(b);
+                var c = aC.CompareTo(bC);
+                if (c != 0)
+                {
+                    return c;
+                }
+
+                return locationToIndex[a].CompareTo(locationToIndex[b]);
+            });
+
+            if (bLocations.Count > 20)
+            {
+                bLocations.RemoveRange(20, bLocations.Count - 20);
+            }
+        }
+
+        var aPlusB = context.GetLocationSet(aLocations.Count + bLocations.Count, allowEnumerate: true);
+        aPlusB.UnionWith(aLocations);
+        aPlusB.UnionWith(bLocations);
+
+        var allEndpoints = PointsToLines(aPlusB.EnumerateItems());
+        var matches = new List<Tuple<Endpoints, int, int>>(allEndpoints.Count);
+        for (var i = 0; i < allEndpoints.Count; i++)
+        {
+            var pair = allEndpoints[i];
+            if ((aLocations.Contains(pair.A) && aLocations.Contains(pair.B))
+                || (bLocations.Contains(pair.A) && bLocations.Contains(pair.B)))
+            {
+                continue;
+            }
+
+            matches.Add(Tuple.Create(pair, pair.A.GetManhattanDistance(pair.B), matches.Count));
+        }
+
+        matches.Sort((a, b) =>
+        {
+            var c = a.Item2.CompareTo(b.Item2);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.Item3.CompareTo(b.Item3);
+        });
+
+        var takeLines = Math.Min(matches.Count, 5);
+        for (var i = 0; i < takeLines; i++)
+        {
+            var l = matches[i].Item1;
+
+            List<Location>? path;
+            if (strategy == PipeStrategy.FbeOriginal)
+            {
+                path = BreadthFirstFinder.GetShortestPath(context, l.B, l.A);
+                if (path is null)
+                {
+                    // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                    throw new NoPathBetweenTerminalsException(l.A, l.B);
+                }
+            }
+            else
+            {
+                var goals = context.GetSingleLocationSet(l.B);
+                var result = AStar.GetShortestPath(context, context.Grid, l.A, goals);
+                if (!result.Success)
+                {
+                    // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
+                    throw new NoPathBetweenTerminalsException(l.A, l.B);
+                }
+
+                path = result.Path;
+            }
+
+            var turns = CountTurns(path);
+            if (turns == 0 || turns > maxTurns)
+            {
+                continue;
+            }
+
+            lineInfo.Add(new PathAndTurns(l, path, turns, lineInfo.Count));
+        }
+
+        lineInfo.Sort((a, b) =>
+        {
+            var c = a.Path.Count.CompareTo(b.Path.Count);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.OriginalIndex.CompareTo(b.OriginalIndex);
+        });
+
+        var lines = new List<List<Location>>(lineInfo.Count);
+        var minCount = lineInfo.Count == 0 ? 0 : int.MaxValue;
+        for (var i = 0; i < lineInfo.Count; i++)
+        {
+            var path = lineInfo[i].Path;
+            lines.Add(path);
+            if (path.Count < minCount)
+            {
+                minCount = path.Count;
+            }
+        }
+
+        return new TwoConnectedGroups(lines, minCount, a);
     }
 
     private class TwoConnectedGroups
@@ -583,16 +663,18 @@ public static partial class AddPipes
 
     private class PathAndTurns
     {
-        public PathAndTurns(Endpoints endpoints, List<Location> path, int turns)
+        public PathAndTurns(Endpoints endpoints, List<Location> path, int turns, int originalIndex)
         {
             Endpoints = endpoints;
             Path = path;
             Turns = turns;
+            OriginalIndex = originalIndex;
         }
 
         public Endpoints Endpoints { get; }
         public List<Location> Path { get; }
         public int Turns { get; }
+        public int OriginalIndex { get; }
     }
 
     private class Group
