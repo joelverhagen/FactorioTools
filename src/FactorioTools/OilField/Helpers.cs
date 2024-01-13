@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using DelaunatorSharp;
 using Knapcode.FactorioTools.Data;
 
@@ -154,12 +153,17 @@ public static class Helpers
         var candidateToInfo = context.GetLocationDictionary<TInfo>();
         var coveredEntities = new CountedBitArray(recipients.Count);
 
-        var providers = context
-            .Grid
-            .EntityToLocation
-            .Select(p => (Location: p.Value, Entity: p.Key as TProvider))
-            .Where(p => p.Entity is not null)
-            .ToDictionary(context, p => p.Location, p => p.Entity!);
+        var providers = context.GetLocationDictionary<TProvider>();
+        foreach (var (entity, location) in context.Grid.EntityToLocation)
+        {
+            var provider = entity as TProvider;
+            if (provider is null)
+            {
+                continue;
+            }
+
+            providers.Add(location, provider);
+        }
         var unusedProviders = providers.Keys.ToReadOnlySet(context, allowEnumerate: removeUnused);
 
         for (int i = 0; i < recipients.Count; i++)
@@ -1162,14 +1166,21 @@ public static class Helpers
         // Check that nodes are not collinear
         if (AreLocationsCollinear(filteredNodes))
         {
-            return Enumerable
-                .Range(1, filteredNodes.Count - 1)
-                .Select(i => new Endpoints(filteredNodes[i - 1], filteredNodes[i]))
-                .ToList();
+            var collinearLines = new List<Endpoints>(filteredNodes.Count - 1);
+            for (var i = 1; i < filteredNodes.Count; i++)
+            {
+                collinearLines.Add(new Endpoints(filteredNodes[i - 1], filteredNodes[i]));
+            }
+
+            return collinearLines;
         }
 
-
-        var points = filteredNodes.Select<Location, IPoint>(x => new Point(x.X, x.Y)).ToArray();
+        var points = new IPoint[filteredNodes.Count];
+        for (var i = 0; i < filteredNodes.Count; i++)
+        {
+            var node = filteredNodes[i];
+            points[i] = new Point(node.X, node.Y);
+        }
         var delaunator = new Delaunator(points);
 
         var lines = new List<Endpoints>();

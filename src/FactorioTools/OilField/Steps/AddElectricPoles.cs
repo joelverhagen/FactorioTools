@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -86,12 +85,33 @@ public static class AddElectricPoles
     {
         (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetElectricPoleCoverage(context, poweredEntities, electricPoles.Keys);
 
-        var removeCandidates = coveredCenterToPoleCenters
-            .EnumeratePairs()
-            .Where(p => p.Value.Count > 2) // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
-            .SelectMany(p => p.Value.EnumerateItems())
-            .Concat(poleCenterToCoveredCenters.EnumeratePairs().Where(p => p.Value.Count == 0).Select(p => p.Key)) // Consider electric poles not covering any pumpjack.
-            .ExceptSet(coveredCenterToPoleCenters.EnumeratePairs().Where(p => p.Value.Count == 1).SelectMany(p => p.Value.EnumerateItems()), context, allowEnumerate: true); // Exclude electric poles covering pumpjacks that are only covered by one pole.
+        var removeCandidates = context.GetLocationSet(allowEnumerate: true);
+
+        foreach (var p in coveredCenterToPoleCenters.EnumeratePairs())
+        {
+            // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
+            if (p.Value.Count > 2)
+            {
+                removeCandidates.UnionWith(p.Value);
+            }
+        }
+
+        foreach (var pair in poleCenterToCoveredCenters.EnumeratePairs())
+        {
+            if (pair.Value.Count == 0)
+            {
+                removeCandidates.Add(pair.Key);
+            }
+        }
+
+        foreach (var p in coveredCenterToPoleCenters.EnumeratePairs())
+        {
+            // Consider electric poles covering pumpjacks that are covered by at least one other electric pole.
+            if (p.Value.Count == 1)
+            {
+                removeCandidates.ExceptWith(p.Value);
+            }
+        }
 
         while (removeCandidates.Count > 0)
         {
@@ -122,7 +142,14 @@ public static class AddElectricPoles
     private static bool ArePolesConnectedWithout(ILocationDictionary<ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
     {
         var queue = new Queue<ElectricPoleCenter>();
-        queue.Enqueue(electricPoles.Values.Where(x => x != except).First());
+        foreach (var center in electricPoles.Values)
+        {
+            if (center != except)
+            {
+                queue.Enqueue(center);
+                break;
+            }
+        }
         var discovered = new HashSet<ElectricPoleCenter>();
 
         while (queue.Count > 0)
@@ -312,20 +339,34 @@ public static class AddElectricPoles
         else
         {
             sorter = CandidateComparerForSamePriorityPowered.Instance;
-            allSubsets.Enqueue(new SortedBatches<ElectricPoleCandidateInfo>(
-                allCandidateToInfo
-                    .EnumeratePairs()
-                    .GroupBy(p => p.Value.PriorityPowered)
-                    .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(context, p => p.Key, p => p.Value))),
-                ascending: false));
+            var priorityToLocationToInfo = new Dictionary<int, ILocationDictionary<ElectricPoleCandidateInfo>>();
+            foreach (var infoPair in allCandidateToInfo.EnumeratePairs())
+            {
+                if (!priorityToLocationToInfo.TryGetValue(infoPair.Value.PriorityPowered, out var locationToInfo))
+                {
+                    locationToInfo = context.GetLocationDictionary<ElectricPoleCandidateInfo>();
+                    priorityToLocationToInfo.Add(infoPair.Value.PriorityPowered, locationToInfo);
+                }
+
+                locationToInfo.Add(infoPair.Key, infoPair.Value);
+            }
+
+            allSubsets.Enqueue(new SortedBatches<ElectricPoleCandidateInfo>(priorityToLocationToInfo, ascending: false));
         }
 
-        var coveredCountBatches = new SortedBatches<ElectricPoleCandidateInfo>(
-            allCandidateToInfo
-                .EnumeratePairs()
-                .GroupBy(p => p.Value.Covered.TrueCount)
-                .Select(g => KeyValuePair.Create(g.Key, g.ToDictionary(context, p => p.Key, p => p.Value))),
-            ascending: false);
+        var coveredToLocationToInfo = new Dictionary<int, ILocationDictionary<ElectricPoleCandidateInfo>>();
+        foreach (var infoPair in allCandidateToInfo.EnumeratePairs())
+        {
+            if (!coveredToLocationToInfo.TryGetValue(infoPair.Value.Covered.TrueCount, out var locationToInfo))
+            {
+                locationToInfo = context.GetLocationDictionary<ElectricPoleCandidateInfo>();
+                coveredToLocationToInfo.Add(infoPair.Value.Covered.TrueCount, locationToInfo);
+            }
+
+            locationToInfo.Add(infoPair.Key, infoPair.Value);
+        }
+
+        var coveredCountBatches = new SortedBatches<ElectricPoleCandidateInfo>(coveredToLocationToInfo, ascending: false);
 
         allSubsets.Enqueue(coveredCountBatches);
 
@@ -360,7 +401,29 @@ public static class AddElectricPoles
                 }
             }
 
-            (var candidate, var candidateInfo) = candidateToInfo.EnumeratePairs().MinBy(x => x.Value, sorter)!;
+            ElectricPoleCandidateInfo? candidateInfo = null;
+            Location candidate = default;
+            foreach (var pair in candidateToInfo.EnumeratePairs())
+            {
+                if (candidateInfo is null)
+                {
+                    candidateInfo = pair.Value;
+                    candidate = pair.Key;
+                    continue;
+                }
+
+                var c = sorter.Compare(pair.Value, candidateInfo);
+                if (c < 0)
+                {
+                    candidateInfo = pair.Value;
+                    candidate = pair.Key;
+                }
+            }
+
+            if (candidateInfo is null)
+            {
+                throw new FactorioToolsException("A candidate should have been found.");
+            }
 
             if (!allCandidateToInfo.ContainsKey(candidate))
             {
@@ -563,24 +626,39 @@ public static class AddElectricPoles
 
         while (groups.Count > 1)
         {
-            var closest = PointsToLines(electricPoles.Keys)
-                .Select(e => new
+            Endpoints? closest = null;
+            int closestDistanceSquared = default;
+            var lines = PointsToLines(electricPoles.Keys);
+            for (var i = 0; i < lines.Count; i++)
+            {
+                var endpoint = lines[i];
+                var groupA = groups.Single(g => g.Contains(endpoint.A));
+                var groupB = groups.Single(g => g.Contains(endpoint.B));
+                if (groupA == groupB)
                 {
-                    Endpoints = e,
-                    GroupA = groups.Single(g => g.Contains(e.A)),
-                    GroupB = groups.Single(g => g.Contains(e.B)),
-                    DistanceSquared = GetElectricPoleDistanceSquared(e.A, e.B, context.Options),
-                })
-                .Where(c => c.GroupA != c.GroupB)
-                .Where(c => c.DistanceSquared > context.Options.ElectricPoleWireReachSquared)
-                .MinBy(c => c.DistanceSquared);
+                    continue;
+                }
+
+                var distanceSquared = GetElectricPoleDistanceSquared(endpoint.A, endpoint.B, context.Options);
+                if (distanceSquared <= context.Options.ElectricPoleWireReachSquared)
+                {
+                    continue;
+                }
+
+                if (closest is null
+                    || distanceSquared < closestDistanceSquared)
+                {
+                    closest = endpoint;
+                    closestDistanceSquared = distanceSquared;
+                }
+            }
 
             if (closest is null)
             {
                 throw new FactorioToolsException("No closest electric pole could be found.");
             }
 
-            AddSinglePoleForConnection(context, electricPoles, groups, Math.Sqrt(closest.DistanceSquared), closest.Endpoints);
+            AddSinglePoleForConnection(context, electricPoles, groups, Math.Sqrt(closestDistanceSquared), closest);
         }
     }
 
@@ -654,7 +732,26 @@ public static class AddElectricPoles
         }
 
         var center = AddElectricPole(context, electricPoles, selectedPoint);
-        var connectedGroups = groups.Where(g => center.Neighbors.Select(n => context.Grid.EntityToLocation[n]).Any(l => g.Contains(l))).ToList();
+        var connectedGroups = new List<ILocationSet>(groups.Count);
+        for (var i = 0; i < groups.Count; i++)
+        {
+            var group = groups[i];
+            var match = false;
+            foreach (var neighbor in center.Neighbors)
+            {
+                var location = context.Grid.EntityToLocation[neighbor];
+                if (group.Contains(location))
+                {
+                    match = true;
+                    break;
+                }
+            }
+
+            if (match)
+            {
+                connectedGroups.Add(group);
+            }
+        }
 
         if (connectedGroups.Count == 0)
         {
@@ -696,7 +793,13 @@ public static class AddElectricPoles
                 }
             }
 
-            var group = entities.Select(e => context.Grid.EntityToLocation[e]).ToSet(context, allowEnumerate: true);
+            var group = context.GetLocationSet(allowEnumerate: true);
+            foreach (var entity in entities)
+            {
+                var location = context.Grid.EntityToLocation[entity];
+                group.Add(location);
+            }
+
             remaining.ExceptWith(group);
             groups.Add(group);
         }

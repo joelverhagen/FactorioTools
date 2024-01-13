@@ -240,8 +240,6 @@ public static partial class AddPipes
             {
                 aloneGroups.Add(group);
             }
-
-            // VisualizeGroups(context, addedPumpjacks, new[] { group });
         }
 
         if (finalGroup is null)
@@ -309,8 +307,6 @@ public static partial class AddPipes
 
                 if (connection is null)
                 {
-                    // VisualizeGroups(context, addedPumpjacks, new[] { finalGroup });
-
                     // Allow more max turns with the modified FBE algorithm.
                     // Related to https://github.com/teoxoy/factorio-blueprint-editor/issues/253
                     if (strategy == PipeStrategy.FbeOriginal)
@@ -431,15 +427,6 @@ public static partial class AddPipes
 
         return next!;
     }
-
-#if ENABLE_VISUALIZER
-    private static void VisualizeGroups(Context context, List<TerminalLocation> addedPumpjacks, IEnumerable<Group> groups)
-    {
-        var clone = new PipeGrid(context.Grid);
-        AddPipeEntities.Execute(context, clone, groups.SelectMany(x => x.Paths.SelectMany(l => l)).ToReadOnlySet(context), undergroundPipes: null, allowMultipleTerminals: true);
-        Visualizer.Show(clone, addedPumpjacks.Select(x => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(x.Center.X, x.Center.Y)), Array.Empty<DelaunatorSharp.IEdge>());
-    }
-#endif
 
     private static bool LineContainsAnAddedPumpjack(List<TerminalLocation> addedPumpjacks, PumpjackConnection ent)
     {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Knapcode.FactorioTools.Data;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
@@ -50,15 +49,58 @@ public static partial class AddPipes
     private static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> AltnernatePlans, List<OilFieldPlan> UnusedPlans, Solution BestSolution, BeaconSolution? BestBeacons)
         GetBestSolution(Context context)
     {
-        var sortedPlans = GetAllPlans(context)
-            .OrderByDescending(x => x.Plan.BeaconEffectCount) // more effects = better
-            .ThenBy(x => x.Plan.BeaconCount) // fewer beacons = better (less power)
-            .ThenBy(x => x.Plan.PipeCount) // fewer pipes = better
-            .ThenByDescending(x => x.GroupSize) // prefer solutions that more algorithms find
-            .ThenBy(x => x.Plan.PipeStrategy)  // the rest of the sorting is for arbitrary tie breaking
-            .ThenBy(x => x.Plan.OptimizePipes)
-            .ThenBy(x => x.Plan.BeaconStrategy)
-            .ThenBy(x => x.GroupNumber);
+        var sortedPlans = GetAllPlans(context);
+        sortedPlans.Sort((a, b) =>
+        {
+            // more effects = better
+            var c = b.Plan.BeaconEffectCount.CompareTo(a.Plan.BeaconEffectCount);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            // fewer beacons = better (less power)
+            c = a.Plan.BeaconCount.CompareTo(b.Plan.BeaconCount);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            // fewer pipes = better
+            c = a.Plan.PipeCount.CompareTo(b.Plan.PipeCount);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            // prefer solutions that more algorithms find
+            c = b.GroupSize.CompareTo(a.GroupSize);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            // the rest of the sorting is for arbitrary tie breaking
+            c = a.Plan.PipeStrategy.CompareTo(b.Plan.PipeStrategy);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            c = a.Plan.OptimizePipes.CompareTo(b.Plan.OptimizePipes);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            c = Comparer<BeaconStrategy?>.Default.Compare(a.Plan.BeaconStrategy, b.Plan.BeaconStrategy);
+            if (c != 0)
+            {
+                return c;
+            }
+
+            return a.GroupNumber.CompareTo(b.GroupNumber);
+        });
 
         PlanInfo? bestPlanInfo = null;
         var noMoreAlternates = false;
@@ -168,18 +210,12 @@ public static partial class AddPipes
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
 
-        var pipesToSolutions = new Dictionary<ILocationSet, SolutionsAndGroupNumber>(ILocationSetComparer.Instance);
+        var pipesToSolutions = new Dictionary<ILocationSet, SolutionsAndGroupNumber>(LocationSetComparer.Instance);
         var connectedCentersToSolutions = new Dictionary<ILocationDictionary<ILocationSet>, List<Solution>>(ConnectedCentersComparer.Instance);
 
         if (context.CenterToTerminals.Count == 1)
         {
-            var terminal = context
-                .CenterToTerminals
-                .EnumeratePairs()
-                .Single()
-                .Value
-                .OrderBy(x => x.Direction)
-                .First();
+            var terminal = context.CenterToTerminals.EnumeratePairs().Single().Value[0];
             EliminateOtherTerminals(context, terminal);
             var pipes = context.GetSingleLocationSet(terminal.Terminal);
             var solutions = OptimizeAndAddSolutions(context, pipesToSolutions, default, pipes, centerToConnectedCenters: null);
@@ -372,7 +408,15 @@ public static partial class AddPipes
             var unreachedTerminals = context.GetLocationSet(goals);
             unreachedTerminals.ExceptWith(result.ReachedGoals);
 
-            var reachedPumpjacks = result.ReachedGoals.EnumerateItems().SelectMany(l => context.LocationToTerminals[l]).Select(t => t.Center).ToReadOnlySet(context);
+            var reachedPumpjacks = context.GetLocationSet();
+            foreach (var location in result.ReachedGoals.EnumerateItems())
+            {
+                var terminals = context.LocationToTerminals[location];
+                for (var i = 0; i < terminals.Count; i++)
+                {
+                    reachedPumpjacks.Add(terminals[i].Center);
+                }
+            }
 
             ILocationSet terminalsToEliminate;
             if (reachedPumpjacks.Count == context.CenterToTerminals.Count)
@@ -431,9 +475,9 @@ public static partial class AddPipes
         public required List<BeaconSolution>? BeaconSolutions { get; set; }
     }
 
-    private class ILocationSetComparer : IEqualityComparer<ILocationSet>
+    private class LocationSetComparer : IEqualityComparer<ILocationSet>
     {
-        public static readonly ILocationSetComparer Instance = new ILocationSetComparer();
+        public static readonly LocationSetComparer Instance = new LocationSetComparer();
 
         public bool Equals(ILocationSet? x, ILocationSet? y)
         {
@@ -462,15 +506,50 @@ public static partial class AddPipes
 
         public int GetHashCode([DisallowNull] ILocationSet obj)
         {
-            var hashCode = new HashCode();
+            var sumX = 0;
+            var minX = int.MaxValue;
+            var maxX = int.MinValue;
+            var sumY = 0;
+            var minY = int.MaxValue;
+            var maxY = int.MinValue;
 
-            foreach (var l in obj.EnumerateItems().OrderBy(p => p.X).ThenBy(p => p.Y))
+            foreach (var l in obj.EnumerateItems())
             {
-                hashCode.Add(l.X);
-                hashCode.Add(l.Y);
+                sumX += l.X;
+
+                if (l.X < minX)
+                {
+                    minX = l.X;
+                }
+
+                if (l.X > maxX)
+                {
+                    maxX = l.X;
+                }
+
+                sumY += l.Y;
+
+                if (l.Y < minY)
+                {
+                    minY = l.Y;
+                }
+
+                if (l.Y > maxY)
+                {
+                    maxY = l.Y;
+                }
             }
 
-            return hashCode.ToHashCode();
+            var hash = 17;
+            hash = hash * 23 + obj.Count;
+            hash = hash * 23 + sumX;
+            hash = hash * 23 + minX;
+            hash = hash * 23 + maxX;
+            hash = hash * 23 + sumY;
+            hash = hash * 23 + minY;
+            hash = hash * 23 + maxY;
+
+            return hash;
         }
     }
 
@@ -518,21 +597,54 @@ public static partial class AddPipes
 
         public int GetHashCode([DisallowNull] ILocationDictionary<ILocationSet> obj)
         {
-            var hashCode = new HashCode();
+            var sumX = 0;
+            var minX = int.MaxValue;
+            var maxX = int.MinValue;
+            var sumY = 0;
+            var minY = int.MaxValue;
+            var maxY = int.MinValue;
+            var locationSum = 0;
 
-            foreach ((var key, var value) in obj.EnumeratePairs().OrderBy(p => p.Key.X).ThenBy(p => p.Key.Y))
+            foreach (var (l, s) in obj.EnumeratePairs())
             {
-                hashCode.Add(key.X);
-                hashCode.Add(key.Y);
+                sumX += l.X;
 
-                foreach (var l in value.EnumerateItems().OrderBy(p => p.X).ThenBy(p => p.Y))
+                if (l.X < minX)
                 {
-                    hashCode.Add(l.X);
-                    hashCode.Add(l.Y);
+                    minX = l.X;
                 }
+
+                if (l.X > maxX)
+                {
+                    maxX = l.X;
+                }
+
+                sumY += l.Y;
+
+                if (l.Y < minY)
+                {
+                    minY = l.Y;
+                }
+
+                if (l.Y > maxY)
+                {
+                    maxY = l.Y;
+                }
+
+                locationSum = s.Count;
             }
 
-            return hashCode.ToHashCode();
+            var hash = 17;
+            hash = hash * 23 + obj.Count;
+            hash = hash * 23 + sumX;
+            hash = hash * 23 + minX;
+            hash = hash * 23 + maxX;
+            hash = hash * 23 + sumY;
+            hash = hash * 23 + minY;
+            hash = hash * 23 + maxY;
+            hash = hash * 23 + locationSum;
+
+            return hash;
         }
     }
 
