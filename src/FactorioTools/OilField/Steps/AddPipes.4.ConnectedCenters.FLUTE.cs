@@ -39,9 +39,9 @@ public static partial class AddPipes
                 {
                     otherCenters.UnionWith(point.Centers);
 
-                    foreach (var neighbor in point.Neighbors)
+                    foreach (var neighbor in point.Neighbors.EnumerateItems())
                     {
-                        queue.Enqueue(neighbor);
+                        queue.Enqueue(locationToPoint[neighbor]);
                     }
                 }
             }
@@ -59,6 +59,7 @@ public static partial class AddPipes
         {
             Location = location;
             Centers = context.GetLocationSet(allowEnumerate: true);
+            Neighbors = context.GetLocationSet(allowEnumerate: true);
         }
 
         public bool IsEliminated { get; set; }
@@ -66,7 +67,7 @@ public static partial class AddPipes
         public Location Location { get; }
         public ILocationSet Centers { get; }
         public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
-        public HashSet<FlutePoint> Neighbors { get; } = new HashSet<FlutePoint>();
+        public ILocationSet Neighbors { get; }
 
 #if ENABLE_GRID_TOSTRING
         public override string ToString()
@@ -108,8 +109,8 @@ public static partial class AddPipes
                 var currentPoint = GetOrAddPoint(locationToPoint, current);
                 var nextPoint = GetOrAddPoint(locationToPoint, next);
 
-                currentPoint.Neighbors.Add(nextPoint);
-                nextPoint.Neighbors.Add(currentPoint);
+                currentPoint.Neighbors.Add(nextPoint.Location);
+                nextPoint.Neighbors.Add(currentPoint.Location);
 
                 if (current.N == next.N)
                 {
@@ -123,7 +124,7 @@ public static partial class AddPipes
         // Remove self from neighbors
         foreach (var point in locationToPoint.Values)
         {
-            point.Neighbors.Remove(point);
+            point.Neighbors.Remove(point.Location);
         }
 
         // Add in pumpjack information
