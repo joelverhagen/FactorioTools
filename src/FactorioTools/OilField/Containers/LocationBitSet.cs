@@ -55,7 +55,7 @@ public class LocationBitSet : ILocationSet
         _set.And(otherSet);
     }
 
-    public bool Overlaps(IEnumerable<Location> other)
+    public bool Overlaps(IReadOnlyCollection<Location> other)
     {
         foreach (var item in other)
         {
@@ -79,7 +79,7 @@ public class LocationBitSet : ILocationSet
         return _set.Equals(otherSet);
     }
 
-    public void UnionWith(IEnumerable<Location> other)
+    public void UnionWith(IReadOnlyCollection<Location> other)
     {
         foreach (var item in other)
         {

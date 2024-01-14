@@ -295,7 +295,7 @@ public static partial class PlanBeacons
         return possibleBeacons;
     }
 
-    private static (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) GetBounds(IEnumerable<Location> locations)
+    private static (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) GetBounds(IReadOnlyCollection<Location> locations)
     {
         var entityMinX = int.MaxValue;
         var entityMinY = int.MaxValue;

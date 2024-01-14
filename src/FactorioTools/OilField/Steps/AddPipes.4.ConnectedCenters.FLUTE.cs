@@ -177,7 +177,7 @@ public static partial class AddPipes
     }
 
 #if ENABLE_VISUALIZER
-    private static void VisualizeFLUTE(Context context, IEnumerable<DelaunatorSharp.IPoint> terminalPoints, Tree fluteTree)
+    private static void VisualizeFLUTE(Context context, IReadOnlyCollection<DelaunatorSharp.IPoint> terminalPoints, Tree fluteTree)
     {
         /*
         var steinerPoints = fluteTree

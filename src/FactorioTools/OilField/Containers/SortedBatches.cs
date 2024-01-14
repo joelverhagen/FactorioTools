@@ -6,7 +6,7 @@ public class SortedBatches<TInfo>
 {
     private readonly bool _ascending;
 
-    public SortedBatches(IEnumerable<KeyValuePair<int, ILocationDictionary<TInfo>>> pairs, bool ascending)
+    public SortedBatches(IReadOnlyCollection<KeyValuePair<int, ILocationDictionary<TInfo>>> pairs, bool ascending)
     {
         _ascending = ascending;
         Queue = new PriorityQueue<ILocationDictionary<TInfo>, int>();

@@ -205,7 +205,7 @@ public static partial class AddPipes
         return plans;
     }
 
-    private static IEnumerable<SolutionsAndGroupNumber> GetSolutionGroups(Context context)
+    private static IReadOnlyCollection<SolutionsAndGroupNumber> GetSolutionGroups(Context context)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;

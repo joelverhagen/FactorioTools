@@ -40,14 +40,14 @@ public static class Helpers
         return centerEntity;
     }
 
-    public static ILocationDictionary<List<TerminalLocation>> GetCenterToTerminals(Context context, SquareGrid grid, IEnumerable<Location> centers)
+    public static ILocationDictionary<List<TerminalLocation>> GetCenterToTerminals(Context context, SquareGrid grid, IReadOnlyCollection<Location> centers)
     {
         var centerToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
         PopulateCenterToTerminals(centerToTerminals, grid, centers);
         return centerToTerminals;
     }
 
-    public static void PopulateCenterToTerminals(ILocationDictionary<List<TerminalLocation>> centerToTerminals, SquareGrid grid, IEnumerable<Location> centers)
+    public static void PopulateCenterToTerminals(ILocationDictionary<List<TerminalLocation>> centerToTerminals, SquareGrid grid, IReadOnlyCollection<Location> centers)
     {
         foreach (var center in centers)
         {
@@ -322,7 +322,7 @@ public static class Helpers
         int providerHeight,
         int supplyWidth,
         int supplyHeight,
-        IEnumerable<Location> providerCenters,
+        IReadOnlyCollection<Location> providerCenters,
         bool includePumpjacks,
         bool includeBeacons)
     {
@@ -673,7 +673,7 @@ public static class Helpers
     public static (ILocationDictionary<ILocationSet> PoleCenterToCoveredCenters, ILocationDictionary<ILocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
         Context context,
         List<ProviderRecipient> poweredEntities,
-        IEnumerable<Location> electricPoleCenters)
+        IReadOnlyCollection<Location> electricPoleCenters)
     {
         var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
             context,

@@ -775,7 +775,7 @@ public static partial class AddPipes
         {
         }
 
-        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IEnumerable<Location> includedCenters, IEnumerable<Location> pipes)
+        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IReadOnlyCollection<Location> includedCenters, IReadOnlyCollection<Location> pipes)
         {
             _context = context;
             _centerToConnectedCenters = centerToConnectedCenters;
@@ -815,7 +815,7 @@ public static partial class AddPipes
             return terminalCandidate.GetEuclideanDistanceSquared(centroidX, centroidY);
         }
 
-        public void ConnectPumpjack(Location center, IEnumerable<Location> path)
+        public void ConnectPumpjack(Location center, List<Location> path)
         {
             _allIncludedCenters.Add(center);
             IncludedCenters.Add(center);
@@ -824,7 +824,7 @@ public static partial class AddPipes
             UpdateIncludedCenterToChildCenters();
         }
 
-        public void MergeGroup(PumpjackGroup other, IEnumerable<Location> path)
+        public void MergeGroup(PumpjackGroup other, List<Location> path)
         {
             IncludedCenters.UnionWith(other.IncludedCenters);
             Pipes.UnionWith(path);

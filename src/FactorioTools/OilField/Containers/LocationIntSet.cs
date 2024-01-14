@@ -44,7 +44,7 @@ public class LocationIntSet : ILocationSet
         return _set.Contains(GetIndex(location));
     }
 
-    public void UnionWith(IEnumerable<Location> other)
+    public void UnionWith(IReadOnlyCollection<Location> other)
     {
         foreach (Location location in other)
         {
@@ -84,7 +84,7 @@ public class LocationIntSet : ILocationSet
         return _set.SetEquals(otherSet._set);
     }
 
-    public bool Overlaps(IEnumerable<Location> other)
+    public bool Overlaps(IReadOnlyCollection<Location> other)
     {
         if (Count == 0)
         {

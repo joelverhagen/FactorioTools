@@ -36,7 +36,7 @@ public class EmptyLocationSet : ILocationSet
     {
     }
 
-    public bool Overlaps(IEnumerable<Location> other)
+    public bool Overlaps(IReadOnlyCollection<Location> other)
     {
         return false;
     }
@@ -51,7 +51,7 @@ public class EmptyLocationSet : ILocationSet
         return other.Count == 0;
     }
 
-    public void UnionWith(IEnumerable<Location> other)
+    public void UnionWith(IReadOnlyCollection<Location> other)
     {
         throw new NotSupportedException();
     }

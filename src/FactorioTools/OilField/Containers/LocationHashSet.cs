@@ -72,7 +72,7 @@ public class LocationHashSet : ILocationSet
         }
     }
 
-    public bool Overlaps(IEnumerable<Location> other)
+    public bool Overlaps(IReadOnlyCollection<Location> other)
     {
         return _set.Overlaps(other);
     }
@@ -88,7 +88,7 @@ public class LocationHashSet : ILocationSet
         return _set.SetEquals(otherSet._set);
     }
 
-    public void UnionWith(IEnumerable<Location> other)
+    public void UnionWith(IReadOnlyCollection<Location> other)
     {
         _set.UnionWith(other);
     }

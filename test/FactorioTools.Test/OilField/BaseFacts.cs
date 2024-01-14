@@ -41,7 +41,7 @@ public abstract class BaseFacts
 
         var previousCenterToTerminals = context.CenterToTerminals;
 
-        context.CenterToTerminals = GetCenterToTerminals(context, context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct(context)));
+        context.CenterToTerminals = GetCenterToTerminals(context, context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct(context)).ToList());
         context.LocationToTerminals = GetLocationToTerminals(context, context.CenterToTerminals);
 
         foreach ((var otherCenter, var terminals) in context.CenterToTerminals.EnumeratePairs().ToList())

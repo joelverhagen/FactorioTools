@@ -108,12 +108,12 @@ public class Context
         return set;
     }
 
-    public ILocationSet GetLocationSet(IEnumerable<Location> locations)
+    public ILocationSet GetLocationSet(IReadOnlyCollection<Location> locations)
     {
         return GetLocationSet(locations, allowEnumerate: false);
     }
 
-    public ILocationSet GetLocationSet(IEnumerable<Location> locations, bool allowEnumerate)
+    public ILocationSet GetLocationSet(IReadOnlyCollection<Location> locations, bool allowEnumerate)
     {
         var set = GetLocationSet(allowEnumerate);
         foreach (var location in locations)
@@ -124,12 +124,12 @@ public class Context
         return set;
     }
 
-    public ILocationSet GetReadOnlyLocationSet(IEnumerable<Location> locations)
+    public ILocationSet GetReadOnlyLocationSet(IReadOnlyCollection<Location> locations)
     {
         return GetReadOnlyLocationSet(locations, allowEnumerate: false);
     }
 
-    public ILocationSet GetReadOnlyLocationSet(IEnumerable<Location> locations, bool allowEnumerate)
+    public ILocationSet GetReadOnlyLocationSet(IReadOnlyCollection<Location> locations, bool allowEnumerate)
     {
         Location firstLocation = Location.Invalid;
         int itemCount = 0;

@@ -13,10 +13,10 @@ namespace Knapcode.FactorioTools.OilField
         void CopyTo(Span<Location> array);
         IReadOnlyCollection<Location> EnumerateItems();
         void ExceptWith(ILocationSet other);
-        bool Overlaps(IEnumerable<Location> other);
+        bool Overlaps(IReadOnlyCollection<Location> other);
         bool Remove(Location location);
         bool SetEquals(ILocationSet other);
-        void UnionWith(IEnumerable<Location> other);
+        void UnionWith(IReadOnlyCollection<Location> other);
         void UnionWith(ILocationSet other);
     }
 }

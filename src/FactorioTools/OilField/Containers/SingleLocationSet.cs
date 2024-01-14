@@ -79,7 +79,7 @@ public class SingleLocationSet : ILocationSet
         throw new NotSupportedException();
     }
 
-    public bool Overlaps(IEnumerable<Location> other)
+    public bool Overlaps(IReadOnlyCollection<Location> other)
     {
         throw new NotSupportedException();
     }
@@ -111,7 +111,7 @@ public class SingleLocationSet : ILocationSet
         return other.Contains(new Location(_x, _y));
     }
 
-    public void UnionWith(IEnumerable<Location> other)
+    public void UnionWith(IReadOnlyCollection<Location> other)
     {
         throw new NotSupportedException();
     }
