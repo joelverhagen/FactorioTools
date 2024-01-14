@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class UndergroundPipe : Pipe
 {
-    public UndergroundPipe(Direction direction)
+    public UndergroundPipe(int id, Direction direction) : base(id)
     {
         Direction = direction;
     }

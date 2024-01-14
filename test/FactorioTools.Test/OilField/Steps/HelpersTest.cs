@@ -303,7 +303,7 @@ public class HelpersTest
             
             // Visualizer.Show(context.Grid, candidateToCovered.Keys.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
 
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.True(e is PumpjackSide || e is PumpjackCenter));
+            Assert.All(context.Grid.GetEntities(), e => Assert.True(e is PumpjackSide || e is PumpjackCenter));
             Assert.Equal(0, providers.Count);
 
             // These are positions that should become candidates after unused substations are removed.

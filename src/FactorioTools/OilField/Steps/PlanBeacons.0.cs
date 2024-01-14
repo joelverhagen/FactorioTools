@@ -10,7 +10,7 @@ public static partial class PlanBeacons
     {
         foreach (var pipe in pipes.EnumerateItems())
         {
-            context.Grid.AddEntity(pipe, new TemporaryEntity());
+            context.Grid.AddEntity(pipe, new TemporaryEntity(context.Grid.GetId()));
         }
 
         var solutions = new List<BeaconSolution>(context.Options.BeaconStrategies.Count);

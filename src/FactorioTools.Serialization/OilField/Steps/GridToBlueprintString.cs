@@ -44,8 +44,9 @@ public static class GridToBlueprintString
             return entityNumber;
         }
 
-        foreach ((var gridEntity, var location) in context.Grid.EntityToLocation)
+        foreach (var location in context.Grid.EntityLocations.EnumerateItems())
         {
+            var gridEntity = context.Grid[location];
             var position = new Position
             {
                 X = location.X,

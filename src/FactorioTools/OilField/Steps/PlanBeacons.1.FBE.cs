@@ -344,12 +344,11 @@ public static partial class PlanBeacons
 
     private static List<Area> GetEntityAreas(Context context)
     {
-        GridEntity pipe = new Pipe();
+        var areas = new List<Area>(context.Grid.EntityLocations.Count);
 
-        var areas = new List<Area>(context.Grid.EntityToLocation.Count);
-
-        foreach (var (entity, location) in context.Grid.EntityToLocation)
+        foreach (var location in context.Grid.EntityLocations.EnumerateItems())
         {
+            var entity = context.Grid[location];
             int width;
             int height;
             bool effect;

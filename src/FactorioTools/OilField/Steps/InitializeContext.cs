@@ -123,8 +123,9 @@ public static class InitializeContext
         Span<Location> neighbors = new Location[4];
 #endif
 
-        foreach ((var entity, var location) in grid.EntityToLocation)
+        foreach (var location in grid.EntityLocations.EnumerateItems())
         {
+            var entity = grid[location];
             if (entity is not PumpjackSide)
             {
                 continue;

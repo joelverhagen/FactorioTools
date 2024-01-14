@@ -2,7 +2,7 @@
 
 public class ElectricPoleSide : GridEntity
 {
-    public ElectricPoleSide(ElectricPoleCenter center)
+    public ElectricPoleSide(int id, ElectricPoleCenter center) : base(id)
     {
         Center = center;
     }

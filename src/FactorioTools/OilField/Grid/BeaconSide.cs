@@ -2,7 +2,7 @@
 
 public class BeaconSide : GridEntity
 {
-    public BeaconSide(BeaconCenter center)
+    public BeaconSide(int id, BeaconCenter center) : base(id)
     {
         Center = center;
     }

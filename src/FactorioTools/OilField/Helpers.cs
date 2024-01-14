@@ -27,12 +27,12 @@ public static class Helpers
 
     public static PumpjackCenter AddPumpjack(SquareGrid grid, Location center)
     {
-        var centerEntity = new PumpjackCenter();
+        var centerEntity = new PumpjackCenter(grid.GetId());
         for (var x = -1; x <= 1; x++)
         {
             for (var y = -1; y <= 1; y++)
             {
-                GridEntity entity = x != 0 || y != 0 ? new PumpjackSide(centerEntity) : centerEntity;
+                GridEntity entity = x != 0 || y != 0 ? new PumpjackSide(grid.GetId(), centerEntity) : centerEntity;
                 grid.AddEntity(new Location(center.X + x, center.Y + y), entity);
             }
         }
@@ -154,9 +154,9 @@ public static class Helpers
         var coveredEntities = new CountedBitArray(recipients.Count);
 
         var providers = context.GetLocationDictionary<TProvider>();
-        foreach (var (entity, location) in context.Grid.EntityToLocation)
+        foreach (var location in context.Grid.EntityLocations.EnumerateItems())
         {
-            var provider = entity as TProvider;
+            var provider = context.Grid[location] as TProvider;
             if (provider is null)
             {
                 continue;
@@ -401,7 +401,7 @@ public static class Helpers
                 }
                 else if (includePumpjacks && entity is PumpjackSide pumpjackSide)
                 {
-                    coveredCenters.Add(grid.EntityToLocation[pumpjackSide.Center]);
+                    coveredCenters.Add(grid.EntityIdToLocation[pumpjackSide.Center.Id]);
                 }
                 else if (includeBeacons && entity is BeaconCenter)
                 {
@@ -409,7 +409,7 @@ public static class Helpers
                 }
                 else if (includeBeacons && entity is BeaconSide beaconSide)
                 {
-                    coveredCenters.Add(grid.EntityToLocation[beaconSide.Center]);
+                    coveredCenters.Add(grid.EntityIdToLocation[beaconSide.Center.Id]);
                 }
             }
         }
@@ -700,8 +700,9 @@ public static class Helpers
         var poweredEntities = new List<ProviderRecipient>();
         var hasBeacons = false;
 
-        foreach ((var entity, var location) in context.Grid.EntityToLocation)
+        foreach (var location in context.Grid.EntityLocations.EnumerateItems())
         {
+            var entity = context.Grid[location];
             if (entity is PumpjackCenter)
             {
                 poweredEntities.Add(new ProviderRecipient(location, PumpjackWidth, PumpjackHeight));
@@ -935,8 +936,8 @@ public static class Helpers
             AddProviderToGrid(
                 grid,
                 center,
-                new BeaconCenter(),
-                c => new BeaconSide(c),
+                new BeaconCenter(grid.GetId()),
+                c => new BeaconSide(grid.GetId(), c),
                 options.BeaconWidth,
                 options.BeaconHeight);
         }

@@ -26,7 +26,7 @@ public static class AddElectricPoles
                 {
                     if (avoidEntities.Add(location))
                     {
-                        context.Grid.AddEntity(location, new TemporaryEntity());
+                        context.Grid.AddEntity(location, new TemporaryEntity(context.Grid.GetId()));
                     }
                 }
             }   
@@ -150,7 +150,7 @@ public static class AddElectricPoles
                 break;
             }
         }
-        var discovered = new HashSet<ElectricPoleCenter>();
+        var discovered = new HashSet<int>();
 
         while (queue.Count > 0)
         {
@@ -161,7 +161,7 @@ public static class AddElectricPoles
                 continue;
             }
 
-            if (discovered.Add(current))
+            if (discovered.Add(current.Id))
             {
                 foreach (var neighbor in current.Neighbors)
                 {
@@ -604,13 +604,13 @@ public static class AddElectricPoles
         ILocationDictionary<ElectricPoleCenter> electricPoles,
         Location center)
     {
-        var centerEntity = new ElectricPoleCenter();
+        var centerEntity = new ElectricPoleCenter(context.Grid.GetId());
 
         AddProviderToGrid(
             context.Grid,
             center,
             centerEntity,
-            c => new ElectricPoleSide(c),
+            c => new ElectricPoleSide(context.Grid.GetId(), c),
             context.Options.ElectricPoleWidth,
             context.Options.ElectricPoleHeight);
 
@@ -739,7 +739,7 @@ public static class AddElectricPoles
             var match = false;
             foreach (var neighbor in center.Neighbors)
             {
-                var location = context.Grid.EntityToLocation[neighbor];
+                var location = context.Grid.EntityIdToLocation[neighbor.Id];
                 if (group.Contains(location))
                 {
                     match = true;
@@ -777,14 +777,14 @@ public static class AddElectricPoles
             var current = remaining.EnumerateItems().First();
             remaining.Remove(current);
 
-            var entities = new HashSet<ElectricPoleCenter>();
+            var entityIds = new HashSet<int>();
             var explore = new Queue<ElectricPoleCenter>();
             explore.Enqueue(electricPoles[current]);
 
             while (explore.Count > 0)
             {
                 var entity = explore.Dequeue();
-                if (entities.Add(entity))
+                if (entityIds.Add(entity.Id))
                 {
                     foreach (var neighbor in entity.Neighbors)
                     {
@@ -794,9 +794,9 @@ public static class AddElectricPoles
             }
 
             var group = context.GetLocationSet(allowEnumerate: true);
-            foreach (var entity in entities)
+            foreach (var entityId in entityIds)
             {
-                var location = context.Grid.EntityToLocation[entity];
+                var location = context.Grid.EntityIdToLocation[entityId];
                 group.Add(location);
             }
 

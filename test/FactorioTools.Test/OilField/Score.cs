@@ -49,7 +49,7 @@ public class Score : BasePlannerFacts
                     summary.SelectedPlans[0].BeaconCount,
                     PipeCountWithUnderground = summary.SelectedPlans[0].PipeCount,
                     summary.SelectedPlans[0].PipeCountWithoutUnderground,
-                    PoleCount = context.Grid.EntityToLocation.Keys.OfType<ElectricPoleCenter>().Count(),
+                    PoleCount = context.Grid.GetEntities().OfType<ElectricPoleCenter>().Count(),
                 };
             });
 

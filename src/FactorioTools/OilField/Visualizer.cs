@@ -20,7 +20,7 @@ public static class Visualizer
         Show(grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
     }
 
-    public static void Show(SquareGrid grid, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
+    public static void Show(SquareGrid grid, IReadOnlyCollection<IPoint> points, IReadOnlyCollection<IEdge> edges)
     {
         var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Knapcode.FactorioTools.OilField.png");
         Save(grid, path, points, edges);
@@ -30,7 +30,7 @@ public static class Visualizer
         p.Start();
     }
 
-    private static void Save(SquareGrid grid, string path, IEnumerable<IPoint> points, IEnumerable<IEdge> edges)
+    private static void Save(SquareGrid grid, string path, IReadOnlyCollection<IPoint> points, IReadOnlyCollection<IEdge> edges)
     {
         var image = new Image<Rgba32>(grid.Width * CellSize, grid.Height * CellSize);
 
@@ -74,9 +74,9 @@ public static class Visualizer
             }
 
             var pairs = new HashSet<(Location A, Location B)>();
-            foreach ((var pole, var location) in grid.EntityToLocation)
+            foreach (var location in grid.EntityLocations.EnumerateItems())
             {
-                var center = pole as ElectricPoleCenter;
+                var center = grid[location] as ElectricPoleCenter;
                 if (center is null)
                 {
                     continue;
@@ -84,7 +84,7 @@ public static class Visualizer
 
                 foreach (var neighbor in center.Neighbors)
                 {
-                    var (a, b) = (location, grid.EntityToLocation[neighbor]);
+                    var (a, b) = (location, grid.EntityIdToLocation[neighbor.Id]);
                     if (a > b)
                     {
                         (a, b) = (b, a);

@@ -7,13 +7,13 @@ public abstract class BaseFacts
 {
     public static ElectricPoleCenter AddElectricPole(Context context, Location center)
     {
-        var entity = new ElectricPoleCenter();
+        var entity = new ElectricPoleCenter(context.Grid.GetId());
 
         AddProviderToGrid(
             context.Grid,
             center,
             entity,
-            c => new ElectricPoleSide(c),
+            c => new ElectricPoleSide(context.Grid.GetId(), c),
             providerWidth: context.Options.ElectricPoleWidth,
             providerHeight: context.Options.ElectricPoleHeight);
 
@@ -22,13 +22,13 @@ public abstract class BaseFacts
 
     public static BeaconCenter AddBeacon(Context context, Location center)
     {
-        var entity = new BeaconCenter();
+        var entity = new BeaconCenter(context.Grid.GetId());
 
         AddProviderToGrid(
             context.Grid,
             center,
             entity,
-            c => new BeaconSide(c),
+            c => new BeaconSide(context.Grid.GetId(),c),
             providerWidth: context.Options.BeaconWidth,
             providerHeight: context.Options.BeaconHeight);
 
@@ -53,7 +53,7 @@ public abstract class BaseFacts
             if (context.Grid[selectedTerminal.Terminal] is Pipe)
             {
                 context.Grid.RemoveEntity(selectedTerminal.Terminal);
-                context.Grid.AddEntity(selectedTerminal.Terminal, new Terminal());
+                context.Grid.AddEntity(selectedTerminal.Terminal, new Terminal(context.Grid.GetId()));
             }
         }
 

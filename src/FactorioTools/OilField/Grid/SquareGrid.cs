@@ -13,23 +13,36 @@ public abstract class SquareGrid
     private const string EmptyLabel = ".";
 #endif
 
-    private readonly Dictionary<GridEntity, Location> _entityToLocation;
+    private readonly Dictionary<int, Location> _entityIdToLocation;
+    private readonly ILocationSet _entityLocations;
     private readonly GridEntity?[] _grid;
+    private int _nextId;
 
     public SquareGrid(SquareGrid existing, bool clone)
     {
         Width = existing.Width;
         Height = existing.Height;
-        Middle = new Location(Width / 2, Height / 2);
-        _entityToLocation = clone ? new Dictionary<GridEntity, Location>(existing._entityToLocation) : existing._entityToLocation;
+        Middle = existing.Middle;
 
         if (clone)
         {
+            _entityIdToLocation = new Dictionary<int, Location>(existing._entityIdToLocation);
+#if USE_HASHSETS
+            _entityLocations = new LocationHashSet(existing._entityLocations.Count);
+#else
+            _entityLocations = new LocationIntSet(existing.Width, existing._entityLocations.Count);
+#endif
+            _entityLocations.UnionWith(existing._entityLocations);
+
             _grid = (GridEntity?[])existing._grid.Clone();
+            _nextId = existing._nextId;
         }
         else
         {
+            _entityIdToLocation = existing._entityIdToLocation;
+            _entityLocations = existing._entityLocations;
             _grid = existing._grid;
+            _nextId = existing._nextId;
         }
     }
 
@@ -38,78 +51,94 @@ public abstract class SquareGrid
         Width = width;
         Height = height;
         Middle = new Location(Width / 2, Height / 2);
-        _entityToLocation = new Dictionary<GridEntity, Location>();
+        _entityIdToLocation = new Dictionary<int, Location>();
+#if USE_HASHSETS
+        _entityLocations = new LocationHashSet();
+#else
+        _entityLocations = new LocationIntSet(width);
+#endif
         _grid = new GridEntity?[width * height];
+        _nextId = 1;
     }
 
     public int Width { get; }
     public int Height { get; }
     public Location Middle { get; }
 
-    public GridEntity? this[Location id]
+    public GridEntity? this[Location location]
     {
         get
         {
-            return _grid[GetIndex(id)];
+            return _grid[GetIndex(location)];
         }
     }
 
-    public IReadOnlyDictionary<GridEntity, Location> EntityToLocation => _entityToLocation;
-
-    public bool IsEmpty(Location id)
+    public int GetId()
     {
-        return _grid[GetIndex(id)] is null;
+        var id = _nextId;
+        _nextId++;
+        return id;
     }
 
-    public void AddEntity(Location id, GridEntity entity)
+    public IReadOnlyDictionary<int, Location> EntityIdToLocation => _entityIdToLocation;
+    public ILocationSet EntityLocations => _entityLocations;
+
+    public bool IsEmpty(Location location)
     {
-        var index = GetIndex(id);
+        return _grid[GetIndex(location)] is null;
+    }
+
+    public void AddEntity(Location location, GridEntity entity)
+    {
+        var index = GetIndex(location);
 
         if (_grid[index] is not null)
         {
-            throw new FactorioToolsException($"There is already an entity at {id}.");
+            throw new FactorioToolsException($"There is already an entity at {location}.");
         }
 
         _grid[index] = entity;
-        _entityToLocation.Add(entity, id);
+        _entityLocations.Add(location);
+        _entityIdToLocation.Add(entity.Id, location);
     }
 
-    public void RemoveEntity(Location id)
+    public void RemoveEntity(Location location)
     {
-        var index = GetIndex(id);
+        var index = GetIndex(location);
         var entity = _grid[index];
         if (entity is not null)
         {
             _grid[index] = null;
-            _entityToLocation.Remove(entity);
+            _entityLocations.Remove(location);
+            _entityIdToLocation.Remove(entity.Id);
             entity.Unlink();
         }
     }
 
-    public bool IsEntityType<T>(Location id) where T : GridEntity
+    public bool IsEntityType<T>(Location location) where T : GridEntity
     {
-        return _grid[GetIndex(id)] is T;
+        return _grid[GetIndex(location)] is T;
     }
 
-    public bool IsInBounds(Location id)
+    public bool IsInBounds(Location location)
     {
-        return id.X >= 0 && id.X < Width && id.Y >= 0 && id.Y < Height;
+        return location.X >= 0 && location.X < Width && location.Y >= 0 && location.Y < Height;
     }
 
-    public abstract void GetNeighbors(Span<Location> neighbors, Location id);
+    public abstract void GetNeighbors(Span<Location> neighbors, Location location);
 
-    public void GetAdjacent(Span<Location> adjacent, Location id)
+    public void GetAdjacent(Span<Location> adjacent, Location location)
     {
-        var a = id.Translate(1, 0);
+        var a = location.Translate(1, 0);
         adjacent[0] = IsInBounds(a) ? a : Location.Invalid;
 
-        var b = id.Translate(0, -1);
+        var b = location.Translate(0, -1);
         adjacent[1] = IsInBounds(b) ? b : Location.Invalid;
 
-        var c = id.Translate(-1, 0);
+        var c = location.Translate(-1, 0);
         adjacent[2] = IsInBounds(c) ? c : Location.Invalid;
 
-        var d = id.Translate(0, 1);
+        var d = location.Translate(0, 1);
         adjacent[3] = IsInBounds(d) ? d : Location.Invalid;
     }
 
@@ -129,7 +158,7 @@ public abstract class SquareGrid
 
     public void ToString(StringBuilder builder, int spacing)
     {
-        var maxLabelLength = _entityToLocation.Keys.Max(x => x.Label.Length) + spacing;
+        var maxLabelLength = _entityLocations.EnumerateItems().Max(x => this[x]!.Label.Length) + spacing;
 
         for (var y = 0; y < Height; y++)
         {
@@ -158,7 +187,11 @@ public abstract class SquareGrid
 
     private class Empty : GridEntity
     {
-        public static Empty Instance { get; } = new Empty();
+        public static Empty Instance { get; } = new Empty(0);
+
+        public Empty(int id) : base(id)
+        {
+        }
 
 #if ENABLE_GRID_TOSTRING
         public override string Label => EmptyLabel;

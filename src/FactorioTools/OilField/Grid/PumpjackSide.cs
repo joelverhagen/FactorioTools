@@ -2,7 +2,7 @@
 
 public class PumpjackSide : GridEntity
 {
-    public PumpjackSide(PumpjackCenter center)
+    public PumpjackSide(int id, PumpjackCenter center) : base(id)
     {
         Center = center;
     }

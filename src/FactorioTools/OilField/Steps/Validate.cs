@@ -169,8 +169,9 @@ public static class Validate
             (var poweredEntities, _) = GetPoweredEntities(context);
 
             var electricPoleCenters = new List<Location>();
-            foreach ((var entity, var location) in context.Grid.EntityToLocation)
+            foreach (var location in context.Grid.EntityLocations.EnumerateItems())
             {
+                var entity = context.Grid[location];
                 if (entity is ElectricPoleCenter)
                 {
                     electricPoleCenters.Add(location);

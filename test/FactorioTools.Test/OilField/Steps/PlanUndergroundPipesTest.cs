@@ -40,8 +40,8 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2, context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsType<UndergroundPipe>(e));
+            Assert.Equal(2, context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsType<UndergroundPipe>(e));
 
             var left = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Left, left.Direction);
@@ -61,10 +61,10 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2 + (length - 11), context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
-            Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is UndergroundPipe));
-            Assert.Equal(2 + (length - 11), context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(2 + (length - 11), context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(2, context.Grid.GetEntities().Count(e => e is UndergroundPipe));
+            Assert.Equal(2 + (length - 11), context.Grid.GetEntities().Count(e => e is Pipe));
 
             var left = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Left, left.Direction);
@@ -92,9 +92,9 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(4, context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
-            Assert.Equal(4, context.Grid.EntityToLocation.Keys.Count(e => e is UndergroundPipe));
+            Assert.Equal(4, context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(4, context.Grid.GetEntities().Count(e => e is UndergroundPipe));
 
             var leftA = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Left, leftA.Direction);
@@ -119,10 +119,10 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(4 + (length - 22), context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
-            Assert.Equal(4, context.Grid.EntityToLocation.Keys.Count(e => e is UndergroundPipe));
-            Assert.Equal(4 + (length - 22), context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(4 + (length - 22), context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(4, context.Grid.GetEntities().Count(e => e is UndergroundPipe));
+            Assert.Equal(4 + (length - 22), context.Grid.GetEntities().Count(e => e is Pipe));
 
             var leftA = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Left, leftA.Direction);
@@ -171,8 +171,8 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2, context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsType<UndergroundPipe>(e));
+            Assert.Equal(2, context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsType<UndergroundPipe>(e));
 
             var up = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Up, up.Direction);
@@ -192,10 +192,10 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2 + (length - 11), context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
-            Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is UndergroundPipe));
-            Assert.Equal(2 + (length - 11), context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(2 + (length - 11), context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(2, context.Grid.GetEntities().Count(e => e is UndergroundPipe));
+            Assert.Equal(2 + (length - 11), context.Grid.GetEntities().Count(e => e is Pipe));
 
             var up = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Up, up.Direction);
@@ -223,9 +223,9 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(4, context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
-            Assert.Equal(4, context.Grid.EntityToLocation.Keys.Count(e => e is UndergroundPipe));
+            Assert.Equal(4, context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(4, context.Grid.GetEntities().Count(e => e is UndergroundPipe));
 
             var upA = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Up, upA.Direction);
@@ -249,10 +249,10 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(4 + (length - 22), context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
-            Assert.Equal(4, context.Grid.EntityToLocation.Keys.Count(e => e is UndergroundPipe));
-            Assert.Equal(4 + (length - 22), context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(4 + (length - 22), context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(4, context.Grid.GetEntities().Count(e => e is UndergroundPipe));
+            Assert.Equal(4 + (length - 22), context.Grid.GetEntities().Count(e => e is Pipe));
 
             var upA = Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 1)]);
             Assert.Equal(Direction.Up, upA.Direction);
@@ -277,8 +277,8 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(9, context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(9, context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 6)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(5, 6)]).Direction);
@@ -305,8 +305,8 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(7, context.Grid.EntityToLocation.Count);
-            Assert.All(context.Grid.EntityToLocation.Keys, e => Assert.IsAssignableFrom<Pipe>(e));
+            Assert.Equal(7, context.Grid.EntityLocations.Count);
+            Assert.All(context.Grid.GetEntities(), e => Assert.IsAssignableFrom<Pipe>(e));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 6)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(10, 6)]).Direction);
@@ -330,7 +330,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(5, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(5, context.Grid.GetEntities().Count(e => e is Pipe));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 4)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(5, 4)]).Direction);
@@ -352,7 +352,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(6, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(6, context.Grid.GetEntities().Count(e => e is Pipe));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 4)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(4, 4)]).Direction);
@@ -374,7 +374,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(2, context.Grid.GetEntities().Count(e => e is Pipe));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(1, 3)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(5, 3)]).Direction);
@@ -390,7 +390,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(2, context.Grid.GetEntities().Count(e => e is Pipe));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(4, 1)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(8, 1)]).Direction);
@@ -407,7 +407,7 @@ public class PlanUndergroundPipesTest
 
             Run(context, pipes);
 
-            Assert.Equal(2, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(2, context.Grid.GetEntities().Count(e => e is Pipe));
 
             Assert.Equal(Direction.Left, Assert.IsType<UndergroundPipe>(context.Grid[new Location(4, 3)]).Direction);
             Assert.Equal(Direction.Right, Assert.IsType<UndergroundPipe>(context.Grid[new Location(8, 3)]).Direction);
@@ -418,7 +418,7 @@ public class PlanUndergroundPipesTest
             var locationSet = pipes.ToReadOnlySet(context, allowEnumerate: true);
             var undergroundPipes = PlanUndergroundPipes.Execute(context, locationSet);
 
-            Assert.Equal(0, context.Grid.EntityToLocation.Keys.Count(e => e is Pipe));
+            Assert.Equal(0, context.Grid.GetEntities().Count(e => e is Pipe));
             Assert.All(undergroundPipes.Keys, p => Assert.Contains(p, pipes));
 
             AddPipeEntities.Execute(context, locationSet, undergroundPipes);

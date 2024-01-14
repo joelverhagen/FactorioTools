@@ -31,7 +31,7 @@ public static class AddPipeEntities
                 foreach ((var location, var direction) in undergroundPipes.EnumeratePairs())
                 {
                     addedPipes.Add(location);
-                    grid.AddEntity(location, new UndergroundPipe(direction));
+                    grid.AddEntity(location, new UndergroundPipe(grid.GetId(), direction));
                 }
             }
 
@@ -46,7 +46,7 @@ public static class AddPipeEntities
                 {
                     if (addedPipes.Add(terminals[i].Terminal))
                     {
-                        grid.AddEntity(terminals[i].Terminal, new Terminal());
+                        grid.AddEntity(terminals[i].Terminal, new Terminal(grid.GetId()));
                     }
                 }
             }
@@ -55,7 +55,7 @@ public static class AddPipeEntities
             {
                 if (addedPipes.Add(pipe))
                 {
-                    grid.AddEntity(pipe, new Pipe());
+                    grid.AddEntity(pipe, new Pipe(grid.GetId()));
                 }
             }
 
