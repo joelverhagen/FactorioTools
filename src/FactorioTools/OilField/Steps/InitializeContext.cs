@@ -51,7 +51,7 @@ public static class InitializeContext
 
     private static Context Execute(OilFieldOptions options, Blueprint blueprint, int marginX, int marginY)
     {
-        var centerAndOriginalDirections = GetCenterAndOriginalDirections(blueprint, marginX, marginY);
+        var (centerAndOriginalDirections, deltaX, deltaY) = GetCenterOriginalDirectionsAndDelta(blueprint, marginX, marginY);
 
         var grid = InitializeGrid(centerAndOriginalDirections, marginX, marginY);
 
@@ -86,6 +86,8 @@ public static class InitializeContext
         {
             Options = options,
             InputBlueprint = blueprint,
+            DeltaX = deltaX,
+            DeltaY = deltaY,
             Grid = grid,
             Centers = centers,
             CenterToTerminals = centerToTerminals,
@@ -146,7 +148,7 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static List<Tuple<Location, Direction>> GetCenterAndOriginalDirections(Blueprint blueprint, int marginX, int marginY)
+    private static Tuple<List<Tuple<Location, Direction>>, float, float> GetCenterOriginalDirectionsAndDelta(Blueprint blueprint, int marginX, int marginY)
     {
         var pumpjacks = new List<Entity>();
         for (var i = 0; i < blueprint.Entities.Length; i++)
@@ -166,10 +168,13 @@ public static class InitializeContext
 
         var centerAndOriginalDirections = new List<Tuple<Location, Direction>>();
 
+        float deltaX = 0;
+        float deltaY = 0;
+
         if (pumpjacks.Count > 0)
         {
-            var deltaX = 0 - pumpjacks.Min(x => x.Position.X) + marginX;
-            var deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + marginY;
+            deltaX = 0 - pumpjacks.Min(x => x.Position.X) + marginX;
+            deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + marginY;
             foreach (var entity in pumpjacks)
             {
                 var x = entity.Position.X + deltaX;
@@ -191,7 +196,7 @@ public static class InitializeContext
             }
         }
 
-        return centerAndOriginalDirections;
+        return Tuple.Create(centerAndOriginalDirections, deltaX, deltaY);
     }
 
     private static int ToInt(float x)

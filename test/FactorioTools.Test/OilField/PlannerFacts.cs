@@ -1,4 +1,7 @@
-﻿namespace Knapcode.FactorioTools.OilField;
+﻿using Knapcode.FactorioTools.Data;
+using NuGet.Frameworks;
+
+namespace Knapcode.FactorioTools.OilField;
 
 public class PlannerFacts : BasePlannerFacts
 {
@@ -73,6 +76,36 @@ public class PlannerFacts : BasePlannerFacts
 #else
         await Task.Yield();
 #endif
+    }
+
+    [Fact]
+    public void SetsPumpjackCenterDirection()
+    {
+        var (context, _) = Planner.ExecuteSample();
+
+        var centers = context
+            .Grid
+            .EntityLocations
+            .EnumerateItems()
+            .Select(l => (Location: l, Entity: (context.Grid[l] as PumpjackCenter)!))
+            .Where(l => l.Entity is not null)
+            .OrderBy(x => x.Location.Y)
+            .ThenBy(x => x.Location.X)
+            .ToList();
+        Assert.Equal(4, centers.Count);
+        Assert.Equal(Direction.Down, centers[0].Entity.Direction);
+        Assert.Equal(Direction.Left, centers[1].Entity.Direction);
+        Assert.Equal(Direction.Up, centers[2].Entity.Direction);
+        Assert.Equal(Direction.Right, centers[3].Entity.Direction);
+    }
+
+    [Fact]
+    public void SetsDeltasFromOriginalPositions()
+    {
+        var (context, _) = Planner.ExecuteSample();
+
+        Assert.Equal(21, context.DeltaX);
+        Assert.Equal(18, context.DeltaY);
     }
 
     [Fact]

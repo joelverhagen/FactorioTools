@@ -8,6 +8,8 @@ public class Context
 {
     public required OilFieldOptions Options { get; set; }
     public required Blueprint InputBlueprint { get; set; }
+    public required float DeltaX { get; set; }
+    public required float DeltaY { get; set; }
     public required SquareGrid Grid { get; set; }
     public required List<Location> Centers { get; set; }
     public required ILocationDictionary<List<TerminalLocation>> CenterToTerminals { get; set; }

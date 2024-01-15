@@ -44,9 +44,10 @@ public static class AddPipeEntities
 
                 for (int i = 0; i < terminals.Count; i++)
                 {
-                    if (addedPipes.Add(terminals[i].Terminal))
+                    var terminal = terminals[i];
+                    if (addedPipes.Add(terminal.Terminal))
                     {
-                        grid.AddEntity(terminals[i].Terminal, new Terminal(grid.GetId()));
+                        grid.AddEntity(terminal.Terminal, new Terminal(grid.GetId()));
                     }
                 }
             }

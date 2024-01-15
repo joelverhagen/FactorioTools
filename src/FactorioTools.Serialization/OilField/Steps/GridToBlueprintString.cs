@@ -55,11 +55,11 @@ public static class GridToBlueprintString
 
             switch (gridEntity)
             {
-                case PumpjackCenter:
+                case PumpjackCenter pumpjackCenter:
                     entities.Add(new Entity
                     {
                         EntityNumber = nextEntityNumber++,
-                        Direction = context.CenterToTerminals[location].Single().Direction,
+                        Direction = pumpjackCenter.Direction,
                         Name = EntityNames.Vanilla.Pumpjack,
                         Position = position,
                         Items = context.Options.PumpjackModules,
