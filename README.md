@@ -105,11 +105,11 @@ AMD Ryzen 9 3950X, 1 CPU, 32 logical and 16 physical cores
 
 | Method                                    |     Mean |    Error |   StdDev |
 | ----------------------------------------- | -------: | -------: | -------: |
-| MediumElectricPole_NoBeacon_NoUnderground | 18.14 ms | 0.075 ms | 0.066 ms |
-| SmallElectricPole_Beacon_Underground      | 31.92 ms | 0.135 ms | 0.126 ms |
-| MediumElectricPole_Beacon_Underground     | 31.40 ms | 0.230 ms | 0.215 ms |
-| BigElectricPole_Beacon_Underground        | 73.52 ms | 1.006 ms | 0.941 ms |
-| Substation_Beacon_Underground             | 35.05 ms | 0.092 ms | 0.077 ms |
+| MediumElectricPole_NoBeacon_NoUnderground | 17.70 ms | 0.157 ms | 0.139 ms |
+| SmallElectricPole_Beacon_Underground      | 31.70 ms | 0.155 ms | 0.145 ms |
+| MediumElectricPole_Beacon_Underground     | 31.73 ms | 0.195 ms | 0.152 ms |
+| BigElectricPole_Beacon_Underground        | 72.56 ms | 0.803 ms | 0.751 ms |
+| Substation_Beacon_Underground             | 34.70 ms | 0.111 ms | 0.093 ms |
 
 ### Lua performance log
 
@@ -122,3 +122,4 @@ Reproduced using commit `3822074caaff18d11fa56961707d41a7ebca68b3` of [CSharp.lu
 - `8964b81944476f3f76a55186fdadabbf4a357230`: 2.20 seconds (int based Location dictionary, struct dictionary key is slow)
 - `fd55e01fd688e6bee033f96cbca7e24d3570de09`: 0.82 seconds (class instead struct for Location, struct does lots of copies)
 - `362caba6117438e27693289e76baeaea3ac9bb5f`: 0.74 seconds (don't use yield return, reduce Lua coroutines)
+- `596eb1bd1c808a48693d3239b412d05c8bff3cb9`: 0.71 seconds (don't use LINQ, reduce Lua coroutines)
