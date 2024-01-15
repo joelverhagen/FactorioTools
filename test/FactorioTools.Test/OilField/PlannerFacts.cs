@@ -54,7 +54,7 @@ public class PlannerFacts : BasePlannerFacts
     /// This blueprint found a bug in the SortedBatches class.
     /// </summary>
     [Fact]
-    public void PlansPowerPoles()
+    public void PlansElectricPoles()
     {
         // Arrange
         var options = OilFieldOptions.ForSubstation;
@@ -63,7 +63,47 @@ public class PlannerFacts : BasePlannerFacts
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         // Act
-        Planner.Execute(options, blueprint);
+        var (context, _) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.NotEmpty(context.Grid.GetEntities().OfType<ElectricPoleCenter>());
+        Assert.NotEmpty(context.Grid.GetEntities().OfType<ElectricPoleSide>());
+    }
+
+    [Fact]
+    public void AllowsElectricPolesToNotBePlanned()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForBigElectricPole;
+        options.ValidateSolution = true;
+        options.AddElectricPoles = false;
+        var blueprintString = SmallListBlueprintStrings[0];
+        var blueprint = ParseBlueprint.Execute(blueprintString);
+
+        // Act
+        var (context, _) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.Empty(context.Grid.GetEntities().OfType<ElectricPoleCenter>());
+        Assert.Empty(context.Grid.GetEntities().OfType<ElectricPoleSide>());
+    }
+
+    [Fact]
+    public void AllowsBeaconsToNotBePlanned()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForBigElectricPole;
+        options.ValidateSolution = true;
+        options.AddBeacons = false;
+        var blueprintString = SmallListBlueprintStrings[0];
+        var blueprint = ParseBlueprint.Execute(blueprintString);
+
+        // Act
+        var (context, _) = Planner.Execute(options, blueprint);
+
+        // Assert
+        Assert.Empty(context.Grid.GetEntities().OfType<BeaconCenter>());
+        Assert.Empty(context.Grid.GetEntities().OfType<BeaconSide>());
     }
 
     [Fact]

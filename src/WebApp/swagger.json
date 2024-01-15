@@ -278,6 +278,11 @@
             "description": "Whether or to allow beacon effects to overlap. For Factorio mods like Space Exploration, beacon effects cannot\r\noverlap otherwise pumpjacks will break down with a beacon overload. For vanilla Factorio, this should be true.",
             "default": true
           },
+          "addElectricPoles": {
+            "type": "boolean",
+            "description": "Whether or not to add electric poles around the pumpjacks and (optionally) beacons.",
+            "default": true
+          },
           "pipeStrategies": {
             "type": "array",
             "items": {
@@ -411,6 +416,7 @@
       "OilFieldPlanRequestResponse": {
         "required": [
           "addBeacons",
+          "addElectricPoles",
           "addFbeOffset",
           "beaconEntityName",
           "beaconHeight",
@@ -450,6 +456,10 @@
           "overlapBeacons": {
             "type": "boolean",
             "description": "Whether or to allow beacon effects to overlap. For Factorio mods like Space Exploration, beacon effects cannot\r\noverlap otherwise pumpjacks will break down with a beacon overload. For vanilla Factorio, this should be true."
+          },
+          "addElectricPoles": {
+            "type": "boolean",
+            "description": "Whether or not to add electric poles around the pumpjacks and (optionally) beacons."
           },
           "pipeStrategies": {
             "type": "array",

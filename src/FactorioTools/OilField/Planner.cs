@@ -146,28 +146,31 @@ public static class Planner
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        if (!addElectricPolesFirst || context.Options.AddBeacons)
+        if (options.AddElectricPoles)
         {
-            poles = AddElectricPoles.Execute(context, avoid: EmptyLocationSet.Instance, allowRetries: addElectricPolesFirst);
-            if (poles is null)
+            if (!addElectricPolesFirst || context.Options.AddBeacons)
             {
-                if (addElectricPolesFirst)
+                poles = AddElectricPoles.Execute(context, avoid: EmptyLocationSet.Instance, allowRetries: addElectricPolesFirst);
+                if (poles is null)
                 {
-                    // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
-                    throw new FactorioToolsException(
-                        "No valid placement for the electric poles could be found, after adding electric poles first. " +
-                        "Try removing some pumpjacks or using a different electric pole.",
-                        badInput: true);
-                }
-                else
-                {
-                    electricPolesAvoid = GetElectricPolesAvoid(context);
-                    return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
+                    if (addElectricPolesFirst)
+                    {
+                        // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
+                        throw new FactorioToolsException(
+                            "No valid placement for the electric poles could be found, after adding electric poles first. " +
+                            "Try removing some pumpjacks or using a different electric pole.",
+                            badInput: true);
+                    }
+                    else
+                    {
+                        electricPolesAvoid = GetElectricPolesAvoid(context);
+                        return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
+                    }
                 }
             }
-        }
 
-        Validate.AllEntitiesHavePower(context);
+            Validate.AllEntitiesHavePower(context);
+        }
 
         var missingPumpjacks = initialPumpjackCount - context.CenterToTerminals.Count;
         if (missingPumpjacks > 0)

@@ -139,6 +139,11 @@ public class OilFieldOptions
     public bool OverlapBeacons { get; set; } = true;
 
     /// <summary>
+    /// Whether or not to add electric poles around the pumpjacks and (optionally) beacons.
+    /// </summary>
+    public bool AddElectricPoles { get; set; } = true;
+
+    /// <summary>
     /// The pipe planning strategies to attempt.
     /// </summary>
     public List<PipeStrategy> PipeStrategies { get; set; } = new List<PipeStrategy>(DefaultPipeStrategies);
