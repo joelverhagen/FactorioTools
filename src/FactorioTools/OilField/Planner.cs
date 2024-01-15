@@ -175,6 +175,17 @@ public static class Planner
             throw new FactorioToolsException("The initial number of pumpjacks does not match the final pumpjack count.");
         }
 
+        foreach (var (center, terminals) in context.CenterToTerminals.EnumeratePairs())
+        {
+            var centerEntity = context.Grid[center] as PumpjackCenter;
+            if (centerEntity is null)
+            {
+                throw new FactorioToolsException("A pumpjack center entity was not at the expected location.");
+            }
+
+            centerEntity.Direction = terminals[0].Direction;
+        }
+
         var rotatedPumpjacks = 0;
         foreach ((var location, var originalDirection) in context.CenterToOriginalDirection.EnumeratePairs())
         {

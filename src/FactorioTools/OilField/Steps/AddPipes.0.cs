@@ -37,17 +37,6 @@ public static partial class AddPipes
 
         AddPipeEntities.Execute(context, bestSolution.Pipes, bestSolution.UndergroundPipes);
 
-        foreach (var (center, terminals) in context.CenterToTerminals.EnumeratePairs())
-        {
-            var centerEntity = context.Grid[center] as PumpjackCenter;
-            if (centerEntity is null)
-            {
-                throw new FactorioToolsException("A pumpjack center entity was not at the expected location.");
-            }
-
-            centerEntity.Direction = terminals[0].Direction;
-        }
-
         if (bestBeacons is not null)
         {
             // Visualizer.Show(context.Grid, bestSolution.Beacons.Select(c => (DelaunatorSharp.IPoint)new DelaunatorSharp.Point(c.X, c.Y)), Array.Empty<DelaunatorSharp.IEdge>());
