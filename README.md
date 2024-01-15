@@ -78,20 +78,7 @@ I want to thank [teoxoy](https://github.com/teoxoy), author of the awesome Facto
 
 ### Planner quality
 
-| Electric pole        | Add beacons | Overlap beacons | Pipe count        | Pole count         | Beacon count      | Effect count       |
-| -------------------- | ----------- | --------------- | ----------------- | ------------------ | ----------------- | ------------------ |
-| small-electric-pole  | yes         | yes             | 46.39344262295082 | 34.131147540983605 | 80.81967213114754 | 110.14754098360656 |
-| medium-electric-pole | yes         | yes             | 46.39344262295082 | 26.327868852459016 | 80.81967213114754 | 110.14754098360656 |
-| substation           | yes         | yes             | 46.39344262295082 | 8.049180327868852  | 80.81967213114754 | 110.14754098360656 |
-| big-electric-pole    | yes         | yes             | 49.75409836065574 | 35.278688524590166 | 77.04918032786885 | 106.24590163934427 |
-| small-electric-pole  | yes         | no              | 44.68852459016394 | 14.229508196721312 | 6.19672131147541  | 11.80327868852459  |
-| medium-electric-pole | yes         | no              | 44.68852459016394 | 11.60655737704918  | 6.19672131147541  | 11.80327868852459  |
-| substation           | yes         | no              | 44.68852459016394 | 4.377049180327869  | 6.19672131147541  | 11.80327868852459  |
-| big-electric-pole    | yes         | no              | 44.90163934426229 | 11.360655737704919 | 6.19672131147541  | 11.80327868852459  |
-| small-electric-pole  | no          | N/A             | 87.65573770491804 | 13.557377049180328 | 0                 | 0                  |
-| medium-electric-pole | no          | N/A             | 87.65573770491804 | 10.59016393442623  | 0                 | 0                  |
-| substation           | no          | N/A             | 87.65573770491804 | 4.016393442622951  | 0                 | 0                  |
-| big-electric-pole    | no          | N/A             | 87.88524590163935 | 9.639344262295081  | 0                 | 0                  |
+See [`Score.HasExpectedScore.verified.txt`](test/FactorioTools.Test/OilField/Score.HasExpectedScore.verified.txt) for results. There is a table at the bottom.
 
 ### Runtime performance
 
