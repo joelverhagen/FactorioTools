@@ -579,6 +579,8 @@ public static partial class AddPipes
             List<Location>? path;
             if (strategy == PipeStrategy.FbeOriginal)
             {
+                // We can't terminal early based on max turns because this leads to different results since it allows
+                // secondary path options that would have otherwise been not considered for a given start and goal state.
                 path = BreadthFirstFinder.GetShortestPath(context, l.B, l.A);
                 if (path is null)
                 {
