@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param ()
 
-$repoDir = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoDir = Resolve-Path (Join-Path $PSScriptRoot "../..")
 $compilerDir = Join-Path $repoDir "submodules/CSharp.lua/CSharp.lua.Launcher"
 $baseOutputDir = Join-Path $repoDir "src/lua"
 
