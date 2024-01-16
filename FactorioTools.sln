@@ -11,8 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
-		global.json = global.json
 		Directory.Build.props = Directory.Build.props
+		global.json = global.json
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
@@ -44,6 +44,12 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SourceGenerator", "submodules\FluteSharp\src\SourceGenerator\SourceGenerator.csproj", "{CA3BE482-7936-432C-878F-F856719E326E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FactorioTools.Serialization", "src\FactorioTools.Serialization\FactorioTools.Serialization.csproj", "{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CSharp.lua", "CSharp.lua", "{1C96F1C2-23C7-40C7-AA33-BB16311DFDDE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp.lua", "submodules\CSharp.lua\CSharp.lua\CSharp.lua.csproj", "{742421E3-AE7F-46DB-B569-5F3C5E261940}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp.lua.Launcher", "submodules\CSharp.lua\CSharp.lua.Launcher\CSharp.lua.Launcher.csproj", "{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -187,6 +193,30 @@ Global
 		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x64.Build.0 = Release|Any CPU
 		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x86.ActiveCfg = Release|Any CPU
 		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79}.Release|x86.Build.0 = Release|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Debug|x64.Build.0 = Debug|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Debug|x86.Build.0 = Debug|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Release|Any CPU.Build.0 = Release|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Release|x64.ActiveCfg = Release|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Release|x64.Build.0 = Release|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Release|x86.ActiveCfg = Release|Any CPU
+		{742421E3-AE7F-46DB-B569-5F3C5E261940}.Release|x86.Build.0 = Release|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Debug|x64.Build.0 = Debug|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Debug|x86.Build.0 = Debug|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Release|x64.ActiveCfg = Release|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Release|x64.Build.0 = Release|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Release|x86.ActiveCfg = Release|Any CPU
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -205,6 +235,9 @@ Global
 		{85D6968F-F3B7-40FC-8491-524D77FD858E} = {ADC9955B-7C4B-4657-B6F8-DDD569315D2A}
 		{CA3BE482-7936-432C-878F-F856719E326E} = {EEA7B6C1-01A0-465D-8806-5E48680F8E70}
 		{AA3FA811-5810-40D4-ADB4-C9688EA4FA79} = {2237B275-4DF9-492E-A555-E38CE0DC0E12}
+		{1C96F1C2-23C7-40C7-AA33-BB16311DFDDE} = {C941BE21-DBF2-46EA-879E-892758A3AE53}
+		{742421E3-AE7F-46DB-B569-5F3C5E261940} = {1C96F1C2-23C7-40C7-AA33-BB16311DFDDE}
+		{5A546BA8-1514-47DD-A850-0F8B9C2B8F79} = {1C96F1C2-23C7-40C7-AA33-BB16311DFDDE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E6A453D-7E2E-4504-B5F6-474D9AEA13B8}
