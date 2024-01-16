@@ -43,7 +43,7 @@
             var options = OilFieldOptions.ForMediumElectricPole;
             var bp = ParseBlueprint.Execute(InputBlueprint);
             (var context, _)= Planner.Execute(options, bp);
-            OutputBlueprint = GridToBlueprintString.Execute(context, addFbeOffset: false);
+            OutputBlueprint = GridToBlueprintString.Execute(context, addFbeOffset: false, addAvoidEntities: false);
             Status = "Done: " + sw.Elapsed;
         }
         catch (Exception ex)

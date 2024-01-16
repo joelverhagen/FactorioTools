@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -7,7 +8,7 @@ public static class CleanBlueprint
 {
     public static Blueprint Execute(Blueprint blueprint)
     {
-        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint);
+        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint, Array.Empty<AvoidLocation>());
 
         var entities = new List<Entity>();
 

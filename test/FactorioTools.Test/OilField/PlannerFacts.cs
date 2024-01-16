@@ -107,6 +107,48 @@ public class PlannerFacts : BasePlannerFacts
     }
 
     [Fact]
+    public async Task AllowsLocationsToBeAvoided()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForMediumElectricPole;
+        options.ValidateSolution = true;
+        options.AddBeacons = true;
+        var blueprint = new Blueprint
+        {
+            Entities = new[]
+            {
+                new Entity { Name = EntityNames.Vanilla.Pumpjack, Position = new Position { X = -3, Y = -5 } },
+                new Entity { Name = EntityNames.Vanilla.Pumpjack, Position = new Position { X = 4, Y = 5 } },
+            },
+            Icons = new[]
+            {
+                new Icon
+                {
+                    Index = 1,
+                    Signal = new SignalID
+                    {
+                        Name = EntityNames.Vanilla.Pumpjack,
+                        Type = SignalTypes.Vanilla.Item,
+                    }
+                }
+            },
+            Item = ItemNames.Vanilla.Blueprint,
+            Version = 0,
+        };
+        var avoid = Enumerable.Range(-7, 16).Select(x => new AvoidLocation(x, 0)).ToArray();
+
+        // Act
+        var result = Planner.Execute(options, blueprint, avoid);
+
+        // Assert
+#if USE_VERIFY
+        await Verify(GetGridString(result));
+#else
+        await Task.Yield();
+#endif
+    }
+
+    [Fact]
     public async Task ExecuteSample()
     {
         var result = Planner.ExecuteSample();

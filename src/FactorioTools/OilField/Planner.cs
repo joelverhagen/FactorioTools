@@ -1,4 +1,6 @@
-﻿using Knapcode.FactorioTools.Data;
+﻿using System;
+using System.Collections.Generic;
+using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -81,16 +83,30 @@ public static class Planner
 
     public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, Blueprint inputBlueprint)
     {
-        return Execute(options, inputBlueprint, electricPolesAvoid: EmptyLocationSet.Instance, EletricPolesMode.AddLast);
+        return Execute(
+            options,
+            inputBlueprint,
+            avoid: Array.Empty<AvoidLocation>());
+    }
+
+    public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyList<AvoidLocation> avoid)
+    {
+        return Execute(
+            options,
+            inputBlueprint,
+            avoid,
+            electricPolesAvoid: EmptyLocationSet.Instance,
+            EletricPolesMode.AddLast);
     }
 
     private static (Context Context, OilFieldPlanSummary Summary) Execute(
         OilFieldOptions options,
         Blueprint blueprint,
+        IReadOnlyList<AvoidLocation> avoid,
         ILocationSet electricPolesAvoid,
         EletricPolesMode electricPolesMode)
     {
-        var context = InitializeContext.Execute(options, blueprint);
+        var context = InitializeContext.Execute(options, blueprint, avoid);
         var initialPumpjackCount = context.CenterToTerminals.Count;
         var addElectricPolesFirst = electricPolesMode != EletricPolesMode.AddLast;
 
@@ -119,7 +135,7 @@ public static class Planner
                         badInput: true);
                 }
 
-                return Execute(options, blueprint, EmptyLocationSet.Instance, EletricPolesMode.AddFirstAndAvoidAllTerminals);
+                return Execute(options, blueprint, avoid, EmptyLocationSet.Instance, EletricPolesMode.AddFirstAndAvoidAllTerminals);
             }
             else
             {
@@ -164,7 +180,7 @@ public static class Planner
                     else
                     {
                         electricPolesAvoid = GetElectricPolesAvoid(context);
-                        return Execute(options, blueprint, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
+                        return Execute(options, blueprint, avoid, electricPolesAvoid, EletricPolesMode.AddFirstAndAvoidSpecificTerminals);
                     }
                 }
             }

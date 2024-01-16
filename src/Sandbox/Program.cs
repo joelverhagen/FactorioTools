@@ -108,7 +108,7 @@ public partial class Program
 
                     if (blueprintStrings.Length == 1)
                     {
-                        var newBlueprint = GridToBlueprintString.Execute(context, addFbeOffset: false);
+                        var newBlueprint = GridToBlueprintString.Execute(context, addFbeOffset: false, addAvoidEntities: true);
                         Console.WriteLine(newBlueprint);
                     }
                 }

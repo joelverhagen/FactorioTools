@@ -34,7 +34,7 @@ public class OilFieldController : ControllerBase
         var parsedBlueprint = ParseBlueprint.Execute(request.Blueprint);
         _logger.LogInformation("Planning oil field for blueprint {Blueprint}", request.Blueprint);
         (var context, var summary) = Planner.Execute(request, parsedBlueprint);
-        var outputBlueprint = GridToBlueprintString.Execute(context, request.AddFbeOffset);
+        var outputBlueprint = GridToBlueprintString.Execute(context, request.AddFbeOffset, addAvoidEntities: false);
         return new OilFieldPlanResponse(request, outputBlueprint, summary);
     }
 }

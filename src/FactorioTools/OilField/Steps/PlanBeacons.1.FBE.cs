@@ -353,7 +353,7 @@ public static partial class PlanBeacons
             int height;
             bool effect;
 
-            if (entity is TemporaryEntity)
+            if (entity is TemporaryEntity || entity is AvoidEntity)
             {
                 width = 1;
                 height = 1;

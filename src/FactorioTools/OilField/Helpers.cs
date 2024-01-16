@@ -1197,4 +1197,14 @@ public static class Helpers
 
         return lines;
     }
+
+    public static int ToInt(float x, string error)
+    {
+        if (Math.Abs(x % 1) > float.Epsilon * 100)
+        {
+            throw new FactorioToolsException(error);
+        }
+
+        return (int)Math.Round(x, 0);
+    }
 }

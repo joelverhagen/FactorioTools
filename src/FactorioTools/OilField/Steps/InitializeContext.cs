@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class InitializeContext
 {
-    public static Context Execute(OilFieldOptions options, Blueprint blueprint)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid)
     {
         // Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
         //   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
@@ -22,7 +22,7 @@ public static class InitializeContext
             marginY += options.BeaconSupplyHeight + (options.BeaconHeight / 2);
         }
 
-        return Execute(options, blueprint, marginX, marginY);
+        return Execute(options, blueprint, avoid, marginX, marginY);
     }
 
     public static Context GetEmpty(OilFieldOptions options, int width, int height)
@@ -46,14 +46,14 @@ public static class InitializeContext
             Version = 1,
         };
 
-        return Execute(options, blueprint, width, height);
+        return Execute(options, blueprint, Array.Empty<AvoidLocation>(), width, height);
     }
 
-    private static Context Execute(OilFieldOptions options, Blueprint blueprint, int marginX, int marginY)
+    private static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int marginX, int marginY)
     {
-        var (centerAndOriginalDirections, deltaX, deltaY) = GetCenterOriginalDirectionsAndDelta(blueprint, marginX, marginY);
+        var (centerAndOriginalDirections, avoidLocations, deltaX, deltaY) = TranslateLocations(blueprint, avoid, marginX, marginY);
 
-        var grid = InitializeGrid(centerAndOriginalDirections, marginX, marginY);
+        var grid = InitializeGrid(centerAndOriginalDirections, avoidLocations, marginX, marginY);
 
         var centers = new List<Location>(centerAndOriginalDirections.Count);
         PopulateCenters(centerAndOriginalDirections, centers);
@@ -148,7 +148,7 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static Tuple<List<Tuple<Location, Direction>>, float, float> GetCenterOriginalDirectionsAndDelta(Blueprint blueprint, int marginX, int marginY)
+    private static Tuple<List<Tuple<Location, Direction>>, List<Location>, float, float> TranslateLocations(Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int marginX, int marginY)
     {
         var pumpjacks = new List<Entity>();
         for (var i = 0; i < blueprint.Entities.Length; i++)
@@ -166,50 +166,56 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centerAndOriginalDirections = new List<Tuple<Location, Direction>>();
+        var centerAndOriginalDirections = new List<Tuple<Location, Direction>>(pumpjacks.Count);
+        var avoidLocations = new List<Location>(avoid.Count);
 
         float deltaX = 0;
         float deltaY = 0;
 
-        if (pumpjacks.Count > 0)
+        if (pumpjacks.Count > 0 || avoid.Count > 0)
         {
-            deltaX = 0 - pumpjacks.Min(x => x.Position.X) + marginX;
-            deltaY = 0 - pumpjacks.Min(x => x.Position.Y) + marginY;
-            foreach (var entity in pumpjacks)
+            float minX = float.MaxValue;
+            float minY = float.MaxValue;
+
+            if (pumpjacks.Count > 0)
             {
-                var x = entity.Position.X + deltaX;
-                var y = entity.Position.Y + deltaY;
+                minX = pumpjacks.Min(p => p.Position.X);
+                minY = pumpjacks.Min(p => p.Position.Y);
+            }
 
-                if (IsInteger(x))
-                {
-                    throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer X value after translation.");
-                }
+            if (avoid.Count > 0)
+            {
+                minX = Math.Min(minX, avoid.Min(a => a.X));
+                minY = Math.Min(minY, avoid.Min(a => a.Y));
+            }
 
-                if (IsInteger(y))
-                {
-                    throw new FactorioToolsException($"Entity {entity.EntityNumber} (a '{entity.Name}') does not have an integer Y value after translation.");
-                }
+            deltaX = 0 - minX + marginX;
+            deltaY = 0 - minY + marginY;
 
-                var center = new Location(ToInt(x), ToInt(y));
-                var originalDireciton = entity.Direction.GetValueOrDefault(Direction.Up);
-                centerAndOriginalDirections.Add(Tuple.Create(center, originalDireciton));
+            for (int i = 0; i < pumpjacks.Count; i++)
+            {
+                var p = pumpjacks[i];
+                var x = ToInt(p.Position.X + deltaX, $"Entity {p.EntityNumber} (a '{p.Name}') does not have an integer X value after translation.");
+                var y = ToInt(p.Position.Y + deltaY, $"Entity {p.EntityNumber} (a '{p.Name}') does not have an integer Y value after translation.");
+                var center = new Location(x, y);
+                var originalDirection = p.Direction.GetValueOrDefault(Direction.Up);
+                centerAndOriginalDirections.Add(Tuple.Create(center, originalDirection));
+            }
+
+            for (var i = 0; i < avoid.Count; i++)
+            {
+                var a = avoid[i];
+                var x = ToInt(a.X + deltaX, $"Avoided location {i} does not have an integer X value after translation.");
+                var y = ToInt(a.Y + deltaY, $"Avoided location {i} does not have an integer Y value after translation.");
+                var avoidLocation = new Location(x, y);
+                avoidLocations.Add(avoidLocation);
             }
         }
 
-        return Tuple.Create(centerAndOriginalDirections, deltaX, deltaY);
+        return Tuple.Create(centerAndOriginalDirections, avoidLocations, deltaX, deltaY);
     }
 
-    private static int ToInt(float x)
-    {
-        return (int)Math.Round(x, 0);
-    }
-
-    private static bool IsInteger(float value)
-    {
-        return Math.Abs(value % 1) > float.Epsilon * 100;
-    }
-
-    private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, int marginX, int marginY)
+    private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> avoidLocations, int marginX, int marginY)
     {
         // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
         // electric poles.
@@ -234,10 +240,21 @@ public static class InitializeContext
 
         SquareGrid grid = new PipeGrid(width, height);
 
-        // Fill the grid with the pumpjacks
-        foreach (var pair in centerAndOriginalDirections)
+        for (int i = 0; i < centerAndOriginalDirections.Count; i++)
         {
-            AddPumpjack(grid, pair.Item1);
+            AddPumpjack(grid, centerAndOriginalDirections[i].Item1);
+        }
+
+        for (var i = 0; i < avoidLocations.Count; i++)
+        {
+            var avoidLocation = avoidLocations[i];
+            var entity = grid[avoidLocation];
+            if (entity is not null && entity is not AvoidEntity)
+            {
+                throw new FactorioToolsException($"Avoided location {i} has another entity already placed there (perhaps it's part of a pumpjack spot).");
+            }
+
+            grid.AddEntity(avoidLocation, new AvoidEntity(grid.GetId()));
         }
 
         return grid;

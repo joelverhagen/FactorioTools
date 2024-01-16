@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -26,7 +27,7 @@ public static class GridToBlueprintString
         { EntityNames.AaiIndustry.SmallIronElectricPole, (1, 1) },
     };
 
-    public static string Execute(Context context, bool addFbeOffset)
+    public static string Execute(Context context, bool addFbeOffset, bool addAvoidEntities)
     {
         var entities = new List<Entity>();
         var nextEntityNumber = 1;
@@ -126,9 +127,19 @@ public static class GridToBlueprintString
                         Items = context.Options.BeaconModules,
                     });
                     break;
+                case AvoidEntity:
+                    if (addAvoidEntities)
+                    {
+                        entities.Add(new Entity
+                        {
+                            EntityNumber = nextEntityNumber++,
+                            Name = EntityNames.Vanilla.Wall,
+                            Position = position,
+                        });
+                    }
+                    break;
                 case BeaconSide:
                 case TemporaryEntity:
-                    // Ignore
                     break;
                 default:
                     throw new NotImplementedException();
@@ -137,9 +148,20 @@ public static class GridToBlueprintString
 
         var blueprint = new Blueprint
         {
-            Icons = context.InputBlueprint.Icons,
+            Icons = context.InputBlueprint.Icons ?? new[]
+            {
+                new Icon
+                {
+                    Index = 1,
+                    Signal = new SignalID
+                    {
+                        Name = EntityNames.Vanilla.Pumpjack,
+                        Type = SignalTypes.Vanilla.Item,
+                    }
+                }
+            },
             Version = context.InputBlueprint.Version,
-            Item = context.InputBlueprint.Item,
+            Item = context.InputBlueprint.Item ?? ItemNames.Vanilla.Blueprint,
             Entities = entities.ToArray(),
         };
 
