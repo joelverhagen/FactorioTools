@@ -61,10 +61,15 @@ export interface OilFieldPlan {
    */
   beaconCount: number;
   /**
-   * The number of pipes in the plan. For the same number of beacon effects and beacons, lower is better.
+   * The number of pipes in the plan. For the same number of beacon effects and beacons, lower is better. If underground pipes are used, this only counts the upwards and downwards connections for the underground stretches of pipes.
    * @format int32
    */
   pipeCount: number;
+  /**
+   * The number of pipes before beacons or underground pipes are placed.
+   * @format int32
+   */
+  pipeCountWithoutUnderground: number;
 }
 
 /** The properties needed to generate an oil field plan. */
@@ -92,6 +97,11 @@ export interface OilFieldPlanRequest {
    * @default true
    */
   overlapBeacons?: boolean;
+  /**
+   * Whether or not to add electric poles around the pumpjacks and (optionally) beacons.
+   * @default true
+   */
+  addElectricPoles?: boolean;
   /**
    * The pipe planning strategies to attempt.
    * @default ["Fbe","ConnectedCentersDelaunay","ConnectedCentersDelaunayMst","ConnectedCentersFlute"]
@@ -220,6 +230,8 @@ export interface OilFieldPlanRequestResponse {
    * overlap otherwise pumpjacks will break down with a beacon overload. For vanilla Factorio, this should be true.
    */
   overlapBeacons: boolean;
+  /** Whether or not to add electric poles around the pumpjacks and (optionally) beacons. */
+  addElectricPoles: boolean;
   /** The pipe planning strategies to attempt. */
   pipeStrategies: PipeStrategy[];
   /** The beacon planning strategies to attempt. This will have no affect if Knapcode.FactorioTools.OilField.OilFieldOptions.AddBeacons is false. */
