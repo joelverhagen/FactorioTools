@@ -6,3 +6,7 @@
 	path = submodules/delaunator-sharp
 	url = https://github.com/joelverhagen/delaunator-sharp.git
 	branch = lua-compat
+[submodule "submodules/CSharp.lua"]
+	path = submodules/CSharp.lua
+	url = https://github.com/joelverhagen/CSharp.lua.git
+	branch = lua-compat
