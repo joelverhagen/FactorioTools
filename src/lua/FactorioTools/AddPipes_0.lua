@@ -1251,7 +1251,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       -- CONNECT GROUPS
-      local maxTries = (strategy == 0 --[[PipeStrategy.FbeOriginal]]) and 3 or 10
+      local maxTries = (strategy == 0 --[[PipeStrategy.FbeOriginal]]) and 3 or 20
       local tries = maxTries
       local aloneGroups = ListGroup()
       local finalGroup = nil

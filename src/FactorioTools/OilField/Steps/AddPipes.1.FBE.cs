@@ -185,7 +185,7 @@ public static partial class AddPipes
         }
 
         // CONNECT GROUPS
-        var maxTries = strategy == PipeStrategy.FbeOriginal ? 3 : 10;
+        var maxTries = strategy == PipeStrategy.FbeOriginal ? 3 : 20;
         var tries = maxTries;
         var aloneGroups = new List<Group>();
         Group? finalGroup = null;
