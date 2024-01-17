@@ -1,7 +1,11 @@
 <template>
   <fieldset class="border p-3 mb-3">
     <legend>Electric poles</legend>
-    <CustomizeSelect custom-label="Entity" label="Entity" idPrefix="electric-pole"
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="add-electric-poles" v-model="addElectricPoles">
+      <label class="form-check-label" for="add-electric-poles">Add electric poles</label>
+    </div>
+    <CustomizeSelect v-if="addElectricPoles" custom-label="Entity" label="Entity" idPrefix="electric-pole"
       :showAdvancedOptions="showAdvancedOptions" :defaultValue="electricPoleEntityName"
       :defaultIsCustom="electricPoleIsCustom" v-model="electricPoleEntityName" v-model:isCustom="electricPoleIsCustom">
       <option value="small-electric-pole">Small electric pole</option>
@@ -9,7 +13,7 @@
       <option value="big-electric-pole">Big electric pole</option>
       <option value="substation">Substation</option>
     </CustomizeSelect>
-    <div class="row" v-show="showAdvancedOptions">
+    <div class="row" v-show="showAdvancedOptions && addElectricPoles">
       <div class="col-lg-4 mt-3">
         <label class="form-label" for="electric-pole-wire-reach">Wire reach</label>
         <input type="text" pattern="\d+(\.\d+)" min="1" max="99" class="form-control" id="electric-pole-wire-reach"
@@ -57,6 +61,7 @@ export default {
   data() {
     return pick(
       storeToRefs(useOilFieldStore()),
+      'addElectricPoles',
       'electricPoleEntityName',
       'electricPoleIsCustom',
       'electricPoleWidth',
