@@ -74,8 +74,17 @@ public class LocationIntSet : ILocationSet
 
     public void ExceptWith(ILocationSet other)
     {
-        var otherSet = ValidateSameDimensions(other);
-        _set.ExceptWith(otherSet._set);
+        if (other.Count == 0)
+        {
+            return;
+        }
+        else
+        {
+            foreach (var item in other.EnumerateItems())
+            {
+                _set.Remove(GetIndex(item));
+            }
+        }
     }
 
     public bool SetEquals(ILocationSet other)

@@ -84,8 +84,19 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
     end
     ExceptWith = function (this, other)
-      local otherSet = ValidateSameDimensions(this, other)
-      this._set:ExceptWith(otherSet._set)
+      if other:getCount() == 0 then
+        return
+      else
+        for _, item in System.each(other:EnumerateItems()) do
+          -- inline Knapcode.FactorioTools.OilField.LocationIntSet.GetIndex(Knapcode.FactorioTools.OilField.Location)
+          local default
+          do
+            local location = item
+            default = location.Y * this._width + location.X
+          end
+          this._set:Remove(default)
+        end
+      end
     end
     SetEquals = function (this, other)
       local otherSet = ValidateSameDimensions(this, other)
