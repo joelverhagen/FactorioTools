@@ -219,10 +219,9 @@ public static partial class AddPipes
             EliminateOtherTerminals(context, terminal);
             var pipes = context.GetSingleLocationSet(terminal.Terminal);
             var solutions = OptimizeAndAddSolutions(context, pipesToSolutions, default, pipes, centerToConnectedCenters: null);
-            foreach (var solution in solutions)
-            {
-                solution.Strategies.Clear();
-            }
+            var solution = solutions.Single();
+            solution.Strategies.Clear();
+            solution.Strategies.AddRange(context.Options.PipeStrategies);
         }
         else
         {

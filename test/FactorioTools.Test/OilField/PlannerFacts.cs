@@ -35,6 +35,59 @@ public class PlannerFacts : BasePlannerFacts
     }
 
     [Fact]
+    public void CanPlanSinglePumpjackSurrounded()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForMediumElectricPole;
+        options.ValidateSolution = true;
+        var blueprint = new Blueprint
+        {
+            Entities = new[]
+            {
+                new Entity
+                {
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position { X = 43.5f, Y = -3.5f },
+                }
+            }
+        };
+        var avoid = new AvoidLocation[]
+        {
+            new AvoidLocation(40.5f, -2.5f),
+            new AvoidLocation(40.5f, -3.5f),
+            new AvoidLocation(40.5f, -4.5f),
+            new AvoidLocation(40.5f, -5.5f),
+            new AvoidLocation(40.5f, -6.5f),
+            new AvoidLocation(41.5f, -2.5f),
+            new AvoidLocation(41.5f, -3.5f),
+            new AvoidLocation(41.5f, -4.5f),
+            new AvoidLocation(41.5f, -5.5f),
+            new AvoidLocation(41.5f, -6.5f),
+            new AvoidLocation(42.5f, -6.5f),
+            new AvoidLocation(43.5f, -6.5f),
+            new AvoidLocation(44.5f, -5.5f),
+            new AvoidLocation(44.5f, -6.5f),
+            new AvoidLocation(45.5f, -4.5f),
+            new AvoidLocation(45.5f, -5.5f),
+            new AvoidLocation(45.5f, -6.5f),
+            new AvoidLocation(46.5f, -0.5f),
+            new AvoidLocation(46.5f, -3.5f),
+            new AvoidLocation(46.5f, -4.5f),
+            new AvoidLocation(46.5f, -5.5f),
+            new AvoidLocation(46.5f, -6.5f),
+        };
+
+        // Act
+        var (_, result) = Planner.Execute(options, blueprint, avoid);
+
+        // Assert
+        Assert.Equal(16, result.SelectedPlans.Count);
+        Assert.Empty(result.AlternatePlans);
+        Assert.Empty(result.UnusedPlans);
+        Assert.Equal(1, result.RotatedPumpjacks);
+    }
+
+    [Fact]
     public void AllowsPumpjackWithDefaultDirection()
     {
         // Arrange

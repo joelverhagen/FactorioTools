@@ -51,6 +51,11 @@ public class Context
         }
 #endif
 
+        if (other is SingleLocationSet singleSet)
+        {
+            return new SingleLocationSet(singleSet);
+        }
+
         return new LocationBitSet((LocationBitSet)other);
     }
 

@@ -9,6 +9,13 @@ public class SingleLocationSet : ILocationSet
     private int _y;
     private bool _hasItem;
 
+    public SingleLocationSet(SingleLocationSet other)
+    {
+        _x = other._x;
+        _y = other._y;
+        _hasItem = other._hasItem;
+    }
+
     public SingleLocationSet(Location location)
     {
         _x = location.X;
