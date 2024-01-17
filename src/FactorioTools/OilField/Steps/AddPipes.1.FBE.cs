@@ -318,7 +318,7 @@ public static partial class AddPipes
                     {
                         return DelaunayTriangulation(context, middle, PipeStrategy.Fbe);
                     }
-                    else if (strategy == PipeStrategy.FbeOriginal || maxTurns > 4)
+                    else if (strategy == PipeStrategy.FbeOriginal || maxTurns > maxTries)
                     {
                         throw new FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group. Max turns: " + maxTurns);
                     }

@@ -1365,7 +1365,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                 -- Related to https://github.com/teoxoy/factorio-blueprint-editor/issues/253
                 if strategy == 0 --[[PipeStrategy.FbeOriginal]] then
                   return DelaunayTriangulation(context, middle, 1 --[[PipeStrategy.Fbe]])
-                elseif strategy == 0 --[[PipeStrategy.FbeOriginal]] or maxTurns > 4 then
+                elseif strategy == 0 --[[PipeStrategy.FbeOriginal]] or maxTurns > maxTries then
                   System.throw(KnapcodeFactorioTools.FactorioToolsException("There should be at least one connection between a leftover pumpjack and the final group. Max turns: " .. maxTurns))
                 end
 
