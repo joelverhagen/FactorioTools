@@ -27,7 +27,7 @@ public static partial class AddPipes
         // Check that nodes are not collinear
         if (AreLocationsCollinear(centers))
         {
-            var connected = centers.ToDictionary(context, c => c, c => context.GetLocationSet());
+            var connected = centers.ToDictionary(context, c => c, c => context.GetLocationSet(allowEnumerate: true));
             for (var j = 1; j < centers.Count; j++)
             {
                 connected[centers[j - 1]].Add(centers[j]);

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-public class AllowsBlueprintWithNonBlockingIsolatedArea : BasePlannerFacts
+public class AllowsBlueprintWithNonBlockingIsolatedArea : BasePlannerTest
 {
     [Theory]
     [MemberData(nameof(AllPipeStrategiesTestData))]

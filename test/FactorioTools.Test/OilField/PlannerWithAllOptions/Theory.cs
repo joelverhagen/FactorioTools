@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-public class PlannerOnAllBlueprintsAndOptions : BasePlannerFacts
+public class PlannerOnAllBlueprintsAndOptions : BasePlannerTest
 {
     [Theory]
     [MemberData(nameof(BlueprintsAndOptions))]

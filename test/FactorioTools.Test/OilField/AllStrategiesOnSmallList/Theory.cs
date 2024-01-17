@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-public class AllStrategiesOnSmallList : BasePlannerFacts
+public class AllStrategiesOnSmallList : BasePlannerTest
 {
     [Theory]
     [MemberData(nameof(SmallListIndexTestData))]

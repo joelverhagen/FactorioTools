@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class PlanUndergroundPipesTest
 {
-    public class Execute : BaseFacts
+    public class Execute : BaseTest
     {
         [Theory]
         [InlineData(1)]

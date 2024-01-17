@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class HelpersTest
 {
-    public class GetProviderCenterToCoveredCentersTest : BaseFacts
+    public class GetProviderCenterToCoveredCentersTest : BaseTest
     {
         [Fact]
         public void SmallElectricPole()
@@ -227,7 +227,7 @@ public class HelpersTest
         }
     }
 
-    public class GetElectricPoleCandidateToCovered : BaseFacts
+    public class GetElectricPoleCandidateToCovered : BaseTest
     {
         [Fact]
         public void SmallElectricPole_RemoveUnused()

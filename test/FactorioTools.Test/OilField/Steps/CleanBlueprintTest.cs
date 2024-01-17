@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class CleanBlueprintTest : BasePlannerFacts
+public class CleanBlueprintTest : BasePlannerTest
 {
     [Theory]
     [MemberData(nameof(BigListIndexTestData))]

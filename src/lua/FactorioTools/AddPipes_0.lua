@@ -1714,7 +1714,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         local connected = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
           return c
         end, function (c)
-          return context:GetLocationSet1()
+          return context:GetLocationSet2(true)
         end, KnapcodeOilField.Location, KnapcodeOilField.ILocationSet)
         for j = 1, #centers - 1 do
           connected:get(centers:get(j - 1)):Add(centers:get(j))

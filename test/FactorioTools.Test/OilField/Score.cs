@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class Score : BasePlannerFacts
+public class Score : BasePlannerTest
 {
     [Fact]
     public async Task HasExpectedScore()

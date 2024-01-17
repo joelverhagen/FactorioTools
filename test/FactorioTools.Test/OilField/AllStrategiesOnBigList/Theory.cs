@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-public class AllStrategiesOnBigList : BasePlannerFacts
+public class AllStrategiesOnBigList : BasePlannerTest
 {
     [Theory]
     [MemberData(nameof(BigListIndexTestData))]

@@ -1,6 +1,6 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-public class NonStandardBeacon : BasePlannerFacts
+public class NonStandardBeacon : BasePlannerTest
 {
     [Theory]
     [MemberData(nameof(SmallListIndexTestData))]
