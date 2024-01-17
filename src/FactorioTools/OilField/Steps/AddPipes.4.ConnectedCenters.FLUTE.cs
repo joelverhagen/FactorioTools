@@ -1,5 +1,4 @@
-﻿using System.Data;
-using Knapcode.FluteSharp;
+﻿using Knapcode.FluteSharp;
 using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;

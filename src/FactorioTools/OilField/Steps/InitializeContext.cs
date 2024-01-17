@@ -221,10 +221,26 @@ public static class InitializeContext
         // electric poles.
         int width = marginX;
         int height = marginY;
-        if (centerAndOriginalDirections.Count > 0)
+
+        if (centerAndOriginalDirections.Count > 0 || avoidLocations.Count > 0)
         {
-            width += 1 + centerAndOriginalDirections.Max(p => p.Item1.X);
-            height += 1 + centerAndOriginalDirections.Max(p => p.Item1.Y);
+            var maxX = int.MinValue;
+            var maxY = int.MinValue;
+
+            if (centerAndOriginalDirections.Count > 0)
+            {
+                maxX = centerAndOriginalDirections.Max(p => p.Item1.X);
+                maxY = centerAndOriginalDirections.Max(p => p.Item1.Y);
+            }
+
+            if (avoidLocations.Count > 0)
+            {
+                maxX = Math.Max(maxX, avoidLocations.Max(a => a.X));
+                maxY = Math.Max(maxY, avoidLocations.Max(a => a.Y));
+            }
+
+            width += 1 + maxX;
+            height += 1 + maxY;
         }
 
         const int maxWidth = 1000;

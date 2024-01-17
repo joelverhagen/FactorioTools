@@ -221,13 +221,31 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- electric poles.
       local width = marginX
       local height = marginY
-      if #centerAndOriginalDirections > 0 then
-        width = width + ((1 + KnapcodeFactorioTools.CollectionExtensions.Max(centerAndOriginalDirections, function (p)
-          return p[1].X
-        end, System.Tuple, System.Int32)))
-        height = height + ((1 + KnapcodeFactorioTools.CollectionExtensions.Max(centerAndOriginalDirections, function (p)
-          return p[1].Y
-        end, System.Tuple, System.Int32)))
+
+      if #centerAndOriginalDirections > 0 or #avoidLocations > 0 then
+        local maxX = -2147483648 --[[Int32.MinValue]]
+        local maxY = -2147483648 --[[Int32.MinValue]]
+
+        if #centerAndOriginalDirections > 0 then
+          maxX = KnapcodeFactorioTools.CollectionExtensions.Max(centerAndOriginalDirections, function (p)
+            return p[1].X
+          end, System.Tuple, System.Int32)
+          maxY = KnapcodeFactorioTools.CollectionExtensions.Max(centerAndOriginalDirections, function (p)
+            return p[1].Y
+          end, System.Tuple, System.Int32)
+        end
+
+        if #avoidLocations > 0 then
+          maxX = math.Max(maxX, KnapcodeFactorioTools.CollectionExtensions.Max(avoidLocations, function (a)
+            return a.X
+          end, KnapcodeOilField.Location, System.Int32))
+          maxY = math.Max(maxY, KnapcodeFactorioTools.CollectionExtensions.Max(avoidLocations, function (a)
+            return a.Y
+          end, KnapcodeOilField.Location, System.Int32))
+        end
+
+        width = width + ((1 + maxX))
+        height = height + ((1 + maxY))
       end
 
       local area = width * height

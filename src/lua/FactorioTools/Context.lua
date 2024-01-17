@@ -21,6 +21,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
 
+      local singleSet = other
+      if System.is(singleSet, KnapcodeOilField.SingleLocationSet) then
+        return System.new(KnapcodeOilField.SingleLocationSet, 2, singleSet)
+      end
+
       return KnapcodeOilField.LocationBitSet(System.cast(KnapcodeOilField.LocationBitSet, other))
     end
     GetLocationSet1 = function (this)
@@ -87,7 +92,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         if itemCount == 0 then
           set = KnapcodeOilField.EmptyLocationSet.Instance
         elseif itemCount == 1 then
-          set = System.new(KnapcodeOilField.SingleLocationSet, 2, firstLocation)
+          set = System.new(KnapcodeOilField.SingleLocationSet, 3, firstLocation)
         else
           System.throw(System.NotImplementedException())
         end
@@ -95,7 +100,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return set
     end
     GetSingleLocationSet = function (this, location)
-      return System.new(KnapcodeOilField.SingleLocationSet, 2, location)
+      return System.new(KnapcodeOilField.SingleLocationSet, 3, location)
     end
     return {
       DeltaX = 0,

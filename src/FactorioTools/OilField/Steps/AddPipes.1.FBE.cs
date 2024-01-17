@@ -155,6 +155,11 @@ public static partial class AddPipes
 
                         var result = AStar.GetShortestPath(context, context.Grid, tA.Terminal, goals);
 
+                        if (!result.Success)
+                        {
+                            throw new FactorioToolsException("A goal should have been reached.");
+                        }
+
                         if (connection is null)
                         {
                             connection = new TerminalPair(tA, tB, result.Path, middle);

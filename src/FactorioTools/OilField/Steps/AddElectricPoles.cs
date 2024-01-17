@@ -402,7 +402,7 @@ public static class AddElectricPoles
             }
 
             ElectricPoleCandidateInfo? candidateInfo = null;
-            Location candidate = default;
+            Location candidate = default!;
             foreach (var pair in candidateToInfo.EnumeratePairs())
             {
                 if (candidateInfo is null)
@@ -425,9 +425,9 @@ public static class AddElectricPoles
                 throw new FactorioToolsException("A candidate should have been found.");
             }
 
-            if (!allCandidateToInfo.ContainsKey(candidate))
+            if (!allCandidateToInfo.ContainsKey(candidate!))
             {
-                candidateToInfo.Remove(candidate);
+                candidateToInfo.Remove(candidate!);
 
                 if (candidateToInfo.Count == 0)
                 {
@@ -437,11 +437,11 @@ public static class AddElectricPoles
                 continue;
             }
 
-            Validate.CandidateCoversMoreEntities(context, poweredEntities, coveredEntities, candidate, candidateInfo);
+            Validate.CandidateCoversMoreEntities(context, poweredEntities, coveredEntities, candidate!, candidateInfo);
 
             AddProviderAndAllowMultipleProviders(
                 context,
-                candidate,
+                candidate!,
                 candidateInfo,
                 context.Options.ElectricPoleWidth,
                 context.Options.ElectricPoleHeight,
@@ -454,7 +454,7 @@ public static class AddElectricPoles
 
             // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-            electricPoleList.Add(candidate);
+            electricPoleList.Add(candidate!);
 
             UpdateCandidateInfo(context, allCandidateToInfo, roundedReach, candidate);
 

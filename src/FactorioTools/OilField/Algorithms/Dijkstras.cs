@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -16,7 +15,7 @@ public static class Dijkstras
         var costSoFar = context.SharedInstances.LocationToDouble;
         var inQueue = context.SharedInstances.LocationSetB;
 #else
-        var priorityQueue = new PriorityQueue<Location, double>();
+        var priorityQueue = new System.Collections.Generic.PriorityQueue<Location, double>();
         var costSoFar = context.GetLocationDictionary<double>();
         var inQueue = context.GetLocationSet();
 #endif

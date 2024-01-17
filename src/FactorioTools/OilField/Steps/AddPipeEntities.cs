@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Knapcode.FactorioTools.Data;
+﻿using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
 

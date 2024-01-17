@@ -9,13 +9,18 @@ end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("SingleLocationSet", function (namespace)
     local getCount, Add, Clear, Contains, CopyTo, EnumerateItems, ExceptWith, Overlaps, 
-    Remove, SetEquals, UnionWith, UnionWith1, __ctor1__, __ctor2__
+    Remove, SetEquals, UnionWith, UnionWith1, __ctor1__, __ctor2__, __ctor3__
     __ctor1__ = function (this)
       this._x = - 1
       this._y = - 1
       this._hasItem = false
     end
-    __ctor2__ = function (this, location)
+    __ctor2__ = function (this, other)
+      this._x = other._x
+      this._y = other._y
+      this._hasItem = other._hasItem
+    end
+    __ctor3__ = function (this, location)
       this._x = location.X
       this._y = location.Y
       this._hasItem = true
@@ -117,7 +122,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       UnionWith1 = UnionWith1,
       __ctor__ = {
         __ctor1__,
-        __ctor2__
+        __ctor2__,
+        __ctor3__
       }
     }
   end)

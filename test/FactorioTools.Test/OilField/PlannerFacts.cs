@@ -1,5 +1,4 @@
 ﻿using Knapcode.FactorioTools.Data;
-using NuGet.Frameworks;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -35,7 +34,7 @@ public class PlannerFacts : BasePlannerFacts
     }
 
     [Fact]
-    public void CanPlanSinglePumpjackSurrounded()
+    public async Task CanPlanSinglePumpjackSurrounded()
     {
         // Arrange
         var options = OilFieldOptions.ForMediumElectricPole;
@@ -78,13 +77,217 @@ public class PlannerFacts : BasePlannerFacts
         };
 
         // Act
-        var (_, result) = Planner.Execute(options, blueprint, avoid);
+        var result = Planner.Execute(options, blueprint, avoid);
 
         // Assert
-        Assert.Equal(16, result.SelectedPlans.Count);
-        Assert.Empty(result.AlternatePlans);
-        Assert.Empty(result.UnusedPlans);
-        Assert.Equal(1, result.RotatedPumpjacks);
+#if USE_VERIFY
+        await Verify(GetGridString(result));
+#else
+        await Task.Yield();
+#endif
+    }
+
+
+    [Fact]
+    public async Task CanPlanTwoPumpjacksWithLotsOfAvoids()
+    {
+        // Arrange
+        var options = OilFieldOptions.ForSmallElectricPole;
+        options.AddBeacons = false;
+        options.ValidateSolution = true;
+        var blueprint = new Blueprint
+        {
+            Entities = new[]
+            {
+                new Entity
+                {
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position { X = 35.5f, Y = -13.5f },
+                },
+                new Entity
+                {
+                    Name = EntityNames.Vanilla.Pumpjack,
+                    Position = new Position { X = 43.5f, Y = -3.5f },
+                }
+            }
+        };
+        var avoid = new AvoidLocation[]
+        {
+            new AvoidLocation(32.5f, -9.5f),
+            new AvoidLocation(32.5f, -8.5f),
+            new AvoidLocation(33.5f, -10.5f),
+            new AvoidLocation(33.5f, -9.5f),
+            new AvoidLocation(33.5f, -8.5f),
+            new AvoidLocation(33.5f, -7.5f),
+            new AvoidLocation(33.5f, -6.5f),
+            new AvoidLocation(34.5f, -10.5f),
+            new AvoidLocation(34.5f, -9.5f),
+            new AvoidLocation(34.5f, -8.5f),
+            new AvoidLocation(34.5f, -7.5f),
+            new AvoidLocation(34.5f, -6.5f),
+            new AvoidLocation(34.5f, -5.5f),
+            new AvoidLocation(34.5f, -4.5f),
+            new AvoidLocation(34.5f, -3.5f),
+            new AvoidLocation(35.5f, -10.5f),
+            new AvoidLocation(35.5f, -9.5f),
+            new AvoidLocation(35.5f, -8.5f),
+            new AvoidLocation(35.5f, -7.5f),
+            new AvoidLocation(35.5f, -6.5f),
+            new AvoidLocation(35.5f, -5.5f),
+            new AvoidLocation(35.5f, -4.5f),
+            new AvoidLocation(35.5f, -3.5f),
+            new AvoidLocation(35.5f, -2.5f),
+            new AvoidLocation(36.5f, -11.5f),
+            new AvoidLocation(36.5f, -10.5f),
+            new AvoidLocation(36.5f, -9.5f),
+            new AvoidLocation(36.5f, -8.5f),
+            new AvoidLocation(36.5f, -7.5f),
+            new AvoidLocation(36.5f, -6.5f),
+            new AvoidLocation(36.5f, -5.5f),
+            new AvoidLocation(36.5f, -4.5f),
+            new AvoidLocation(36.5f, -3.5f),
+            new AvoidLocation(36.5f, -2.5f),
+            new AvoidLocation(37.5f, -11.5f),
+            new AvoidLocation(37.5f, -10.5f),
+            new AvoidLocation(37.5f, -9.5f),
+            new AvoidLocation(37.5f, -8.5f),
+            new AvoidLocation(37.5f, -7.5f),
+            new AvoidLocation(37.5f, -6.5f),
+            new AvoidLocation(37.5f, -5.5f),
+            new AvoidLocation(37.5f, -4.5f),
+            new AvoidLocation(37.5f, -3.5f),
+            new AvoidLocation(37.5f, -1.5f),
+            new AvoidLocation(37.5f, -0.5f),
+            new AvoidLocation(38.5f, -16.5f),
+            new AvoidLocation(38.5f, -15.5f),
+            new AvoidLocation(38.5f, -14.5f),
+            new AvoidLocation(38.5f, -11.5f),
+            new AvoidLocation(38.5f, -10.5f),
+            new AvoidLocation(38.5f, -9.5f),
+            new AvoidLocation(38.5f, -8.5f),
+            new AvoidLocation(38.5f, -7.5f),
+            new AvoidLocation(38.5f, -6.5f),
+            new AvoidLocation(38.5f, -5.5f),
+            new AvoidLocation(38.5f, -4.5f),
+            new AvoidLocation(38.5f, -3.5f),
+            new AvoidLocation(38.5f, -1.5f),
+            new AvoidLocation(38.5f, -0.5f),
+            new AvoidLocation(39.5f, -16.5f),
+            new AvoidLocation(39.5f, -15.5f),
+            new AvoidLocation(39.5f, -14.5f),
+            new AvoidLocation(39.5f, -13.5f),
+            new AvoidLocation(39.5f, -10.5f),
+            new AvoidLocation(39.5f, -9.5f),
+            new AvoidLocation(39.5f, -8.5f),
+            new AvoidLocation(39.5f, -7.5f),
+            new AvoidLocation(39.5f, -6.5f),
+            new AvoidLocation(39.5f, -5.5f),
+            new AvoidLocation(39.5f, -4.5f),
+            new AvoidLocation(39.5f, -3.5f),
+            new AvoidLocation(39.5f, -1.5f),
+            new AvoidLocation(39.5f, -0.5f),
+            new AvoidLocation(40.5f, -16.5f),
+            new AvoidLocation(40.5f, -15.5f),
+            new AvoidLocation(40.5f, -14.5f),
+            new AvoidLocation(40.5f, -13.5f),
+            new AvoidLocation(40.5f, -12.5f),
+            new AvoidLocation(40.5f, -11.5f),
+            new AvoidLocation(40.5f, -10.5f),
+            new AvoidLocation(40.5f, -9.5f),
+            new AvoidLocation(40.5f, -8.5f),
+            new AvoidLocation(40.5f, -7.5f),
+            new AvoidLocation(40.5f, -6.5f),
+            new AvoidLocation(40.5f, -5.5f),
+            new AvoidLocation(40.5f, -4.5f),
+            new AvoidLocation(40.5f, -3.5f),
+            new AvoidLocation(40.5f, -2.5f),
+            new AvoidLocation(41.5f, -16.5f),
+            new AvoidLocation(41.5f, -15.5f),
+            new AvoidLocation(41.5f, -14.5f),
+            new AvoidLocation(41.5f, -13.5f),
+            new AvoidLocation(41.5f, -12.5f),
+            new AvoidLocation(41.5f, -11.5f),
+            new AvoidLocation(41.5f, -10.5f),
+            new AvoidLocation(41.5f, -9.5f),
+            new AvoidLocation(41.5f, -8.5f),
+            new AvoidLocation(41.5f, -7.5f),
+            new AvoidLocation(41.5f, -6.5f),
+            new AvoidLocation(41.5f, -5.5f),
+            new AvoidLocation(41.5f, -4.5f),
+            new AvoidLocation(41.5f, -3.5f),
+            new AvoidLocation(41.5f, -2.5f),
+            new AvoidLocation(42.5f, -16.5f),
+            new AvoidLocation(42.5f, -15.5f),
+            new AvoidLocation(42.5f, -14.5f),
+            new AvoidLocation(42.5f, -13.5f),
+            new AvoidLocation(42.5f, -11.5f),
+            new AvoidLocation(42.5f, -10.5f),
+            new AvoidLocation(42.5f, -9.5f),
+            new AvoidLocation(42.5f, -8.5f),
+            new AvoidLocation(42.5f, -7.5f),
+            new AvoidLocation(42.5f, -6.5f),
+            new AvoidLocation(43.5f, -16.5f),
+            new AvoidLocation(43.5f, -15.5f),
+            new AvoidLocation(43.5f, -14.5f),
+            new AvoidLocation(43.5f, -13.5f),
+            new AvoidLocation(43.5f, -12.5f),
+            new AvoidLocation(43.5f, -11.5f),
+            new AvoidLocation(43.5f, -10.5f),
+            new AvoidLocation(43.5f, -9.5f),
+            new AvoidLocation(43.5f, -8.5f),
+            new AvoidLocation(43.5f, -7.5f),
+            new AvoidLocation(43.5f, -6.5f),
+            new AvoidLocation(44.5f, -16.5f),
+            new AvoidLocation(44.5f, -15.5f),
+            new AvoidLocation(44.5f, -14.5f),
+            new AvoidLocation(44.5f, -13.5f),
+            new AvoidLocation(44.5f, -12.5f),
+            new AvoidLocation(44.5f, -11.5f),
+            new AvoidLocation(44.5f, -10.5f),
+            new AvoidLocation(44.5f, -9.5f),
+            new AvoidLocation(44.5f, -8.5f),
+            new AvoidLocation(44.5f, -7.5f),
+            new AvoidLocation(44.5f, -6.5f),
+            new AvoidLocation(44.5f, -5.5f),
+            new AvoidLocation(45.5f, -16.5f),
+            new AvoidLocation(45.5f, -15.5f),
+            new AvoidLocation(45.5f, -14.5f),
+            new AvoidLocation(45.5f, -13.5f),
+            new AvoidLocation(45.5f, -12.5f),
+            new AvoidLocation(45.5f, -11.5f),
+            new AvoidLocation(45.5f, -10.5f),
+            new AvoidLocation(45.5f, -9.5f),
+            new AvoidLocation(45.5f, -8.5f),
+            new AvoidLocation(45.5f, -7.5f),
+            new AvoidLocation(45.5f, -6.5f),
+            new AvoidLocation(45.5f, -5.5f),
+            new AvoidLocation(45.5f, -4.5f),
+            new AvoidLocation(46.5f, -16.5f),
+            new AvoidLocation(46.5f, -15.5f),
+            new AvoidLocation(46.5f, -14.5f),
+            new AvoidLocation(46.5f, -13.5f),
+            new AvoidLocation(46.5f, -12.5f),
+            new AvoidLocation(46.5f, -11.5f),
+            new AvoidLocation(46.5f, -10.5f),
+            new AvoidLocation(46.5f, -9.5f),
+            new AvoidLocation(46.5f, -8.5f),
+            new AvoidLocation(46.5f, -7.5f),
+            new AvoidLocation(46.5f, -6.5f),
+            new AvoidLocation(46.5f, -5.5f),
+            new AvoidLocation(46.5f, -4.5f),
+            new AvoidLocation(46.5f, -3.5f),
+            new AvoidLocation(46.5f, -0.5f),
+        };
+
+        // Act
+        var result = Planner.Execute(options, blueprint, avoid);
+
+        // Assert
+#if USE_VERIFY
+        await Verify(GetGridString(result));
+#else
+        await Task.Yield();
+#endif
     }
 
     [Fact]

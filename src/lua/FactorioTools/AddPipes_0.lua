@@ -802,9 +802,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         KnapcodeOilField.Helpers.EliminateOtherTerminals(context, terminal)
         local pipes = context:GetSingleLocationSet(terminal.Terminal)
         local solutions = OptimizeAndAddSolutions(context, pipesToSolutions, 0, pipes)
-        for _, solution in System.each(solutions) do
-          solution.Strategies:Clear()
-        end
+        local solution = KnapcodeFactorioTools.CollectionExtensions.Single(solutions, class.Solution)
+        solution.Strategies:Clear()
+        solution.Strategies:AddRange(context.Options.PipeStrategies)
       else
         local completedStrategies = System.new(KnapcodeOilField.CustomCountedBitArray, 2, 5 --[[(int)PipeStrategy.ConnectedCentersFlute + 1]])
         -- max value
@@ -1206,6 +1206,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                     end
 
                     local result = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, tA.Terminal, goals, true, 1, 1)
+
+                    if not result.Success then
+                      System.throw(KnapcodeFactorioTools.FactorioToolsException("A goal should have been reached."))
+                    end
 
                     if connection == nil then
                       connection = class.TerminalPair(tA, tB, result:getPath(), middle)
