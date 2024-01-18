@@ -17,78 +17,74 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local cameFrom = context:GetLocationDictionary(KnapcodeOilField.ILocationSet)
       cameFrom:set(start, context:GetLocationSet1())
       local remainingGoals = context:GetLocationSet(goals)
+      local reachedGoals = context:GetLocationSet2(allowGoalEnumerate)
+
 
       local priorityQueue = PriorityQueueLocationDouble()
       local costSoFar = context:GetLocationDictionary(System.Double)
       local inQueue = context:GetLocationSet1()
-
-
-      local reachedGoals = context:GetLocationSet2(allowGoalEnumerate)
       costSoFar:set(start, 0)
 
-      System.try(function ()
-        priorityQueue:Enqueue(start, 0)
-        inQueue:Add(start)
+      priorityQueue:Enqueue(start, 0)
+      inQueue:Add(start)
 
-        local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
 
 
-        while #priorityQueue > 0 do
-          local continue
-          repeat
-            local current = priorityQueue:Dequeue()
-            inQueue:Remove(current)
-            local currentCost = costSoFar:get(current)
+      while #priorityQueue > 0 do
+        local continue
+        repeat
+          local current = priorityQueue:Dequeue()
+          inQueue:Remove(current)
+          local currentCost = costSoFar:get(current)
 
-            if remainingGoals:Remove(current) then
-              reachedGoals:Add(current)
+          if remainingGoals:Remove(current) then
+            reachedGoals:Add(current)
 
-              if stopOnFirstGoal or remainingGoals:getCount() == 0 then
-                break
-              end
+            if stopOnFirstGoal or remainingGoals:getCount() == 0 then
+              break
             end
-
-            grid:GetNeighbors(neighbors, current)
-            for i = 0, neighbors:getLength() - 1 do
-              local continue
-              repeat
-                local neighbor = neighbors:get(i)
-                if not neighbor.IsValid then
-                  continue = true
-                  break
-                end
-
-                local alternateCost = currentCost + 1 --[[SquareGrid.NeighborCost]]
-                local previousExists
-                local default, neighborCost = costSoFar:TryGetValue(neighbor)
-                previousExists = default
-                if not previousExists or alternateCost <= neighborCost then
-                  if not previousExists or alternateCost < neighborCost then
-                    costSoFar:set(neighbor, alternateCost)
-                    cameFrom:set(neighbor, context:GetLocationSet3(current))
-                  else
-                    cameFrom:get(neighbor):Add(current)
-                  end
-
-                  if not inQueue:Contains(neighbor) then
-                    priorityQueue:Enqueue(neighbor, alternateCost)
-                    inQueue:Add(neighbor)
-                  end
-                end
-                continue = true
-              until 1
-              if not continue then
-                break
-              end
-            end
-            continue = true
-          until 1
-          if not continue then
-            break
           end
+
+          grid:GetNeighbors(neighbors, current)
+          for i = 0, neighbors:getLength() - 1 do
+            local continue
+            repeat
+              local neighbor = neighbors:get(i)
+              if not neighbor.IsValid then
+                continue = true
+                break
+              end
+
+              local alternateCost = currentCost + 1 --[[SquareGrid.NeighborCost]]
+              local previousExists
+              local default, neighborCost = costSoFar:TryGetValue(neighbor)
+              previousExists = default
+              if not previousExists or alternateCost <= neighborCost then
+                if not previousExists or alternateCost < neighborCost then
+                  costSoFar:set(neighbor, alternateCost)
+                  cameFrom:set(neighbor, context:GetLocationSet3(current))
+                else
+                  cameFrom:get(neighbor):Add(current)
+                end
+
+                if not inQueue:Contains(neighbor) then
+                  priorityQueue:Enqueue(neighbor, alternateCost)
+                  inQueue:Add(neighbor)
+                end
+              end
+              continue = true
+            until 1
+            if not continue then
+              break
+            end
+          end
+          continue = true
+        until 1
+        if not continue then
+          break
         end
-      end, nil, function ()
-      end)
+      end
 
       return KnapcodeOilField.DijkstrasResult(cameFrom, reachedGoals)
     end

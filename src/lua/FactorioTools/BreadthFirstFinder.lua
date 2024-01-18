@@ -19,69 +19,62 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local toExplore = QueueLocation()
       local parents = context:GetLocationDictionary(KnapcodeOilField.Location)
       local visited = context:GetLocationSet1()
+      toExplore:Enqueue(start)
 
-      local default, extern = System.try(function ()
-        toExplore:Enqueue(start)
-
-        local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
 
 
-        while #toExplore > 0 do
-          local continue
-          repeat
-            local current = toExplore:Dequeue()
-            if not visited:Add(current) then
-              continue = true
-              break
-            end
-
-            if KnapcodeOilField.Location.op_Equality(current, goal) then
-              local default = ListLocation()
-              default:Add(current)
-              local output = default
-              while true do
-                local default, parent = parents:TryGetValue(current)
-                if not default then
-                  break
-                end
-                output:Add(parent)
-                current = parent
-              end
-
-              output:Reverse()
-              return true, output
-            end
-
-            context.Grid:GetNeighbors(neighbors, current)
-            for i = 0, neighbors:getLength() - 1 do
-              local continue
-              repeat
-                local next = neighbors:get(i)
-                if not next.IsValid or visited:Contains(next) or not parents:TryAdd(next, current) then
-                  continue = true
-                  break
-                end
-
-                toExplore:Enqueue(next)
-                continue = true
-              until 1
-              if not continue then
-                break
-              end
-            end
+      while #toExplore > 0 do
+        local continue
+        repeat
+          local current = toExplore:Dequeue()
+          if not visited:Add(current) then
             continue = true
-          until 1
-          if not continue then
             break
           end
-        end
 
-        return true, nil
-      end, nil, function ()
-      end)
-      if default then
-        return extern
+          if KnapcodeOilField.Location.op_Equality(current, goal) then
+            local default = ListLocation()
+            default:Add(current)
+            local output = default
+            while true do
+              local default, parent = parents:TryGetValue(current)
+              if not default then
+                break
+              end
+              output:Add(parent)
+              current = parent
+            end
+
+            output:Reverse()
+            return output
+          end
+
+          context.Grid:GetNeighbors(neighbors, current)
+          for i = 0, neighbors:getLength() - 1 do
+            local continue
+            repeat
+              local next = neighbors:get(i)
+              if not next.IsValid or visited:Contains(next) or not parents:TryAdd(next, current) then
+                continue = true
+                break
+              end
+
+              toExplore:Enqueue(next)
+              continue = true
+            until 1
+            if not continue then
+              break
+            end
+          end
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
       end
+
+      return nil
     end
     return {
       GetShortestPath = GetShortestPath

@@ -622,37 +622,33 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
       local idealPoint = idealLine:get(idealIndex)
 
-      local candidates = QueueLocation()
-      local attempted = context:GetLocationSet1()
-
-
       local selectedPoint = KnapcodeOilField.Location.getInvalid()
       local matchFound = false
-      System.try(function ()
-        candidates:Enqueue(idealPoint)
-        attempted:Add(idealPoint)
 
 
-        local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+      local candidates = QueueLocation()
+      local attempted = context:GetLocationSet1()
+      candidates:Enqueue(idealPoint)
+      attempted:Add(idealPoint)
+
+      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
 
 
-        while #candidates > 0 do
-          local candidate = candidates:Dequeue()
-          if KnapcodeOilField.Helpers.DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate) and KnapcodeOilField.Helpers.IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate) then
-            selectedPoint = candidate
-            matchFound = true
-            break
-          end
+      while #candidates > 0 do
+        local candidate = candidates:Dequeue()
+        if KnapcodeOilField.Helpers.DoesProviderFit(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate) and KnapcodeOilField.Helpers.IsProviderInBounds(context.Grid, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, candidate) then
+          selectedPoint = candidate
+          matchFound = true
+          break
+        end
 
-          context.Grid:GetAdjacent(neighbors, candidate)
-          for i = 0, neighbors:getLength() - 1 do
-            if neighbors:get(i).IsValid and AreElectricPolesConnected(idealLine:get(0), neighbors:get(i), context.Options) and attempted:Add(neighbors:get(i)) then
-              candidates:Enqueue(neighbors:get(i))
-            end
+        context.Grid:GetAdjacent(neighbors, candidate)
+        for i = 0, neighbors:getLength() - 1 do
+          if neighbors:get(i).IsValid and AreElectricPolesConnected(idealLine:get(0), neighbors:get(i), context.Options) and attempted:Add(neighbors:get(i)) then
+            candidates:Enqueue(neighbors:get(i))
           end
         end
-      end, nil, function ()
-      end)
+      end
 
       if not matchFound then
         System.throw(KnapcodeFactorioTools.FactorioToolsException("Could not find a pole that can be connected."))

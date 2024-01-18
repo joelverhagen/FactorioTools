@@ -1894,71 +1894,60 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return KnapcodeFactorioTools.CollectionExtensions.Single(groups, class.PumpjackGroup).Pipes
     end
     GetShortestPathToGroup = function (context, terminal, group, groupCentroidX, groupCentroidY)
-      local default, extern = System.try(function ()
-        local aStarResultV = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 2, 1)
-        local aStarResultH = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 1, 2)
+      local aStarResultV = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 2, 1)
+      local aStarResultH = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 1, 2)
+
+      if not aStarResultV.Success then
+        System.throw(KnapcodeFactorioTools.NoPathBetweenTerminalsException(terminal.Terminal, KnapcodeFactorioTools.CollectionExtensions.First(group.Pipes:EnumerateItems(), KnapcodeOilField.Location)))
+      end
+
+      if KnapcodeFactorioTools.CollectionExtensions.SequenceEqual(aStarResultV:getPath(), aStarResultH:getPath(), KnapcodeOilField.Location) then
+        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
+      end
+
+      local adjacentPipesV = 0
+      local centroidDistanceSquaredV = 0
+
+      local adjacentPipesH = 0
+      local centroidDistanceSquaredH = 0
+
+      local sizeEstimate = #aStarResultV:getPath() + #aStarResultH:getPath()
 
 
-        if not aStarResultV.Success then
-          System.throw(KnapcodeFactorioTools.NoPathBetweenTerminalsException(terminal.Terminal, KnapcodeFactorioTools.CollectionExtensions.First(group.Pipes:EnumerateItems(), KnapcodeOilField.Location)))
-        end
-
-        if KnapcodeFactorioTools.CollectionExtensions.SequenceEqual(aStarResultV:getPath(), aStarResultH:getPath(), KnapcodeOilField.Location) then
-          return true, KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
-        end
-
-        local adjacentPipesV = 0
-        local centroidDistanceSquaredV = 0
-
-        local adjacentPipesH = 0
-        local centroidDistanceSquaredH = 0
-
-        local sizeEstimate = #aStarResultV:getPath() + #aStarResultH:getPath()
-
-        local locationToCentroidDistanceSquared = context:GetLocationDictionary1(sizeEstimate, System.Double)
-
-
-        System.try(function ()
-          local width = context.Grid.Width
-          do
-            local i = 0
-            while i < math.Max(#aStarResultV:getPath(), #aStarResultH:getPath()) do
-              if i < #aStarResultV:getPath() then
-                local location = aStarResultV:getPath():get(i)
-                if context.LocationToAdjacentCount:get(location.Y * width + location.X) > 0 then
-                  adjacentPipesV = adjacentPipesV + 1
-                end
-
-                centroidDistanceSquaredV = centroidDistanceSquaredV + GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)
-              end
-
-              if i < #aStarResultH:getPath() then
-                local location = aStarResultH:getPath():get(i)
-                if context.LocationToAdjacentCount:get(location.Y * width + location.X) > 0 then
-                  adjacentPipesH = adjacentPipesH + 1
-                end
-
-                centroidDistanceSquaredH = centroidDistanceSquaredH + GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)
-              end
-              i = i + 1
+      local locationToCentroidDistanceSquared = context:GetLocationDictionary1(sizeEstimate, System.Double)
+      local width = context.Grid.Width
+      do
+        local i = 0
+        while i < math.Max(#aStarResultV:getPath(), #aStarResultH:getPath()) do
+          if i < #aStarResultV:getPath() then
+            local location = aStarResultV:getPath():get(i)
+            if context.LocationToAdjacentCount:get(location.Y * width + location.X) > 0 then
+              adjacentPipesV = adjacentPipesV + 1
             end
-          end
-        end, nil, function ()
-        end)
 
-        if adjacentPipesV > adjacentPipesH then
-          return true, KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
-        elseif adjacentPipesV < adjacentPipesH then
-          return true, KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location)
-        elseif centroidDistanceSquaredV < centroidDistanceSquaredH then
-          return true, KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
-        else
-          return true, KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location)
+            centroidDistanceSquaredV = centroidDistanceSquaredV + GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)
+          end
+
+          if i < #aStarResultH:getPath() then
+            local location = aStarResultH:getPath():get(i)
+            if context.LocationToAdjacentCount:get(location.Y * width + location.X) > 0 then
+              adjacentPipesH = adjacentPipesH + 1
+            end
+
+            centroidDistanceSquaredH = centroidDistanceSquaredH + GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)
+          end
+          i = i + 1
         end
-      end, nil, function ()
-      end)
-      if default then
-        return extern
+      end
+
+      if adjacentPipesV > adjacentPipesH then
+        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
+      elseif adjacentPipesV < adjacentPipesH then
+        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location)
+      elseif centroidDistanceSquaredV < centroidDistanceSquaredH then
+        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
+      else
+        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location)
       end
     end
     GetCentroidDistanceSquared = function (groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)

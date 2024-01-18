@@ -216,14 +216,13 @@ public static class Helpers
 
         if (removeUnused && unusedProviders.Count > 0)
         {
-#if USE_SHARED_INSTANCES
-            var coveredCenters = context.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
             var coveredCenters = context.GetLocationSet();
-#endif
-
+#else
+            var coveredCenters = context.SharedInstances.LocationSetA;
             try
             {
+#endif
                 foreach (var center in unusedProviders.EnumerateItems())
                 {
                     var entityMinX = center.X - ((providerWidth - 1) / 2);
@@ -283,13 +282,13 @@ public static class Helpers
 
                     providers.Remove(center);
                 }
+#if USE_SHARED_INSTANCES
             }
             finally
             {
-#if USE_SHARED_INSTANCES
                 coveredCenters.Clear();
-#endif
             }
+#endif
         }
 
         if (providers.Count > 0 || unusedProviders.Count > 0)
@@ -491,17 +490,16 @@ public static class Helpers
             candidateToInfo,
             coveredToCandidates);
 
-#if USE_SHARED_INSTANCES
-        var toRemove = context.SharedInstances.LocationListA;
-        var updated = context.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
         var toRemove = new List<Location>();
         var updated = context.GetLocationSet();
-#endif
-
+#else
+        var toRemove = context.SharedInstances.LocationListA;
+        var updated = context.SharedInstances.LocationSetA;
         try
         {
-            for (var i = 0; i < recipients.Count; i++)
+#endif
+        for (var i = 0; i < recipients.Count; i++)
             {
                 if (!newlyCovered[i])
                 {
@@ -528,15 +526,14 @@ public static class Helpers
                     toRemove.Clear();
                 }
             }
-
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             toRemove.Clear();
             updated.Clear();
-#endif
         }
+#endif
     }
 
     public static void AddProviderAndAllowMultipleProviders<TInfo>(
@@ -580,16 +577,15 @@ public static class Helpers
             return;
         }
 
-#if USE_SHARED_INSTANCES
-        var toRemove = context.SharedInstances.LocationListA;
-        var updated = context.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
         var toRemove = new List<Location>();
         var updated = context.GetLocationSet();
-#endif
-
+#else
+        var toRemove = context.SharedInstances.LocationListA;
+        var updated = context.SharedInstances.LocationSetA;
         try
         {
+#endif
             // Remove the covered entities from the candidate data, so that the next candidates are discounted
             // by the entities that no longer need to be covered.
             for (var i = 0; i < recipients.Count; i++)
@@ -659,15 +655,14 @@ public static class Helpers
                     toRemove.Clear();
                 }
             }
-
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             toRemove.Clear();
             updated.Clear();
-#endif
         }
+#endif
     }
 
     public static (ILocationDictionary<ILocationSet> PoleCenterToCoveredCenters, ILocationDictionary<ILocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(

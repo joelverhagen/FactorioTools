@@ -16,15 +16,13 @@ public static class AddPipeEntities
         ILocationDictionary<Direction>? undergroundPipes = null,
         bool allowMultipleTerminals = false)
     {
-#if USE_SHARED_INSTANCES
-        var addedPipes = context.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
         var addedPipes = context.GetLocationSet();
-#endif
-
+#else
+        var addedPipes = context.SharedInstances.LocationSetA;
         try
         {
-
+#endif
             if (undergroundPipes is not null)
             {
                 foreach ((var location, var direction) in undergroundPipes.EnumeratePairs())
@@ -58,13 +56,12 @@ public static class AddPipeEntities
                     grid.AddEntity(pipe, new Pipe(grid.GetId()));
                 }
             }
-
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             addedPipes.Clear();
-#endif
         }
+#endif
     }
 }

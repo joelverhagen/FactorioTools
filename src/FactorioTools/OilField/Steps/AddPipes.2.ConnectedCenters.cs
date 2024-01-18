@@ -215,14 +215,14 @@ public static partial class AddPipes
 
     private static List<Location> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
+#if !USE_SHARED_INSTANCES
+        var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
+        var aStarResultH = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
+#else
         try
         {
-#if USE_SHARED_INSTANCES
             var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2, outputList: context.SharedInstances.LocationListA);
             var aStarResultH = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2, outputList: context.SharedInstances.LocationListB);
-#else
-            var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
-            var aStarResultH = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2);
 #endif
 
             if (!aStarResultV.Success)
@@ -243,14 +243,13 @@ public static partial class AddPipes
 
             var sizeEstimate = aStarResultV.Path.Count + aStarResultH.Path.Count;
 
-#if USE_SHARED_INSTANCES
-            var locationToCentroidDistanceSquared = context.SharedInstances.LocationToDouble;
-#else
+#if !USE_SHARED_INSTANCES
             var locationToCentroidDistanceSquared = context.GetLocationDictionary<double>(sizeEstimate);
-#endif
-
+#else
+            var locationToCentroidDistanceSquared = context.SharedInstances.LocationToDouble;
             try
             {
+#endif
                 var width = context.Grid.Width;
                 for (var i = 0; i < Math.Max(aStarResultV.Path.Count, aStarResultH.Path.Count); i++)
                 {
@@ -276,13 +275,13 @@ public static partial class AddPipes
                         centroidDistanceSquaredH += GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location);
                     }
                 }
+#if USE_SHARED_INSTANCES
             }
             finally
             {
-#if USE_SHARED_INSTANCES
                 locationToCentroidDistanceSquared.Clear();
-#endif
             }
+#endif
 
             if (adjacentPipesV > adjacentPipesH)
             {
@@ -300,14 +299,14 @@ public static partial class AddPipes
             {
                 return aStarResultH.Path.ToList();
             }
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             context.SharedInstances.LocationListA.Clear();
             context.SharedInstances.LocationListB.Clear();
-#endif
         }
+#endif
     }
 
     private static double GetCentroidDistanceSquared(

@@ -673,21 +673,20 @@ public static class AddElectricPoles
         }
         var idealPoint = idealLine[idealIndex];
 
-#if USE_SHARED_INSTANCES
-        var candidates = context.SharedInstances.LocationQueue;
-        var attempted = context.SharedInstances.LocationSetA;
-#else
-        var candidates = new Queue<Location>();
-        var attempted = context.GetLocationSet();
-#endif
-
         Location selectedPoint = Location.Invalid;
         bool matchFound = false;
+
+#if !USE_SHARED_INSTANCES
+        var candidates = new Queue<Location>();
+        var attempted = context.GetLocationSet();
+#else
+        var candidates = context.SharedInstances.LocationQueue;
+        var attempted = context.SharedInstances.LocationSetA;
         try
         {
+#endif
             candidates.Enqueue(idealPoint);
             attempted.Add(idealPoint);
-
 
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
@@ -717,14 +716,14 @@ public static class AddElectricPoles
                     }
                 }
             }
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             candidates.Clear();
             attempted.Clear();
-#endif
         }
+#endif
 
         if (!matchFound)
         {

@@ -55,19 +55,18 @@ public static class AStar
         }
 #endif
 
-#if USE_SHARED_INSTANCES
-        var cameFrom = context.SharedInstances.LocationToLocation;
-        var costSoFar = context.SharedInstances.LocationToDouble;
-        var frontier = context.SharedInstances.LocationPriorityQueue;
-#else
+#if !USE_SHARED_INSTANCES
         var cameFrom = context.GetLocationDictionary<Location>();
         var costSoFar = context.GetLocationDictionary<double>();
         var frontier = new PriorityQueue<Location, double>();
-#endif
-
+#else
+        var cameFrom = context.SharedInstances.LocationToLocation;
+        var costSoFar = context.SharedInstances.LocationToDouble;
+        var frontier = context.SharedInstances.LocationPriorityQueue;
         try
         {
-            frontier.Enqueue(start, 0);
+#endif
+        frontier.Enqueue(start, 0);
 
             cameFrom[start] = start;
             costSoFar[start] = 0;
@@ -147,15 +146,15 @@ public static class AStar
             }
 
             return new AStarResult(success, reachedGoal, outputList);
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             cameFrom.Clear();
             costSoFar.Clear();
             frontier.Clear();
-#endif
         }
+#endif
     }
 
     private static bool IsTurn(Location a, Location b, Location c)

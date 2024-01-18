@@ -9,22 +9,21 @@ public static class Dijkstras
         var cameFrom = context.GetLocationDictionary<ILocationSet>();
         cameFrom[start] = context.GetLocationSet();
         var remainingGoals = context.GetLocationSet(goals);
+        var reachedGoals = context.GetLocationSet(allowEnumerate: allowGoalEnumerate);
 
-#if USE_SHARED_INSTANCES
-        var priorityQueue = context.SharedInstances.LocationPriorityQueue;
-        var costSoFar = context.SharedInstances.LocationToDouble;
-        var inQueue = context.SharedInstances.LocationSetB;
-#else
+#if !USE_SHARED_INSTANCES
         var priorityQueue = new System.Collections.Generic.PriorityQueue<Location, double>();
         var costSoFar = context.GetLocationDictionary<double>();
         var inQueue = context.GetLocationSet();
-#endif
-
-        var reachedGoals = context.GetLocationSet(allowEnumerate: allowGoalEnumerate);
-        costSoFar[start] = 0;
-
+#else
+        var priorityQueue = context.SharedInstances.LocationPriorityQueue;
+        var costSoFar = context.SharedInstances.LocationToDouble;
+        var inQueue = context.SharedInstances.LocationSetB;
         try
         {
+#endif
+            costSoFar[start] = 0;
+
             priorityQueue.Enqueue(start, 0);
             inQueue.Add(start);
 
@@ -81,15 +80,15 @@ public static class Dijkstras
                     }
                 }
             }
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             priorityQueue.Clear();
             costSoFar.Clear();
             inQueue.Clear();
-#endif
         }
+#endif
 
         return new DijkstrasResult(cameFrom, reachedGoals);
     }

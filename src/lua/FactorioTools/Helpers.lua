@@ -180,53 +180,48 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       if removeUnused and unusedProviders:getCount() > 0 then
         local coveredCenters = context:GetLocationSet1()
+        for _, center in System.each(unusedProviders:EnumerateItems()) do
+          local entityMinX = center.X - (System.div((providerWidth - 1), 2))
+          local entityMinY = center.Y - (System.div((providerHeight - 1), 2))
+          local entityMaxX = center.X + (System.div(providerWidth, 2))
+          local entityMaxY = center.Y + (System.div(providerHeight, 2))
 
+          -- Expand the loop bounds beyond the entity bounds so we can removed candidates that are not longer valid with
+          -- the newly added provider, i.e. they would overlap with what was just added.
+          local minX = math.Max(System.div((providerWidth - 1), 2), entityMinX - (System.div(providerWidth, 2)))
+          local minY = math.Max(System.div((providerHeight - 1), 2), entityMinY - (System.div(providerHeight, 2)))
+          local maxX = math.Min(context.Grid.Width - (System.div(providerWidth, 2)) - 1, entityMaxX + (System.div((providerWidth - 1), 2)))
+          local maxY = math.Min(context.Grid.Height - (System.div(providerHeight, 2)) - 1, entityMaxY + (System.div((providerHeight - 1), 2)))
 
-        System.try(function ()
-          for _, center in System.each(unusedProviders:EnumerateItems()) do
-            local entityMinX = center.X - (System.div((providerWidth - 1), 2))
-            local entityMinY = center.Y - (System.div((providerHeight - 1), 2))
-            local entityMaxX = center.X + (System.div(providerWidth, 2))
-            local entityMaxY = center.Y + (System.div(providerHeight, 2))
+          for x = minX, maxX do
+            for y = minY, maxY do
+              local candidate = KnapcodeOilField.Location(x, y)
 
-            -- Expand the loop bounds beyond the entity bounds so we can removed candidates that are not longer valid with
-            -- the newly added provider, i.e. they would overlap with what was just added.
-            local minX = math.Max(System.div((providerWidth - 1), 2), entityMinX - (System.div(providerWidth, 2)))
-            local minY = math.Max(System.div((providerHeight - 1), 2), entityMinY - (System.div(providerHeight, 2)))
-            local maxX = math.Min(context.Grid.Width - (System.div(providerWidth, 2)) - 1, entityMaxX + (System.div((providerWidth - 1), 2)))
-            local maxY = math.Min(context.Grid.Height - (System.div(providerHeight, 2)) - 1, entityMaxY + (System.div((providerHeight - 1), 2)))
+              if x >= entityMinX and x <= entityMaxX and y >= entityMinY and y <= entityMaxY then
+                context.Grid:RemoveEntity(candidate)
+              else
+                AddCoveredCenters(coveredCenters, context.Grid, candidate, providerWidth, providerHeight, supplyWidth, supplyHeight, includePumpjacks, includeBeacons)
 
-            for x = minX, maxX do
-              for y = minY, maxY do
-                local candidate = KnapcodeOilField.Location(x, y)
-
-                if x >= entityMinX and x <= entityMaxX and y >= entityMinY and y <= entityMaxY then
-                  context.Grid:RemoveEntity(candidate)
-                else
-                  AddCoveredCenters(coveredCenters, context.Grid, candidate, providerWidth, providerHeight, supplyWidth, supplyHeight, includePumpjacks, includeBeacons)
-
-                  local default, info = candidateToInfo:TryGetValue(candidate)
-                  if not default then
-                    local covered = System.new(KnapcodeOilField.CustomCountedBitArray, 2, #recipients)
-                    info = candidateFactory:Create(covered)
-                    candidateToInfo:Add(candidate, info)
-                  end
-
-                  for i = 0, #recipients - 1 do
-                    if coveredCenters:Contains(recipients:get(i).Center) then
-                      info.Covered:set(i, true)
-                    end
-                  end
-
-                  coveredCenters:Clear()
+                local default, info = candidateToInfo:TryGetValue(candidate)
+                if not default then
+                  local covered = System.new(KnapcodeOilField.CustomCountedBitArray, 2, #recipients)
+                  info = candidateFactory:Create(covered)
+                  candidateToInfo:Add(candidate, info)
                 end
+
+                for i = 0, #recipients - 1 do
+                  if coveredCenters:Contains(recipients:get(i).Center) then
+                    info.Covered:set(i, true)
+                  end
+                end
+
+                coveredCenters:Clear()
               end
             end
-
-            providers:Remove(center)
           end
-        end, nil, function ()
-        end)
+
+          providers:Remove(center)
+        end
       end
 
       if providers:getCount() > 0 or unusedProviders:getCount() > 0 then
@@ -368,51 +363,47 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       RemoveOverlappingCandidates1(context.Grid, center, providerWidth, providerHeight, candidateToInfo, coveredToCandidates, TInfo)
 
+
       local toRemove = ListLocation()
       local updated = context:GetLocationSet1()
-
-
-      System.try(function ()
-        for i = 0, #recipients - 1 do
-          local continue
-          repeat
-            if not newlyCovered:get(i) then
-              continue = true
-              break
-            end
-
-            for _, default in System.each(coveredToCandidates:get(i):EnumeratePairs()) do
-              local otherCandidate, otherInfo = default:Deconstruct()
-              local continue
-              repeat
-                if not updated:Add(otherCandidate) then
-                  continue = true
-                  break
-                end
-
-                toRemove:Add(otherCandidate)
-                continue = true
-              until 1
-              if not continue then
-                break
-              end
-            end
-
-            if #toRemove > 0 then
-              for j = 0, #toRemove - 1 do
-                candidateToInfo:Remove(toRemove:get(j))
-              end
-
-              toRemove:Clear()
-            end
+      for i = 0, #recipients - 1 do
+        local continue
+        repeat
+          if not newlyCovered:get(i) then
             continue = true
-          until 1
-          if not continue then
             break
           end
+
+          for _, default in System.each(coveredToCandidates:get(i):EnumeratePairs()) do
+            local otherCandidate, otherInfo = default:Deconstruct()
+            local continue
+            repeat
+              if not updated:Add(otherCandidate) then
+                continue = true
+                break
+              end
+
+              toRemove:Add(otherCandidate)
+              continue = true
+            until 1
+            if not continue then
+              break
+            end
+          end
+
+          if #toRemove > 0 then
+            for j = 0, #toRemove - 1 do
+              candidateToInfo:Remove(toRemove:get(j))
+            end
+
+            toRemove:Clear()
+          end
+          continue = true
+        until 1
+        if not continue then
+          break
         end
-      end, nil, function ()
-      end)
+      end
     end
     AddProviderAndAllowMultipleProviders = function (context, center, centerInfo, providerWidth, providerHeight, recipients, coveredEntities, coveredToCandidates, candidateToInfo, scopedCandidateToInfo, coveredCountBatches, TInfo)
       -- Console.WriteLine("adding " + center);
@@ -433,89 +424,85 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         return
       end
 
+
       local toRemove = ListLocation()
       local updated = context:GetLocationSet1()
-
-
-      System.try(function ()
-        -- Remove the covered entities from the candidate data, so that the next candidates are discounted
-        -- by the entities that no longer need to be covered.
-        for i = 0, #recipients - 1 do
-          local continue
-          repeat
-            if not newlyCovered:get(i) then
-              continue = true
-              break
-            end
-
-            local currentCandidates = coveredToCandidates:get(i)
-            for _, default in System.each(currentCandidates:EnumeratePairs()) do
-              local otherCandidate, otherInfo = default:Deconstruct()
-              local continue
-              repeat
-                if not updated:Add(otherCandidate) then
-                  continue = true
-                  break
-                end
-
-                local modified = false
-                local oldCoveredCount = otherInfo.Covered.TrueCount
-                do
-                  local j = 0
-                  while j < #recipients and otherInfo.Covered.TrueCount > 0 do
-                    if coveredEntities:get(j) and otherInfo.Covered:get(j) then
-                      otherInfo.Covered:set(j, false)
-                      modified = true
-
-                      -- avoid modifying the collection we are enumerating
-                      if i ~= j then
-                        coveredToCandidates:get(j):Remove(otherCandidate)
-                      end
-                    end
-                    j = j + 1
-                  end
-                end
-
-                if otherInfo.Covered.TrueCount == 0 then
-                  toRemove:Add(otherCandidate)
-                  coveredCountBatches:RemoveCandidate(otherCandidate, oldCoveredCount)
-                elseif modified then
-                  coveredCountBatches:MoveCandidate(context, otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount)
-
-                  local entityDistance = 0
-                  for j = 0, #recipients - 1 do
-                    entityDistance = entityDistance + otherCandidate:GetEuclideanDistance(recipients:get(j).Center)
-                  end
-
-                  otherInfo.EntityDistance = entityDistance
-                end
-                continue = true
-              until 1
-              if not continue then
-                break
-              end
-            end
-
-            -- now that we're done enumerating this dictionary, we can clear it
-            currentCandidates:Clear()
-
-            if #toRemove > 0 then
-              for j = 0, #toRemove - 1 do
-                if candidateToInfo:Remove(toRemove:get(j)) then
-                  scopedCandidateToInfo:Remove(toRemove:get(j))
-                end
-              end
-
-              toRemove:Clear()
-            end
+      -- Remove the covered entities from the candidate data, so that the next candidates are discounted
+      -- by the entities that no longer need to be covered.
+      for i = 0, #recipients - 1 do
+        local continue
+        repeat
+          if not newlyCovered:get(i) then
             continue = true
-          until 1
-          if not continue then
             break
           end
+
+          local currentCandidates = coveredToCandidates:get(i)
+          for _, default in System.each(currentCandidates:EnumeratePairs()) do
+            local otherCandidate, otherInfo = default:Deconstruct()
+            local continue
+            repeat
+              if not updated:Add(otherCandidate) then
+                continue = true
+                break
+              end
+
+              local modified = false
+              local oldCoveredCount = otherInfo.Covered.TrueCount
+              do
+                local j = 0
+                while j < #recipients and otherInfo.Covered.TrueCount > 0 do
+                  if coveredEntities:get(j) and otherInfo.Covered:get(j) then
+                    otherInfo.Covered:set(j, false)
+                    modified = true
+
+                    -- avoid modifying the collection we are enumerating
+                    if i ~= j then
+                      coveredToCandidates:get(j):Remove(otherCandidate)
+                    end
+                  end
+                  j = j + 1
+                end
+              end
+
+              if otherInfo.Covered.TrueCount == 0 then
+                toRemove:Add(otherCandidate)
+                coveredCountBatches:RemoveCandidate(otherCandidate, oldCoveredCount)
+              elseif modified then
+                coveredCountBatches:MoveCandidate(context, otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount)
+
+                local entityDistance = 0
+                for j = 0, #recipients - 1 do
+                  entityDistance = entityDistance + otherCandidate:GetEuclideanDistance(recipients:get(j).Center)
+                end
+
+                otherInfo.EntityDistance = entityDistance
+              end
+              continue = true
+            until 1
+            if not continue then
+              break
+            end
+          end
+
+          -- now that we're done enumerating this dictionary, we can clear it
+          currentCandidates:Clear()
+
+          if #toRemove > 0 then
+            for j = 0, #toRemove - 1 do
+              if candidateToInfo:Remove(toRemove:get(j)) then
+                scopedCandidateToInfo:Remove(toRemove:get(j))
+              end
+            end
+
+            toRemove:Clear()
+          end
+          continue = true
+        until 1
+        if not continue then
+          break
         end
-      end, nil, function ()
-      end)
+      end
     end
     GetElectricPoleCoverage = function (context, poweredEntities, electricPoleCenters)
       local poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(context, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight, context.Options.ElectricPoleSupplyWidth, context.Options.ElectricPoleSupplyHeight, electricPoleCenters, true, true)

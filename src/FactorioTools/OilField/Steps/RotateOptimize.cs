@@ -107,14 +107,13 @@ public static class RotateOptimize
 
         var originalGoal = exploredPaths.ReachedGoals.Single();
 
-#if USE_SHARED_INSTANCES
-        var originalPath = context.ParentContext.SharedInstances.LocationListA;
-#else
+#if !USE_SHARED_INSTANCES
         var originalPath = new List<Location>();
-#endif
-
+#else
+        var originalPath = context.ParentContext.SharedInstances.LocationListA;
         try
         {
+#endif
             exploredPaths.AddPath(originalGoal, originalPath);
 
             for (var i = 1; i < originalPath.Count; i++)
@@ -207,14 +206,14 @@ public static class RotateOptimize
                 context.Goals.Add(originalTerminal.Terminal);
                 return false;
             }
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             context.ParentContext.SharedInstances.LocationListA.Clear();
             context.ParentContext.SharedInstances.LocationListB.Clear();
-#endif
         }
+#endif
     }
 
     private static bool UseShortestPath(
@@ -223,17 +222,15 @@ public static class RotateOptimize
         Location start,
         Location originalGoal)
     {
-#if USE_SHARED_INSTANCES
-        var originalPath = context.ParentContext.SharedInstances.LocationListA;
-        var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
         var originalPath = new List<Location>();
         var connectionPoints = context.ParentContext.GetLocationSet(context.Pipes.Count, allowEnumerate: true);
-#endif
-
+#else
+        var originalPath = context.ParentContext.SharedInstances.LocationListA;
+        var connectionPoints = context.ParentContext.SharedInstances.LocationSetA;
         try
         {
-
+#endif
             exploredPaths.AddPath(originalGoal, originalPath);
 
             for (var i = 1; i < originalPath.Count; i++)
@@ -262,23 +259,13 @@ public static class RotateOptimize
 
             ExplorePipes(context, originalGoal, connectionPoints);
 
-#if USE_SHARED_INSTANCES
-            var result = AStar.GetShortestPath(context.ParentContext, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
-#else
+#if !USE_SHARED_INSTANCES
             var result = AStar.GetShortestPath(context.ParentContext, context.Grid, start, connectionPoints);
-#endif
-
-            /*
-            if (result.ReachedGoal is null)
-            {
-                var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
-                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
-            }
-            */
-
+#else
+            var result = AStar.GetShortestPath(context.ParentContext, context.Grid, start, connectionPoints, outputList: context.ParentContext.SharedInstances.LocationListB);
             try
             {
+#endif
                 if (result.Path.Count > originalPath.Count
                     || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
                 {
@@ -299,28 +286,30 @@ public static class RotateOptimize
                 // Console.WriteLine($"Shortened path: {result.Path[0]} -> {result.Path.Last()}");
 
                 return true;
+#if USE_SHARED_INSTANCES
             }
             finally
             {
-#if USE_SHARED_INSTANCES
                 result.Path.Clear();
-#endif
             }
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             originalPath.Clear();
             connectionPoints.Clear();
-#endif
         }
+#endif
     }
 
     private static void ExplorePipes(ChildContext context, Location start, ILocationSet pipes)
     {
-        var toExplore = GetQueue(context);
+#if !USE_SHARED_INSTANCES
+        var toExplore = new Queue<Location>();
+#else
+        var toExplore = context.ParentContext.SharedInstances.LocationQueue;
         try
         {
+#endif
             toExplore.Enqueue(start);
             pipes.Add(start);
 
@@ -343,18 +332,24 @@ public static class RotateOptimize
                     }
                 }
             }
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-            ReturnQueue(toExplore);
+            toExplore.Clear();
         }
+#endif
     }
 
     private static ExploredPaths ExplorePaths(ChildContext context, Location start)
     {
-        var toExplore = GetQueue(context);
+#if !USE_SHARED_INSTANCES
+        var toExplore = new Queue<Location>();
+#else
+        var toExplore = context.ParentContext.SharedInstances.LocationQueue;
         try
         {
+#endif
             toExplore.Enqueue(start);
             var cameFrom = context.ParentContext.GetLocationDictionary<Location>();
             cameFrom[start] = start;
@@ -391,26 +386,12 @@ public static class RotateOptimize
             }
 
             return new ExploredPaths(start, cameFrom, reachedGoals);
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-            ReturnQueue(toExplore);
+            toExplore.Clear();
         }
-    }
-
-    private static Queue<Location> GetQueue(ChildContext context)
-    {
-#if USE_SHARED_INSTANCES
-        return context.ParentContext.SharedInstances.LocationQueue;
-#else
-        return new Queue<Location>();
-#endif
-    }
-
-    private static void ReturnQueue(Queue<Location> toExplore)
-    {
-#if USE_SHARED_INSTANCES
-        toExplore.Clear();
 #endif
     }
 

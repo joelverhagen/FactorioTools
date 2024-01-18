@@ -79,14 +79,13 @@ public static class PlanUndergroundPipes
         // Find candidates for underground pipes. These are pipes that have other pipes before and after them in
         // axis they are going and no pipes next to them.
 
-#if USE_SHARED_INSTANCES
-        var candidates = context.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
         var candidates = context.GetLocationSet(allowEnumerate: true);
-#endif
-
+#else
+        var candidates = context.SharedInstances.LocationSetA;
         try
         {
+#endif
             var backward = new Location(forward.X * -1, forward.Y * -1);
             var right = new Location(forward.Y, forward.X);
             var left = new Location(right.X * -1, right.Y * -1);
@@ -143,13 +142,13 @@ public static class PlanUndergroundPipes
             }
 
             AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun);
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             candidates.Clear();
-#endif
         }
+#endif
     }
 
     private static void AddRunAndClear(

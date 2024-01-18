@@ -10,17 +10,17 @@ public static class Prims
         Location firstNode,
         bool digraph)
     {
-#if USE_SHARED_INSTANCES
-        var visited = context.SharedInstances.LocationSetA;
-#else
-        var visited = context.GetLocationSet();
-#endif
         var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
         var mst = context.GetLocationDictionary<ILocationSet>();
 
+#if !USE_SHARED_INSTANCES
+        var visited = context.GetLocationSet();
+#else
+        var visited = context.SharedInstances.LocationSetA;
         try
         {
-            visited.Add(firstNode);
+#endif
+        visited.Add(firstNode);
             foreach ((var otherNode, var cost) in graph[firstNode].EnumeratePairs())
             {
                 priority.Enqueue((firstNode, otherNode), cost);
@@ -74,12 +74,12 @@ public static class Prims
             }
 
             return mst;
+#if USE_SHARED_INSTANCES
         }
         finally
         {
-#if USE_SHARED_INSTANCES
             visited.Clear();
-#endif
         }
+#endif
     }
 }

@@ -18,7 +18,7 @@ System.import(function (out)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("RotateOptimize", function (namespace)
-    local Execute, UseBestTerminal, UseShortestPath, ExplorePipes, ExplorePaths, GetQueue, ReturnQueue, class
+    local Execute, UseBestTerminal, UseShortestPath, ExplorePipes, ExplorePaths, class
     namespace.class("ChildContext", function (namespace)
       local getGrid, getLocationToTerminals, getCenterToTerminals, UpdateIntersectionsAndGoals, __ctor__
       __ctor__ = function (this, parentContext, pipes)
@@ -192,254 +192,207 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local originalGoal = KnapcodeFactorioTools.CollectionExtensions.Single(exploredPaths.ReachedGoals, KnapcodeOilField.Location)
 
+
       local originalPath = ListLocation()
+      exploredPaths:AddPath(originalGoal, originalPath)
 
+      for i = 1, #originalPath - 1 do
+        context.Pipes:Remove(originalPath:get(i))
+      end
 
-      local default, extern = System.try(function ()
-        exploredPaths:AddPath(originalGoal, originalPath)
+      local minTerminal = originalTerminal
+      local minPath = originalPath
+      local minPathTurns = KnapcodeOilField.Helpers.CountTurns(minPath)
+      local changedPath = false
 
-        for i = 1, #originalPath - 1 do
-          context.Pipes:Remove(originalPath:get(i))
-        end
+      for i = 0, KnapcodeOilField.Helpers.TerminalOffsets:getCount() - 1 do
+        local continue
+        repeat
+          local direction, translation = KnapcodeOilField.Helpers.TerminalOffsets:get(i):Deconstruct()
 
-        local minTerminal = originalTerminal
-        local minPath = originalPath
-        local minPathTurns = KnapcodeOilField.Helpers.CountTurns(minPath)
-        local changedPath = false
+          local terminalCandidate = originalTerminal.Center:Translate1(translation)
+          if not context:getGrid():IsEmpty(terminalCandidate) and not context:getGrid():IsEntityType(terminalCandidate, KnapcodeOilField.Pipe) then
+            continue = true
+            break
+          end
 
-        for i = 0, KnapcodeOilField.Helpers.TerminalOffsets:getCount() - 1 do
-          local continue
-          repeat
-            local direction, translation = KnapcodeOilField.Helpers.TerminalOffsets:get(i):Deconstruct()
+          local newPath = ListLocation()
 
-            local terminalCandidate = originalTerminal.Center:Translate1(translation)
-            if not context:getGrid():IsEmpty(terminalCandidate) and not context:getGrid():IsEntityType(terminalCandidate, KnapcodeOilField.Pipe) then
-              continue = true
-              break
-            end
+          local result = KnapcodeOilField.AStar.GetShortestPath(context.ParentContext, context:getGrid(), terminalCandidate, context.Pipes, true, 1, 1, newPath)
+          if result.Success then
+            local terminal = KnapcodeOilField.TerminalLocation(originalTerminal.Center, terminalCandidate, direction)
+            local pathTurns = KnapcodeOilField.Helpers.CountTurns(newPath)
 
-            local newPath = ListLocation()
+            if #newPath < #minPath or (#newPath == #minPath and pathTurns < minPathTurns) then
+              minPath:Clear()
 
-            local result = KnapcodeOilField.AStar.GetShortestPath(context.ParentContext, context:getGrid(), terminalCandidate, context.Pipes, true, 1, 1, newPath)
-            if result.Success then
-              local terminal = KnapcodeOilField.TerminalLocation(originalTerminal.Center, terminalCandidate, direction)
-              local pathTurns = KnapcodeOilField.Helpers.CountTurns(newPath)
-
-              if #newPath < #minPath or (#newPath == #minPath and pathTurns < minPathTurns) then
-                minPath:Clear()
-
-                minTerminal = terminal
-                minPath = newPath
-                minPathTurns = pathTurns
-                changedPath = true
-              else
-                newPath:Clear()
-              end
+              minTerminal = terminal
+              minPath = newPath
+              minPathTurns = pathTurns
+              changedPath = true
             else
               newPath:Clear()
             end
-            continue = true
-          until 1
-          if not continue then
-            break
+          else
+            newPath:Clear()
           end
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
+      end
+
+      context.Pipes:UnionWith(minPath)
+
+      if changedPath then
+        if minTerminal ~= originalTerminal then
+          context:getCenterToTerminals():get(originalTerminal.Center):Add(minTerminal)
+
+          local default, locationTerminals = context:getLocationToTerminals():TryGetValue(minTerminal.Terminal)
+          if not default then
+            local extern = ListTerminalLocation()
+            extern:Add(minTerminal)
+            locationTerminals = extern
+            context:getLocationToTerminals():Add(minTerminal.Terminal, locationTerminals)
+          else
+            locationTerminals:Add(minTerminal)
+          end
+
+          KnapcodeOilField.Helpers.EliminateOtherTerminals(context.ParentContext, minTerminal)
         end
 
-        context.Pipes:UnionWith(minPath)
+        -- Console.WriteLine($"New best terminal: {minTerminal} -> {minPath.Last()}");
 
-        if changedPath then
-          if minTerminal ~= originalTerminal then
-            context:getCenterToTerminals():get(originalTerminal.Center):Add(minTerminal)
+        context:UpdateIntersectionsAndGoals()
 
-            local default, locationTerminals = context:getLocationToTerminals():TryGetValue(minTerminal.Terminal)
-            if not default then
-              local extern = ListTerminalLocation()
-              extern:Add(minTerminal)
-              locationTerminals = extern
-              context:getLocationToTerminals():Add(minTerminal.Terminal, locationTerminals)
-            else
-              locationTerminals:Add(minTerminal)
-            end
-
-            KnapcodeOilField.Helpers.EliminateOtherTerminals(context.ParentContext, minTerminal)
-          end
-
-          -- Console.WriteLine($"New best terminal: {minTerminal} -> {minPath.Last()}");
-
-          context:UpdateIntersectionsAndGoals()
-
-          --[[
+        --[[
                 var clone = new PipeGrid(context.Grid);
                 AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
                 Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
                 ]]
 
-          return true, true
-        else
-          context.Goals:Add(originalTerminal.Terminal)
-          return true, false
-        end
-      end, nil, function ()
-      end)
-      if default then
-        return extern
+        return true
+      else
+        context.Goals:Add(originalTerminal.Terminal)
+        return false
       end
     end
     UseShortestPath = function (context, exploredPaths, start, originalGoal)
       local originalPath = ListLocation()
       local connectionPoints = context.ParentContext:GetLocationSet6(context.Pipes:getCount(), true)
+      exploredPaths:AddPath(originalGoal, originalPath)
 
-
-      local default, extern = System.try(function ()
-        exploredPaths:AddPath(originalGoal, originalPath)
-
-        for i = 1, #originalPath - 1 do
-          -- Does the path contain an intersection as an intermediate point? This can happen if a previous call
-          -- of this method with the same exploration changed the intersections.
-          if i < #originalPath - 1 and context.Intersections:Contains(originalPath:get(i)) then
-            -- Add the path back.
-            for j = i - 1, 1, -1 do
-              context.Pipes:Add(originalPath:get(j))
-            end
-
-            return true, false
+      for i = 1, #originalPath - 1 do
+        -- Does the path contain an intersection as an intermediate point? This can happen if a previous call
+        -- of this method with the same exploration changed the intersections.
+        if i < #originalPath - 1 and context.Intersections:Contains(originalPath:get(i)) then
+          -- Add the path back.
+          for j = i - 1, 1, -1 do
+            context.Pipes:Add(originalPath:get(j))
           end
 
-          context.Pipes:Remove(originalPath:get(i))
+          return false
         end
 
-        --[[
+        context.Pipes:Remove(originalPath:get(i))
+      end
+
+      --[[
             var clone = new PipeGrid(context.Grid);
             AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
             Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
             ]]
 
-        ExplorePipes(context, originalGoal, connectionPoints)
-
-        local result = KnapcodeOilField.AStar.GetShortestPath(context.ParentContext, context:getGrid(), start, connectionPoints, true, 1, 1)
+      ExplorePipes(context, originalGoal, connectionPoints)
 
 
-        --[[
-            if (result.ReachedGoal is null)
-            {
-                var clone = new PipeGrid(context.Grid);
-                AddPipeEntities.Execute(clone, new(), context.CenterToTerminals, context.Pipes);
-                Visualizer.Show(clone, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
-            }
-            ]]
+      local result = KnapcodeOilField.AStar.GetShortestPath(context.ParentContext, context:getGrid(), start, connectionPoints, true, 1, 1)
+      if #result:getPath() > #originalPath or (#result:getPath() == #originalPath and KnapcodeOilField.Helpers.CountTurns(result:getPath()) >= KnapcodeOilField.Helpers.CountTurns(originalPath)) then
+        context.Pipes:UnionWith(originalPath)
 
-        local default, extern = System.try(function ()
-          if #result:getPath() > #originalPath or (#result:getPath() == #originalPath and KnapcodeOilField.Helpers.CountTurns(result:getPath()) >= KnapcodeOilField.Helpers.CountTurns(originalPath)) then
-            context.Pipes:UnionWith(originalPath)
+        return false
+      end
 
-            return true, false
-          end
+      context.Pipes:UnionWith(result:getPath())
+      context:UpdateIntersectionsAndGoals()
 
-          context.Pipes:UnionWith(result:getPath())
-          context:UpdateIntersectionsAndGoals()
-
-          --[[
+      --[[
                 var clone2 = new PipeGrid(context.Grid);
                 AddPipeEntities.Execute(clone2, new(), context.CenterToTerminals, context.Pipes);
                 Visualizer.Show(clone2, originalPath.Select(l => (IPoint)new Point(l.X, l.Y)), Array.Empty<IEdge>());
                 ]]
 
-          -- Console.WriteLine($"Shortened path: {result.Path[0]} -> {result.Path.Last()}");
+      -- Console.WriteLine($"Shortened path: {result.Path[0]} -> {result.Path.Last()}");
 
-          return true, true
-        end, nil, function ()
-        end)
-        if default then
-          return true, extern
-        end
-      end, nil, function ()
-      end)
-      if default then
-        return extern
-      end
+      return true
     end
     ExplorePipes = function (context, start, pipes)
-      local toExplore = GetQueue(context)
-      System.try(function ()
-        toExplore:Enqueue(start)
-        pipes:Add(start)
+      local toExplore = QueueLocation()
+      toExplore:Enqueue(start)
+      pipes:Add(start)
 
-        local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
 
 
-        while #toExplore > 0 do
+      while #toExplore > 0 do
+        local current = toExplore:Dequeue()
+
+        context.ExistingPipeGrid:GetNeighbors(neighbors, current)
+        for i = 0, neighbors:getLength() - 1 do
+          if neighbors:get(i).IsValid and pipes:Add(neighbors:get(i)) then
+            toExplore:Enqueue(neighbors:get(i))
+          end
+        end
+      end
+    end
+    ExplorePaths = function (context, start)
+      local toExplore = QueueLocation()
+      toExplore:Enqueue(start)
+      local cameFrom = context.ParentContext:GetLocationDictionary(KnapcodeOilField.Location)
+      cameFrom:set(start, start)
+
+      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+
+      local reachedGoals = ListLocation()
+
+      while #toExplore > 0 do
+        local continue
+        repeat
           local current = toExplore:Dequeue()
+
+          if KnapcodeOilField.Location.op_Inequality(current, start) and context.Goals:Contains(current) then
+            reachedGoals:Add(current)
+            continue = true
+            break
+          end
 
           context.ExistingPipeGrid:GetNeighbors(neighbors, current)
           for i = 0, neighbors:getLength() - 1 do
-            if neighbors:get(i).IsValid and pipes:Add(neighbors:get(i)) then
-              toExplore:Enqueue(neighbors:get(i))
-            end
-          end
-        end
-      end, nil, function ()
-        ReturnQueue(toExplore)
-      end)
-    end
-    ExplorePaths = function (context, start)
-      local toExplore = GetQueue(context)
-      local default, extern = System.try(function ()
-        toExplore:Enqueue(start)
-        local cameFrom = context.ParentContext:GetLocationDictionary(KnapcodeOilField.Location)
-        cameFrom:set(start, start)
-
-        local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
-
-
-        local reachedGoals = ListLocation()
-
-        while #toExplore > 0 do
-          local continue
-          repeat
-            local current = toExplore:Dequeue()
-
-            if KnapcodeOilField.Location.op_Inequality(current, start) and context.Goals:Contains(current) then
-              reachedGoals:Add(current)
-              continue = true
-              break
-            end
-
-            context.ExistingPipeGrid:GetNeighbors(neighbors, current)
-            for i = 0, neighbors:getLength() - 1 do
-              local continue
-              repeat
-                if not neighbors:get(i).IsValid or cameFrom:ContainsKey(neighbors:get(i)) then
-                  continue = true
-                  break
-                end
-
-                cameFrom:Add(neighbors:get(i), current)
-                toExplore:Enqueue(neighbors:get(i))
+            local continue
+            repeat
+              if not neighbors:get(i).IsValid or cameFrom:ContainsKey(neighbors:get(i)) then
                 continue = true
-              until 1
-              if not continue then
                 break
               end
-            end
-            continue = true
-          until 1
-          if not continue then
-            break
-          end
-        end
 
-        return true, class.ExploredPaths(start, cameFrom, reachedGoals)
-      end, nil, function ()
-        ReturnQueue(toExplore)
-      end)
-      if default then
-        return extern
+              cameFrom:Add(neighbors:get(i), current)
+              toExplore:Enqueue(neighbors:get(i))
+              continue = true
+            until 1
+            if not continue then
+              break
+            end
+          end
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
       end
-    end
-    GetQueue = function (context)
-      return QueueLocation()
-    end
-    ReturnQueue = function (toExplore)
+
+      return class.ExploredPaths(start, cameFrom, reachedGoals)
     end
     class = {
       Execute = Execute

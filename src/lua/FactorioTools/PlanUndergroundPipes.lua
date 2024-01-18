@@ -56,79 +56,72 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- Find candidates for underground pipes. These are pipes that have other pipes before and after them in
       -- axis they are going and no pipes next to them.
 
+
       local candidates = context:GetLocationSet2(true)
+      local backward = KnapcodeOilField.Location(forward.X * - 1, forward.Y * - 1)
+      local right = KnapcodeOilField.Location(forward.Y, forward.X)
+      local left = KnapcodeOilField.Location(right.X * - 1, right.Y * - 1)
 
-
-      local default = System.try(function ()
-        local backward = KnapcodeOilField.Location(forward.X * - 1, forward.Y * - 1)
-        local right = KnapcodeOilField.Location(forward.Y, forward.X)
-        local left = KnapcodeOilField.Location(right.X * - 1, right.Y * - 1)
-
-        for _, goal in System.each(pipes:EnumerateItems()) do
-          local continue
-          repeat
-            if (pipes:Contains(goal:Translate1(forward)) or pipes:Contains(goal:Translate1(backward))) and not pipes:Contains(goal:Translate1(right)) and not pipes:Contains(goal:Translate1(left)) then
-              local default, terminals = context.LocationToTerminals:TryGetValue(goal)
-              if default then
-                if #terminals > 1 then
-                  continue = true
-                  break
-                end
-
-                local direction = KnapcodeFactorioTools.CollectionExtensions.Single(terminals, KnapcodeOilField.TerminalLocation).Direction
-                if direction ~= forwardDirection and direction ~= backwardDirection then
-                  continue = true
-                  break
-                end
+      for _, goal in System.each(pipes:EnumerateItems()) do
+        local continue
+        repeat
+          if (pipes:Contains(goal:Translate1(forward)) or pipes:Contains(goal:Translate1(backward))) and not pipes:Contains(goal:Translate1(right)) and not pipes:Contains(goal:Translate1(left)) then
+            local default, terminals = context.LocationToTerminals:TryGetValue(goal)
+            if default then
+              if #terminals > 1 then
+                continue = true
+                break
               end
 
-              candidates:Add(goal)
-            end
-            continue = true
-          until 1
-          if not continue then
-            break
-          end
-        end
-
-        if candidates:getCount() == 0 then
-          return true
-        end
-
-        local sorted = KnapcodeFactorioTools.CollectionExtensions.ToList(candidates:EnumerateItems(), KnapcodeOilField.Location)
-        sorted:Sort(sort)
-
-        local default = ListLocation()
-        default:Add(sorted:get(0))
-        local currentRun = default
-        for i = 1, #sorted - 1 do
-          local continue
-          repeat
-            local previous = currentRun:get(#currentRun - 1)
-            local current = sorted:get(i)
-
-            if previous.X + forward.X == current.X and previous.Y + forward.Y == current.Y and #currentRun < 11 --[[PlanUndergroundPipes.MaxUnderground]] then
-              currentRun:Add(current)
-              continue = true
-              break
+              local direction = KnapcodeFactorioTools.CollectionExtensions.Single(terminals, KnapcodeOilField.TerminalLocation).Direction
+              if direction ~= forwardDirection and direction ~= backwardDirection then
+                continue = true
+                break
+              end
             end
 
-            AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
-
-            currentRun:Add(current)
-            continue = true
-          until 1
-          if not continue then
-            break
+            candidates:Add(goal)
           end
+          continue = true
+        until 1
+        if not continue then
+          break
         end
+      end
 
-        AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
-      end, nil, function ()
-      end)
-      if default then
+      if candidates:getCount() == 0 then
         return
       end
+
+      local sorted = KnapcodeFactorioTools.CollectionExtensions.ToList(candidates:EnumerateItems(), KnapcodeOilField.Location)
+      sorted:Sort(sort)
+
+      local default = ListLocation()
+      default:Add(sorted:get(0))
+      local currentRun = default
+      for i = 1, #sorted - 1 do
+        local continue
+        repeat
+          local previous = currentRun:get(#currentRun - 1)
+          local current = sorted:get(i)
+
+          if previous.X + forward.X == current.X and previous.Y + forward.Y == current.Y and #currentRun < 11 --[[PlanUndergroundPipes.MaxUnderground]] then
+            currentRun:Add(current)
+            continue = true
+            break
+          end
+
+          AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
+
+          currentRun:Add(current)
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
+      end
+
+      AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
     end
     AddRunAndClear = function (pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
       if #currentRun >= 3 --[[PlanUndergroundPipes.MinUnderground]] then

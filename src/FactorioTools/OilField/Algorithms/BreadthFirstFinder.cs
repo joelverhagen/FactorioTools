@@ -7,18 +7,18 @@ namespace Knapcode.FactorioTools.OilField
     {
         public static List<Location>? GetShortestPath(Context context, Location start, Location goal)
         {
-#if USE_SHARED_INSTANCES
-            var toExplore = context.SharedInstances.LocationQueue;
-            var parents = context.SharedInstances.LocationToLocation;
-            var visited = context.SharedInstances.LocationSetA;
-#else
+#if !USE_SHARED_INSTANCES
             var toExplore = new Queue<Location>();
             var parents = context.GetLocationDictionary<Location>();
             var visited = context.GetLocationSet();
-#endif
+#else
+            var toExplore = context.SharedInstances.LocationQueue;
+            var parents = context.SharedInstances.LocationToLocation;
+            var visited = context.SharedInstances.LocationSetA;
             try
             {
-                toExplore.Enqueue(start);
+#endif
+            toExplore.Enqueue(start);
 
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
                 Span<Location> neighbors = stackalloc Location[4];
@@ -63,15 +63,15 @@ namespace Knapcode.FactorioTools.OilField
                 }
 
                 return null;
+#if USE_SHARED_INSTANCES
             }
             finally
             {
-#if USE_SHARED_INSTANCES
                 toExplore.Clear();
                 parents.Clear();
                 visited.Clear();
-#endif
             }
+#endif
         }
     }
 }
