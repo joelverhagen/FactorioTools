@@ -3,11 +3,15 @@
     <legend>Planner options</legend>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="use-underground-pipes" v-model="useUndergroundPipes">
-      <label class="form-check-label" for="use-underground-pipes">Use underground pipes</label>
+      <label class="form-check-label" for="use-underground-pipes">
+        <AlgorithmStep v-bind="Steps.UndergroundPipesStep" :show-as-option="true" />
+      </label>
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="optimize-pipes" v-model="optimizePipes">
-      <label class="form-check-label" for="optimize-pipes">Optimize pipes</label>
+      <label class="form-check-label" for="optimize-pipes">
+        <AlgorithmStep v-bind="Steps.OptimizeStep" :show-as-option="true" />
+      </label>
     </div>
     <div class="form-check">
       <input type="checkbox" class="form-check-input" id="validate-solution" v-model="validateSolution">
@@ -26,31 +30,36 @@
       <legend>Pipe strategies</legend>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-fbe-original" v-model="pipeStrategyFbeOriginal">
-        <label class="form-check-label" for="pipes-fbe-original">Teoxoy's FBE</label> (<a
-          href="https://github.com/teoxoy/factorio-blueprint-editor/blob/0bec144b8989422f86bce8cea58ef49258c1a88d/packages/editor/src/core/generators/pipe.ts">original
-          source</a>) without modifications
+        <label class="form-check-label" for="pipes-fbe-original">
+          <AlgorithmStep v-bind="Steps.PipeSteps.FbeOriginal" :show-as-option="true" />
+        </label>
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-fbe" v-model="pipeStrategyFbe">
-        <label class="form-check-label" for="pipes-fbe">Teoxoy's FBE</label> with modifications
+        <label class="form-check-label" for="pipes-fbe">
+          <AlgorithmStep v-bind="Steps.PipeSteps.Fbe" :show-as-option="true" />
+        </label>
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-connected-centers-delaunay"
           v-model="pipeStrategyConnectedCentersDelaunay">
-        <label class="form-check-label" for="pipes-connected-centers-delaunay">Connected centers via Delaunay
-          triangulation</label>
+        <label class="form-check-label" for="pipes-connected-centers-delaunay">
+          <AlgorithmStep v-bind="Steps.PipeSteps.ConnectedCentersDelaunay" :show-as-option="true" />
+        </label>
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-connected-centers-delaunay-mst"
           v-model="pipeStrategyConnectedCentersDelaunayMst">
-        <label class="form-check-label" for="pipes-connected-centers-delaunay-mst">Connected centers via Delaunay
-          triangulation and Prim's MST</label>
+        <label class="form-check-label" for="pipes-connected-centers-delaunay-mst">
+          <AlgorithmStep v-bind="Steps.PipeSteps.ConnectedCentersDelaunayMst" :show-as-option="true" />
+        </label>
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="pipes-connected-centers-flute"
           v-model="pipeStrategyConnectedCentersFlute">
-        <label class="form-check-label" for="pipes-connected-centers-flute">Connected centers via <a
-            href="https://home.engineering.iastate.edu/~cnchu/flute.html">FLUTE</a></label>
+        <label class="form-check-label" for="pipes-connected-centers-flute">
+          <AlgorithmStep v-bind="Steps.PipeSteps.ConnectedCentersFlute" :show-as-option="true" />
+        </label>
       </div>
     </fieldset>
     <fieldset class="border p-3 mt-3" :disabled="!addBeacons">
@@ -60,17 +69,21 @@
       </legend>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="beacons-fbe-original" v-model="beaconStrategyFbeOriginal">
-        <label class="form-check-label" for="beacons-fbe-original">Teoxoy's FBE</label> (<a
-          href="https://github.com/teoxoy/factorio-blueprint-editor/blob/0bec144b8989422f86bce8cea58ef49258c1a88d/packages/editor/src/core/generators/beacon.ts">original
-          source</a>) without modifications
+        <label class="form-check-label" for="beacons-fbe-original">
+          <AlgorithmStep v-bind="Steps.BeaconSteps.FbeOriginal" :show-as-option="true" />
+        </label>
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="beacons-fbe" v-model="beaconStrategyFbe">
-        <label class="form-check-label" for="beacons-fbe">Teoxoy's FBE</label> with modifications
+        <label class="form-check-label" for="beacons-fbe">
+          <AlgorithmStep v-bind="Steps.BeaconSteps.Fbe" :show-as-option="true" />
+        </label>
       </div>
       <div class="form-check">
         <input type="checkbox" class="form-check-input" id="beacons-snug" v-model="beaconStrategySnug">
-        <label class="form-check-label" for="beacons-snug">Snug</label>
+        <label class="form-check-label" for="beacons-snug">
+          <AlgorithmStep v-bind="Steps.BeaconSteps.Snug" :show-as-option="true" />
+        </label>
       </div>
     </fieldset>
   </fieldset>
@@ -82,6 +95,8 @@ import { storeToRefs } from 'pinia';
 import { pick } from '../lib/helpers';
 import { useAutoPlanStore } from '../stores/AutoPlanStore';
 import { getDefaults, useOilFieldStore } from '../stores/OilFieldStore';
+import { Steps } from '../lib/steps';
+import AlgorithmStep from './AlgorithmStep.vue';
 
 export default {
   props: {
@@ -93,7 +108,8 @@ export default {
   data() {
     return Object.assign(
       storeToRefs(useAutoPlanStore()),
-      pick(storeToRefs(useOilFieldStore()),
+      pick(
+        storeToRefs(useOilFieldStore()),
         'addBeacons',
         'useUndergroundPipes',
         'useStagingApi',
@@ -106,31 +122,34 @@ export default {
         'pipeStrategyConnectedCentersFlute',
         'beaconStrategyFbeOriginal',
         'beaconStrategyFbe',
-        'beaconStrategySnug'));
+        'beaconStrategySnug'), {
+      Steps: Steps
+    });
   },
   watch: {
     showAdvancedOptions: function (newVal: boolean) {
       if (!newVal) {
-        this.reset()
+        this.reset();
       }
     }
   },
   methods: {
     reset() {
-      const defaults = getDefaults()
-      this.useUndergroundPipes = defaults.useUndergroundPipes
-      this.useStagingApi = defaults.useStagingApi
-      this.optimizePipes = defaults.optimizePipes
-      this.validateSolution = defaults.validateSolution
-      this.pipeStrategyFbeOriginal = defaults.pipeStrategyFbeOriginal
-      this.pipeStrategyFbe = defaults.pipeStrategyFbe
-      this.pipeStrategyConnectedCentersDelaunay = defaults.pipeStrategyConnectedCentersDelaunay
-      this.pipeStrategyConnectedCentersDelaunayMst = defaults.pipeStrategyConnectedCentersDelaunayMst
-      this.pipeStrategyConnectedCentersFlute = defaults.pipeStrategyConnectedCentersFlute
-      this.beaconStrategyFbeOriginal = defaults.beaconStrategyFbeOriginal
-      this.beaconStrategyFbe = defaults.beaconStrategyFbe
-      this.beaconStrategySnug = defaults.beaconStrategySnug
+      const defaults = getDefaults();
+      this.useUndergroundPipes = defaults.useUndergroundPipes;
+      this.useStagingApi = defaults.useStagingApi;
+      this.optimizePipes = defaults.optimizePipes;
+      this.validateSolution = defaults.validateSolution;
+      this.pipeStrategyFbeOriginal = defaults.pipeStrategyFbeOriginal;
+      this.pipeStrategyFbe = defaults.pipeStrategyFbe;
+      this.pipeStrategyConnectedCentersDelaunay = defaults.pipeStrategyConnectedCentersDelaunay;
+      this.pipeStrategyConnectedCentersDelaunayMst = defaults.pipeStrategyConnectedCentersDelaunayMst;
+      this.pipeStrategyConnectedCentersFlute = defaults.pipeStrategyConnectedCentersFlute;
+      this.beaconStrategyFbeOriginal = defaults.beaconStrategyFbeOriginal;
+      this.beaconStrategyFbe = defaults.beaconStrategyFbe;
+      this.beaconStrategySnug = defaults.beaconStrategySnug;
     }
-  }
+  },
+  components: { AlgorithmStep }
 }
 </script>

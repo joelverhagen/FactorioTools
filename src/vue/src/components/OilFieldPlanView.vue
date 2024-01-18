@@ -19,10 +19,18 @@
         <thead>
           <tr>
             <th scope="col">Rank</th>
-            <th scope="col">Plan</th>
-            <th v-if="plan.data.request.addBeacons" scope="col">Beacon effect count ⏬</th>
-            <th v-if="plan.data.request.addBeacons" scope="col">Beacon count ⏫</th>
-            <th scope="col">Pipe count ⏫</th>
+            <th scope="col"
+              title="The pipe, optimization, and beacon strategies used for generating the plan, in order of execution.">
+              Plan</th>
+            <th v-if="plan.data.request.addBeacons" scope="col"
+              title="A higher beacon effect count is preferred (more pump bonuses).">Beacon effect count 📈</th>
+            <th v-if="plan.data.request.addBeacons" scope="col"
+              title="A lower beacon effect count is preferred (less power consumption).">Beacon
+              count 📉</th>
+            <th scope="col" title="A lower pipe count is preferred (better fluid flow).">Pipe count 📉</th>
+            <th v-if="plan.data.request.useUndergroundPipes" scope="col"
+              title="The number of pipes uses before stretches of pipes are replaced with underground pipes. Not used for prioritizing plans.">
+              Pipe count (w/o underground)</th>
           </tr>
         </thead>
         <tbody class="table-group-divider">
@@ -34,12 +42,13 @@
             <td>
               <template v-for="(s, i) of p.steps">
                 <span v-if="i > 0">➡️</span>
-                <span class="badge" :class="s.class">{{ s.text }} </span>
+                <AlgorithmStep v-bind="s" />
               </template>
             </td>
             <td v-if="plan.data.request.addBeacons">{{ p.beaconEffectCount }}</td>
             <td v-if="plan.data.request.addBeacons">{{ p.beaconCount }}</td>
             <td>{{ p.pipeCount }}</td>
+            <td v-if="plan.data.request.useUndergroundPipes">{{ p.pipeCountWithoutUnderground }}</td>
           </tr>
         </tbody>
       </table>
@@ -52,9 +61,11 @@
 <script lang="ts">
 import clipboard from 'clipboardy';
 import { PropType } from 'vue';
-import { BeaconStrategy, OilFieldPlan, OilFieldPlanResponse, PipeStrategy } from '../lib/FactorioToolsApi';
+import { OilFieldPlan, OilFieldPlanResponse } from '../lib/FactorioToolsApi';
 import { ApiResult } from '../lib/OilFieldPlanner';
 import CopyButton from './CopyButton.vue';
+import AlgorithmStep from './AlgorithmStep.vue';
+import { AllSteps, Step, Steps, getBeaconStep, getPipeStep } from '../lib/steps';
 
 interface SelectedOilFieldPlan extends OilFieldPlan {
   category: PlanCategory,
@@ -68,43 +79,6 @@ enum PlanCategory {
   Selected,
   Alternate,
   Unused,
-}
-
-interface Step {
-  readonly text: string,
-  readonly class: string,
-}
-
-const optimizeStep: Step = { text: "optimize", class: "text-bg-secondary" }
-
-function getPipeStep(pipeStrategy: PipeStrategy): Step {
-  switch (pipeStrategy) {
-    case PipeStrategy.FbeOriginal:
-      return { text: "FBE", class: "text-bg-fbe" };
-    case PipeStrategy.Fbe:
-      return { text: "FBE*", class: "text-bg-fbe" };
-    case PipeStrategy.ConnectedCentersDelaunay:
-      return { text: "CC-DT", class: "text-bg-primary" };
-    case PipeStrategy.ConnectedCentersDelaunayMst:
-      return { text: "CC-DT-MST", class: "text-bg-primary" };
-    case PipeStrategy.ConnectedCentersFlute:
-      return { text: "CC-FLUTE", class: "text-bg-primary" };
-    default:
-      throw new Error(`unrecognized pipe strategy ${pipeStrategy}`)
-  }
-}
-
-function getBeaconStep(beaconStrategy: BeaconStrategy): Step {
-  switch (beaconStrategy) {
-    case BeaconStrategy.FbeOriginal:
-      return { text: "FBE", class: "text-bg-fbe" };
-    case BeaconStrategy.Fbe:
-      return { text: "FBE*", class: "text-bg-fbe" };
-    case BeaconStrategy.Snug:
-      return { text: "snug", class: "text-bg-primary" };
-    default:
-      throw new Error(`unrecognized beacon strategy ${beaconStrategy}`)
-  }
 }
 
 function initPlan(plan: OilFieldPlan, category: PlanCategory): SelectedOilFieldPlan {
@@ -161,14 +135,23 @@ export default {
         c.steps.push(getPipeStep(c.pipeStrategy))
 
         if (c.optimizePipes) {
-          c.steps.push(optimizeStep)
+          c.steps.push(Steps.OptimizeStep)
+        }
+        if (c.pipeCount != c.pipeCountWithoutUnderground) {
+          c.steps.push(Steps.UndergroundPipesStep)
         }
         if (c.beaconStrategy) {
           c.steps.push(getBeaconStep(c.beaconStrategy))
         }
+        if (c.category == PlanCategory.Selected && this.plan.data.request.addElectricPoles) {
+          c.steps.push(Steps.PolesStep)
+        }
       }
 
       return allPlans;
+    },
+    allSteps() {
+      return AllSteps
     }
   },
   methods: {
@@ -176,7 +159,7 @@ export default {
       await clipboard.write(this.plan.data.blueprint);
     }
   },
-  components: { CopyButton }
+  components: { CopyButton, AlgorithmStep }
 }
 </script>
 

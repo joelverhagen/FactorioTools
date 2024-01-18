@@ -1,7 +1,7 @@
 <template>
   <h1 class="row gx-2">
     <div class="col-md-auto">
-      Oil field planner
+      Factorio oil field planner
       <span v-if="useAdvancedOptions">🧙‍♂️</span>
       <span v-else>🐣</span>
     </div>
@@ -12,8 +12,6 @@
       </small>
     </div>
   </h1>
-  <p>This tool finds a near optimal oil field layout given a blueprint containing pumpjacks.</p>
-
   <form>
     <div class="row row-cols-md-auto g-2 mb-3">
       <div class="col-12">
@@ -64,6 +62,41 @@
     <OilFieldPlanView v-if="plan" :plan="plan" />
     <ResponseErrorView v-if="planError" :error="planError" />
   </form>
+  <div class="row">
+    <div class="col p-3">
+      <h3>About this tool</h3>
+      <p>This tool attempts finds a near optimal oil field layout given a blueprint containing pumpjacks.</p>
+      <p>It attempts to find the best arrangement for pipes, beacons, and electric poles and returns the plan in the form
+        of a Factorio blueprint. The input blueprint should contain at least one pumpjack. All other entities will be
+        ignored and excluded from the output blueprint. You can use the "View in FBE" links on the input or output
+        blueprint to preview the blueprint in your web browser using Teoxoy's wonderful <a
+          href="https://fbe.teoxoy.com/">Factorio Blueprint Editor</a> tool.</p>
+      <p>The planner has multiple pipe planning strategies (i.e. algorithms) and multiple beacon planning strategies. It
+        tries all combinations enabled and returns the blueprint for the best result. You can explore alternate or less
+        effective plans by limiting the strategies enabled. For more information about performance analysis, see <a
+          href="https://www.reddit.com/r/factorio/comments/11ply6h/i_want_to_share_an_oil_field_planner_tool_i_built/">my
+          Reddit post</a> about the tool.</p>
+      <p>There is only one electric pole strategy implemented so it is only run on the best pipe and beacon layout.</p>
+      <p>Currently, only oil pumpjacks from the base game (vanilla) are supported. Other kinds of liquid extractors, such
+        as those from mods, are not supported. There is a <a
+          href="https://github.com/joelverhagen/FactorioTools/issues/4">GitHub issue #4</a> tracking this possible
+        enhancement.</p>
+      <p>For more details about the various steps performed, see the table below.</p>
+      <h6 class="mt-2">Possible planner steps</h6>
+      <table class="table table-sm">
+        <tbody>
+          <template v-for="(s, i) of allSteps">
+            <tr>
+              <td>
+                <AlgorithmStep v-bind="s" />
+              </td>
+              <td v-html="s.longDescription"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -80,6 +113,8 @@ import OilFieldPlanView from '../components/OilFieldPlanView.vue';
 import CopyButton from '../components/CopyButton.vue';
 import { useAutoPlanStore } from '../stores/AutoPlanStore';
 import { OilFieldPlanResponse } from '../lib/FactorioToolsApi';
+import { AllSteps } from '../lib/steps';
+import AlgorithmStep from '../components/AlgorithmStep.vue';
 
 const sampleBlueprints = __SAMPLE_BLUEPRINTS__;
 sampleBlueprints.sort((a, b) => b.length - a.length)
@@ -95,6 +130,7 @@ export default {
       normalizeError: null as null | ApiError,
       plan: null as null | ApiResult<OilFieldPlanResponse>,
       planError: null as null | ApiError,
+      allSteps: AllSteps,
     },
       storeToRefs(useAutoPlanStore()),
       pick(storeToRefs(useOilFieldStore()),
@@ -265,6 +301,6 @@ export default {
       initializeOilFieldStore(this.$route.query)
     }
   },
-  components: { ElectricPoleSelect, BeaconForm, PumpjacksForm, PlannerForm, ResponseErrorView, OilFieldPlanView, CopyButton }
+  components: { ElectricPoleSelect, BeaconForm, PumpjacksForm, PlannerForm, ResponseErrorView, OilFieldPlanView, CopyButton, AlgorithmStep }
 }
 </script>
