@@ -22,15 +22,18 @@ public static partial class AddPipes
         Solution bestSolution;
         BeaconSolution? bestBeacons;
 
-        try
-        {
-            (selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
-        }
-        catch (NoPathBetweenTerminalsException) when (!eliminateStrandedTerminals)
+        var result = GetBestSolution(context);
+        if (result.Exception is NoPathBetweenTerminalsException && !eliminateStrandedTerminals)
         {
             EliminateStrandedTerminals(context);
-            (selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons) = GetBestSolution(context);
+            result = GetBestSolution(context);
+            if (result.Exception is not null)
+            {
+                throw result.Exception;
+            }
         }
+
+        (selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons) = result.Data!;
 
         context.CenterToTerminals = bestSolution.CenterToTerminals;
         context.LocationToTerminals = bestSolution.LocationToTerminals;
@@ -46,10 +49,17 @@ public static partial class AddPipes
         return (selectedPlans, alternatePlans, unusedPlans);
     }
 
-    private static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> AltnernatePlans, List<OilFieldPlan> UnusedPlans, Solution BestSolution, BeaconSolution? BestBeacons)
-        GetBestSolution(Context context)
+    private record SolutionInfo(List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> AltnernatePlans, List<OilFieldPlan> UnusedPlans, Solution BestSolution, BeaconSolution? BestBeacons);
+
+    private static Result<SolutionInfo> GetBestSolution(Context context)
     {
-        var sortedPlans = GetAllPlans(context);
+        var result = GetAllPlans(context);
+        if (result.Exception is not null)
+        {
+            return Result.NewException<SolutionInfo>(result.Exception);
+        }
+
+        var sortedPlans = result.Data!;
         sortedPlans.Sort((a, b) =>
         {
             // more effects = better
@@ -146,13 +156,18 @@ public static partial class AddPipes
             throw new FactorioToolsException("At least one pipe strategy must be used.");
         }
 
-        return (selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Pipes, bestPlanInfo.Beacons);
+        return Result.NewData(new SolutionInfo(selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Pipes, bestPlanInfo.Beacons));
     }
 
-
-    private static List<PlanInfo> GetAllPlans(Context context)
+    private static Result<List<PlanInfo>> GetAllPlans(Context context)
     {
-        var solutionGroups = GetSolutionGroups(context);
+        var result = GetSolutionGroups(context);
+        if (result.Exception is not null)
+        {
+            return Result.NewException<List<PlanInfo>>(result.Exception);
+        }
+
+        var solutionGroups = result.Data!;
         var plans = new List<PlanInfo>();
         foreach ((var solutionGroup, var groupNumber) in solutionGroups)
         {
@@ -202,10 +217,10 @@ public static partial class AddPipes
             }
         }
 
-        return plans;
+        return Result.NewData(plans);
     }
 
-    private static IReadOnlyCollection<SolutionsAndGroupNumber> GetSolutionGroups(Context context)
+    private static Result<IReadOnlyCollection<SolutionsAndGroupNumber>> GetSolutionGroups(Context context)
     {
         var originalCenterToTerminals = context.CenterToTerminals;
         var originalLocationToTerminals = context.LocationToTerminals;
@@ -241,7 +256,13 @@ public static partial class AddPipes
                     case PipeStrategy.FbeOriginal:
                     case PipeStrategy.Fbe:
                         {
-                            (var pipes, var finalStrategy) = ExecuteWithFbe(context, strategy);
+                            var result = ExecuteWithFbe(context, strategy);
+                            if (result.Exception is not null)
+                            {
+                                return Result.NewException<IReadOnlyCollection<SolutionsAndGroupNumber>>(result.Exception);
+                            }
+
+                            (var pipes, var finalStrategy) = result.Data!;
                             completedStrategies[(int)finalStrategy] = true;
 
                             OptimizeAndAddSolutions(context, pipesToSolutions, finalStrategy, pipes, centerToConnectedCenters: null);
@@ -264,7 +285,13 @@ public static partial class AddPipes
                                 continue;
                             }
 
-                            var pipes = FindTrunksAndConnect(context, centerToConnectedCenters);
+                            var result = FindTrunksAndConnect(context, centerToConnectedCenters);
+                            if (result.Exception is not null)
+                            {
+                                return Result.NewException<IReadOnlyCollection<SolutionsAndGroupNumber>>(result.Exception);
+                            }
+
+                            var pipes = result.Data!;
                             solutions = OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters);
                             connectedCentersToSolutions.Add(centerToConnectedCenters, solutions);
                         }
@@ -276,7 +303,7 @@ public static partial class AddPipes
             }
         }
 
-        return pipesToSolutions.Values;
+        return Result.NewData<IReadOnlyCollection<SolutionsAndGroupNumber>>(pipesToSolutions.Values);
     }
 
     private static List<Solution> OptimizeAndAddSolutions(

@@ -33,6 +33,7 @@ local KeyValuePairLocationILocationSet
 local ILocationDictionary_1ILocationSet
 local DictILocationSetSolutionsAndGroupNumber
 local KeyValuePairLocationListTerminalLocation
+local IReadOnlyCollection_1SolutionsAndGroupNumber
 local DictILocationDictionary_1ILocationSetListSolution
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
@@ -63,6 +64,7 @@ System.import(function (out)
   ILocationDictionary_1ILocationSet = KnapcodeOilField.ILocationDictionary_1(KnapcodeOilField.ILocationSet)
   DictILocationSetSolutionsAndGroupNumber = System.Dictionary(KnapcodeOilField.ILocationSet, KnapcodeAddPipes.SolutionsAndGroupNumber)
   KeyValuePairLocationListTerminalLocation = System.KeyValuePair(KnapcodeOilField.Location, ListTerminalLocation)
+  IReadOnlyCollection_1SolutionsAndGroupNumber = System.IReadOnlyCollection_1(KnapcodeAddPipes.SolutionsAndGroupNumber)
   DictILocationDictionary_1ILocationSetListSolution = System.Dictionary(ILocationDictionary_1ILocationSet, ListSolution)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
@@ -79,6 +81,29 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     DelaunayTriangulation, GetNextLine, LineContainsAnAddedPumpjack, GetPathBetweenGroups, ConnectTwoGroups, Translations, GetConnectedPumpjacks, FindTrunksAndConnect, 
     GetShortestPathToGroup, GetCentroidDistanceSquared, FindTrunks, ConnectTwoClosestPumpjacks, GetChildCenters, GetTrunkCandidates, GetConnectedPumpjacksWithDelaunay, GetConnectedPumpjacksWithDelaunayMst, 
     GetDelauntator, GetConnectedPumpjacksWithFLUTE, GetLocationToFlutePoint, GetFluteTree, class, static
+    namespace.class("SolutionInfo", function (namespace)
+      local __members__, __ctor__
+      __ctor__ = function (this, SelectedPlans, AltnernatePlans, UnusedPlans, BestSolution, BestBeacons)
+        this.SelectedPlans = SelectedPlans
+        this.AltnernatePlans = AltnernatePlans
+        this.UnusedPlans = UnusedPlans
+        this.BestSolution = BestSolution
+        this.BestBeacons = BestBeacons
+      end
+      __members__ = function ()
+        return "SolutionInfo", "SelectedPlans", "AltnernatePlans", "UnusedPlans", "BestSolution", "BestBeacons"
+      end
+      return {
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipes.SolutionInfo)
+          }
+        end,
+        __members__ = __members__,
+        __ctor__ = __ctor__
+      }
+    end)
     namespace.class("SolutionsAndGroupNumber", function (namespace)
       local __members__, __ctor__
       __ctor__ = function (this, Solutions, GroupNumber)
@@ -297,6 +322,49 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           return {
             System.RecordType,
             System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipes.PlanInfo)
+          }
+        end,
+        __members__ = __members__,
+        __ctor__ = __ctor__
+      }
+    end)
+    namespace.class("FbeResult", function (namespace)
+      local __members__, __ctor__
+      __ctor__ = function (this, Pipes, FinalStrategy)
+        this.Pipes = Pipes
+        this.FinalStrategy = FinalStrategy
+      end
+      __members__ = function ()
+        return "FbeResult", "Pipes", "FinalStrategy"
+      end
+      return {
+        FinalStrategy = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipes.FbeResult)
+          }
+        end,
+        __members__ = __members__,
+        __ctor__ = __ctor__
+      }
+    end)
+    namespace.class("FbeResultInfo", function (namespace)
+      local __members__, __ctor__
+      __ctor__ = function (this, Terminals, Pipes, FinalStrategy)
+        this.Terminals = Terminals
+        this.Pipes = Pipes
+        this.FinalStrategy = FinalStrategy
+      end
+      __members__ = function ()
+        return "FbeResultInfo", "Terminals", "Pipes", "FinalStrategy"
+      end
+      return {
+        FinalStrategy = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipes.FbeResultInfo)
           }
         end,
         __members__ = __members__,
@@ -645,18 +713,16 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local bestSolution
       local bestBeacons
 
-      System.try(function ()
-        selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons = GetBestSolution(context):Deconstruct()
-      end, function (default)
-        if System.when(function ()
-          return not eliminateStrandedTerminals
-        end) and System.is(default, KnapcodeFactorioTools.NoPathBetweenTerminalsException) then
-          EliminateStrandedTerminals(context)
-          selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons = GetBestSolution(context):Deconstruct()
-        else
-          return 1, default
+      local result = GetBestSolution(context)
+      if System.is(result.Exception, KnapcodeFactorioTools.NoPathBetweenTerminalsException) and not eliminateStrandedTerminals then
+        EliminateStrandedTerminals(context)
+        result = GetBestSolution(context)
+        if result.Exception ~= nil then
+          System.throw(result.Exception)
         end
-      end)
+      end
+
+      selectedPlans, alternatePlans, unusedPlans, bestSolution, bestBeacons = result.Data:Deconstruct()
 
       context.CenterToTerminals = bestSolution.CenterToTerminals
       context.LocationToTerminals = bestSolution.LocationToTerminals
@@ -671,7 +737,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return System.ValueTuple(selectedPlans, alternatePlans, unusedPlans)
     end
     GetBestSolution = function (context)
-      local sortedPlans = GetAllPlans(context)
+      local result = GetAllPlans(context)
+      if result.Exception ~= nil then
+        return KnapcodeFactorioTools.Result.NewException(result.Exception, class.SolutionInfo)
+      end
+
+      local sortedPlans = result.Data
       sortedPlans:Sort(function (a, b)
         -- more effects = better
         local c = System.Int32.CompareTo(b.Plan.BeaconEffectCount, a.Plan.BeaconEffectCount)
@@ -758,10 +829,15 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         System.throw(KnapcodeFactorioTools.FactorioToolsException("At least one pipe strategy must be used."))
       end
 
-      return System.ValueTuple(selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Pipes, bestPlanInfo.Beacons)
+      return KnapcodeFactorioTools.Result.NewData(class.SolutionInfo(selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Pipes, bestPlanInfo.Beacons), class.SolutionInfo)
     end
     GetAllPlans = function (context)
-      local solutionGroups = GetSolutionGroups(context)
+      local result = GetSolutionGroups(context)
+      if result.Exception ~= nil then
+        return KnapcodeFactorioTools.Result.NewException(result.Exception, ListPlanInfo)
+      end
+
+      local solutionGroups = result.Data
       local plans = ListPlanInfo()
       for _, default in System.each(solutionGroups) do
         local solutionGroup, groupNumber = default:Deconstruct()
@@ -788,7 +864,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return plans
+      return KnapcodeFactorioTools.Result.NewData(plans, ListPlanInfo)
     end
     GetSolutionGroups = function (context)
       local originalCenterToTerminals = context.CenterToTerminals
@@ -830,7 +906,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             repeat
               if strategy == 0 --[[PipeStrategy.FbeOriginal]] or strategy == 1 --[[PipeStrategy.Fbe]] then
                 do
-                  local pipes, finalStrategy = ExecuteWithFbe(context, strategy):Deconstruct()
+                  local result = ExecuteWithFbe(context, strategy)
+                  if result.Exception ~= nil then
+                    return KnapcodeFactorioTools.Result.NewException(result.Exception, IReadOnlyCollection_1SolutionsAndGroupNumber)
+                  end
+
+                  local pipes, finalStrategy = result.Data:Deconstruct()
                   completedStrategies:set(finalStrategy, true)
 
                   OptimizeAndAddSolutions(context, pipesToSolutions, finalStrategy, pipes)
@@ -850,7 +931,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                     break
                   end
 
-                  local pipes = FindTrunksAndConnect(context, centerToConnectedCenters)
+                  local result = FindTrunksAndConnect(context, centerToConnectedCenters)
+                  if result.Exception ~= nil then
+                    return KnapcodeFactorioTools.Result.NewException(result.Exception, IReadOnlyCollection_1SolutionsAndGroupNumber)
+                  end
+
+                  local pipes = result.Data
                   solutions = OptimizeAndAddSolutions(context, pipesToSolutions, strategy, pipes, centerToConnectedCenters)
                   connectedCentersToSolutions:AddKeyValue(centerToConnectedCenters, solutions)
                 end
@@ -867,7 +953,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return pipesToSolutions:getValues()
+      return KnapcodeFactorioTools.Result.NewData(pipesToSolutions:getValues(), IReadOnlyCollection_1SolutionsAndGroupNumber)
     end
     OptimizeAndAddSolutions = function (context, pipesToSolutions, strategy, pipes, centerToConnectedCenters)
       local solutionsAndIndex
@@ -1054,13 +1140,18 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- We'll apply this hack for now to reproduce FBE results.
       local middle = context.Grid.Middle:Translate(- 2, - 2)
 
-      local terminals, pipes, finalStrategy = DelaunayTriangulation(context, middle, strategy):Deconstruct()
+      local result = DelaunayTriangulation(context, middle, strategy)
+      if result.Exception ~= nil then
+        return KnapcodeFactorioTools.Result.NewException(result.Exception, class.FbeResult)
+      end
+
+      local terminals, pipes, finalStrategy = result.Data:Deconstruct()
 
       for _, terminal in System.each(terminals) do
         KnapcodeOilField.Helpers.EliminateOtherTerminals(context, terminal)
       end
 
-      return System.ValueTuple(pipes, finalStrategy)
+      return KnapcodeFactorioTools.Result.NewData(class.FbeResult(pipes, finalStrategy), class.FbeResult)
     end
     DelaunayTriangulation = function (context, middle, strategy)
       -- GENERATE LINES
@@ -1298,7 +1389,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             end
           end
 
-          local connection = GetPathBetweenGroups(context, par, group, 2 + maxTries - tries, strategy)
+          local result = GetPathBetweenGroups(context, par, group, 2 + maxTries - tries, strategy)
+          if result.Exception ~= nil then
+            return KnapcodeFactorioTools.Result.NewException(result.Exception, class.FbeResultInfo)
+          end
+
+          local connection = result.Data
 
           if connection ~= nil then
             connection.FirstGroup:AddRange(group)
@@ -1327,7 +1423,6 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
         System.throw(KnapcodeFactorioTools.FactorioToolsException("There should be no more alone groups at this point."))
       end
-
 
       local sortedLeftoverPumpjacks = ArrayLocation(leftoverPumpjacks:getCount())
       leftoverPumpjacks:CopyTo(SpanLocation.ctorArray(sortedLeftoverPumpjacks))
@@ -1358,7 +1453,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           while true do
             local continue
             repeat
-              local connection = GetPathBetweenGroups(context, terminalGroups, finalGroup, maxTurns, strategy)
+              local result = GetPathBetweenGroups(context, terminalGroups, finalGroup, maxTurns, strategy)
+              if result.Exception ~= nil then
+                return KnapcodeFactorioTools.Result.NewException(result.Exception, class.FbeResultInfo)
+              end
+
+              local connection = result.Data
 
               if connection == nil then
                 -- Allow more max turns with the modified FBE algorithm.
@@ -1398,7 +1498,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return System.ValueTuple(terminals, pipes, strategy)
+      return KnapcodeFactorioTools.Result.NewData(class.FbeResultInfo(terminals, pipes, strategy), class.FbeResultInfo)
     end
     GetNextLine = function (lines, addedPumpjacks)
       local next = nil
@@ -1514,7 +1614,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         local continue
         repeat
           local g = groups:get(i)
-          local connection = ConnectTwoGroups(context, g, group, maxTurns, strategy)
+          local result = ConnectTwoGroups(context, g, group, maxTurns, strategy)
+          if result.Exception ~= nil then
+            return result
+          end
+
+          local connection = result.Data
+
           if #connection.Lines == 0 then
             continue = true
             break
@@ -1537,7 +1643,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return best
+      return KnapcodeFactorioTools.Result.NewData(best, class.TwoConnectedGroups)
     end
     ConnectTwoGroups = function (context, a, b, maxTurns, strategy)
       local aLocations = ListLocation()
@@ -1651,14 +1757,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             path = KnapcodeOilField.BreadthFirstFinder.GetShortestPath(context, l.B, l.A)
             if path == nil then
               -- Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-              System.throw(KnapcodeFactorioTools.NoPathBetweenTerminalsException(l.A, l.B))
+              return KnapcodeFactorioTools.Result.NewException(KnapcodeFactorioTools.NoPathBetweenTerminalsException(l.A, l.B), class.TwoConnectedGroups)
             end
           else
             local goals = context:GetSingleLocationSet(l.B)
             local result = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, l.A, goals, true, 1, 1)
             if not result.Success then
               -- Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-              System.throw(KnapcodeFactorioTools.NoPathBetweenTerminalsException(l.A, l.B))
+              return KnapcodeFactorioTools.Result.NewException(KnapcodeFactorioTools.NoPathBetweenTerminalsException(l.A, l.B), class.TwoConnectedGroups)
             end
 
             path = result:getPath()
@@ -1697,7 +1803,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return class.TwoConnectedGroups(lines, minCount, a)
+      return KnapcodeFactorioTools.Result.NewData(class.TwoConnectedGroups(lines, minCount, a), class.TwoConnectedGroups)
     end
     GetConnectedPumpjacks = function (context, strategy)
       local centers = context.Centers
@@ -1807,7 +1913,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                   for _, terminal in System.each(context.CenterToTerminals:get(center)) do
                     local continue
                     repeat
-                      local path = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY)
+                      local result = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY)
+                      if result.Exception ~= nil then
+                        return KnapcodeFactorioTools.Result.NewException(result.Exception, KnapcodeOilField.ILocationSet)
+                      end
+
+                      local path = result.Data
 
                       if candidate == nil then
                         candidate = class.GroupCandidate(group, center, includedCenter, terminal, path)
@@ -1891,18 +2002,17 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return KnapcodeFactorioTools.CollectionExtensions.Single(groups, class.PumpjackGroup).Pipes
+      return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.Single(groups, class.PumpjackGroup).Pipes, KnapcodeOilField.ILocationSet)
     end
     GetShortestPathToGroup = function (context, terminal, group, groupCentroidX, groupCentroidY)
       local aStarResultV = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 2, 1)
       local aStarResultH = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 1, 2)
-
       if not aStarResultV.Success then
-        System.throw(KnapcodeFactorioTools.NoPathBetweenTerminalsException(terminal.Terminal, KnapcodeFactorioTools.CollectionExtensions.First(group.Pipes:EnumerateItems(), KnapcodeOilField.Location)))
+        return KnapcodeFactorioTools.Result.NewException(KnapcodeFactorioTools.NoPathBetweenTerminalsException(terminal.Terminal, KnapcodeFactorioTools.CollectionExtensions.First(group.Pipes:EnumerateItems(), KnapcodeOilField.Location)), ListLocation)
       end
 
       if KnapcodeFactorioTools.CollectionExtensions.SequenceEqual(aStarResultV:getPath(), aStarResultH:getPath(), KnapcodeOilField.Location) then
-        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location), ListLocation)
       end
 
       local adjacentPipesV = 0
@@ -1941,13 +2051,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       if adjacentPipesV > adjacentPipesH then
-        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location), ListLocation)
       elseif adjacentPipesV < adjacentPipesH then
-        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location), ListLocation)
       elseif centroidDistanceSquaredV < centroidDistanceSquaredH then
-        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location), ListLocation)
       else
-        return KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location), ListLocation)
       end
     end
     GetCentroidDistanceSquared = function (groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)

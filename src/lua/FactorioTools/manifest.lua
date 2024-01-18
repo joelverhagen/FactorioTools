@@ -65,6 +65,7 @@ return function (path)
       "ProviderRecipient",
       "PumpjackCenter",
       "PumpjackSide",
+      "Result",
       "RotateOptimize",
       "SetHandling",
       "SharedInstances",
@@ -98,6 +99,7 @@ return function (path)
       "Knapcode.FactorioTools.OilField.Planner",
       "Knapcode.FactorioTools.OilField.RotateOptimize",
       "Knapcode.FactorioTools.OilField.Pipe",
+      "Knapcode.FactorioTools.Result",
       "Knapcode.FactorioTools.CollectionExtensions",
       "Knapcode.FactorioTools.Data.Blueprint",
       "Knapcode.FactorioTools.Data.BlueprintBook",
@@ -121,6 +123,8 @@ return function (path)
       "Knapcode.FactorioTools.OilField.AddPipeEntities",
       "Knapcode.FactorioTools.OilField.AddPipes.BestConnection",
       "Knapcode.FactorioTools.OilField.AddPipes.ConnectedCentersComparer",
+      "Knapcode.FactorioTools.OilField.AddPipes.FbeResult",
+      "Knapcode.FactorioTools.OilField.AddPipes.FbeResultInfo",
       "Knapcode.FactorioTools.OilField.AddPipes.FlutePoint",
       "Knapcode.FactorioTools.OilField.AddPipes.Group",
       "Knapcode.FactorioTools.OilField.AddPipes.GroupCandidate",
@@ -130,6 +134,7 @@ return function (path)
       "Knapcode.FactorioTools.OilField.AddPipes.PumpjackConnection",
       "Knapcode.FactorioTools.OilField.AddPipes.PumpjackGroup",
       "Knapcode.FactorioTools.OilField.AddPipes.Solution",
+      "Knapcode.FactorioTools.OilField.AddPipes.SolutionInfo",
       "Knapcode.FactorioTools.OilField.AddPipes.SolutionsAndGroupNumber",
       "Knapcode.FactorioTools.OilField.AddPipes.TerminalPair",
       "Knapcode.FactorioTools.OilField.AddPipes.Trunk",
@@ -184,6 +189,7 @@ return function (path)
       "Knapcode.FactorioTools.OilField.TerminalLocation",
       "Knapcode.FactorioTools.OilField.UndergroundPipe",
       "Knapcode.FactorioTools.OilField.Validate",
+      "Knapcode.FactorioTools.Result_1",
       "Knapcode.FactorioTools.SetHandling"
     }
   })

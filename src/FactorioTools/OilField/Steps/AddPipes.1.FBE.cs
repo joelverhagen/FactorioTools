@@ -14,24 +14,33 @@ namespace Knapcode.FactorioTools.OilField;
 /// </summary>
 public static partial class AddPipes
 {
-    public static (ILocationSet Pipes, PipeStrategy FinalStrategy) ExecuteWithFbe(Context context, PipeStrategy strategy)
+    public record FbeResult(ILocationSet Pipes, PipeStrategy FinalStrategy);
+
+    public static Result<FbeResult> ExecuteWithFbe(Context context, PipeStrategy strategy)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
         var middle = context.Grid.Middle.Translate(-2, -2);
 
-        (var terminals, var pipes, var finalStrategy) = DelaunayTriangulation(context, middle, strategy);
+        var result = DelaunayTriangulation(context, middle, strategy);
+        if (result.Exception is not null)
+        {
+            return Result.NewException<FbeResult>(result.Exception);
+        }
+
+        (var terminals, var pipes, var finalStrategy) = result.Data!;
 
         foreach (var terminal in terminals)
         {
             EliminateOtherTerminals(context, terminal);
         }
 
-        return (pipes, finalStrategy);
+        return Result.NewData(new FbeResult(pipes, finalStrategy));
     }
 
-    private static (IReadOnlyList<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy)
-        DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
+    private record FbeResultInfo(IReadOnlyList<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy);
+
+    private static Result<FbeResultInfo> DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         // GENERATE LINES
         var lines = new List<PumpjackConnection>();
@@ -228,12 +237,18 @@ public static partial class AddPipes
                 }
             }
 
-            var connection = GetPathBetweenGroups(
+            var result = GetPathBetweenGroups(
                 context,
                 par,
                 group,
                 2 + maxTries - tries,
                 strategy);
+            if (result.Exception is not null)
+            {
+                return Result.NewException<FbeResultInfo>(result.Exception);
+            }
+
+            var connection = result.Data!;
 
             if (connection is not null)
             {
@@ -263,7 +278,6 @@ public static partial class AddPipes
 
             throw new FactorioToolsException("There should be no more alone groups at this point.");
         }
-
 
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
         var sortedLeftoverPumpjacks =
@@ -303,12 +317,18 @@ public static partial class AddPipes
             var maxTurns = 2;
             while (true)
             {
-                var connection = GetPathBetweenGroups(
+                var result = GetPathBetweenGroups(
                     context,
                     terminalGroups,
                     finalGroup,
                     maxTurns,
                     strategy);
+                if (result.Exception is not null)
+                {
+                    return Result.NewException<FbeResultInfo>(result.Exception);
+                }
+
+                var connection = result.Data!;
 
                 if (connection is null)
                 {
@@ -331,7 +351,6 @@ public static partial class AddPipes
                 finalGroup.Paths.Add(connection.Lines[0]);
                 break;
             }
-
         }
 
         var terminals = finalGroup.Entities;
@@ -345,7 +364,7 @@ public static partial class AddPipes
             }
         }
 
-        return (terminals, pipes, strategy);
+        return Result.NewData(new FbeResultInfo(terminals, pipes, strategy));
     }
 
     private static PumpjackConnection GetNextLine(List<PumpjackConnection> lines, List<TerminalLocation> addedPumpjacks)
@@ -456,13 +475,20 @@ public static partial class AddPipes
         return false;
     }
 
-    private static TwoConnectedGroups? GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns, PipeStrategy strategy)
+    private static Result<TwoConnectedGroups?> GetPathBetweenGroups(Context context, List<Group> groups, Group group, int maxTurns, PipeStrategy strategy)
     {
         TwoConnectedGroups? best = null;
         for (var i = 0; i < groups.Count; i++)
         {
             var g = groups[i];
-            var connection = ConnectTwoGroups(context, g, group, maxTurns, strategy);
+            var result = ConnectTwoGroups(context, g, group, maxTurns, strategy);
+            if (result.Exception != null)
+            {
+                return result!;
+            }
+
+            var connection = result.Data!;
+
             if (connection.Lines.Count == 0)
             {
                 continue;
@@ -481,10 +507,10 @@ public static partial class AddPipes
             }
         }
 
-        return best;
+        return Result.NewData(best);
     }
 
-    private static TwoConnectedGroups ConnectTwoGroups(Context context, Group a, Group b, int maxTurns, PipeStrategy strategy)
+    private static Result<TwoConnectedGroups> ConnectTwoGroups(Context context, Group a, Group b, int maxTurns, PipeStrategy strategy)
     {
         var aLocations = new List<Location>();
         for (var i = 0; i < a.Paths.Count; i++)
@@ -590,7 +616,7 @@ public static partial class AddPipes
                 if (path is null)
                 {
                     // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                    throw new NoPathBetweenTerminalsException(l.A, l.B);
+                    return Result.NewException<TwoConnectedGroups>(new NoPathBetweenTerminalsException(l.A, l.B));
                 }
             }
             else
@@ -600,7 +626,7 @@ public static partial class AddPipes
                 if (!result.Success)
                 {
                     // Visualizer.Show(context.Grid, new[] { l.A, l.B }.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
-                    throw new NoPathBetweenTerminalsException(l.A, l.B);
+                    return Result.NewException<TwoConnectedGroups>(new NoPathBetweenTerminalsException(l.A, l.B));
                 }
 
                 path = result.Path;
@@ -638,7 +664,7 @@ public static partial class AddPipes
             }
         }
 
-        return new TwoConnectedGroups(lines, minCount, a);
+        return Result.NewData(new TwoConnectedGroups(lines, minCount, a));
     }
 
     private class TwoConnectedGroups

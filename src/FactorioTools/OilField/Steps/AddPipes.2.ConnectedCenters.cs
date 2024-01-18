@@ -89,7 +89,7 @@ public static partial class AddPipes
         TerminalLocation Terminal,
         List<Location> Path);
 
-    private static ILocationSet FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
+    private static Result<ILocationSet> FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 
@@ -142,7 +142,13 @@ public static partial class AddPipes
                     // of the child (unconnected) pumpjacks.
                     foreach (var terminal in context.CenterToTerminals[center])
                     {
-                        var path = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
+                        var result = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
+                        if (result.Exception is not null)
+                        {
+                            return Result.NewException<ILocationSet>(result.Exception);
+                        }
+
+                        var path = result.Data!;
 
                         if (candidate is null)
                         {
@@ -210,10 +216,10 @@ public static partial class AddPipes
             }
         }
 
-        return groups.Single().Pipes;
+        return Result.NewData(groups.Single().Pipes);
     }
 
-    private static List<Location> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
+    private static Result<List<Location>> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
 #if !USE_SHARED_INSTANCES
         var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
@@ -224,15 +230,14 @@ public static partial class AddPipes
             var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2, outputList: context.SharedInstances.LocationListA);
             var aStarResultH = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, yWeight: 2, outputList: context.SharedInstances.LocationListB);
 #endif
-
             if (!aStarResultV.Success)
             {
-                throw new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First());
+                return Result.NewException<List<Location>>(new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First()));
             }
 
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
             {
-                return aStarResultV.Path.ToList();
+                return Result.NewData(aStarResultV.Path.ToList());
             }
 
             var adjacentPipesV = 0;
@@ -285,19 +290,19 @@ public static partial class AddPipes
 
             if (adjacentPipesV > adjacentPipesH)
             {
-                return aStarResultV.Path.ToList();
+                return Result.NewData(aStarResultV.Path.ToList());
             }
             else if (adjacentPipesV < adjacentPipesH)
             {
-                return aStarResultH.Path.ToList();
+                return Result.NewData(aStarResultH.Path.ToList());
             }
             else if (centroidDistanceSquaredV < centroidDistanceSquaredH)
             {
-                return aStarResultV.Path.ToList();
+                return Result.NewData(aStarResultV.Path.ToList());
             }
             else
             {
-                return aStarResultH.Path.ToList();
+                return Result.NewData(aStarResultH.Path.ToList());
             }
 #if USE_SHARED_INSTANCES
         }

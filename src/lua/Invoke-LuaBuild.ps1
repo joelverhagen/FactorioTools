@@ -70,6 +70,9 @@ function Publish-CompiledLua($projectDir, $referenceNames, $filesFirst) {
     $sourceList = ($files | ForEach-Object { $_.FullName } | Sort-Object) -join ";"
     
     dotnet run --no-build --configuration Release --project $compilerDir -- -c -p -csc "-define:ENABLE_GRID_TOSTRING" @libArg -s $sourceList -d $outputDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "The CSharp.lua compiler failed with exit code $LASTEXITCODE."
+    }
 
     # workaround for https://github.com/yanghuan/CSharp.lua/issues/492
     if ($filesFirst) {
