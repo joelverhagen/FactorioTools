@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public static partial class AddPipes
+public static class AddPipesConnectedCentersFLUTE
 {
-    private static ILocationDictionary<ILocationSet> GetConnectedPumpjacksWithFLUTE(Context context)
+    public static ILocationDictionary<ILocationSet> Execute(Context context)
     {
         var locationToPoint = GetLocationToFlutePoint(context);
 

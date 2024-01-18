@@ -4,9 +4,9 @@ using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public static partial class PlanBeacons
+public static class PlanBeaconsSnug
 {
-    private static (List<Location> Beacons, int Effects) AddBeaconsSnug(Context context)
+    public static BeaconPlannerResult Execute(Context context)
     {
         var poweredEntities = new List<ProviderRecipient>(context.CenterToTerminals.Count);
         foreach (var center in context.Centers)
@@ -123,7 +123,7 @@ public static partial class PlanBeacons
 
         // Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-        return (beacons, effects);
+        return new BeaconPlannerResult(beacons, effects);
     }
 
     private class CandidateFactory : ICandidateFactory<BeaconCandidateInfo>

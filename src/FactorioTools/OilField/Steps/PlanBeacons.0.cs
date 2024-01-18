@@ -3,7 +3,9 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public static partial class PlanBeacons
+public record BeaconPlannerResult(List<Location> Beacons, int Effects);
+
+public static class PlanBeacons
 {
     public static List<BeaconSolution> Execute(Context context, ILocationSet pipes)
     {
@@ -24,9 +26,9 @@ public static partial class PlanBeacons
 
             (var beacons, var effects) = strategy switch
             {
-                BeaconStrategy.FbeOriginal => AddBeaconsFbe(context, strategy),
-                BeaconStrategy.Fbe => AddBeaconsFbe(context, strategy),
-                BeaconStrategy.Snug => AddBeaconsSnug(context),
+                BeaconStrategy.FbeOriginal => PlanBeaconsFbe.Execute(context, strategy),
+                BeaconStrategy.Fbe => PlanBeaconsFbe.Execute(context, strategy),
+                BeaconStrategy.Snug => PlanBeaconsSnug.Execute(context),
                 _ => throw new NotImplementedException(),
             };
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -10,7 +11,7 @@ public static class Prims
         Location firstNode,
         bool digraph)
     {
-        var priority = new PriorityQueue<(Location NodeA, Location NodeB), int>();
+        var priority = new PriorityQueue<Tuple<Location, Location>, int>();
         var mst = context.GetLocationDictionary<ILocationSet>();
 
 #if !USE_SHARED_INSTANCES
@@ -23,7 +24,7 @@ public static class Prims
         visited.Add(firstNode);
             foreach ((var otherNode, var cost) in graph[firstNode].EnumeratePairs())
             {
-                priority.Enqueue((firstNode, otherNode), cost);
+                priority.Enqueue(Tuple.Create(firstNode, otherNode), cost);
             }
 
             while (priority.Count > 0)
@@ -48,7 +49,7 @@ public static class Prims
                 {
                     if (!visited.Contains(neighbor))
                     {
-                        priority.Enqueue((nodeB, neighbor), cost);
+                        priority.Enqueue(Tuple.Create(nodeB, neighbor), cost);
                     }
                 }
             }

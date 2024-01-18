@@ -6,7 +6,7 @@ using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public static partial class AddPipes
+public static class AddPipes
 {
     public static (List<OilFieldPlan> SelectedPlans, List<OilFieldPlan> AlternatePlans, List<OilFieldPlan> UnusedPlans)
         Execute(Context context, bool eliminateStrandedTerminals)
@@ -256,7 +256,7 @@ public static partial class AddPipes
                     case PipeStrategy.FbeOriginal:
                     case PipeStrategy.Fbe:
                         {
-                            var result = ExecuteWithFbe(context, strategy);
+                            var result = AddPipesFbe.Execute(context, strategy);
                             if (result.Exception is not null)
                             {
                                 return Result.NewException<IReadOnlyCollection<SolutionsAndGroupNumber>>(result.Exception);
@@ -273,7 +273,7 @@ public static partial class AddPipes
                     case PipeStrategy.ConnectedCentersDelaunayMst:
                     case PipeStrategy.ConnectedCentersFlute:
                         {
-                            ILocationDictionary<ILocationSet> centerToConnectedCenters = GetConnectedPumpjacks(context, strategy);
+                            ILocationDictionary<ILocationSet> centerToConnectedCenters = AddPipesConnectedCenters.GetConnectedPumpjacks(context, strategy);
                             completedStrategies[(int)strategy] = true;
 
                             if (connectedCentersToSolutions.TryGetValue(centerToConnectedCenters, out var solutions))
@@ -285,7 +285,7 @@ public static partial class AddPipes
                                 continue;
                             }
 
-                            var result = FindTrunksAndConnect(context, centerToConnectedCenters);
+                            var result = AddPipesConnectedCenters.FindTrunksAndConnect(context, centerToConnectedCenters);
                             if (result.Exception is not null)
                             {
                                 return Result.NewException<IReadOnlyCollection<SolutionsAndGroupNumber>>(result.Exception);
@@ -363,7 +363,7 @@ public static partial class AddPipes
             var pipesB = context.Options.UseUndergroundPipes ? context.GetLocationSet(pipes) : pipes;
             var solutionB = GetSolution(context, strategy, optimized: false, centerToConnectedCenters, pipesB);
 
-            Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionA.UndergroundPipes, solutionB.Pipes, solutionB.UndergroundPipes);
+            Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionB.Pipes);
 
             solutions = new List<Solution> { solutionA, solutionB };
         }

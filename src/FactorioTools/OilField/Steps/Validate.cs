@@ -60,9 +60,7 @@ public static class Validate
     public static void PipesDoNotMatch(
         Context context,
         ILocationSet pipes1,
-        ILocationDictionary<Direction>? undergroundPipes1,
-        ILocationSet pipes2,
-        ILocationDictionary<Direction>? undergroundPipes2)
+        ILocationSet pipes2)
     {
         if (context.Options.ValidateSolution)
         {

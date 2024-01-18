@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime;
 using DelaunatorSharp;
 using Knapcode.FactorioTools.Data;
+using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -17,12 +19,12 @@ public static class Helpers
     /// + j j j .
     /// . + . . .
     /// </summary>
-    public static readonly IReadOnlyList<(Direction Direction, Location Location)> TerminalOffsets = new List<(Direction, Location)>
+    public static readonly IReadOnlyList<Tuple<Direction, Location>> TerminalOffsets = new List<Tuple<Direction, Location>>
     {
-        (Direction.Up, new Location(1, -2)),
-        (Direction.Right, new Location(2, -1)),
-        (Direction.Down, new Location(-1, 2)),
-        (Direction.Left, new Location(-2, 1)),
+        Tuple.Create(Direction.Up, new Location(1, -2)),
+        Tuple.Create(Direction.Right, new Location(2, -1)),
+        Tuple.Create(Direction.Down, new Location(-1, 2)),
+        Tuple.Create(Direction.Left, new Location(-2, 1)),
     };
 
     public static PumpjackCenter AddPumpjack(SquareGrid grid, Location center)
@@ -96,7 +98,9 @@ public static class Helpers
         }
     }
 
-    public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
+    public record CandidateToCoveredResult<TInfo, TProvider>(ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers);
+
+    public static CandidateToCoveredResult<TInfo, BeaconCenter> GetBeaconCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -116,7 +120,7 @@ public static class Helpers
             includeBeacons: false);
     }
 
-    public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
+    public static CandidateToCoveredResult<TInfo, ElectricPoleCenter> GetElectricPoleCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -136,7 +140,7 @@ public static class Helpers
             includeBeacons: true);
     }
 
-    private static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
+    private static CandidateToCoveredResult<TInfo, TProvider> GetCandidateToCovered<TProvider, TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -312,7 +316,7 @@ public static class Helpers
             }
         }
 
-        return (candidateToInfo, coveredEntities, providers);
+        return new CandidateToCoveredResult<TInfo, TProvider>(candidateToInfo, coveredEntities, providers);
     }
 
     public static ILocationDictionary<ILocationSet> GetProviderCenterToCoveredCenters(

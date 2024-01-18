@@ -4,7 +4,7 @@ using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public static partial class AddPipes
+public static class AddPipesConnectedCenters
 {
     private static readonly IReadOnlyList<Location> Translations = new[]
     {
@@ -12,7 +12,7 @@ public static partial class AddPipes
         new Location(0, 1),
     };
 
-    private static ILocationDictionary<ILocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
+    public static ILocationDictionary<ILocationSet> GetConnectedPumpjacks(Context context, PipeStrategy strategy)
     {
         var centers = context.Centers;
 
@@ -39,9 +39,9 @@ public static partial class AddPipes
 
         var connectedCenters = strategy switch
         {
-            PipeStrategy.ConnectedCentersDelaunay => GetConnectedPumpjacksWithDelaunay(context, centers),
-            PipeStrategy.ConnectedCentersDelaunayMst => GetConnectedPumpjacksWithDelaunayMst(context, centers),
-            PipeStrategy.ConnectedCentersFlute => GetConnectedPumpjacksWithFLUTE(context),
+            PipeStrategy.ConnectedCentersDelaunay => AddPipesConnectedCentersDT.ExecuteWithDelaunay(context, centers),
+            PipeStrategy.ConnectedCentersDelaunayMst => AddPipesConnectedCentersDT.ExecuteWithDelaunayMst(context, centers),
+            PipeStrategy.ConnectedCentersFlute => AddPipesConnectedCentersFLUTE.Execute(context),
             _ => throw new NotImplementedException(),
         };
 
@@ -89,7 +89,7 @@ public static partial class AddPipes
         TerminalLocation Terminal,
         List<Location> Path);
 
-    private static Result<ILocationSet> FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
+    public static Result<ILocationSet> FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var selectedTrunks = FindTrunks(context, centerToConnectedCenters);
 
@@ -572,6 +572,8 @@ public static partial class AddPipes
         return group;
     }
 
+    private record ExploreCenter(Location Location, bool ShouldRecurse);
+
     private static ILocationSet GetChildCenters(
         Context context,
         ILocationDictionary<ILocationSet> centerToConnectedCenters,
@@ -579,9 +581,9 @@ public static partial class AddPipes
         ILocationSet shallowExploreCenters,
         Location startingCenter)
     {
-        var queue = new Queue<(Location Location, bool ShouldRecurse)>();
+        var queue = new Queue<ExploreCenter>();
         var visited = context.GetLocationSet(allowEnumerate: true);
-        queue.Enqueue((startingCenter, ShouldRecurse: true));
+        queue.Enqueue(new ExploreCenter(startingCenter, ShouldRecurse: true));
 
         while (queue.Count > 0)
         {
@@ -599,7 +601,7 @@ public static partial class AddPipes
                 }
 
                 // If the other center is in another group, don't recursively explore.
-                queue.Enqueue((other, ShouldRecurse: !shallowExploreCenters.Contains(other)));
+                queue.Enqueue(new ExploreCenter(other, ShouldRecurse: !shallowExploreCenters.Contains(other)));
             }
         }
 

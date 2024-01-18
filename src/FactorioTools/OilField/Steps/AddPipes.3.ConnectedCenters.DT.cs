@@ -3,9 +3,9 @@ using DelaunatorSharp;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public static partial class AddPipes
+public static class AddPipesConnectedCentersDT
 {
-    private static ILocationDictionary<ILocationSet> GetConnectedPumpjacksWithDelaunay(Context context, List<Location> centers)
+    public static ILocationDictionary<ILocationSet> ExecuteWithDelaunay(Context context, List<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
         var dlGraph = centers.ToDictionary(context, c => c, c => context.GetLocationSet(allowEnumerate: true));
@@ -25,7 +25,7 @@ public static partial class AddPipes
         return dlGraph;
     }
 
-    private static ILocationDictionary<ILocationSet> GetConnectedPumpjacksWithDelaunayMst(Context context, List<Location> centers)
+    public static ILocationDictionary<ILocationSet> ExecuteWithDelaunayMst(Context context, List<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
         var dlGraph = centers.ToDictionary(context, c => c, c => context.GetLocationDictionary<int>());

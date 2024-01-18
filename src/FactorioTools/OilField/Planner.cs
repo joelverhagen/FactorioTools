@@ -4,9 +4,11 @@ using Knapcode.FactorioTools.Data;
 
 namespace Knapcode.FactorioTools.OilField;
 
+public record PlannerResult(Context Context, OilFieldPlanSummary Summary);
+
 public static class Planner
 {
-    public static (Context Context, OilFieldPlanSummary Summary) ExecuteSample()
+    public static PlannerResult ExecuteSample()
     {
         var options = OilFieldOptions.ForMediumElectricPole;
 
@@ -81,7 +83,7 @@ public static class Planner
         return Execute(options, inputBlueprint);
     }
 
-    public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, Blueprint inputBlueprint)
+    public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint)
     {
         return Execute(
             options,
@@ -89,7 +91,7 @@ public static class Planner
             avoid: Array.Empty<AvoidLocation>());
     }
 
-    public static (Context Context, OilFieldPlanSummary Summary) Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyList<AvoidLocation> avoid)
+    public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyList<AvoidLocation> avoid)
     {
         return Execute(
             options,
@@ -99,7 +101,7 @@ public static class Planner
             EletricPolesMode.AddLast);
     }
 
-    private static (Context Context, OilFieldPlanSummary Summary) Execute(
+    private static PlannerResult Execute(
         OilFieldOptions options,
         Blueprint blueprint,
         IReadOnlyList<AvoidLocation> avoid,
@@ -222,7 +224,7 @@ public static class Planner
             alternatePlans,
             unusedPlans);
 
-        return (context, planSummary);
+        return new PlannerResult(context, planSummary);
     }
 
     private static ILocationSet GetElectricPolesAvoid(Context context)

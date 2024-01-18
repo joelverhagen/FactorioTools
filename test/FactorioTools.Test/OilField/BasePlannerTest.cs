@@ -23,7 +23,7 @@ public class BasePlannerTest : BaseTest
     public static IReadOnlyList<string> SmallListBlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(SmallListFilePath);
     public static IReadOnlyList<string> BigListBlueprintStrings { get; } = ParseBlueprint.ReadBlueprintFile(BigListFilePath);
 
-    public static (Context Context, OilFieldPlanSummary Summary) ExecuteAllStrategies(string blueprintString)
+    public static PlannerResult ExecuteAllStrategies(string blueprintString)
     {
         var options = OilFieldOptions.ForMediumElectricPole;
         options.ValidateSolution = true;
@@ -34,7 +34,7 @@ public class BasePlannerTest : BaseTest
         return Planner.Execute(options, blueprint);
     }
 
-    public static string GetGridString((Context Context, OilFieldPlanSummary Summary) result)
+    public static string GetGridString(PlannerResult result)
     {
         var builder = new StringBuilder();
 

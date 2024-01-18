@@ -12,11 +12,11 @@ namespace Knapcode.FactorioTools.OilField;
 /// 
 /// Teoxoy came up with the idea to use Delaunay triangulation for this problem. Awesome!
 /// </summary>
-public static partial class AddPipes
+public static class AddPipesFbe
 {
     public record FbeResult(ILocationSet Pipes, PipeStrategy FinalStrategy);
 
-    public static Result<FbeResult> ExecuteWithFbe(Context context, PipeStrategy strategy)
+    public static Result<FbeResult> Execute(Context context, PipeStrategy strategy)
     {
         // HACK: it appears FBE does not adjust the grid middle by the 2 cell buffer added to the side of the grid.
         // We'll apply this hack for now to reproduce FBE results.
@@ -542,7 +542,7 @@ public static partial class AddPipes
                     continue;
                 }
 
-                lineInfo.Add(new PathAndTurns(new Endpoints(line[0], line[line.Count - 1]), line, turns: 0, lineInfo.Count));
+                lineInfo.Add(new PathAndTurns(new Endpoints(line[0], line[line.Count - 1]), line, Turns: 0, lineInfo.Count));
             }
         }
 
@@ -667,35 +667,9 @@ public static partial class AddPipes
         return Result.NewData(new TwoConnectedGroups(lines, minCount, a));
     }
 
-    private class TwoConnectedGroups
-    {
-        public TwoConnectedGroups(List<List<Location>> lines, int minDistance, Group firstGroup)
-        {
-            Lines = lines;
-            MinDistance = minDistance;
-            FirstGroup = firstGroup;
-        }
+    private record TwoConnectedGroups(List<List<Location>> Lines, int MinDistance, Group FirstGroup);
 
-        public List<List<Location>> Lines { get; }
-        public int MinDistance { get; }
-        public Group FirstGroup { get; }
-    }
-
-    private class PathAndTurns
-    {
-        public PathAndTurns(Endpoints endpoints, List<Location> path, int turns, int originalIndex)
-        {
-            Endpoints = endpoints;
-            Path = path;
-            Turns = turns;
-            OriginalIndex = originalIndex;
-        }
-
-        public Endpoints Endpoints { get; }
-        public List<Location> Path { get; }
-        public int Turns { get; }
-        public int OriginalIndex { get; }
-    }
+    private record PathAndTurns(Endpoints Endpoints, List<Location> Path, int Turns, int OriginalIndex);
 
     private class Group
     {

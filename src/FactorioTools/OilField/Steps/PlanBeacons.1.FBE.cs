@@ -21,11 +21,11 @@ namespace Knapcode.FactorioTools.OilField;
 /// - Add support for non-standard beacon sizes
 /// - Add support for non-overlapping beacons (for Space Exploration beacon overlap)
 /// </summary>
-public static partial class PlanBeacons
+public static class PlanBeaconsFbe
 {
     private const int MinAffectedEntities = 1;
 
-    private static (List<Location> Beacons, int Effects) AddBeaconsFbe(Context context, BeaconStrategy strategy)
+    public static BeaconPlannerResult Execute(Context context, BeaconStrategy strategy)
     {
         var entityAreas = GetEntityAreas(context);
         var occupiedPositions = GetOccupiedPositions(context, entityAreas);
@@ -58,10 +58,10 @@ public static partial class PlanBeacons
         }
 
         // GENERATE BEACONS
-        return GetBeacons(context, strategy, effectEntityAreas, possibleBeacons);
+        return GetBeacons(context, effectEntityAreas, possibleBeacons);
     }
 
-    private static (List<Location> Beacons, int Effects) GetBeacons(Context context, BeaconStrategy strategy, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
+    private static BeaconPlannerResult GetBeacons(Context context, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
     {
         var beacons = new List<Location>();
         var effects = 0;
@@ -101,7 +101,7 @@ public static partial class PlanBeacons
             collisionArea.UnionWith(beacon.CollisionArea);
         }
 
-        return (beacons, effects);
+        return new BeaconPlannerResult(beacons, effects);
     }
 
     private static List<BeaconCandidate> SortPossibleBeacons(Context context, List<BeaconCandidate> possibleBeacons)
@@ -295,7 +295,9 @@ public static partial class PlanBeacons
         return possibleBeacons;
     }
 
-    private static (int entityMinX, int entityMinY, int entityMaxX, int entityMaxY) GetBounds(IReadOnlyCollection<Location> locations)
+    public record Bounds(int EntityMinX, int EntityMinY, int EntityMaxX, int EntityMaxY);
+
+    private static Bounds GetBounds(IReadOnlyCollection<Location> locations)
     {
         var entityMinX = int.MaxValue;
         var entityMinY = int.MaxValue;
@@ -324,7 +326,7 @@ public static partial class PlanBeacons
             }
         }
 
-        return (entityMinX, entityMinY, entityMaxX, entityMaxY);
+        return new Bounds(entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
     private static ILocationSet GetOccupiedPositions(Context context, List<Area> entityAreas)
@@ -551,32 +553,12 @@ public static partial class PlanBeacons
         public Location[] Locations { get; }
     }
 
-    private class BeaconCandidate
-    {
-        public BeaconCandidate(
-            int originalIndex,
-            Location center,
-            Location[] collisionArea,
-            int effectsGivenCount,
-            double averageDistanceToEntities,
-            int numberOfOverlaps,
-            CountedBitArray? effectsGiven)
-        {
-            OriginalIndex = originalIndex;
-            Center = center;
-            CollisionArea = collisionArea;
-            EffectsGivenCount = effectsGivenCount;
-            AverageDistanceToEntities = averageDistanceToEntities;
-            NumberOfOverlaps = numberOfOverlaps;
-            EffectsGiven = effectsGiven;
-        }
-
-        public int OriginalIndex { get; }
-        public Location Center { get; }
-        public Location[] CollisionArea { get; }
-        public int EffectsGivenCount { get; }
-        public double AverageDistanceToEntities { get; }
-        public int NumberOfOverlaps { get; }
-        public CountedBitArray? EffectsGiven { get; }
-    }
+    private record BeaconCandidate(
+            int OriginalIndex,
+            Location Center,
+            Location[] CollisionArea,
+            int EffectsGivenCount,
+            double AverageDistanceToEntities,
+            int NumberOfOverlaps,
+            CountedBitArray? EffectsGiven);
 }

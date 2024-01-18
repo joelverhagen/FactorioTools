@@ -148,7 +148,9 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private static Tuple<List<Tuple<Location, Direction>>, List<Location>, float, float> TranslateLocations(Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int marginX, int marginY)
+    private record TranslatedLocations(List<Tuple<Location, Direction>> CenterAndOriginalDirections, List<Location> AvoidLocations, float DeltaX, float DeltaY);
+
+    private static TranslatedLocations TranslateLocations(Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int marginX, int marginY)
     {
         var pumpjacks = new List<Entity>();
         for (var i = 0; i < blueprint.Entities.Length; i++)
@@ -212,7 +214,7 @@ public static class InitializeContext
             }
         }
 
-        return Tuple.Create(centerAndOriginalDirections, avoidLocations, deltaX, deltaY);
+        return new TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY);
     }
 
     private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> avoidLocations, int marginX, int marginY)
