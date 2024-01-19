@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime;
 using DelaunatorSharp;
 using Knapcode.FactorioTools.Data;
-using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
 
@@ -98,9 +96,7 @@ public static class Helpers
         }
     }
 
-    public record CandidateToCoveredResult<TInfo, TProvider>(ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers);
-
-    public static CandidateToCoveredResult<TInfo, BeaconCenter> GetBeaconCandidateToCovered<TInfo>(
+    public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -120,7 +116,7 @@ public static class Helpers
             includeBeacons: false);
     }
 
-    public static CandidateToCoveredResult<TInfo, ElectricPoleCenter> GetElectricPoleCandidateToCovered<TInfo>(
+    public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -140,7 +136,7 @@ public static class Helpers
             includeBeacons: true);
     }
 
-    private static CandidateToCoveredResult<TInfo, TProvider> GetCandidateToCovered<TProvider, TInfo>(
+    private static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
         Context context,
         List<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
@@ -316,7 +312,7 @@ public static class Helpers
             }
         }
 
-        return new CandidateToCoveredResult<TInfo, TProvider>(candidateToInfo, coveredEntities, providers);
+        return (candidateToInfo, coveredEntities, providers);
     }
 
     public static ILocationDictionary<ILocationSet> GetProviderCenterToCoveredCenters(
