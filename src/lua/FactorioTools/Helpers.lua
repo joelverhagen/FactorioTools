@@ -4,17 +4,17 @@ local DelaunatorSharp = DelaunatorSharp
 local ArrayIPoint = System.Array(DelaunatorSharp.IPoint)
 local KnapcodeFactorioTools
 local KnapcodeOilField
+local ListTuple
 local ListLocation
 local ListEndpoints
-local ListValueTuple
 local ListTerminalLocation
 local ListProviderRecipient
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
+  ListTuple = System.List(System.Tuple)
   ListLocation = System.List(KnapcodeOilField.Location)
   ListEndpoints = System.List(KnapcodeOilField.Endpoints)
-  ListValueTuple = System.List(System.ValueTuple)
   ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
   ListProviderRecipient = System.List(KnapcodeOilField.ProviderRecipient)
 end)
@@ -26,11 +26,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     AddProviderToGrid, AddBeaconsToGrid, IsProviderInBounds, EliminateOtherTerminals, GetPath, AddPath, AreLocationsCollinear, CountTurns, 
     MakeStraightLineOnEmpty, MakeStraightLine, PointsToLines, PointsToLines1, ToInt, static
     static = function (this)
-      local default = ListValueTuple()
-      default:Add(System.ValueTuple(0 --[[Direction.Up]], KnapcodeOilField.Location(1, - 2)))
-      default:Add(System.ValueTuple(2 --[[Direction.Right]], KnapcodeOilField.Location(2, - 1)))
-      default:Add(System.ValueTuple(4 --[[Direction.Down]], KnapcodeOilField.Location(- 1, 2)))
-      default:Add(System.ValueTuple(6 --[[Direction.Left]], KnapcodeOilField.Location(- 2, 1)))
+      local default = ListTuple()
+      default:Add(System.Tuple(0 --[[Direction.Up]], KnapcodeOilField.Location(1, - 2)))
+      default:Add(System.Tuple(2 --[[Direction.Right]], KnapcodeOilField.Location(2, - 1)))
+      default:Add(System.Tuple(4 --[[Direction.Down]], KnapcodeOilField.Location(- 1, 2)))
+      default:Add(System.Tuple(6 --[[Direction.Left]], KnapcodeOilField.Location(- 2, 1)))
       TerminalOffsets = default
       this.TerminalOffsets = TerminalOffsets
     end

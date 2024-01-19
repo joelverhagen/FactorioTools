@@ -609,7 +609,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         local pipesB = extern
         local solutionB = GetSolution(context, strategy, false, centerToConnectedCenters, pipesB)
 
-        KnapcodeOilField.Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionA.UndergroundPipes, solutionB.Pipes, solutionB.UndergroundPipes)
+        KnapcodeOilField.Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionB.Pipes)
 
         local ref = ListSolution()
         ref:Add(solutionA)

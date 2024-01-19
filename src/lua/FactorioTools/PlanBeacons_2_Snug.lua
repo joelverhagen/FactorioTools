@@ -178,7 +178,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       -- Visualizer.Show(context.Grid, Array.Empty<DelaunatorSharp.IPoint>(), Array.Empty<DelaunatorSharp.IEdge>());
 
-      return System.ValueTuple(beacons, effects)
+      return KnapcodeOilField.BeaconPlannerResult(beacons, effects)
     end
     PopulateCandidateToInfo = function (context, candidateToInfo, poweredEntities)
       for _, default in System.each(candidateToInfo:EnumeratePairs()) do

@@ -83,28 +83,48 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       }
     end)
     namespace.class("TwoConnectedGroups", function (namespace)
-      local __ctor__
-      __ctor__ = function (this, lines, minDistance, firstGroup)
-        this.Lines = lines
-        this.MinDistance = minDistance
-        this.FirstGroup = firstGroup
+      local __members__, __ctor__
+      __ctor__ = function (this, Lines, MinDistance, FirstGroup)
+        this.Lines = Lines
+        this.MinDistance = MinDistance
+        this.FirstGroup = FirstGroup
+      end
+      __members__ = function ()
+        return "TwoConnectedGroups", "Lines", "MinDistance", "FirstGroup"
       end
       return {
         MinDistance = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipesFbe.TwoConnectedGroups)
+          }
+        end,
+        __members__ = __members__,
         __ctor__ = __ctor__
       }
     end)
     namespace.class("PathAndTurns", function (namespace)
-      local __ctor__
-      __ctor__ = function (this, endpoints, path, turns, originalIndex)
-        this.Endpoints = endpoints
-        this.Path = path
-        this.Turns = turns
-        this.OriginalIndex = originalIndex
+      local __members__, __ctor__
+      __ctor__ = function (this, Endpoints, Path, Turns, OriginalIndex)
+        this.Endpoints = Endpoints
+        this.Path = Path
+        this.Turns = Turns
+        this.OriginalIndex = OriginalIndex
+      end
+      __members__ = function ()
+        return "PathAndTurns", "Endpoints", "Path", "Turns", "OriginalIndex"
       end
       return {
         Turns = 0,
         OriginalIndex = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipesFbe.PathAndTurns)
+          }
+        end,
+        __members__ = __members__,
         __ctor__ = __ctor__
       }
     end)

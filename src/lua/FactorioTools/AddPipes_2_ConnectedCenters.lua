@@ -6,8 +6,8 @@ local AddPipesConnectedCenters
 local ListTrunk
 local ListLocation
 local ArrayLocation
-local QueueValueTuple
 local ListPumpjackGroup
+local QueueExploreCenter
 local ListTerminalLocation
 local KeyValuePairLocationILocationSet
 System.import(function (out)
@@ -17,8 +17,8 @@ System.import(function (out)
   ListTrunk = System.List(AddPipesConnectedCenters.Trunk)
   ListLocation = System.List(KnapcodeOilField.Location)
   ArrayLocation = System.Array(KnapcodeOilField.Location)
-  QueueValueTuple = System.Queue(System.ValueTuple)
   ListPumpjackGroup = System.List(AddPipesConnectedCenters.PumpjackGroup)
+  QueueExploreCenter = System.Queue(AddPipesConnectedCenters.ExploreCenter)
   ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
   KeyValuePairLocationILocationSet = System.KeyValuePair(KnapcodeOilField.Location, KnapcodeOilField.ILocationSet)
 end)
@@ -64,6 +64,27 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           return {
             System.RecordType,
             System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipesConnectedCenters.BestConnection)
+          }
+        end,
+        __members__ = __members__,
+        __ctor__ = __ctor__
+      }
+    end)
+    namespace.class("ExploreCenter", function (namespace)
+      local __members__, __ctor__
+      __ctor__ = function (this, Location, ShouldRecurse)
+        this.Location = Location
+        this.ShouldRecurse = ShouldRecurse
+      end
+      __members__ = function ()
+        return "ExploreCenter", "Location", "ShouldRecurse"
+      end
+      return {
+        ShouldRecurse = false,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.AddPipesConnectedCenters.ExploreCenter)
           }
         end,
         __members__ = __members__,
@@ -713,9 +734,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return group
     end
     GetChildCenters = function (context, centerToConnectedCenters, ignoreCenters, shallowExploreCenters, startingCenter)
-      local queue = QueueValueTuple()
+      local queue = QueueExploreCenter()
       local visited = context:GetLocationSet2(true)
-      queue:Enqueue(System.ValueTuple(startingCenter, true))
+      queue:Enqueue(class.ExploreCenter(startingCenter, true))
 
       while #queue > 0 do
         local continue
@@ -735,7 +756,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
               end
 
               -- If the other center is in another group, don't recursively explore.
-              queue:Enqueue(System.ValueTuple(other, not shallowExploreCenters:Contains(other)))
+              queue:Enqueue(class.ExploreCenter(other, not shallowExploreCenters:Contains(other)))
               continue = true
             until 1
             if not continue then

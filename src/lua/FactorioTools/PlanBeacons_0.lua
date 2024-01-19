@@ -9,6 +9,28 @@ System.import(function (out)
   ListBeaconSolution = System.List(KnapcodeOilField.BeaconSolution)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
+  namespace.class("BeaconPlannerResult", function (namespace)
+    local __members__, __ctor__
+    __ctor__ = function (this, Beacons, Effects)
+      this.Beacons = Beacons
+      this.Effects = Effects
+    end
+    __members__ = function ()
+      return "BeaconPlannerResult", "Beacons", "Effects"
+    end
+    return {
+      Effects = 0,
+      base = function (out)
+        return {
+          System.RecordType,
+          System.IEquatable_1(out.Knapcode.FactorioTools.OilField.BeaconPlannerResult)
+        }
+      end,
+      __members__ = __members__,
+      __ctor__ = __ctor__
+    }
+  end)
+
   namespace.class("PlanBeacons", function (namespace)
     local Execute
     Execute = function (context, pipes)

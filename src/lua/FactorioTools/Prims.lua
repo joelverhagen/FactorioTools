@@ -2,17 +2,17 @@
 local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
-local PriorityQueueValueTupleInt32
+local PriorityQueueTupleInt32
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
-  PriorityQueueValueTupleInt32 = System.PriorityQueue(System.ValueTuple, System.Int32)
+  PriorityQueueTupleInt32 = System.PriorityQueue(System.Tuple, System.Int32)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("Prims", function (namespace)
     local GetMinimumSpanningTree
     GetMinimumSpanningTree = function (context, graph, firstNode, digraph)
-      local priority = PriorityQueueValueTupleInt32()
+      local priority = PriorityQueueTupleInt32()
       local mst = context:GetLocationDictionary(KnapcodeOilField.ILocationSet)
 
 
@@ -20,7 +20,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       visited:Add(firstNode)
       for _, default in System.each(graph:get(firstNode):EnumeratePairs()) do
         local otherNode, cost = default:Deconstruct()
-        priority:Enqueue(System.ValueTuple(firstNode, otherNode), cost)
+        priority:Enqueue(System.Tuple(firstNode, otherNode), cost)
       end
 
       while #priority > 0 do
@@ -43,7 +43,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           for _, ref in System.each(graph:get(nodeB):EnumeratePairs()) do
             local neighbor, cost = ref:Deconstruct()
             if not visited:Contains(neighbor) then
-              priority:Enqueue(System.ValueTuple(nodeB, neighbor), cost)
+              priority:Enqueue(System.Tuple(nodeB, neighbor), cost)
             end
           end
           continue = true

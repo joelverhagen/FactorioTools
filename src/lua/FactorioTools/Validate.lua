@@ -50,7 +50,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
     end
-    PipesDoNotMatch = function (context, pipes1, undergroundPipes1, pipes2, undergroundPipes2)
+    PipesDoNotMatch = function (context, pipes1, pipes2)
       if context.Options.ValidateSolution then
         if pipes1:SetEquals(pipes2) then
           System.throw(KnapcodeFactorioTools.FactorioToolsException("The two pipe configurations should not match."))

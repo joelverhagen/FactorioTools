@@ -29,7 +29,32 @@ System.import(function (out)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("InitializeContext", function (namespace)
-    local Execute, GetEmpty, Execute1, PopulateCenters, PopulateCenterToOriginalDirection, GetLocationToAdjacentCount, TranslateLocations, InitializeGrid
+    local Execute, GetEmpty, Execute1, PopulateCenters, PopulateCenterToOriginalDirection, GetLocationToAdjacentCount, TranslateLocations, InitializeGrid, 
+    class
+    namespace.class("TranslatedLocations", function (namespace)
+      local __members__, __ctor__
+      __ctor__ = function (this, CenterAndOriginalDirections, AvoidLocations, DeltaX, DeltaY)
+        this.CenterAndOriginalDirections = CenterAndOriginalDirections
+        this.AvoidLocations = AvoidLocations
+        this.DeltaX = DeltaX
+        this.DeltaY = DeltaY
+      end
+      __members__ = function ()
+        return "TranslatedLocations", "CenterAndOriginalDirections", "AvoidLocations", "DeltaX", "DeltaY"
+      end
+      return {
+        DeltaX = 0,
+        DeltaY = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.InitializeContext.TranslatedLocations)
+          }
+        end,
+        __members__ = __members__,
+        __ctor__ = __ctor__
+      }
+    end)
     Execute = function (options, blueprint, avoid)
       -- Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
       --   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
@@ -214,7 +239,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return System.Tuple(centerAndOriginalDirections, avoidLocations, deltaX, deltaY)
+      return class.TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY)
     end
     InitializeGrid = function (centerAndOriginalDirections, avoidLocations, marginX, marginY)
       -- Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
@@ -271,9 +296,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       return grid
     end
-    return {
+    class = {
       Execute = Execute,
       GetEmpty = GetEmpty
     }
+    return class
   end)
 end)

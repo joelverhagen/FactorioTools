@@ -13,6 +13,27 @@ System.import(function (out)
   ArrayEntity = System.Array(KnapcodeFactorioToolsData.Entity)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
+  namespace.class("PlannerResult", function (namespace)
+    local __members__, __ctor__
+    __ctor__ = function (this, Context, Summary)
+      this.Context = Context
+      this.Summary = Summary
+    end
+    __members__ = function ()
+      return "PlannerResult", "Context", "Summary"
+    end
+    return {
+      base = function (out)
+        return {
+          System.RecordType,
+          System.IEquatable_1(out.Knapcode.FactorioTools.OilField.PlannerResult)
+        }
+      end,
+      __members__ = __members__,
+      __ctor__ = __ctor__
+    }
+  end)
+
   namespace.class("Planner", function (namespace)
     local ExecuteSample, Execute, Execute1, Execute2, GetElectricPolesAvoid
     ExecuteSample = function ()
@@ -178,7 +199,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local planSummary = KnapcodeOilField.OilFieldPlanSummary(missingPumpjacks, rotatedPumpjacks, selectedPlans, alternatePlans, unusedPlans)
 
-      return System.ValueTuple(context, planSummary)
+      return KnapcodeOilField.PlannerResult(context, planSummary)
     end
     GetElectricPolesAvoid = function (context)
       local electricPolesAvoid = context:GetLocationSet2(true)

@@ -37,6 +37,32 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("PlanBeaconsFbe", function (namespace)
     local Execute, GetBeacons, SortPossibleBeacons, SortPossibleBeaconsOriginal, GetPossibleBeacons, GetBounds, GetOccupiedPositions, GetEntityAreas, 
     GetEffectEntityAreas, GetPossibleBeaconAreas, GetPointToBeaconCount, GetPointToEntityArea, class
+    namespace.class("Bounds", function (namespace)
+      local __members__, __ctor__
+      __ctor__ = function (this, EntityMinX, EntityMinY, EntityMaxX, EntityMaxY)
+        this.EntityMinX = EntityMinX
+        this.EntityMinY = EntityMinY
+        this.EntityMaxX = EntityMaxX
+        this.EntityMaxY = EntityMaxY
+      end
+      __members__ = function ()
+        return "Bounds", "EntityMinX", "EntityMinY", "EntityMaxX", "EntityMaxY"
+      end
+      return {
+        EntityMinX = 0,
+        EntityMinY = 0,
+        EntityMaxX = 0,
+        EntityMaxY = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.PlanBeaconsFbe.Bounds)
+          }
+        end,
+        __members__ = __members__,
+        __ctor__ = __ctor__
+      }
+    end)
     namespace.class("Area", function (namespace)
       local __ctor__
       __ctor__ = function (this, index, effect, locations)
@@ -51,21 +77,31 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       }
     end)
     namespace.class("BeaconCandidate", function (namespace)
-      local __ctor__
-      __ctor__ = function (this, originalIndex, center, collisionArea, effectsGivenCount, averageDistanceToEntities, numberOfOverlaps, effectsGiven)
-        this.OriginalIndex = originalIndex
-        this.Center = center
-        this.CollisionArea = collisionArea
-        this.EffectsGivenCount = effectsGivenCount
-        this.AverageDistanceToEntities = averageDistanceToEntities
-        this.NumberOfOverlaps = numberOfOverlaps
-        this.EffectsGiven = effectsGiven
+      local __members__, __ctor__
+      __ctor__ = function (this, OriginalIndex, Center, CollisionArea, EffectsGivenCount, AverageDistanceToEntities, NumberOfOverlaps, EffectsGiven)
+        this.OriginalIndex = OriginalIndex
+        this.Center = Center
+        this.CollisionArea = CollisionArea
+        this.EffectsGivenCount = EffectsGivenCount
+        this.AverageDistanceToEntities = AverageDistanceToEntities
+        this.NumberOfOverlaps = NumberOfOverlaps
+        this.EffectsGiven = EffectsGiven
+      end
+      __members__ = function ()
+        return "BeaconCandidate", "OriginalIndex", "Center", "CollisionArea", "EffectsGivenCount", "AverageDistanceToEntities", "NumberOfOverlaps", "EffectsGiven"
       end
       return {
         OriginalIndex = 0,
         EffectsGivenCount = 0,
         AverageDistanceToEntities = 0,
         NumberOfOverlaps = 0,
+        base = function (out)
+          return {
+            System.RecordType,
+            System.IEquatable_1(out.Knapcode.FactorioTools.OilField.PlanBeaconsFbe.BeaconCandidate)
+          }
+        end,
+        __members__ = __members__,
         __ctor__ = __ctor__
       }
     end)
@@ -93,9 +129,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       -- GENERATE BEACONS
-      return GetBeacons(context, strategy, effectEntityAreas, possibleBeacons)
+      return GetBeacons(context, effectEntityAreas, possibleBeacons)
     end
-    GetBeacons = function (context, strategy, effectEntityAreas, possibleBeacons)
+    GetBeacons = function (context, effectEntityAreas, possibleBeacons)
       local beacons = ListLocation()
       local effects = 0
       local collisionArea = context:GetLocationSet1()
@@ -144,7 +180,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return System.ValueTuple(beacons, effects)
+      return KnapcodeOilField.BeaconPlannerResult(beacons, effects)
     end
     SortPossibleBeacons = function (context, possibleBeacons)
       local candidateToDistance = context:GetLocationDictionary(System.Double)
@@ -342,7 +378,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return System.ValueTuple(entityMinX, entityMinY, entityMaxX, entityMaxY)
+      return class.Bounds(entityMinX, entityMinY, entityMaxX, entityMaxY)
     end
     GetOccupiedPositions = function (context, entityAreas)
       local occupiedPositions = context:GetLocationSet1()
