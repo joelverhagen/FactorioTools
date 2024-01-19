@@ -32,14 +32,14 @@ public static class GridToBlueprintString
         var entities = new List<Entity>();
         var nextEntityNumber = 1;
 
-        var electricPoleToEntityNumber = new Dictionary<ElectricPoleCenter, int>();
+        var gridIdToEntityNumber = new Dictionary<int, int>();
 
-        int GetEntityNumber(ElectricPoleCenter pole)
+        int GetEntityNumber(GridEntity entity)
         {
-            if (!electricPoleToEntityNumber!.TryGetValue(pole, out var entityNumber))
+            if (!gridIdToEntityNumber!.TryGetValue(entity.Id, out var entityNumber))
             {
                 entityNumber = nextEntityNumber++;
-                electricPoleToEntityNumber.Add(pole, entityNumber);
+                gridIdToEntityNumber.Add(entity.Id, entityNumber);
             }
 
             return entityNumber;
@@ -102,7 +102,11 @@ public static class GridToBlueprintString
                         EntityNumber = GetEntityNumber(electricPole),
                         Name = context.Options.ElectricPoleEntityName,
                         Position = position,
-                        Neighbours = electricPole.Neighbors.Select(GetEntityNumber).ToArray(),
+                        Neighbours = electricPole
+                            .Neighbors
+                            .Select(id => context.Grid[context.Grid.EntityIdToLocation[id]]!)
+                            .Select(GetEntityNumber)
+                            .ToArray(),
                     });
                     break;
                 case ElectricPoleSide:

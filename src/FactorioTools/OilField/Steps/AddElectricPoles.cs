@@ -117,7 +117,7 @@ public static class AddElectricPoles
         {
             var center = removeCandidates.EnumerateItems().First();
             var centerEntity = electricPoles[center];
-            if (ArePolesConnectedWithout(electricPoles, centerEntity))
+            if (ArePolesConnectedWithout(context.Grid, electricPoles, centerEntity))
             {
                 electricPoles.Remove(center);
                 RemoveEntity(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight);
@@ -139,7 +139,7 @@ public static class AddElectricPoles
         }
     }
 
-    private static bool ArePolesConnectedWithout(ILocationDictionary<ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
+    private static bool ArePolesConnectedWithout(SquareGrid grid, ILocationDictionary<ElectricPoleCenter> electricPoles, ElectricPoleCenter except)
     {
         var queue = new Queue<ElectricPoleCenter>();
         foreach (var center in electricPoles.Values)
@@ -163,9 +163,9 @@ public static class AddElectricPoles
 
             if (discovered.Add(current.Id))
             {
-                foreach (var neighbor in current.Neighbors)
+                foreach (var id in current.Neighbors)
                 {
-                    queue.Enqueue(neighbor);
+                    queue.Enqueue(grid.GetEntity<ElectricPoleCenter>(id));
                 }
             }
         }
@@ -736,9 +736,9 @@ public static class AddElectricPoles
         {
             var group = groups[i];
             var match = false;
-            foreach (var neighbor in center.Neighbors)
+            foreach (var id in center.Neighbors)
             {
-                var location = context.Grid.EntityIdToLocation[neighbor.Id];
+                var location = context.Grid.EntityIdToLocation[id];
                 if (group.Contains(location))
                 {
                     match = true;
@@ -785,9 +785,9 @@ public static class AddElectricPoles
                 var entity = explore.Dequeue();
                 if (entityIds.Add(entity.Id))
                 {
-                    foreach (var neighbor in entity.Neighbors)
+                    foreach (var id in entity.Neighbors)
                     {
-                        explore.Enqueue(neighbor);
+                        explore.Enqueue(context.Grid.GetEntity<ElectricPoleCenter>(id));
                     }
                 }
             }

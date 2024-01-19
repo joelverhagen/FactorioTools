@@ -6,7 +6,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     __ctor__ = function (this, id)
       this.Id = id
     end
-    Unlink = function (this)
+    Unlink = function (this, grid)
     end
     return {
       Id = 0,

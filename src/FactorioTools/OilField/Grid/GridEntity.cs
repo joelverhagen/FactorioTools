@@ -13,7 +13,7 @@ public abstract class GridEntity
 
     public int Id { get; }
 
-    public virtual void Unlink()
+    public virtual void Unlink(SquareGrid grid)
     {
     }
 }

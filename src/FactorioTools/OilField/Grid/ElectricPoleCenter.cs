@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class ElectricPoleCenter : GridEntity
 {
-    private readonly HashSet<ElectricPoleCenter> _neighbors = new();
+    private readonly HashSet<int> _neighbors = new();
 
     public ElectricPoleCenter(int id) : base(id)
     {
@@ -14,26 +14,27 @@ public class ElectricPoleCenter : GridEntity
     public override string Label => "E";
 #endif
 
-    public HashSet<ElectricPoleCenter> Neighbors => _neighbors;
+    public HashSet<int> Neighbors => _neighbors;
 
     public void AddNeighbor(ElectricPoleCenter neighbor)
     {
-        _neighbors.Add(neighbor);
-        neighbor._neighbors.Add(this);
+        _neighbors.Add(neighbor.Id);
+        neighbor._neighbors.Add(Id);
     }
 
-    public void ClearNeighbors()
+    public void ClearNeighbors(SquareGrid grid)
     {
-        foreach (var neighbor in _neighbors)
+        foreach (var id in _neighbors)
         {
-            neighbor._neighbors.Remove(this);
+            var neighbor = grid.GetEntity<ElectricPoleCenter>(id);
+            neighbor._neighbors.Remove(Id);
         }
 
         _neighbors.Clear();
     }
 
-    public override void Unlink()
+    public override void Unlink(SquareGrid grid)
     {
-        ClearNeighbors();
+        ClearNeighbors(grid);
     }
 }

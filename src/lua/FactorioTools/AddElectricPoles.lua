@@ -201,7 +201,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       while removeCandidates:getCount() > 0 do
         local center = KnapcodeFactorioTools.CollectionExtensions.First(removeCandidates:EnumerateItems(), KnapcodeOilField.Location)
         local centerEntity = electricPoles:get(center)
-        if ArePolesConnectedWithout(electricPoles, centerEntity) then
+        if ArePolesConnectedWithout(context.Grid, electricPoles, centerEntity) then
           electricPoles:Remove(center)
           KnapcodeOilField.Helpers.RemoveEntity(context.Grid, center, context.Options.ElectricPoleWidth, context.Options.ElectricPoleHeight)
 
@@ -219,7 +219,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         removeCandidates:Remove(center)
       end
     end
-    ArePolesConnectedWithout = function (electricPoles, except)
+    ArePolesConnectedWithout = function (grid, electricPoles, except)
       local queue = QueueElectricPoleCenter()
       for _, center in System.each(electricPoles:getValues()) do
         if center ~= except then
@@ -240,8 +240,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
 
           if discovered:Add(current.Id) then
-            for _, neighbor in System.each(current:getNeighbors()) do
-              queue:Enqueue(neighbor)
+            for _, id in System.each(current:getNeighbors()) do
+              queue:Enqueue(grid:GetEntity(id, KnapcodeOilField.ElectricPoleCenter))
             end
           end
           continue = true
@@ -659,8 +659,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       for i = 0, #groups - 1 do
         local group = groups:get(i)
         local match = false
-        for _, neighbor in System.each(center:getNeighbors()) do
-          local location = context.Grid:getEntityIdToLocation():get(neighbor.Id)
+        for _, id in System.each(center:getNeighbors()) do
+          local location = context.Grid:getEntityIdToLocation():get(id)
           if group:Contains(location) then
             match = true
             break
@@ -698,8 +698,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         while #explore > 0 do
           local entity = explore:Dequeue()
           if entityIds:Add(entity.Id) then
-            for _, neighbor in System.each(entity:getNeighbors()) do
-              explore:Enqueue(neighbor)
+            for _, id in System.each(entity:getNeighbors()) do
+              explore:Enqueue(context.Grid:GetEntity(id, KnapcodeOilField.ElectricPoleCenter))
             end
           end
         end

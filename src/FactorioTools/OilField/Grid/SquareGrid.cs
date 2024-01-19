@@ -88,6 +88,12 @@ public abstract class SquareGrid
         return _grid[GetIndex(location)] is null;
     }
 
+    public T GetEntity<T>(int id) where T : GridEntity
+    {
+        var location = EntityIdToLocation[id];
+        return (T)this[location]!;
+    }
+
     public void AddEntity(Location location, GridEntity entity)
     {
         var index = GetIndex(location);
@@ -111,7 +117,7 @@ public abstract class SquareGrid
             _grid[index] = null;
             _entityLocations.Remove(location);
             _entityIdToLocation.Remove(entity.Id);
-            entity.Unlink();
+            entity.Unlink(this);
         }
     }
 

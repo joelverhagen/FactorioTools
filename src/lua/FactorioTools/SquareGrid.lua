@@ -12,8 +12,8 @@ System.import(function (out)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("SquareGrid", function (namespace)
-    local get, GetId, getEntityIdToLocation, getEntityLocations, IsEmpty, AddEntity, RemoveEntity, IsEntityType, 
-    IsInBounds, GetAdjacent, GetIndex, ToString, ToString1, __ctor1__, __ctor2__
+    local get, GetId, getEntityIdToLocation, getEntityLocations, IsEmpty, GetEntity, AddEntity, RemoveEntity, 
+    IsEntityType, IsInBounds, GetAdjacent, GetIndex, ToString, ToString1, __ctor1__, __ctor2__
     namespace.class("Empty", function (namespace)
       local Instance, getLabel, class, static, __ctor__
       static = function (this)
@@ -97,6 +97,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
       return this._grid:get(default) == nil
     end
+    GetEntity = function (this, id, T)
+      local location = getEntityIdToLocation(this):get(id)
+      return System.cast(T, this:get(location))
+    end
     AddEntity = function (this, location, entity)
       -- inline Knapcode.FactorioTools.OilField.SquareGrid.GetIndex(Knapcode.FactorioTools.OilField.Location)
       local default
@@ -127,7 +131,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         this._grid:set(index, nil)
         this._entityLocations:Remove(location)
         this._entityIdToLocation:RemoveKey(entity.Id)
-        entity:Unlink()
+        entity:Unlink(this)
       end
     end
     IsEntityType = function (this, location, T)
@@ -227,6 +231,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       getEntityIdToLocation = getEntityIdToLocation,
       getEntityLocations = getEntityLocations,
       IsEmpty = IsEmpty,
+      GetEntity = GetEntity,
       AddEntity = AddEntity,
       RemoveEntity = RemoveEntity,
       IsEntityType = IsEntityType,
