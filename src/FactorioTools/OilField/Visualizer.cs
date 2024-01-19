@@ -84,7 +84,7 @@ public static class Visualizer
 
                 foreach (var neighbor in center.Neighbors)
                 {
-                    var (a, b) = (location, grid.EntityIdToLocation[neighbor.Id]);
+                    var (a, b) = (location, grid.EntityIdToLocation[neighbor]);
                     if (a > b)
                     {
                         (a, b) = (b, a);
