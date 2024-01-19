@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class InitializeContext
 {
-    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid)
     {
         return Execute(options, blueprint, avoid, minWidth: 0, minHeight: 0);
     }
@@ -33,16 +33,16 @@ public static class InitializeContext
             Version = 1,
         };
 
-        return Execute(options, blueprint, Array.Empty<AvoidLocation>(), width, height);
+        return Execute(options, blueprint, TableList.Empty<AvoidLocation>(), width, height);
     }
 
-    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int minWidth, int minHeight)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
         var (centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height) = TranslateLocations(options, blueprint, avoid, minWidth, minHeight);
 
         var grid = InitializeGrid(centerAndOriginalDirections, avoidLocations, width, height);
 
-        var centers = new List<Location>(centerAndOriginalDirections.Count);
+        var centers = TableList.New<Location>(centerAndOriginalDirections.Count);
         PopulateCenters(centerAndOriginalDirections, centers);
         centers.Sort((a, b) =>
         {
@@ -57,12 +57,12 @@ public static class InitializeContext
 
 #if USE_HASHSETS
         var centerToOriginalDirection = new LocationHashDictionary<Direction>(centerAndOriginalDirections.Count);
-        var centerToTerminals = new LocationHashDictionary<List<TerminalLocation>>(centerAndOriginalDirections.Count);
-        var locationToTerminals = new LocationHashDictionary<List<TerminalLocation>>();
+        var centerToTerminals = new LocationHashDictionary<ITableList<TerminalLocation>>(centerAndOriginalDirections.Count);
+        var locationToTerminals = new LocationHashDictionary<ITableList<TerminalLocation>>();
 #else
         var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width, centerAndOriginalDirections.Count);
-        var centerToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width, centerAndOriginalDirections.Count);
-        var locationToTerminals = new LocationIntDictionary<List<TerminalLocation>>(grid.Width);
+        var centerToTerminals = new LocationIntDictionary<ITableList<TerminalLocation>>(grid.Width, centerAndOriginalDirections.Count);
+        var locationToTerminals = new LocationIntDictionary<ITableList<TerminalLocation>>(grid.Width);
 #endif
 
         PopulateCenterToOriginalDirection(centerAndOriginalDirections, centerToOriginalDirection);
@@ -85,7 +85,7 @@ public static class InitializeContext
         };
     }
 
-    private static void PopulateCenters(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> centers)
+    private static void PopulateCenters(ITableList<Tuple<Location, Direction>> centerAndOriginalDirections, ITableList<Location> centers)
     {
         for (int i = 0; i < centerAndOriginalDirections.Count; i++)
         {
@@ -93,7 +93,7 @@ public static class InitializeContext
         }
     }
 
-    private static void PopulateCenterToOriginalDirection(List<Tuple<Location, Direction>> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
+    private static void PopulateCenterToOriginalDirection(ITableList<Tuple<Location, Direction>> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
     {
         for (int i = 0; i < centerAndOriginalDirections.Count; i++)
         {
@@ -136,16 +136,16 @@ public static class InitializeContext
     }
 
     private record TranslatedLocations(
-        List<Tuple<Location, Direction>> CenterAndOriginalDirections,
-        List<Location> AvoidLocations,
+        ITableList<Tuple<Location, Direction>> CenterAndOriginalDirections,
+        ITableList<Location> AvoidLocations,
         float DeltaX,
         float DeltaY,
         int Width,
         int Height);
 
-    private static TranslatedLocations TranslateLocations(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int minWidth, int minHeight)
+    private static TranslatedLocations TranslateLocations(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
-        var pumpjacks = new List<Entity>();
+        var pumpjacks = TableList.New<Entity>(blueprint.Entities.Length);
         for (var i = 0; i < blueprint.Entities.Length; i++)
         {
             var entity = blueprint.Entities[i];
@@ -161,8 +161,8 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centerAndOriginalDirections = new List<Tuple<Location, Direction>>(pumpjacks.Count);
-        var avoidLocations = new List<Location>(avoid.Count);
+        var centerAndOriginalDirections = TableList.New<Tuple<Location, Direction>>(pumpjacks.Count);
+        var avoidLocations = TableList.New<Location>(avoid.Count);
 
         float deltaX = 0;
         float deltaY = 0;
@@ -182,10 +182,10 @@ public static class InitializeContext
             var pumpjackOffsetX = PumpjackWidth / 2;
             var pumpjackOffsetY = PumpjackHeight / 2;
 
-            minX = pumpjacks.Min(p => p.Position.X) - pumpjackOffsetX;
-            minY = pumpjacks.Min(p => p.Position.Y) - pumpjackOffsetY;
-            maxX = pumpjacks.Max(p => p.Position.X) + pumpjackOffsetX;
-            maxY = pumpjacks.Max(p => p.Position.Y) + pumpjackOffsetY;
+            minX = pumpjacks.EnumerateItems().Min(p => p.Position.X) - pumpjackOffsetX;
+            minY = pumpjacks.EnumerateItems().Min(p => p.Position.Y) - pumpjackOffsetY;
+            maxX = pumpjacks.EnumerateItems().Max(p => p.Position.X) + pumpjackOffsetX;
+            maxY = pumpjacks.EnumerateItems().Max(p => p.Position.Y) + pumpjackOffsetY;
 
             if (options.AddBeacons)
             {
@@ -201,10 +201,10 @@ public static class InitializeContext
 
         if (avoid.Count > 0)
         {
-            minX = Math.Min(minX, avoid.Min(a => a.X));
-            minY = Math.Min(minY, avoid.Min(a => a.Y));
-            maxX = Math.Max(maxX, avoid.Max(a => a.X));
-            maxY = Math.Max(maxY, avoid.Max(a => a.Y));
+            minX = Math.Min(minX, avoid.EnumerateItems().Min(a => a.X));
+            minY = Math.Min(minY, avoid.EnumerateItems().Min(a => a.Y));
+            maxX = Math.Max(maxX, avoid.EnumerateItems().Max(a => a.X));
+            maxY = Math.Max(maxY, avoid.EnumerateItems().Max(a => a.Y));
         }
 
         // Leave some space on all sides to cover:
@@ -256,7 +256,7 @@ public static class InitializeContext
         return new TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height);
     }
 
-    private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> avoidLocations, int width, int height)
+    private static SquareGrid InitializeGrid(ITableList<Tuple<Location, Direction>> centerAndOriginalDirections, ITableList<Location> avoidLocations, int width, int height)
     {
         const int maxWidth = 1000;
         const int maxHeight = 1000;

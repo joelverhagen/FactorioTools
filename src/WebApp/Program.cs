@@ -1,3 +1,4 @@
+using System.IO.Pipelines;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Knapcode.FactorioTools.OilField;
@@ -5,6 +6,7 @@ using Knapcode.FactorioTools.WebApp.Models;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.OpenApi.Models;
 
 namespace Knapcode.FactorioTools.WebApp;
 
@@ -66,6 +68,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
+            options.SchemaFilter<GenericCollectionSchemaFilter>();
             options.SchemaFilter<OilFieldPlanRequestDefaultsSchemaFilter>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldNormalizeResponse>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldNormalizeRequestResponse>>();
@@ -73,6 +76,9 @@ public class Program
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanRequestResponse>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanSummary>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlan>>();
+            options.MapType<ITableList<BeaconStrategy>>(() => new OpenApiSchema());
+            options.MapType<ITableList<PipeStrategy>>(() => new OpenApiSchema());
+            options.MapType<ITableList<OilFieldPlan>>(() => new OpenApiSchema());
             options.SupportNonNullableReferenceTypes();
             options.UseAllOfToExtendReferenceSchemas();
             options.IncludeXmlComments(Path.ChangeExtension(typeof(OilFieldOptions).Assembly.Location, ".xml"));

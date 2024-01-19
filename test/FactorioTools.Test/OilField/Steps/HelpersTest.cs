@@ -238,8 +238,9 @@ public class HelpersTest
             AddElectricPole(context, new Location(8, 3));
             var pumpjacks = new[] { new Location(3, 2), new Location(13, 2) }
                 .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
-                .ToList();
-            foreach (var pumpjack in pumpjacks)
+                .ToList()
+                .ToTableList();
+            foreach (var pumpjack in pumpjacks.EnumerateItems())
             {
                 AddPumpjack(context, pumpjack.Center);
             }
@@ -289,8 +290,9 @@ public class HelpersTest
             AddElectricPole(context, new Location(12, 12));
             var pumpjacks = new[] { new Location(2, 2),}
                 .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
-                .ToList();
-            foreach (var pumpjack in pumpjacks)
+                .ToList()
+                .ToTableList();
+            foreach (var pumpjack in pumpjacks.EnumerateItems())
             {
                 AddPumpjack(context, pumpjack.Center);
             }

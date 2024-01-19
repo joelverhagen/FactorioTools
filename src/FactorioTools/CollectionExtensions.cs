@@ -27,10 +27,26 @@ internal static class CollectionExtensions
         return dictionary;
     }
 
-    public static List<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
+    public static ILocationDictionary<TValue> ToDictionary<TItem, TValue>(
+        this IReadOnlyTableList<TItem> items,
+        Context context,
+        Func<TItem, Location> keySelector,
+        Func<TItem, TValue> valueSelector)
+    {
+        var dictionary = context.GetLocationDictionary<TValue>(items.Count);
+        for (var i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            dictionary.Add(keySelector(item), valueSelector(item));
+        }
+
+        return dictionary;
+    }
+
+    public static ITableList<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
     {
         var set = context.GetLocationSet(locations.Count);
-        var output = new List<Location>(locations.Count);
+        var output = TableList.New<Location>(locations.Count);
         foreach (var location in locations)
         {
             if (set.Add(location))
@@ -41,25 +57,74 @@ internal static class CollectionExtensions
         return output;
     }
 
+    public static ILocationSet ToSet(this IReadOnlyCollection<Location> locations, Context context)
+    {
+        return locations.ToSet(context, allowEnumerate: false);
+    }
+
     public static ILocationSet ToSet(this IReadOnlyCollection<Location> locations, Context context, bool allowEnumerate)
     {
-        return context.GetLocationSet(locations, allowEnumerate);
+        var set = context.GetLocationSet(allowEnumerate);
+        foreach (var location in locations)
+        {
+            set.Add(location);
+        }
+
+        return set;
     }
 
     public static ILocationSet ToReadOnlySet(this IReadOnlyCollection<Location> locations, Context context)
     {
-        return context.GetReadOnlyLocationSet(locations);
+        return locations.ToReadOnlySet(context, allowEnumerate: false);
     }
 
     public static ILocationSet ToReadOnlySet(this IReadOnlyCollection<Location> locations, Context context, bool allowEnumerate)
     {
-        return context.GetReadOnlyLocationSet(locations, allowEnumerate);
+        Location firstLocation = Location.Invalid;
+        int itemCount = 0;
+        ILocationSet? set = null;
+        foreach (var location in locations)
+        {
+            if (itemCount == 0)
+            {
+                firstLocation = location;
+            }
+            else if (itemCount == 1)
+            {
+                set = context.GetLocationSet(allowEnumerate);
+                set.Add(firstLocation);
+                set.Add(location);
+            }
+            else
+            {
+                set!.Add(location);
+            }
+
+            itemCount++;
+        }
+
+        if (set is null)
+        {
+            if (itemCount == 0)
+            {
+                set = EmptyLocationSet.Instance;
+            }
+            else if (itemCount == 1)
+            {
+                set = context.GetSingleLocationSet(firstLocation);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+        return set;
     }
 
 #if ENABLE_VISUALIZER
-    public static List<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
+    public static ITableList<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
     {
-        var points = new List<DelaunatorSharp.IPoint>();
+        var points = TableList.New<DelaunatorSharp.IPoint>();
         foreach (var item in set.EnumerateItems())
         {
             points.Add(new DelaunatorSharp.Point(item.X, item.Y));
@@ -68,9 +133,9 @@ internal static class CollectionExtensions
         return points;
     }
 
-    public static List<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
+    public static ITableList<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
     {
-        var points = new List<DelaunatorSharp.IPoint>();
+        var points = TableList.New<DelaunatorSharp.IPoint>();
         foreach (var item in dictionary.Keys)
         {
             points.Add(new DelaunatorSharp.Point(item.X, item.Y));
@@ -186,9 +251,27 @@ internal static class CollectionExtensions
         return min;
     }
 
-    public static List<TSource> ToList<TSource>(this IReadOnlyCollection<TSource> source)
+    public static TSource[] ToArray<TSource>(this IReadOnlyTableList<TSource> source)
     {
-        var output = new List<TSource>(source.Count);
+        var output = new TSource[source.Count];
+        for (var i = 0; i < source.Count; i++)
+        {
+            output[i] = source[i];
+        }
+
+        return output;
+    }
+
+    public static ITableList<TSource> ToTableList<TSource>(this IReadOnlyCollection<TSource> source)
+    {
+        var output = TableList.New<TSource>(source.Count);
+        output.AddCollection(source);
+        return output;
+    }
+
+    public static ITableList<TSource> ToTableList<TSource>(this IReadOnlyTableList<TSource> source)
+    {
+        var output = TableList.New<TSource>(source.Count);
         output.AddRange(source);
         return output;
     }
@@ -269,11 +352,10 @@ internal static class CollectionExtensions
         throw new FactorioToolsException("An item should have matched the predicate.");
     }
 
-    public static TSource? FirstOrDefault<TSource>(this IReadOnlyList<TSource> source, Func<TSource, bool> predicate)
+    public static TSource? FirstOrDefault<TSource>(this IReadOnlyCollection<TSource> source, Func<TSource, bool> predicate)
     {
-        for (int i = 0; i < source.Count; i++)
+        foreach (var item in source)
         {
-            var item = source[i];
             if (predicate(item))
             {
                 return item;
@@ -301,7 +383,7 @@ internal static class CollectionExtensions
         return sum / count;
     }
 
-    public static bool SequenceEqual<TSource>(this IReadOnlyList<TSource> first, IReadOnlyList<TSource> second)
+    public static bool SequenceEqual<TSource>(this IReadOnlyTableList<TSource> first, IReadOnlyTableList<TSource> second)
     {
         if (first.Count != second.Count)
         {
@@ -321,12 +403,12 @@ internal static class CollectionExtensions
         return true;
     }
 
-    public static int Sum<TSource>(this IReadOnlyList<TSource> source, Func<TSource, int> selector)
+    public static int Sum<TSource>(this IReadOnlyCollection<TSource> source, Func<TSource, int> selector)
     {
         var sum = 0;
-        for (var i = 0; i < source.Count; i++)
+        foreach (var item in source)
         {
-            sum += selector(source[i]);
+            sum += selector(item);
         }
 
         return sum;

@@ -28,7 +28,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(7, context.Grid.Height);
         Assert.Equal(-22.5, context.DeltaX);
         Assert.Equal(17.5, context.DeltaY);
-        Assert.Equal(new Location(3, 3), Assert.Single(context.Centers));
+        Assert.Equal(new Location(3, 3), Assert.Single(context.Centers.EnumerateItems()));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(9, context.Grid.Height);
         Assert.Equal(-21.5, context.DeltaX);
         Assert.Equal(18.5, context.DeltaY);
-        Assert.Equal(new Location(4, 4), Assert.Single(context.Centers));
+        Assert.Equal(new Location(4, 4), Assert.Single(context.Centers.EnumerateItems()));
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(17, context.Grid.Height);
         Assert.Equal(-17.5, context.DeltaX);
         Assert.Equal(22.5, context.DeltaY);
-        Assert.Equal(new Location(8, 8), Assert.Single(context.Centers));
+        Assert.Equal(new Location(8, 8), Assert.Single(context.Centers.EnumerateItems()));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(19, context.Grid.Height);
         Assert.Equal(-16.5, context.DeltaX);
         Assert.Equal(23.5, context.DeltaY);
-        Assert.Equal(new Location(9, 9), Assert.Single(context.Centers));
+        Assert.Equal(new Location(9, 9), Assert.Single(context.Centers.EnumerateItems()));
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(15, context.Grid.Height);
         Assert.Equal(-20.5, context.DeltaX);
         Assert.Equal(21.5, context.DeltaY);
-        Assert.Equal(new Location(5, 7), Assert.Single(context.Centers));
+        Assert.Equal(new Location(5, 7), Assert.Single(context.Centers.EnumerateItems()));
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(17, context.Grid.Height);
         Assert.Equal(-19.5, context.DeltaX);
         Assert.Equal(22.5, context.DeltaY);
-        Assert.Equal(new Location(6, 8), Assert.Single(context.Centers));
+        Assert.Equal(new Location(6, 8), Assert.Single(context.Centers.EnumerateItems()));
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class InitializeContextTest : BasePlannerTest
     public void AvoidAtMaxXMaxYBeaconBound()
     {
         var blueprint = BlueprintWithCenters((25.5f, -14.5f), (33.5f, -12.5f));
-        var avoid = new[] { new AvoidLocation(39.5f, -6.5f) };
+        var avoid = new[] { new AvoidLocation(39.5f, -6.5f) }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid);
         Assert.Equal(27, context.Grid.Width);
         Assert.Equal(21, context.Grid.Height);
@@ -138,7 +138,7 @@ public class InitializeContextTest : BasePlannerTest
     public void AvoidLessThanMinY()
     {
         var blueprint = BlueprintWithCenters((25.5f, -14.5f), (33.5f, -12.5f));
-        var avoid = new[] { new AvoidLocation(29.5f, -21.5f) };
+        var avoid = new[] { new AvoidLocation(29.5f, -21.5f) }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid);
         var g = context.Grid.ToString();
         Assert.Equal(27, context.Grid.Width);
@@ -154,7 +154,7 @@ public class InitializeContextTest : BasePlannerTest
     public void AvoidGreaterThanMaxY()
     {
         var blueprint = BlueprintWithCenters((25.5f, -14.5f), (33.5f, -12.5f));
-        var avoid = new[] { new AvoidLocation(29.5f, -5.5f) };
+        var avoid = new[] { new AvoidLocation(29.5f, -5.5f) }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid);
         Assert.Equal(27, context.Grid.Width);
         Assert.Equal(22, context.Grid.Height);
@@ -169,7 +169,7 @@ public class InitializeContextTest : BasePlannerTest
     public void AvoidLessThanMinX()
     {
         var blueprint = BlueprintWithCenters((25.5f, -14.5f), (33.5f, -12.5f));
-        var avoid = new[] { new AvoidLocation(18.5f, -13.5f) };
+        var avoid = new[] { new AvoidLocation(18.5f, -13.5f) }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid);
         Assert.Equal(28, context.Grid.Width);
         Assert.Equal(21, context.Grid.Height);
@@ -184,7 +184,7 @@ public class InitializeContextTest : BasePlannerTest
     public void AvoidGreaterThanMaxX()
     {
         var blueprint = BlueprintWithCenters((25.5f, -14.5f), (33.5f, -12.5f));
-        var avoid = new[] { new AvoidLocation(40.5f, -13.5f) };
+        var avoid = new[] { new AvoidLocation(40.5f, -13.5f) }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid);
         Assert.Equal(28, context.Grid.Width);
         Assert.Equal(21, context.Grid.Height);
@@ -205,7 +205,7 @@ public class InitializeContextTest : BasePlannerTest
             new AvoidLocation(43.5f, -13.5f),
             new AvoidLocation(29.5f, -2.5f),
             new AvoidLocation(15.5f, -13.5f),
-        };
+        }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid);
         Assert.Equal(35, context.Grid.Width);
         Assert.Equal(29, context.Grid.Height);
@@ -240,7 +240,7 @@ public class InitializeContextTest : BasePlannerTest
             new AvoidLocation(43.5f, -13.5f),
             new AvoidLocation(29.5f, -2.5f),
             new AvoidLocation(15.5f, -13.5f),
-        };
+        }.ToTableList();
         Context context = InitializeContext.Execute(BigPowerWithBeacon, blueprint, avoid, minWidth: 50, minHeight: 40);
         Assert.Equal(50, context.Grid.Width);
         Assert.Equal(40, context.Grid.Height);
@@ -251,7 +251,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(new Location(28, 20), context.Centers[1]);
     }
 
-    public AvoidLocation[] NoAvoid { get; }
+    public IReadOnlyTableList<AvoidLocation> NoAvoid { get; }
     public OilFieldOptions SmallPowerNoBeacon { get; }
     public OilFieldOptions BigPowerNoBeacon { get; }
     public OilFieldOptions SmallPowerWithBeacon { get; }
@@ -261,7 +261,7 @@ public class InitializeContextTest : BasePlannerTest
 
     public InitializeContextTest()
     {
-        NoAvoid = Array.Empty<AvoidLocation>();
+        NoAvoid = TableList.Empty<AvoidLocation>();
         SmallPowerNoBeacon = OilFieldOptions.ForMediumElectricPole;
         SmallPowerNoBeacon.AddBeacons = false;
         BigPowerNoBeacon = OilFieldOptions.ForSubstation;

@@ -57,8 +57,10 @@ public static class Prims
             if (!digraph)
             {
                 // Make the MST bidirectional (a graph, not a digraph).
-                foreach (var center in mst.Keys.ToList())
+                var keys = mst.Keys.ToTableList();
+                for (var i = 0; i < keys.Count; i++)
                 {
+                    var center = keys[i];
                     foreach (var neighbor in mst[center].EnumerateItems())
                     {
                         if (!mst.TryGetValue(neighbor, out var otherNeighbors))

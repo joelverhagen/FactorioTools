@@ -3,22 +3,24 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public record BeaconPlannerResult(List<Location> Beacons, int Effects);
+public record BeaconPlannerResult(ITableList<Location> Beacons, int Effects);
 
 public static class PlanBeacons
 {
-    public static List<BeaconSolution> Execute(Context context, ILocationSet pipes)
+    public static ITableList<BeaconSolution> Execute(Context context, ILocationSet pipes)
     {
         foreach (var pipe in pipes.EnumerateItems())
         {
             context.Grid.AddEntity(pipe, new TemporaryEntity(context.Grid.GetId()));
         }
 
-        var solutions = new List<BeaconSolution>(context.Options.BeaconStrategies.Count);
+        var solutions = TableList.New<BeaconSolution>(context.Options.BeaconStrategies.Count);
 
         var completedStrategies = new CountedBitArray((int)BeaconStrategy.Snug + 1); // max value
-        foreach (var strategy in context.Options.BeaconStrategies)
+        for (var i = 0; i < context.Options.BeaconStrategies.Count; i++)
         {
+            var strategy = context.Options.BeaconStrategies[i];
+
             if (completedStrategies[(int)strategy])
             {
                 continue;

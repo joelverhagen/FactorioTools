@@ -10,7 +10,15 @@ namespace Knapcode.FactorioTools.OilField;
 /// </summary>
 public static class AStar
 {
-    public static AStarResult GetShortestPath(Context context, SquareGrid grid, Location start, ILocationSet goals, bool preferNoTurns = true, int xWeight = 1, int yWeight = 1, List<Location>? outputList = null)
+    public static AStarResult GetShortestPath(
+        Context context,
+        SquareGrid grid,
+        Location start,
+        ILocationSet goals,
+        bool preferNoTurns = true,
+        int xWeight = 1,
+        int yWeight = 1,
+        ITableList<Location>? outputList = null)
     {
         if (goals.Contains(start))
         {
@@ -20,7 +28,7 @@ public static class AStar
             }
             else
             {
-                outputList = new List<Location> { start };
+                outputList = TableList.New(start);
             }
 
             return new AStarResult(success: true, start, outputList);

@@ -1,4 +1,5 @@
-﻿using Knapcode.FactorioTools.Data;
+﻿using System.Linq;
+using Knapcode.FactorioTools.Data;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -41,13 +42,13 @@ public abstract class BaseTest
 
         var previousCenterToTerminals = context.CenterToTerminals;
 
-        context.CenterToTerminals = GetCenterToTerminals(context, context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }.Distinct(context)).ToList());
+        context.CenterToTerminals = GetCenterToTerminals(context, context.Grid, context.CenterToTerminals.Keys.Concat(new[] { center }).DistinctBy(l => (l.X, l.Y)).ToTableArray());
         context.LocationToTerminals = GetLocationToTerminals(context, context.CenterToTerminals);
 
         foreach ((var otherCenter, var terminals) in context.CenterToTerminals.EnumeratePairs().ToList())
         {
-            var selectedDirection = center == otherCenter ? direction.GetValueOrDefault() : previousCenterToTerminals[otherCenter].First().Direction;
-            var selectedTerminal = terminals.OrderByDescending(t => t.Direction == selectedDirection).First();
+            var selectedDirection = center == otherCenter ? direction.GetValueOrDefault() : previousCenterToTerminals[otherCenter].EnumerateItems().First().Direction;
+            var selectedTerminal = terminals.EnumerateItems().OrderByDescending(t => t.Direction == selectedDirection).First();
             EliminateOtherTerminals(context, selectedTerminal);
 
             if (context.Grid[selectedTerminal.Terminal] is Pipe)

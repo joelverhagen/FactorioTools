@@ -49,8 +49,8 @@ public class SharedInstances
     public ILocationDictionary<Location> LocationToLocation;
     public ILocationDictionary<double> LocationToDouble;
     public PriorityQueue<Location, double> LocationPriorityQueue = new();
-    public List<Location> LocationListA = new();
-    public List<Location> LocationListB = new();
+    public ITableList<Location> LocationListA = TableList.New<Location>();
+    public ITableList<Location> LocationListB = TableList.New<Location>();
     public ILocationSet LocationSetA;
     public ILocationSet LocationSetB;
 

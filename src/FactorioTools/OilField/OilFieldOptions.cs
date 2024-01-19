@@ -146,12 +146,12 @@ public class OilFieldOptions
     /// <summary>
     /// The pipe planning strategies to attempt.
     /// </summary>
-    public List<PipeStrategy> PipeStrategies { get; set; } = new List<PipeStrategy>(DefaultPipeStrategies);
+    public ITableList<PipeStrategy> PipeStrategies { get; set; } = DefaultPipeStrategies.ToTableList();
 
     /// <summary>
     /// The beacon planning strategies to attempt. This will have no affect if <see cref="AddBeacons"/> is false.
     /// </summary>
-    public List<BeaconStrategy> BeaconStrategies { get; set; } = new List<BeaconStrategy>(DefaultBeaconStrategies);
+    public ITableList<BeaconStrategy> BeaconStrategies { get; set; } = DefaultBeaconStrategies.ToTableList();
 
     /// <summary>
     /// The internal entity name for the electric pole to use.

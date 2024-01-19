@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using static Knapcode.FactorioTools.OilField.Helpers;
 
 namespace Knapcode.FactorioTools.OilField;
@@ -78,7 +79,7 @@ public static class AddPipesConnectedCenters
             }
         }
 
-        Visualizer.Show(context.Grid, connectedCenters.ToDelaunatorPoints(), edges);
+        Visualizer.Show(context.Grid, connectedCenters.ToDelaunatorPoints().EnumerateItems(), edges);
     }
 #endif
 
@@ -87,7 +88,7 @@ public static class AddPipesConnectedCenters
         Location Center,
         Location IncludedCenter,
         TerminalLocation Terminal,
-        List<Location> Path);
+        ITableList<Location> Path);
 
     public static Result<ILocationSet> FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
@@ -102,7 +103,7 @@ public static class AddPipesConnectedCenters
             }
         }
 
-        var groups = new List<PumpjackGroup>(selectedTrunks.Count);
+        var groups = TableList.New<PumpjackGroup>(selectedTrunks.Count);
         for (var i = 0; i < selectedTrunks.Count; i++)
         {
             groups.Add(new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, selectedTrunks[i]));
@@ -125,8 +126,9 @@ public static class AddPipesConnectedCenters
             double? shortestDistance = null;
             GroupCandidate? candidate = null;
 
-            foreach (var group in groups)
+            for (int i = 0; i < groups.Count; i++)
             {
+                var group = groups[i];
                 var centroidX = group.Pipes.EnumerateItems().Average(l => l.X);
                 var centroidY = group.Pipes.EnumerateItems().Average(l => l.Y);
 
@@ -140,8 +142,10 @@ public static class AddPipesConnectedCenters
 
                     // Prefer the terminal that has the shortest path, then prefer the terminal closer to the centroid
                     // of the child (unconnected) pumpjacks.
-                    foreach (var terminal in context.CenterToTerminals[center])
+                    var terminals = context.CenterToTerminals[center];
+                    for (var j = 0; j < terminals.Count; j++)
                     {
+                        var terminal = terminals[j];
                         var result = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY);
                         if (result.Exception is not null)
                         {
@@ -192,7 +196,7 @@ public static class AddPipesConnectedCenters
 
             if (allIncludedCenters.Contains(candidate.Terminal.Center))
             {
-                var otherGroup = groups.Single(g => g.IncludedCenters.Contains(candidate.Terminal.Center));
+                var otherGroup = groups.EnumerateItems().Single(g => g.IncludedCenters.Contains(candidate.Terminal.Center));
                 candidate.Group.MergeGroup(otherGroup, candidate.Path);
                 groups.Remove(otherGroup);
 
@@ -216,10 +220,15 @@ public static class AddPipesConnectedCenters
             }
         }
 
-        return Result.NewData(groups.Single().Pipes);
+        if (groups.Count != 1)
+        {
+            throw new FactorioToolsException("There should be a single group at this point.");
+        }
+
+        return Result.NewData(groups[0].Pipes);
     }
 
-    private static Result<List<Location>> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
+    private static Result<ITableList<Location>> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
 #if !USE_SHARED_INSTANCES
         var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
@@ -232,12 +241,12 @@ public static class AddPipesConnectedCenters
 #endif
             if (!aStarResultV.Success)
             {
-                return Result.NewException<List<Location>>(new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First()));
+                return Result.NewException<ITableList<Location>>(new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First()));
             }
 
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
             {
-                return Result.NewData(aStarResultV.Path.ToList());
+                return Result.NewData(aStarResultV.Path.ToTableList());
             }
 
             var adjacentPipesV = 0;
@@ -290,19 +299,19 @@ public static class AddPipesConnectedCenters
 
             if (adjacentPipesV > adjacentPipesH)
             {
-                return Result.NewData(aStarResultV.Path.ToList());
+                return Result.NewData(aStarResultV.Path.ToTableList());
             }
             else if (adjacentPipesV < adjacentPipesH)
             {
-                return Result.NewData(aStarResultH.Path.ToList());
+                return Result.NewData(aStarResultH.Path.ToTableList());
             }
             else if (centroidDistanceSquaredV < centroidDistanceSquaredH)
             {
-                return Result.NewData(aStarResultV.Path.ToList());
+                return Result.NewData(aStarResultV.Path.ToTableList());
             }
             else
             {
-                return Result.NewData(aStarResultH.Path.ToList());
+                return Result.NewData(aStarResultH.Path.ToTableList());
             }
 #if USE_SHARED_INSTANCES
         }
@@ -329,7 +338,7 @@ public static class AddPipesConnectedCenters
         return centroidDistanceSquared;
     }
 
-    private static List<Trunk> FindTrunks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
+    private static ITableList<Trunk> FindTrunks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         /*
         Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
@@ -368,14 +377,15 @@ public static class AddPipesConnectedCenters
         // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
         var includedPipes = context.GetLocationSet();
         var includedCenters = context.GetLocationSet(allowEnumerate: true);
-        var selectedTrunks = new List<Trunk>();
-        foreach (var trunk in trunkCandidates)
+        var selectedTrunks = TableList.New<Trunk>();
+        for (var i = 0; i < trunkCandidates.Count; i++)
         {
+            var trunk = trunkCandidates[i];
             var path = MakeStraightLine(trunk.Start, trunk.End);
-            if (!includedPipes.Overlaps(path) && !includedCenters.Overlaps(trunk.Centers.EnumerateItems()))
+            if (!includedPipes.Overlaps(path.EnumerateItems()) && !includedCenters.Overlaps(trunk.Centers.EnumerateItems()))
             {
                 selectedTrunks.Add(trunk);
-                includedPipes.UnionWith(path);
+                includedPipes.UnionWith(path.EnumerateItems());
                 includedCenters.UnionWith(trunk.Centers);
             }
         }
@@ -392,11 +402,12 @@ public static class AddPipesConnectedCenters
 
         // Eliminate unused terminals for pumpjacks included in all of the trunks. A pumpjack connected to a trunk has
         // its terminal selected.
-        foreach (var trunk in selectedTrunks)
+        for (var i = 0; i < selectedTrunks.Count; i++)
         {
-            foreach (var terminal in trunk.Terminals)
+            var trunk = selectedTrunks[i];
+            for (var j = 0; j < trunk.Terminals.Count; j++)
             {
-                EliminateOtherTerminals(context, terminal);
+                EliminateOtherTerminals(context, trunk.Terminals[j]);
             }
         }
 
@@ -407,7 +418,7 @@ public static class AddPipesConnectedCenters
         return selectedTrunks;
     }
 
-    private record BestConnection(List<Location> Path, TerminalLocation Terminal, TerminalLocation BestTerminal);
+    private record BestConnection(ITableList<Location> Path, TerminalLocation Terminal, TerminalLocation BestTerminal);
 
     private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters)
     {
@@ -450,7 +461,7 @@ public static class AddPipesConnectedCenters
                     }
 
                     var reachedGoal = result.ReachedGoal;
-                    var closestTerminal = otherTerminals.Single(t => t.Terminal == reachedGoal);
+                    var closestTerminal = otherTerminals.EnumerateItems().Single(t => t.Terminal == reachedGoal);
                     var path = result.Path;
 
                     if (bestConnection is null)
@@ -609,23 +620,26 @@ public static class AddPipesConnectedCenters
         return visited;
     }
 
-    private static List<Trunk> GetTrunkCandidates(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
+    private static ITableList<Trunk> GetTrunkCandidates(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var centerToMaxX = context
             .Centers
-            .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X)));
+            .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].EnumerateItems().Max(t => t.Terminal.X)));
         var centerToMaxY = context
             .Centers
-            .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y)));
+            .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].EnumerateItems().Max(t => t.Terminal.Y)));
 
         // Find paths that connect the most terminals of neighboring pumpjacks.
-        var trunkCandidates = new List<Trunk>();
+        var trunkCandidates = TableList.New<Trunk>();
         foreach (var translation in Translations)
         {
-            foreach (var startingCenter in context.Centers)
+            for (var i = 0; i < context.Centers.Count; i++)
             {
-                foreach (var terminal in context.CenterToTerminals[startingCenter])
+                var startingCenter = context.Centers[i];
+                var terminals = context.CenterToTerminals[startingCenter];
+                for (var j = 0; j < terminals.Count; j++)
                 {
+                    var terminal = terminals[j];
                     var currentCenter = startingCenter;
                     var expandedChildCenters = false;
                     var nextCenters = centerToConnectedCenters[currentCenter];
@@ -638,12 +652,13 @@ public static class AddPipesConnectedCenters
 
                     while (location.X <= maxX && location.Y <= maxY && context.Grid.IsEmpty(location))
                     {
-                        if (context.LocationToTerminals.TryGetValue(location, out var terminals))
+                        if (context.LocationToTerminals.TryGetValue(location, out var otherTerminals))
                         {
                             Location nextCenter = Location.Invalid;
                             bool hasMatch = false;
-                            foreach (var nextTerminal in terminals)
+                            for (var k = 0; k < otherTerminals.Count; k++)
                             {
+                                var nextTerminal = otherTerminals[k];
                                 if (nextCenters.Contains(nextTerminal.Center))
                                 {
                                     nextCenter = nextTerminal.Center;
@@ -673,8 +688,8 @@ public static class AddPipesConnectedCenters
                                     break;
                                 }
 
-                                maxX = nextCenters.EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.X));
-                                maxY = nextCenters.EnumerateItems().Max(c => context.CenterToTerminals[c].Max(t => t.Terminal.Y));
+                                maxX = nextCenters.EnumerateItems().Max(c => context.CenterToTerminals[c].EnumerateItems().Max(t => t.Terminal.X));
+                                maxY = nextCenters.EnumerateItems().Max(c => context.CenterToTerminals[c].EnumerateItems().Max(t => t.Terminal.Y));
                                 expandedChildCenters = true;
                             }
 
@@ -683,14 +698,12 @@ public static class AddPipesConnectedCenters
                                 trunk = new Trunk(context, terminal, currentCenter);
                             }
 
-                            trunk.Terminals.AddRange(terminals);
-                            foreach (var other in terminals)
+                            trunk.Terminals.AddRange(otherTerminals);
+                            for (var k = 0; k < otherTerminals.Count; k++)
                             {
-                                trunk.TerminalLocations.Add(other.Terminal);
-                            }
-                            foreach (var nextTerminal in terminals)
-                            {
-                                trunk.Centers.Add(nextTerminal.Center);
+                                var otherTerminal = otherTerminals[k];
+                                trunk.TerminalLocations.Add(otherTerminal.Terminal);
+                                trunk.Centers.Add(otherTerminal.Center);
                             }
 
                             currentCenter = nextCenter;
@@ -725,7 +738,7 @@ public static class AddPipesConnectedCenters
         }
 
         public int OriginalIndex { get; set; }
-        public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>(2);
+        public ITableList<TerminalLocation> Terminals { get; } = TableList.New<TerminalLocation>(2);
         public ILocationSet TerminalLocations { get; }
         public ILocationSet Centers { get; }
         public int Length => Start.GetManhattanDistance(End) + 1;
@@ -781,7 +794,7 @@ public static class AddPipesConnectedCenters
         {
         }
 
-        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IReadOnlyCollection<Location> includedCenters, IReadOnlyCollection<Location> pipes)
+        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IReadOnlyCollection<Location> includedCenters, ITableList<Location> pipes)
         {
             _context = context;
             _centerToConnectedCenters = centerToConnectedCenters;
@@ -792,7 +805,7 @@ public static class AddPipesConnectedCenters
             FrontierCenters = context.GetLocationSet(allowEnumerate: true);
             IncludedCenterToChildCenters = context.GetLocationDictionary<ILocationSet>();
 
-            Pipes = pipes.ToSet(context, allowEnumerate: true);
+            Pipes = pipes.EnumerateItems().ToSet(context, allowEnumerate: true);
 
             UpdateFrontierCenters();
             UpdateIncludedCenterToChildCenters();
@@ -821,19 +834,19 @@ public static class AddPipesConnectedCenters
             return terminalCandidate.GetEuclideanDistanceSquared(centroidX, centroidY);
         }
 
-        public void ConnectPumpjack(Location center, List<Location> path)
+        public void ConnectPumpjack(Location center, ITableList<Location> path)
         {
             _allIncludedCenters.Add(center);
             IncludedCenters.Add(center);
-            Pipes.UnionWith(path);
+            Pipes.UnionWith(path.EnumerateItems());
             UpdateFrontierCenters();
             UpdateIncludedCenterToChildCenters();
         }
 
-        public void MergeGroup(PumpjackGroup other, List<Location> path)
+        public void MergeGroup(PumpjackGroup other, ITableList<Location> path)
         {
             IncludedCenters.UnionWith(other.IncludedCenters);
-            Pipes.UnionWith(path);
+            Pipes.UnionWith(path.EnumerateItems());
             Pipes.UnionWith(other.Pipes);
             UpdateFrontierCenters();
             UpdateIncludedCenterToChildCenters();

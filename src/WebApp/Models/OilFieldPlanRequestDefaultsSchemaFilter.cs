@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using Knapcode.FactorioTools.OilField;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
@@ -42,8 +43,8 @@ public class OilFieldPlanRequestDefaultsSchemaFilter : ISchemaFilter
                     int v => new OpenApiInteger(v),
                     double v => new OpenApiDouble(v),
                     bool v => new OpenApiBoolean(v),
-                    IEnumerable<BeaconStrategy> v => ToStringArray(v),
-                    IEnumerable<PipeStrategy> v => ToStringArray(v),
+                    ITableList<BeaconStrategy> v => ToStringArray(v),
+                    ITableList<PipeStrategy> v => ToStringArray(v),
                     IEnumerable<KeyValuePair<string, int>> v => ToObjectArray(v),
                     _ => throw new NotImplementedException(),
                 };
@@ -53,12 +54,12 @@ public class OilFieldPlanRequestDefaultsSchemaFilter : ISchemaFilter
         }
     }
 
-    private OpenApiArray ToStringArray<T>(IEnumerable<T> values)
+    private OpenApiArray ToStringArray<T>(ITableList<T> values)
     {
         var array = new OpenApiArray();
-        foreach (var value in values)
+        for (var i = 0; i < values.Count; i++)
         {
-            array.Add(new OpenApiString(value!.ToString()));
+            array.Add(new OpenApiString(values[i]!.ToString()));
         }
 
         return array;

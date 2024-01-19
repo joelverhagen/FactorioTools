@@ -11,10 +11,10 @@ public class Context
     public required float DeltaX { get; set; }
     public required float DeltaY { get; set; }
     public required SquareGrid Grid { get; set; }
-    public required List<Location> Centers { get; set; }
-    public required ILocationDictionary<List<TerminalLocation>> CenterToTerminals { get; set; }
+    public required ITableList<Location> Centers { get; set; }
+    public required ILocationDictionary<ITableList<TerminalLocation>> CenterToTerminals { get; set; }
     public required ILocationDictionary<Direction> CenterToOriginalDirection { get; set; }
-    public required ILocationDictionary<List<TerminalLocation>> LocationToTerminals { get; set; }
+    public required ILocationDictionary<ITableList<TerminalLocation>> LocationToTerminals { get; set; }
     public required int[] LocationToAdjacentCount { get; set; }
 
     public required SharedInstances SharedInstances { get; set; }
@@ -112,70 +112,6 @@ public class Context
     {
         var set = GetLocationSet(capacity, allowEnumerate);
         set.Add(location);
-        return set;
-    }
-
-    public ILocationSet GetLocationSet(IReadOnlyCollection<Location> locations)
-    {
-        return GetLocationSet(locations, allowEnumerate: false);
-    }
-
-    public ILocationSet GetLocationSet(IReadOnlyCollection<Location> locations, bool allowEnumerate)
-    {
-        var set = GetLocationSet(allowEnumerate);
-        foreach (var location in locations)
-        {
-            set.Add(location);
-        }
-
-        return set;
-    }
-
-    public ILocationSet GetReadOnlyLocationSet(IReadOnlyCollection<Location> locations)
-    {
-        return GetReadOnlyLocationSet(locations, allowEnumerate: false);
-    }
-
-    public ILocationSet GetReadOnlyLocationSet(IReadOnlyCollection<Location> locations, bool allowEnumerate)
-    {
-        Location firstLocation = Location.Invalid;
-        int itemCount = 0;
-        ILocationSet? set = null;
-        foreach (var location in locations)
-        {
-            if (itemCount == 0)
-            {
-                firstLocation = location;
-            }
-            else if (itemCount == 1)
-            {
-                set = GetLocationSet(allowEnumerate);
-                set.Add(firstLocation);
-                set.Add(location);
-            }
-            else
-            {
-                set!.Add(location);
-            }
-
-            itemCount++;
-        }
-
-        if (set is null)
-        {
-            if (itemCount == 0)
-            {
-                set = EmptyLocationSet.Instance;
-            }
-            else if (itemCount == 1)
-            {
-                set = new SingleLocationSet(firstLocation);
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
         return set;
     }
 

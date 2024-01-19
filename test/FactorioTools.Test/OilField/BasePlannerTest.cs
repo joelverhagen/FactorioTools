@@ -27,8 +27,8 @@ public class BasePlannerTest : BaseTest
     {
         var options = OilFieldOptions.ForMediumElectricPole;
         options.ValidateSolution = true;
-        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToList();
-        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
+        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableList();
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableList();
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         return Planner.Execute(options, blueprint);
@@ -40,9 +40,9 @@ public class BasePlannerTest : BaseTest
 
         var plans = Enumerable
             .Empty<(char Prefix, OilFieldPlan Plan)>()
-            .Concat(result.Summary.SelectedPlans.Select(x => (Prefix: 'S', Plan: x)))
-            .Concat(result.Summary.AlternatePlans.Select(x => (Prefix: 'A', Plan: x)))
-            .Concat(result.Summary.UnusedPlans.Select(x => (Prefix: ' ', Plan: x)))
+            .Concat(result.Summary.SelectedPlans.EnumerateItems().Select(x => (Prefix: 'S', Plan: x)))
+            .Concat(result.Summary.AlternatePlans.EnumerateItems().Select(x => (Prefix: 'A', Plan: x)))
+            .Concat(result.Summary.UnusedPlans.EnumerateItems().Select(x => (Prefix: ' ', Plan: x)))
             .OrderBy(x => x.Plan.PipeStrategy)
             .ThenBy(x => x.Plan.OptimizePipes)
             .ThenBy(x => x.Plan.BeaconStrategy)

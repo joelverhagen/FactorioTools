@@ -81,7 +81,7 @@ public static class AddElectricPoles
         return electricPoles.Keys.ToReadOnlySet(context);
     }
 
-    private static void RemoveExtraElectricPoles(Context context, List<ProviderRecipient> poweredEntities, ILocationDictionary<ElectricPoleCenter> electricPoles)
+    private static void RemoveExtraElectricPoles(Context context, ITableList<ProviderRecipient> poweredEntities, ILocationDictionary<ElectricPoleCenter> electricPoles)
     {
         (var poleCenterToCoveredCenters, var coveredCenterToPoleCenters) = GetElectricPoleCoverage(context, poweredEntities, electricPoles.Keys);
 
@@ -202,7 +202,7 @@ public static class AddElectricPoles
         return b.GetEuclideanDistanceSquared(a.X + offsetX, a.Y + offsetY);
     }
 
-    private static (List<Location>? ElectricPoleList, List<ProviderRecipient> PoweredEntities) AddElectricPolesAroundEntities(
+    private static (ITableList<Location>? ElectricPoleList, ITableList<ProviderRecipient> PoweredEntities) AddElectricPolesAroundEntities(
         Context context,
         bool allowRetries)
     {
@@ -312,9 +312,9 @@ public static class AddElectricPoles
         }
     }
     
-    private static (List<Location>? ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
+    private static (ITableList<Location>? ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
         Context context,
-        List<ProviderRecipient> poweredEntities,
+        ITableList<ProviderRecipient> poweredEntities,
         CountedBitArray? entitiesToPowerFirst)
     {
         (var allCandidateToInfo, var coveredEntities, var electricPoles2) = GetElectricPoleCandidateToCovered(
@@ -323,7 +323,7 @@ public static class AddElectricPoles
             CandidateFactory.Instance,
             removeUnused: true);
 
-        var electricPoleList = electricPoles2.Keys.ToList();
+        var electricPoleList = electricPoles2.Keys.ToTableList();
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
@@ -472,8 +472,8 @@ public static class AddElectricPoles
         Context context,
         ILocationDictionary<ElectricPoleCandidateInfo> candidateToInfo,
         CountedBitArray? entitiesToPowerFirst,
-        List<ProviderRecipient> poweredEntities,
-        List<Location> electricPoleList)
+        ITableList<ProviderRecipient> poweredEntities,
+        ITableList<Location> electricPoleList)
     {
         foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
         {
@@ -632,8 +632,8 @@ public static class AddElectricPoles
             for (var i = 0; i < lines.Count; i++)
             {
                 var endpoint = lines[i];
-                var groupA = groups.Single(g => g.Contains(endpoint.A));
-                var groupB = groups.Single(g => g.Contains(endpoint.B));
+                var groupA = groups.EnumerateItems().Single(g => g.Contains(endpoint.A));
+                var groupB = groups.EnumerateItems().Single(g => g.Contains(endpoint.B));
                 if (groupA == groupB)
                 {
                     continue;
@@ -662,7 +662,7 @@ public static class AddElectricPoles
         }
     }
 
-    private static void AddSinglePoleForConnection(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles, List<ILocationSet> groups, double distance, Endpoints endpoints)
+    private static void AddSinglePoleForConnection(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles, ITableList<ILocationSet> groups, double distance, Endpoints endpoints)
     {
         var segments = (int)Math.Ceiling(distance / context.Options.ElectricPoleWireReach);
         var idealLine = BresenhamsLine.GetPath(endpoints.A, endpoints.B);
@@ -735,7 +735,7 @@ public static class AddElectricPoles
         }
 
         var center = AddElectricPole(context, electricPoles, selectedPoint);
-        var connectedGroups = new List<ILocationSet>(groups.Count);
+        var connectedGroups = TableList.New<ILocationSet>(groups.Count);
         for (var i = 0; i < groups.Count; i++)
         {
             var group = groups[i];
@@ -771,9 +771,9 @@ public static class AddElectricPoles
         // Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
     }
 
-    private static List<ILocationSet> GetElectricPoleGroups(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles)
+    private static ITableList<ILocationSet> GetElectricPoleGroups(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles)
     {
-        var groups = new List<ILocationSet>();
+        var groups = TableList.New<ILocationSet>();
         var remaining = electricPoles.Keys.ToSet(context, allowEnumerate: true);
         while (remaining.Count > 0)
         {
