@@ -32,7 +32,7 @@ public interface IItemList<T>
 
     void Add(T item);
     void AddRange(IReadOnlyCollection<T> collection);
-    void Sort(Comparer<T> comparer);
+    void Sort(Comparison<T> comparison);
 }
 
 public class StandardList<T> : IItemList<T>
@@ -67,9 +67,9 @@ public class StandardList<T> : IItemList<T>
         _list.AddRange(collection);
     }
 
-    public void Sort(Comparer<T> comparer)
+    public void Sort(Comparison<T> comparison)
     {
-        _list.Sort(comparer);
+        _list.Sort(comparison);
     }
 }
 
@@ -121,6 +121,28 @@ public class DictionaryList<T> : IItemList<T>
         foreach (var item in collection)
         {
             _dictionary.Add(_dictionary.Count, item);
+        }
+    }
+
+    public void Sort(Comparison<T> comparison)
+    {
+        var keys = new int[Count];
+        for (var i = 0; i < keys.Length; i++)
+        {
+            keys[i] = i;
+        }
+
+        Array.Sort(keys, (a, b) => comparison(this[a], this[b]));
+
+        for (var i = 0; i < keys.Length; i++)
+        {
+            if (keys[i] != i)
+            {
+                var temp = _dictionary[i];
+                _dictionary[i] = _dictionary[keys[i]];
+                _dictionary[keys[i]] = temp;
+                keys[i] = i;
+            }
         }
     }
 }
