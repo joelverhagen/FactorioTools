@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\FactorioTools\SetHandling.cs" Link="SetHandling.cs" />
+    <Compile Include="..\..\src\FactorioTools\CollectionExtensions.cs" Link="CollectionExtensions.cs" />
   </ItemGroup>
 
   <ItemGroup>
