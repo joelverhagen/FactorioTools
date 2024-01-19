@@ -15,6 +15,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <UseArray Condition="'$(UseArray)' == ''">$(UseDefines)</UseArray>
+    <DefineConstants Condition="$(UseArray) == 'true'">$(DefineConstants);USE_ARRAY</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LocationAsStruct Condition="'$(LocationAsStruct)' == ''">$(UseDefines)</LocationAsStruct>
     <DefineConstants Condition="$(LocationAsStruct) == 'true'">$(DefineConstants);LOCATION_AS_STRUCT</DefineConstants>
   </PropertyGroup>

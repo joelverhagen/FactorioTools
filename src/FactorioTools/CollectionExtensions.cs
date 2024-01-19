@@ -27,10 +27,10 @@ internal static class CollectionExtensions
         return dictionary;
     }
 
-    public static List<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
+    public static IItemList<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
     {
         var set = context.GetLocationSet(locations.Count);
-        var output = new List<Location>(locations.Count);
+        var output = Collection.List<Location>(locations.Count);
         foreach (var location in locations)
         {
             if (set.Add(location))
@@ -57,9 +57,9 @@ internal static class CollectionExtensions
     }
 
 #if ENABLE_VISUALIZER
-    public static List<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
+    public static IItemList<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
     {
-        var points = new List<DelaunatorSharp.IPoint>();
+        var points = Collection.List<DelaunatorSharp.IPoint>();
         foreach (var item in set.EnumerateItems())
         {
             points.Add(new DelaunatorSharp.Point(item.X, item.Y));
@@ -68,9 +68,9 @@ internal static class CollectionExtensions
         return points;
     }
 
-    public static List<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
+    public static IItemList<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
     {
-        var points = new List<DelaunatorSharp.IPoint>();
+        var points = Collection.List<DelaunatorSharp.IPoint>();
         foreach (var item in dictionary.Keys)
         {
             points.Add(new DelaunatorSharp.Point(item.X, item.Y));
@@ -186,9 +186,9 @@ internal static class CollectionExtensions
         return min;
     }
 
-    public static List<TSource> ToList<TSource>(this IReadOnlyCollection<TSource> source)
+    public static IItemList<TSource> ToList<TSource>(this IReadOnlyCollection<TSource> source)
     {
-        var output = new List<TSource>(source.Count);
+        var output = Collection.List<TSource>(source.Count);
         output.AddRange(source);
         return output;
     }

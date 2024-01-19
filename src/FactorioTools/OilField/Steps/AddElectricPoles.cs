@@ -312,9 +312,9 @@ public static class AddElectricPoles
         }
     }
     
-    private static (List<Location>? ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
+    private static (IItemList<Location>? ElectricPoleList, CountedBitArray CoveredEntities) AddElectricPolesAroundEntities(
         Context context,
-        List<ProviderRecipient> poweredEntities,
+        IItemList<ProviderRecipient> poweredEntities,
         CountedBitArray? entitiesToPowerFirst)
     {
         (var allCandidateToInfo, var coveredEntities, var electricPoles2) = GetElectricPoleCandidateToCovered(
@@ -472,8 +472,8 @@ public static class AddElectricPoles
         Context context,
         ILocationDictionary<ElectricPoleCandidateInfo> candidateToInfo,
         CountedBitArray? entitiesToPowerFirst,
-        List<ProviderRecipient> poweredEntities,
-        List<Location> electricPoleList)
+        IItemList<ProviderRecipient> poweredEntities,
+        IItemList<Location> electricPoleList)
     {
         foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
         {

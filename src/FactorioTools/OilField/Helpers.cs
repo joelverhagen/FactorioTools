@@ -72,14 +72,14 @@ public static class Helpers
         }
     }
 
-    public static ILocationDictionary<List<TerminalLocation>> GetLocationToTerminals(Context context, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
+    public static ILocationDictionary<IItemList<TerminalLocation>> GetLocationToTerminals(Context context, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
     {
-        var locationToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
+        var locationToTerminals = context.GetLocationDictionary<IItemList<TerminalLocation>>();
         PopulateLocationToTerminals(locationToTerminals, centerToTerminals);
         return locationToTerminals;
     }
 
-    public static void PopulateLocationToTerminals(ILocationDictionary<List<TerminalLocation>> locationToTerminals, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
+    public static void PopulateLocationToTerminals(ILocationDictionary<IItemList<TerminalLocation>> locationToTerminals, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
     {
         foreach (var terminals in centerToTerminals.Values)
         {
@@ -87,7 +87,7 @@ public static class Helpers
             {
                 if (!locationToTerminals.TryGetValue(terminal.Terminal, out var list))
                 {
-                    list = new List<TerminalLocation>(2);
+                    list = Collection.List<TerminalLocation>(2);
                     locationToTerminals.Add(terminal.Terminal, list);
                 }
 
@@ -98,7 +98,7 @@ public static class Helpers
 
     public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
         Context context,
-        List<ProviderRecipient> recipients,
+        IItemList<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
         bool removeUnused)
         where TInfo : CandidateInfo
@@ -118,7 +118,7 @@ public static class Helpers
 
     public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
         Context context,
-        List<ProviderRecipient> recipients,
+        IItemList<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
         bool removeUnused)
         where TInfo : CandidateInfo
@@ -138,7 +138,7 @@ public static class Helpers
 
     private static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
         Context context,
-        List<ProviderRecipient> recipients,
+        IItemList<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
         int providerWidth,
         int providerHeight,
@@ -443,7 +443,7 @@ public static class Helpers
         return true;
     }
 
-    public static double GetEntityDistance(List<ProviderRecipient> poweredEntities, Location candidate, CountedBitArray covered)
+    public static double GetEntityDistance(IItemList<ProviderRecipient> poweredEntities, Location candidate, CountedBitArray covered)
     {
         double sum = 0;
         for (var i = 0; i < poweredEntities.Count; i++)
@@ -1119,7 +1119,7 @@ public static class Helpers
         throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
     }
 
-    public static List<Endpoints> PointsToLines(IReadOnlyCollection<Location> nodes)
+    public static IItemList<Endpoints> PointsToLines(IReadOnlyCollection<Location> nodes)
     {
         return PointsToLines(nodes.ToList(), sort: true);
     }
@@ -1127,7 +1127,7 @@ public static class Helpers
     /// <summary>
     /// Source: https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts#L62
     /// </summary>
-    public static List<Endpoints> PointsToLines(IReadOnlyList<Location> nodes, bool sort)
+    public static IItemList<Endpoints> PointsToLines(IReadOnlyList<Location> nodes, bool sort)
     {
         IReadOnlyList<Location> filteredNodes;
         if (sort)
