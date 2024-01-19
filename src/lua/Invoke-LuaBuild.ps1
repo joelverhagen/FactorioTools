@@ -43,7 +43,7 @@ function Publish-CompiledLua($projectDir, $referenceNames, $filesFirst) {
 
     $outputDir = Join-Path $baseOutputDir $projectName
 
-    if (!$Fast) {
+    if ($All) {
         Write-Host "Building $projectName"
         dotnet build --configuration Release $projectDir
     }
