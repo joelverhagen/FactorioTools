@@ -1,7 +1,13 @@
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName = "AllSteps")]
 param (
-    [switch]$Fast
+    [Parameter(ParameterSetName = "SpecificSteps")]
+    [switch] $CopyCoreSystem,
+
+    [Parameter(ParameterSetName = "SpecificSteps")]
+    [switch]$CompileFactorioTools
 )
+
+$All = $PsCmdlet.ParameterSetName -eq "AllSteps"
 
 $repoDir = Resolve-Path (Join-Path $PSScriptRoot "../..")
 $compilerDir = Join-Path $repoDir "submodules/CSharp.lua/CSharp.lua.Launcher"
@@ -96,21 +102,23 @@ function Publish-CompiledLua($projectDir, $referenceNames, $filesFirst) {
     }
 }
 
-if (!$Fast) {
+if ($All) {
     Write-Host "Building the CSharp.lua compiler"
     dotnet build --configuration Release $compilerDir
 }
 
-if (!$Fast) {
+if ($All -or $CopyCoreSystem) {
     Copy-CoreSystem
 }
 
-if (!$Fast) {
+if ($All) {
     Publish-CompiledLua "submodules/delaunator-sharp/DelaunatorSharp"
 }
 
-if (!$Fast) {
+if ($All) {
     Publish-CompiledLua "submodules/FluteSharp/src/FluteSharp"
 }
 
-Publish-CompiledLua "src/FactorioTools" @("DelaunatorSharp.dll", "Knapcode.FluteSharp.dll") @("LocationIntDictionary")
+if ($All -or $CompileFactorioTools) {
+    Publish-CompiledLua "src/FactorioTools" @("DelaunatorSharp.dll", "Knapcode.FluteSharp.dll") @("LocationIntDictionary")
+}
