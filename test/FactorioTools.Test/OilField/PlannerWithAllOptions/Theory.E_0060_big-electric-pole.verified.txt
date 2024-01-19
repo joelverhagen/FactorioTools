@@ -7,41 +7,35 @@ S CC-DT -> optimize (pipes: 95)
   CC-FLUTE (pipes: 106)
   CC-FLUTE -> optimize (pipes: 96)
 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . j j j E e . . . 
-. . . . . . . . . . . . . . . . . . . . . . j J j e e . . . 
-. . . . . . . . . . . . . . . . . . . . . . j j j . . . . . 
-. . . . . . j j j . . . . . . . . . . . . . + . . . . . . . 
-. . . . . . j J j E e . . . . . o o o + o o o . . . . . . . 
-. . . . . . j j j e e o o o o o + j j j . . o . . . . . . . 
-. . . . . . + o o o o + . . j j j j J j . . o . . . . . . . 
-. . . . . . . o . j j j E e j J j j j j . . o . . . . . . . 
-. . . . . . . o . j J j e e j j j E e . . . o . j j j . . . 
-. . . . . . . o . j j j j j j . . e e j j j + . j J j . . . 
-. . . . . . . o j j j + j J j E e . . j J j o + j j j . . . 
-. . . . . . . + j J j + j j j e e . . j j j . o . E e . . . 
-. . . . . j j j j j j o + o j j j . . . . . . o . e e . . . 
-. . . . . j J j E e j j j o j J j . . . o o o + o . . . . . 
-. . . . . j j j e e j J j o j j j . . . o j j j o . . . . . 
-. . . j j j + o o . j j j o + + o o o o + j J j o . . . . . 
-. . . j J j E e o . . . . j j j . . j j j j j j o . . . . . 
-. . . j j j e e o . . . . j J j E e j J j . E e o . . . . . 
-. . . . . j j j + o o o o j j j e e j j j . e e o . . . . . 
-. . . . . j J j . . . . o j j j j j j . . . . . o . . . . . 
-. . . . . j j j . . . . o j J j j J j . . . . . o . . . . . 
-. . . . . . . . . . . . o j j j j j j o o o o o o . . . . . 
-. . . . . . . . . . . . o + o o + o o o . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . o . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . o . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . o . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . o . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . o . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . + . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . j j j . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . j J j E e . . . . . . . . . 
-. . . . . . . . . . . . . . . . j j j e e . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . . . . . j j j E e 
+. . . . . . . . . . . . . . . . . . . j J j e e 
+. . . . . . . . . . . . . . . . . . . j j j . . 
+. . . j j j . . . . . . . . . . . . . + . . . . 
+. . . j J j E e . . . . . o o o + o o o . . . . 
+. . . j j j e e o o o o o + j j j . . o . . . . 
+. . . + o o o o + . . j j j j J j . . o . . . . 
+. . . . o . j j j E e j J j j j j . . o . . . . 
+. . . . o . j J j e e j j j E e . . . o . j j j 
+. . . . o . j j j j j j . . e e j j j + . j J j 
+. . . . o j j j + j J j E e . . j J j o + j j j 
+. . . . + j J j + j j j e e . . j j j . o . E e 
+. . j j j j j j o + o j j j . . . . . . o . e e 
+. . j J j E e j j j o j J j . . . o o o + o . . 
+. . j j j e e j J j o j j j . . . o j j j o . . 
+j j j + o o . j j j o + + o o o o + j J j o . . 
+j J j E e o . . . . j j j . . j j j j j j o . . 
+j j j e e o . . . . j J j E e j J j . E e o . . 
+. . j j j + o o o o j j j e e j j j . e e o . . 
+. . j J j . . . . o j j j j j j . . . . . o . . 
+. . j j j . . . . o j J j j J j . . . . . o . . 
+. . . . . . . . . o j j j j j j o o o o o o . . 
+. . . . . . . . . o + o o + o o o . . . . . . . 
+. . . . . . . . . . . . . . . o . . . . . . . . 
+. . . . . . . . . . . . . . . o . . . . . . . . 
+. . . . . . . . . . . . . . . o . . . . . . . . 
+. . . . . . . . . . . . . . . o . . . . . . . . 
+. . . . . . . . . . . . . . . o . . . . . . . . 
+. . . . . . . . . . . . . . . + . . . . . . . . 
+. . . . . . . . . . . . . j j j . . . . . . . . 
+. . . . . . . . . . . . . j J j E e . . . . . . 
+. . . . . . . . . . . . . j j j e e . . . . . . 

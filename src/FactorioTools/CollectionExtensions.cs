@@ -86,7 +86,7 @@ public static class CollectionExtensions
         return min;
     }
 
-    public static TResult? Min<TSource, TResult>(this IReadOnlyList<TSource> source, Func<TSource, TResult> selector)
+    public static TResult? Min<TSource, TResult>(this IReadOnlyCollection<TSource> source, Func<TSource, TResult> selector)
     {
         TResult? min = default;
         var hasItem = false;

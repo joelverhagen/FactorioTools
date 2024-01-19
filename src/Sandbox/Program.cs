@@ -10,7 +10,8 @@ public partial class Program
     {
         if (args.Length > 0 && args[0] == "normalize")
         {
-            NormalizeBlueprints.Execute(BigListDataPath, SmallListDataPath);
+            NormalizeBlueprints.Execute(SmallListDataPath, BigListDataPath, allowComments: true);
+            NormalizeBlueprints.Execute(BigListDataPath, SmallListDataPath, allowComments: false);
         }
         else if (args.Length > 0 && args[0] == "sample")
         {

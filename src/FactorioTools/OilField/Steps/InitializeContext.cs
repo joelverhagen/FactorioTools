@@ -9,20 +9,7 @@ public static class InitializeContext
 {
     public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid)
     {
-        // Translate the blueprint by the minimum X and Y. Leave three spaces on both lesser (left for X, top for Y) sides to cover:
-        //   - The side of the pumpjack. It is a 3x3 entity and the position of the entity is the center.
-        //   - A spot for a pipe, if needed.
-        //   - A spot for an electric pole, if needed.
-        var marginX = 1 + 1 + options.ElectricPoleWidth;
-        var marginY = 1 + 1 + options.ElectricPoleHeight;
-
-        if (options.AddBeacons)
-        {
-            marginX += options.BeaconSupplyWidth + (options.BeaconWidth / 2);
-            marginY += options.BeaconSupplyHeight + (options.BeaconHeight / 2);
-        }
-
-        return Execute(options, blueprint, avoid, marginX, marginY);
+        return Execute(options, blueprint, avoid, minWidth: 0, minHeight: 0);
     }
 
     public static Context GetEmpty(OilFieldOptions options, int width, int height)
@@ -49,11 +36,11 @@ public static class InitializeContext
         return Execute(options, blueprint, Array.Empty<AvoidLocation>(), width, height);
     }
 
-    private static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int marginX, int marginY)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
-        var (centerAndOriginalDirections, avoidLocations, deltaX, deltaY) = TranslateLocations(blueprint, avoid, marginX, marginY);
+        var (centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height) = TranslateLocations(options, blueprint, avoid, minWidth, minHeight);
 
-        var grid = InitializeGrid(centerAndOriginalDirections, avoidLocations, marginX, marginY);
+        var grid = InitializeGrid(centerAndOriginalDirections, avoidLocations, width, height);
 
         var centers = new List<Location>(centerAndOriginalDirections.Count);
         PopulateCenters(centerAndOriginalDirections, centers);
@@ -148,9 +135,15 @@ public static class InitializeContext
         return locationToHasAdjacentPumpjack;
     }
 
-    private record TranslatedLocations(List<Tuple<Location, Direction>> CenterAndOriginalDirections, List<Location> AvoidLocations, float DeltaX, float DeltaY);
+    private record TranslatedLocations(
+        List<Tuple<Location, Direction>> CenterAndOriginalDirections,
+        List<Location> AvoidLocations,
+        float DeltaX,
+        float DeltaY,
+        int Width,
+        int Height);
 
-    private static TranslatedLocations TranslateLocations(Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int marginX, int marginY)
+    private static TranslatedLocations TranslateLocations(OilFieldOptions options, Blueprint blueprint, IReadOnlyList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
         var pumpjacks = new List<Entity>();
         for (var i = 0; i < blueprint.Entities.Length; i++)
@@ -174,77 +167,97 @@ public static class InitializeContext
         float deltaX = 0;
         float deltaY = 0;
 
-        if (pumpjacks.Count > 0 || avoid.Count > 0)
+        if (pumpjacks.Count == 0 && avoid.Count == 0)
         {
-            float minX = float.MaxValue;
-            float minY = float.MaxValue;
+            return new TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY, minWidth, minHeight);
+        }
 
-            if (pumpjacks.Count > 0)
+        var minX = float.MaxValue;
+        var minY = float.MaxValue;
+        var maxX = float.MinValue;
+        var maxY = float.MinValue;
+
+        if (pumpjacks.Count > 0)
+        {
+            var pumpjackOffsetX = PumpjackWidth / 2;
+            var pumpjackOffsetY = PumpjackHeight / 2;
+
+            minX = pumpjacks.Min(p => p.Position.X) - pumpjackOffsetX;
+            minY = pumpjacks.Min(p => p.Position.Y) - pumpjackOffsetY;
+            maxX = pumpjacks.Max(p => p.Position.X) + pumpjackOffsetX;
+            maxY = pumpjacks.Max(p => p.Position.Y) + pumpjackOffsetY;
+
+            if (options.AddBeacons)
             {
-                minX = pumpjacks.Min(p => p.Position.X);
-                minY = pumpjacks.Min(p => p.Position.Y);
-            }
-
-            if (avoid.Count > 0)
-            {
-                minX = Math.Min(minX, avoid.Min(a => a.X));
-                minY = Math.Min(minY, avoid.Min(a => a.Y));
-            }
-
-            deltaX = 0 - minX + marginX;
-            deltaY = 0 - minY + marginY;
-
-            for (int i = 0; i < pumpjacks.Count; i++)
-            {
-                var p = pumpjacks[i];
-                var x = ToInt(p.Position.X + deltaX, $"Entity {p.EntityNumber} (a '{p.Name}') does not have an integer X value after translation.");
-                var y = ToInt(p.Position.Y + deltaY, $"Entity {p.EntityNumber} (a '{p.Name}') does not have an integer Y value after translation.");
-                var center = new Location(x, y);
-                var originalDirection = p.Direction.GetValueOrDefault(Direction.Up);
-                centerAndOriginalDirections.Add(Tuple.Create(center, originalDirection));
-            }
-
-            for (var i = 0; i < avoid.Count; i++)
-            {
-                var a = avoid[i];
-                var x = ToInt(a.X + deltaX, $"Avoided location {i} does not have an integer X value after translation.");
-                var y = ToInt(a.Y + deltaY, $"Avoided location {i} does not have an integer Y value after translation.");
-                var avoidLocation = new Location(x, y);
-                avoidLocations.Add(avoidLocation);
+                // leave room around pumpjacks for beacons
+                var beaconOffsetX = ((options.BeaconSupplyWidth - 1) / 2) + (options.BeaconWidth / 2);
+                var beaconOffsetY = ((options.BeaconSupplyHeight - 1) / 2) + (options.BeaconHeight / 2);
+                minX -= beaconOffsetX;
+                minY -= beaconOffsetY;
+                maxX += beaconOffsetX;
+                maxY += beaconOffsetY;
             }
         }
 
-        return new TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY);
+        if (avoid.Count > 0)
+        {
+            minX = Math.Min(minX, avoid.Min(a => a.X));
+            minY = Math.Min(minY, avoid.Min(a => a.Y));
+            maxX = Math.Max(maxX, avoid.Max(a => a.X));
+            maxY = Math.Max(maxY, avoid.Max(a => a.Y));
+        }
+
+        // Leave some space on all sides to cover:
+        // - A spot for a pipe.
+        // - A spot for a electric pole.
+        minX -= 1 + options.ElectricPoleWidth;
+        minY -= 1 + options.ElectricPoleHeight;
+        maxX += 1 + options.ElectricPoleWidth;
+        maxY += 1 + options.ElectricPoleHeight;
+
+        deltaX = -minX;
+        deltaY = -minY;
+
+        var width = ToInt(maxX - minX, "The grid width is not an integer after translation.") + 1;
+        var height = ToInt(maxY - minY, "The grid height is not an integer after translation.") + 1;
+
+        if (minWidth > width)
+        {
+            deltaX += (minWidth - width) / 2;
+            width = minWidth;
+        }
+
+        if (minHeight > height)
+        {
+            deltaY += (minHeight - height) / 2;
+            height = minHeight;
+        }
+
+        for (int i = 0; i < pumpjacks.Count; i++)
+        {
+            var p = pumpjacks[i];
+            var x = ToInt(p.Position.X + deltaX, $"Entity {p.EntityNumber} (a '{p.Name}') does not have an integer X value after translation.");
+            var y = ToInt(p.Position.Y + deltaY, $"Entity {p.EntityNumber} (a '{p.Name}') does not have an integer Y value after translation.");
+            var center = new Location(x, y);
+            var originalDirection = p.Direction.GetValueOrDefault(Direction.Up);
+            centerAndOriginalDirections.Add(Tuple.Create(center, originalDirection));
+        }
+
+        for (var i = 0; i < avoid.Count; i++)
+        {
+            var a = avoid[i];
+            var x = ToInt(a.X + deltaX, $"Avoided location {i} does not have an integer X value after translation.");
+            var y = ToInt(a.Y + deltaY, $"Avoided location {i} does not have an integer Y value after translation.");
+            var avoidLocation = new Location(x, y);
+            avoidLocations.Add(avoidLocation);
+        }
+
+
+        return new TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height);
     }
 
-    private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> avoidLocations, int marginX, int marginY)
+    private static SquareGrid InitializeGrid(List<Tuple<Location, Direction>> centerAndOriginalDirections, List<Location> avoidLocations, int width, int height)
     {
-        // Make a grid to contain game state. Similar to the above, we add extra spots for the pumpjacks, pipes, and
-        // electric poles.
-        int width = marginX;
-        int height = marginY;
-
-        if (centerAndOriginalDirections.Count > 0 || avoidLocations.Count > 0)
-        {
-            var maxX = int.MinValue;
-            var maxY = int.MinValue;
-
-            if (centerAndOriginalDirections.Count > 0)
-            {
-                maxX = centerAndOriginalDirections.Max(p => p.Item1.X);
-                maxY = centerAndOriginalDirections.Max(p => p.Item1.Y);
-            }
-
-            if (avoidLocations.Count > 0)
-            {
-                maxX = Math.Max(maxX, avoidLocations.Max(a => a.X));
-                maxY = Math.Max(maxY, avoidLocations.Max(a => a.Y));
-            }
-
-            width += 1 + maxX;
-            height += 1 + maxY;
-        }
-
         const int maxWidth = 1000;
         const int maxHeight = 1000;
         const int maxArea = 500 * 500;

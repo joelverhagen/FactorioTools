@@ -159,10 +159,14 @@ public abstract class SquareGrid
     public void ToString(StringBuilder builder, int spacing)
     {
         var maxLabelLength = _entityLocations.EnumerateItems().Max(x => this[x]!.Label.Length) + spacing;
+        var minX = _entityLocations.EnumerateItems().Min(l => l.X);
+        var minY = _entityLocations.EnumerateItems().Min(l => l.Y);
+        var maxX = _entityLocations.EnumerateItems().Max(l => l.X);
+        var maxY = _entityLocations.EnumerateItems().Max(l => l.Y);
 
-        for (var y = 0; y < Height; y++)
+        for (var y = minY; y <= maxY; y++)
         {
-            for (var x = 0; x < Width; x++)
+            for (var x = minX; x <= maxX; x++)
             {
                 var location = new Location(x, y);
                 var entity = _grid[y * Width + x];

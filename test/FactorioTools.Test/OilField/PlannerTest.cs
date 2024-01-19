@@ -165,8 +165,8 @@ public class PlannerTest : BasePlannerTest
     {
         var (context, _) = Planner.ExecuteSample();
 
-        Assert.Equal(21, context.DeltaX);
-        Assert.Equal(18, context.DeltaY);
+        Assert.Equal(16, context.DeltaX);
+        Assert.Equal(13, context.DeltaY);
     }
 
     [Fact]

@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class NormalizeBlueprints
 {
-    public static void Execute(string inputPath, string excludePath)
+    public static void Execute(string inputPath, string excludePath, bool allowComments)
     {
         var exclude = NormalizeFile(excludePath).ToLookup(x => x.Normalized);
 
@@ -17,23 +17,18 @@ public static class NormalizeBlueprints
         var added = new HashSet<string>();
         var orderedInput = input
             .Concat(exclude.SelectMany(g => g))
-            .Where(x => x.Valid)
-            .Where(x => !exclude[x.Normalized].Any())
+            .Where(x => allowComments || x.Valid)
+            .Where(x => !x.Valid || !exclude[x.Normalized].Any())
             .OrderBy(x => x.Index);
 
         foreach (var line in orderedInput)
         {
-            if (line.Normalized is null)
+            var outputLine = line.Normalized ?? line.Original;
+            if (added.Add(outputLine))
             {
-                continue;
-            }
-
-            if (added.Add(line.Normalized))
-            {
-                output.Add(line.Normalized);
+                output.Add(outputLine);
             }
         }
-
 
         File.WriteAllLines(inputPath, output);
     }

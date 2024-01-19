@@ -191,9 +191,21 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local maxLabelLength = KnapcodeFactorioTools.CollectionExtensions.Max(this._entityLocations:EnumerateItems(), function (x)
         return #this:get(x):getLabel()
       end, KnapcodeOilField.Location, System.Int32) + spacing
+      local minX = KnapcodeFactorioTools.CollectionExtensions.Min(this._entityLocations:EnumerateItems(), function (l)
+        return l.X
+      end, KnapcodeOilField.Location, System.Int32)
+      local minY = KnapcodeFactorioTools.CollectionExtensions.Min(this._entityLocations:EnumerateItems(), function (l)
+        return l.Y
+      end, KnapcodeOilField.Location, System.Int32)
+      local maxX = KnapcodeFactorioTools.CollectionExtensions.Max(this._entityLocations:EnumerateItems(), function (l)
+        return l.X
+      end, KnapcodeOilField.Location, System.Int32)
+      local maxY = KnapcodeFactorioTools.CollectionExtensions.Max(this._entityLocations:EnumerateItems(), function (l)
+        return l.Y
+      end, KnapcodeOilField.Location, System.Int32)
 
-      for y = 0, this.Height - 1 do
-        for x = 0, this.Width - 1 do
+      for y = minY, maxY do
+        for x = minX, maxX do
           local location = KnapcodeOilField.Location(x, y)
           local entity = this._grid:get(y * this.Width + x)
           if entity ~= nil then
