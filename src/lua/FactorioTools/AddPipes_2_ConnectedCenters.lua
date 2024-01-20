@@ -160,12 +160,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         this._centerToConnectedCenters = centerToConnectedCenters
         this._allIncludedCenters = allIncludedCenters
 
-        this.IncludedCenters = KnapcodeFactorioTools.SetHandling.ToReadOnlySet1(includedCenters, context, true)
+        this.IncludedCenters = KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet1(includedCenters, context, true)
 
         this.FrontierCenters = context:GetLocationSet2(true)
         this.IncludedCenterToChildCenters = context:GetLocationDictionary(KnapcodeOilField.ILocationSet)
 
-        this.Pipes = KnapcodeFactorioTools.SetHandling.ToSet(pipes, context, true)
+        this.Pipes = KnapcodeFactorioTools.CollectionExtensions.ToSet(pipes, context, true)
 
         UpdateFrontierCenters(this)
         UpdateIncludedCenterToChildCenters(this)
@@ -245,7 +245,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       -- Check that nodes are not collinear
       if KnapcodeOilField.Helpers.AreLocationsCollinear(centers) then
-        local connected = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
+        local connected = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(centers, context, function (c)
           return c
         end, function (c)
           return context:GetLocationSet2(true)
@@ -774,7 +774,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return visited
     end
     GetTrunkCandidates = function (context, centerToConnectedCenters)
-      local centerToMaxX = KnapcodeFactorioTools.SetHandling.ToDictionary(context.Centers, context, function (c)
+      local centerToMaxX = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(context.Centers, context, function (c)
         return c
       end, function (c)
         return KnapcodeFactorioTools.CollectionExtensions.Max(centerToConnectedCenters:get(c):EnumerateItems(), function (c)
@@ -783,7 +783,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end, KnapcodeOilField.TerminalLocation, System.Int32)
         end, KnapcodeOilField.Location, System.Int32)
       end, KnapcodeOilField.Location, System.Int32)
-      local centerToMaxY = KnapcodeFactorioTools.SetHandling.ToDictionary(context.Centers, context, function (c)
+      local centerToMaxY = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(context.Centers, context, function (c)
         return c
       end, function (c)
         return KnapcodeFactorioTools.CollectionExtensions.Max(centerToConnectedCenters:get(c):EnumerateItems(), function (c)

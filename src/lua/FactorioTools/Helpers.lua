@@ -115,7 +115,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
       end
-      local unusedProviders = KnapcodeFactorioTools.SetHandling.ToReadOnlySet1(providers:getKeys(), context, removeUnused)
+      local unusedProviders = KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet1(providers:getKeys(), context, removeUnused)
 
       for i = 0, #recipients - 1 do
         local continue

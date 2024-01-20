@@ -473,12 +473,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
               break
             end
 
-            context.CenterToTerminals = KnapcodeFactorioTools.SetHandling.ToDictionary(originalCenterToTerminals:EnumeratePairs(), context, function (x)
+            context.CenterToTerminals = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(originalCenterToTerminals:EnumeratePairs(), context, function (x)
               return x[1]
             end, function (x)
               return KnapcodeFactorioTools.CollectionExtensions.ToList(x[2], KnapcodeOilField.TerminalLocation)
             end, KeyValuePairLocationListTerminalLocation, ListTerminalLocation)
-            context.LocationToTerminals = KnapcodeFactorioTools.SetHandling.ToDictionary(originalLocationToTerminals:EnumeratePairs(), context, function (x)
+            context.LocationToTerminals = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(originalLocationToTerminals:EnumeratePairs(), context, function (x)
               return x[1]
             end, function (x)
               return KnapcodeFactorioTools.CollectionExtensions.ToList(x[2], KnapcodeOilField.TerminalLocation)
@@ -555,12 +555,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local optimizedPipes = pipes
       if context.Options.OptimizePipes then
-        context.CenterToTerminals = KnapcodeFactorioTools.SetHandling.ToDictionary(originalCenterToTerminals:EnumeratePairs(), context, function (x)
+        context.CenterToTerminals = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(originalCenterToTerminals:EnumeratePairs(), context, function (x)
           return x[1]
         end, function (x)
           return KnapcodeFactorioTools.CollectionExtensions.ToList(x[2], KnapcodeOilField.TerminalLocation)
         end, KeyValuePairLocationListTerminalLocation, ListTerminalLocation)
-        context.LocationToTerminals = KnapcodeFactorioTools.SetHandling.ToDictionary(originalLocationToTerminals:EnumeratePairs(), context, function (x)
+        context.LocationToTerminals = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(originalLocationToTerminals:EnumeratePairs(), context, function (x)
           return x[1]
         end, function (x)
           return KnapcodeFactorioTools.CollectionExtensions.ToList(x[2], KnapcodeOilField.TerminalLocation)
@@ -590,12 +590,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       else
         local solutionA = GetSolution(context, strategy, true, centerToConnectedCenters, optimizedPipes)
 
-        context.CenterToTerminals = KnapcodeFactorioTools.SetHandling.ToDictionary(originalCenterToTerminals:EnumeratePairs(), context, function (x)
+        context.CenterToTerminals = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(originalCenterToTerminals:EnumeratePairs(), context, function (x)
           return x[1]
         end, function (x)
           return KnapcodeFactorioTools.CollectionExtensions.ToList(x[2], KnapcodeOilField.TerminalLocation)
         end, KeyValuePairLocationListTerminalLocation, ListTerminalLocation)
-        context.LocationToTerminals = KnapcodeFactorioTools.SetHandling.ToDictionary(originalLocationToTerminals:EnumeratePairs(), context, function (x)
+        context.LocationToTerminals = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(originalLocationToTerminals:EnumeratePairs(), context, function (x)
           return x[1]
         end, function (x)
           return KnapcodeFactorioTools.CollectionExtensions.ToList(x[2], KnapcodeOilField.TerminalLocation)
@@ -657,7 +657,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return default
     end
     EliminateStrandedTerminals = function (context)
-      local locationsToExplore = KnapcodeFactorioTools.SetHandling.ToReadOnlySet1(context.LocationToTerminals:getKeys(), context, true)
+      local locationsToExplore = KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet1(context.LocationToTerminals:getKeys(), context, true)
 
       while locationsToExplore:getCount() > 0 do
         local goals = context:GetLocationSet(locationsToExplore)

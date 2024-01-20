@@ -171,7 +171,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return KnapcodeFactorioTools.SetHandling.ToReadOnlySet(electricPoles:getKeys(), context)
+      return KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet(electricPoles:getKeys(), context)
     end
     RemoveExtraElectricPoles = function (context, poweredEntities, electricPoles)
       local poleCenterToCoveredCenters, coveredCenterToPoleCenters = KnapcodeOilField.Helpers.GetElectricPoleCoverage(context, poweredEntities, electricPoles:getKeys()):Deconstruct()
@@ -686,7 +686,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     GetElectricPoleGroups = function (context, electricPoles)
       local groups = ListILocationSet()
-      local remaining = KnapcodeFactorioTools.SetHandling.ToSet(electricPoles:getKeys(), context, true)
+      local remaining = KnapcodeFactorioTools.CollectionExtensions.ToSet(electricPoles:getKeys(), context, true)
       while remaining:getCount() > 0 do
         local current = KnapcodeFactorioTools.CollectionExtensions.First(remaining:EnumerateItems(), KnapcodeOilField.Location)
         remaining:Remove(current)

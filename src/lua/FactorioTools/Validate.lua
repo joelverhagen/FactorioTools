@@ -42,7 +42,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     UndergroundPipesArePipes = function (context, pipes, locationToDirection)
       if context.Options.ValidateSolution then
-        local missing = KnapcodeFactorioTools.SetHandling.ToSet(locationToDirection:getKeys(), context, true)
+        local missing = KnapcodeFactorioTools.CollectionExtensions.ToSet(locationToDirection:getKeys(), context, true)
         missing:ExceptWith(pipes)
 
         if missing:getCount() > 0 then

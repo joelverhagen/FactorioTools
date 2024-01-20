@@ -15,7 +15,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     local ExecuteWithDelaunay, ExecuteWithDelaunayMst, GetDelauntator
     ExecuteWithDelaunay = function (context, centers)
       local delaunator = GetDelauntator(centers)
-      local dlGraph = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
+      local dlGraph = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(centers, context, function (c)
         return c
       end, function (c)
         return context:GetLocationSet2(true)
@@ -35,7 +35,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     ExecuteWithDelaunayMst = function (context, centers)
       local delaunator = GetDelauntator(centers)
-      local dlGraph = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
+      local dlGraph = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(centers, context, function (c)
         return c
       end, function (c)
         return context:GetLocationDictionary(System.Int32)

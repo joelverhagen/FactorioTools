@@ -301,7 +301,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- GENERATE GROUPS
       local groups = ListGroup()
       local addedPumpjacks = ListTerminalLocation()
-      local leftoverPumpjacks = KnapcodeFactorioTools.SetHandling.ToSet(context.Centers, context, true)
+      local leftoverPumpjacks = KnapcodeFactorioTools.CollectionExtensions.ToSet(context.Centers, context, true)
       while #lines > 0 do
         local line = GetNextLine(lines, addedPumpjacks)
 
@@ -462,7 +462,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          local locationToGroup = KnapcodeFactorioTools.SetHandling.ToDictionary(groups, context, function (x)
+          local locationToGroup = KnapcodeFactorioTools.CollectionExtensions.ToDictionary(groups, context, function (x)
             return x.Location
           end, function (x)
             return x

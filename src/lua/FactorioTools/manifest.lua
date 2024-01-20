@@ -73,7 +73,6 @@ return function (path)
       "PumpjackSide",
       "Result",
       "RotateOptimize",
-      "SetHandling",
       "SharedInstances",
       "SignalID",
       "SignalTypes",
@@ -206,8 +205,7 @@ return function (path)
       "Knapcode.FactorioTools.OilField.TerminalLocation",
       "Knapcode.FactorioTools.OilField.UndergroundPipe",
       "Knapcode.FactorioTools.OilField.Validate",
-      "Knapcode.FactorioTools.Result_1",
-      "Knapcode.FactorioTools.SetHandling"
+      "Knapcode.FactorioTools.Result_1"
     }
   })
 end
