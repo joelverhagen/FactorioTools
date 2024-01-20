@@ -156,7 +156,7 @@ public static class PlanUndergroundPipes
         ILocationDictionary<Direction> locationToDirection,
         Direction forwardDirection,
         Direction backwardDirection,
-        ITableArray<Location> currentRun)
+        ITableList<Location> currentRun)
     {
         if (currentRun.Count >= MinUnderground)
         {

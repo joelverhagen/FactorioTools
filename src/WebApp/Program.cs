@@ -76,9 +76,9 @@ public class Program
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanRequestResponse>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlanSummary>>();
             options.SchemaFilter<RequireNonNullablePropertiesSchemaFilter<OilFieldPlan>>();
-            options.MapType<ITableArray<BeaconStrategy>>(() => new OpenApiSchema());
-            options.MapType<ITableArray<PipeStrategy>>(() => new OpenApiSchema());
-            options.MapType<ITableArray<OilFieldPlan>>(() => new OpenApiSchema());
+            options.MapType<ITableList<BeaconStrategy>>(() => new OpenApiSchema());
+            options.MapType<ITableList<PipeStrategy>>(() => new OpenApiSchema());
+            options.MapType<ITableList<OilFieldPlan>>(() => new OpenApiSchema());
             options.SupportNonNullableReferenceTypes();
             options.UseAllOfToExtendReferenceSchemas();
             options.IncludeXmlComments(Path.ChangeExtension(typeof(OilFieldOptions).Assembly.Location, ".xml"));

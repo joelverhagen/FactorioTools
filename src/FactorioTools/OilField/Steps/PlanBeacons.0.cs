@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public record BeaconPlannerResult(ITableArray<Location> Beacons, int Effects);
+public record BeaconPlannerResult(ITableList<Location> Beacons, int Effects);
 
 public static class PlanBeacons
 {
-    public static ITableArray<BeaconSolution> Execute(Context context, ILocationSet pipes)
+    public static ITableList<BeaconSolution> Execute(Context context, ILocationSet pipes)
     {
         foreach (var pipe in pipes.EnumerateItems())
         {

@@ -2,7 +2,7 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public interface IReadOnlyTableArray<T>
+public interface IReadOnlyTableList<T>
 {
     T this[int index] { get; }
     int Count { get; }

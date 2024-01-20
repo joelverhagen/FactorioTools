@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class BresenhamsLine
 {
-    public static ITableArray<Location> GetPath(Location a, Location b)
+    public static ITableList<Location> GetPath(Location a, Location b)
     {
         var line = TableArray.New<Location>();
         var dx = Math.Abs(b.X - a.X);

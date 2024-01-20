@@ -139,7 +139,7 @@ public static class PlanBeaconsSnug
     private static void PopulateCandidateToInfo(
         Context context,
         ILocationDictionary<BeaconCandidateInfo> candidateToInfo,
-        ITableArray<ProviderRecipient> poweredEntities)
+        ITableList<ProviderRecipient> poweredEntities)
     {
         foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
         {
@@ -162,7 +162,7 @@ public static class PlanBeaconsSnug
     private static void AddNeighborsAndSort(
         Context context,
         ILocationDictionary<BeaconCandidateInfo> candidateToInfo,
-        ITableArray<KeyValuePair<Location, BeaconCandidateInfo>> scopedCandidates,
+        ITableList<KeyValuePair<Location, BeaconCandidateInfo>> scopedCandidates,
         ILocationDictionary<BeaconCandidateInfo> scopedCandidatesSet,
         SnugCandidateSorter sorter,
         Location candidate)

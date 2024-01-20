@@ -4,7 +4,7 @@ namespace Knapcode.FactorioTools;
 
 public static class ExtensionMethods
 {
-    public static ITableArray<T> ToTableArray<T>(this IEnumerable<T> source)
+    public static ITableList<T> ToTableArray<T>(this IEnumerable<T> source)
     {
         return source.ToList().ToTableArray();
     }

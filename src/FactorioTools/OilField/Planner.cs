@@ -91,7 +91,7 @@ public static class Planner
             avoid: TableArray.Empty<AvoidLocation>());
     }
 
-    public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyTableArray<AvoidLocation> avoid)
+    public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyTableList<AvoidLocation> avoid)
     {
         return Execute(
             options,
@@ -104,7 +104,7 @@ public static class Planner
     private static PlannerResult Execute(
         OilFieldOptions options,
         Blueprint blueprint,
-        IReadOnlyTableArray<AvoidLocation> avoid,
+        IReadOnlyTableList<AvoidLocation> avoid,
         ILocationSet electricPolesAvoid,
         EletricPolesMode electricPolesMode)
     {

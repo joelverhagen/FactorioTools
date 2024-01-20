@@ -61,7 +61,7 @@ public static class PlanBeaconsFbe
         return GetBeacons(context, effectEntityAreas, possibleBeacons);
     }
 
-    private static BeaconPlannerResult GetBeacons(Context context, ITableArray<Area> effectEntityAreas, ITableArray<BeaconCandidate> possibleBeacons)
+    private static BeaconPlannerResult GetBeacons(Context context, ITableList<Area> effectEntityAreas, ITableList<BeaconCandidate> possibleBeacons)
     {
         var beacons = TableArray.New<Location>();
         var effects = 0;
@@ -104,7 +104,7 @@ public static class PlanBeaconsFbe
         return new BeaconPlannerResult(beacons, effects);
     }
 
-    private static void SortPossibleBeacons(Context context, ITableArray<BeaconCandidate> possibleBeacons)
+    private static void SortPossibleBeacons(Context context, ITableList<BeaconCandidate> possibleBeacons)
     {
         var candidateToDistance = context.GetLocationDictionary<double>();
 
@@ -146,7 +146,7 @@ public static class PlanBeaconsFbe
         });
     }
 
-    private static void SortPossibleBeaconsOriginal(ITableArray<BeaconCandidate> possibleBeacons)
+    private static void SortPossibleBeaconsOriginal(ITableList<BeaconCandidate> possibleBeacons)
     {
         /*
         possibleBeacons
@@ -217,10 +217,10 @@ public static class PlanBeaconsFbe
         // possibleBeacons.Reverse();
     }
 
-    private static ITableArray<BeaconCandidate> GetPossibleBeacons(
+    private static ITableList<BeaconCandidate> GetPossibleBeacons(
         Context context,
-        ITableArray<Area> effectEntityAreas,
-        ITableArray<Location[]> possibleBeaconAreas,
+        ITableList<Area> effectEntityAreas,
+        ITableList<Location[]> possibleBeaconAreas,
         ILocationDictionary<int> pointToBeaconCount,
         ILocationDictionary<Area> pointToEntityArea)
     {
@@ -327,7 +327,7 @@ public static class PlanBeaconsFbe
         return new Bounds(entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
-    private static ILocationSet GetOccupiedPositions(Context context, ITableArray<Area> entityAreas)
+    private static ILocationSet GetOccupiedPositions(Context context, ITableList<Area> entityAreas)
     {
         var occupiedPositions = context.GetLocationSet();
         for (int i = 0; i < entityAreas.Count; i++)
@@ -342,7 +342,7 @@ public static class PlanBeaconsFbe
         return occupiedPositions;
     }
 
-    private static ITableArray<Area> GetEntityAreas(Context context)
+    private static ITableList<Area> GetEntityAreas(Context context)
     {
         var areas = TableArray.New<Area>(context.Grid.EntityLocations.Count);
 
@@ -405,7 +405,7 @@ public static class PlanBeaconsFbe
         return areas;
     }
 
-    private static ITableArray<Area> GetEffectEntityAreas(ITableArray<Area> entityAreas)
+    private static ITableList<Area> GetEffectEntityAreas(ITableList<Area> entityAreas)
     {
         var effectEntityArea = TableArray.New<Area>();
         for (var i = 0; i < entityAreas.Count; i++)
@@ -425,7 +425,7 @@ public static class PlanBeaconsFbe
         return effectEntityArea;
     }
 
-    private static ITableArray<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
+    private static ITableList<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
     {
         var validBeaconCenters = context.GetLocationSet();
         var possibleBeaconAreas = TableArray.New<Location[]>();
@@ -501,7 +501,7 @@ public static class PlanBeaconsFbe
         return possibleBeaconAreas;
     }
 
-    private static ILocationDictionary<int> GetPointToBeaconCount(Context context, ITableArray<Location[]> possibleBeaconAreas)
+    private static ILocationDictionary<int> GetPointToBeaconCount(Context context, ITableList<Location[]> possibleBeaconAreas)
     {
         var pointToBeaconCount = context.GetLocationDictionary<int>();
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
@@ -524,7 +524,7 @@ public static class PlanBeaconsFbe
         return pointToBeaconCount;
     }
 
-    private static ILocationDictionary<Area> GetPointToEntityArea(Context context, ITableArray<Area> effectEntityAreas)
+    private static ILocationDictionary<Area> GetPointToEntityArea(Context context, ITableList<Area> effectEntityAreas)
     {
         var pointToEntityArea = context.GetLocationDictionary<Area>();
         for (var i = 0; i < effectEntityAreas.Count; i++)

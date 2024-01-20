@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class AddPipesConnectedCentersDT
 {
-    public static ILocationDictionary<ILocationSet> ExecuteWithDelaunay(Context context, ITableArray<Location> centers)
+    public static ILocationDictionary<ILocationSet> ExecuteWithDelaunay(Context context, ITableList<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
         var dlGraph = centers.ToDictionary(context, c => c, c => context.GetLocationSet(allowEnumerate: true));
@@ -25,7 +25,7 @@ public static class AddPipesConnectedCentersDT
         return dlGraph;
     }
 
-    public static ILocationDictionary<ILocationSet> ExecuteWithDelaunayMst(Context context, ITableArray<Location> centers)
+    public static ILocationDictionary<ILocationSet> ExecuteWithDelaunayMst(Context context, ITableList<Location> centers)
     {
         var delaunator = GetDelauntator(centers);
         var dlGraph = centers.ToDictionary(context, c => c, c => context.GetLocationDictionary<int>());
@@ -49,7 +49,7 @@ public static class AddPipesConnectedCentersDT
         return mst;
     }
 
-    private static Delaunator GetDelauntator(ITableArray<Location> centers)
+    private static Delaunator GetDelauntator(ITableList<Location> centers)
     {
         var points = new IPoint[centers.Count];
         for (var i = 0; i < centers.Count; i++)

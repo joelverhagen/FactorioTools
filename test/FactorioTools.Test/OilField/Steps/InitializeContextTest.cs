@@ -251,7 +251,7 @@ public class InitializeContextTest : BasePlannerTest
         Assert.Equal(new Location(28, 20), context.Centers[1]);
     }
 
-    public IReadOnlyTableArray<AvoidLocation> NoAvoid { get; }
+    public IReadOnlyTableList<AvoidLocation> NoAvoid { get; }
     public OilFieldOptions SmallPowerNoBeacon { get; }
     public OilFieldOptions BigPowerNoBeacon { get; }
     public OilFieldOptions SmallPowerWithBeacon { get; }

@@ -88,7 +88,7 @@ public static class AddPipesConnectedCenters
         Location Center,
         Location IncludedCenter,
         TerminalLocation Terminal,
-        ITableArray<Location> Path);
+        ITableList<Location> Path);
 
     public static Result<ILocationSet> FindTrunksAndConnect(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
@@ -228,7 +228,7 @@ public static class AddPipesConnectedCenters
         return Result.NewData(groups[0].Pipes);
     }
 
-    private static Result<ITableArray<Location>> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
+    private static Result<ITableList<Location>> GetShortestPathToGroup(Context context, TerminalLocation terminal, PumpjackGroup group, double groupCentroidX, double groupCentroidY)
     {
 #if !USE_SHARED_INSTANCES
         var aStarResultV = AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, xWeight: 2);
@@ -241,7 +241,7 @@ public static class AddPipesConnectedCenters
 #endif
             if (!aStarResultV.Success)
             {
-                return Result.NewException<ITableArray<Location>>(new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First()));
+                return Result.NewException<ITableList<Location>>(new NoPathBetweenTerminalsException(terminal.Terminal, group.Pipes.EnumerateItems().First()));
             }
 
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
@@ -338,7 +338,7 @@ public static class AddPipesConnectedCenters
         return centroidDistanceSquared;
     }
 
-    private static ITableArray<Trunk> FindTrunks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
+    private static ITableList<Trunk> FindTrunks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         /*
         Visualizer.Show(context.Grid, Array.Empty<IPoint>(), centerToConnectedCenters
@@ -418,7 +418,7 @@ public static class AddPipesConnectedCenters
         return selectedTrunks;
     }
 
-    private record BestConnection(ITableArray<Location> Path, TerminalLocation Terminal, TerminalLocation BestTerminal);
+    private record BestConnection(ITableList<Location> Path, TerminalLocation Terminal, TerminalLocation BestTerminal);
 
     private static PumpjackGroup ConnectTwoClosestPumpjacks(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters)
     {
@@ -620,7 +620,7 @@ public static class AddPipesConnectedCenters
         return visited;
     }
 
-    private static ITableArray<Trunk> GetTrunkCandidates(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
+    private static ITableList<Trunk> GetTrunkCandidates(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters)
     {
         var centerToMaxX = context
             .Centers
@@ -738,7 +738,7 @@ public static class AddPipesConnectedCenters
         }
 
         public int OriginalIndex { get; set; }
-        public ITableArray<TerminalLocation> Terminals { get; } = TableArray.New<TerminalLocation>(2);
+        public ITableList<TerminalLocation> Terminals { get; } = TableArray.New<TerminalLocation>(2);
         public ILocationSet TerminalLocations { get; }
         public ILocationSet Centers { get; }
         public int Length => Start.GetManhattanDistance(End) + 1;
@@ -794,7 +794,7 @@ public static class AddPipesConnectedCenters
         {
         }
 
-        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IReadOnlyCollection<Location> includedCenters, ITableArray<Location> pipes)
+        public PumpjackGroup(Context context, ILocationDictionary<ILocationSet> centerToConnectedCenters, ILocationSet allIncludedCenters, IReadOnlyCollection<Location> includedCenters, ITableList<Location> pipes)
         {
             _context = context;
             _centerToConnectedCenters = centerToConnectedCenters;
@@ -834,7 +834,7 @@ public static class AddPipesConnectedCenters
             return terminalCandidate.GetEuclideanDistanceSquared(centroidX, centroidY);
         }
 
-        public void ConnectPumpjack(Location center, ITableArray<Location> path)
+        public void ConnectPumpjack(Location center, ITableList<Location> path)
         {
             _allIncludedCenters.Add(center);
             IncludedCenters.Add(center);
@@ -843,7 +843,7 @@ public static class AddPipesConnectedCenters
             UpdateIncludedCenterToChildCenters();
         }
 
-        public void MergeGroup(PumpjackGroup other, ITableArray<Location> path)
+        public void MergeGroup(PumpjackGroup other, ITableList<Location> path)
         {
             IncludedCenters.UnionWith(other.IncludedCenters);
             Pipes.UnionWith(path.EnumerateItems());

@@ -38,7 +38,7 @@ public static class AddPipesFbe
         return Result.NewData(new FbeResult(pipes, finalStrategy));
     }
 
-    private record FbeResultInfo(IReadOnlyTableArray<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy);
+    private record FbeResultInfo(IReadOnlyTableList<TerminalLocation> Terminals, ILocationSet Pipes, PipeStrategy FinalStrategy);
 
     private static Result<FbeResultInfo> DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
@@ -377,7 +377,7 @@ public static class AddPipesFbe
         return Result.NewData(new FbeResultInfo(terminals, pipes, strategy));
     }
 
-    private static PumpjackConnection GetNextLine(ITableArray<PumpjackConnection> lines, ITableArray<TerminalLocation> addedPumpjacks)
+    private static PumpjackConnection GetNextLine(ITableList<PumpjackConnection> lines, ITableList<TerminalLocation> addedPumpjacks)
     {
         PumpjackConnection? next = null;
         int nextIndex = 0;
@@ -462,7 +462,7 @@ public static class AddPipesFbe
         return next!;
     }
 
-    private static bool LineContainsAnAddedPumpjack(ITableArray<TerminalLocation> addedPumpjacks, PumpjackConnection ent)
+    private static bool LineContainsAnAddedPumpjack(ITableList<TerminalLocation> addedPumpjacks, PumpjackConnection ent)
     {
         for (var i = 0; i < addedPumpjacks.Count; i++)
         {
@@ -485,7 +485,7 @@ public static class AddPipesFbe
         return false;
     }
 
-    private static Result<TwoConnectedGroups?> GetPathBetweenGroups(Context context, ITableArray<Group> groups, Group group, int maxTurns, PipeStrategy strategy)
+    private static Result<TwoConnectedGroups?> GetPathBetweenGroups(Context context, ITableList<Group> groups, Group group, int maxTurns, PipeStrategy strategy)
     {
         TwoConnectedGroups? best = null;
         for (var i = 0; i < groups.Count; i++)
@@ -617,7 +617,7 @@ public static class AddPipesFbe
         {
             var l = matches[i].Item1;
 
-            ITableArray<Location>? path;
+            ITableList<Location>? path;
             if (strategy == PipeStrategy.FbeOriginal)
             {
                 // We can't terminal early based on max turns because this leads to different results since it allows
@@ -662,7 +662,7 @@ public static class AddPipesFbe
             return a.OriginalIndex.CompareTo(b.OriginalIndex);
         });
 
-        var lines = TableArray.New<ITableArray<Location>>(lineInfo.Count);
+        var lines = TableArray.New<ITableList<Location>>(lineInfo.Count);
         var minCount = lineInfo.Count == 0 ? 0 : int.MaxValue;
         for (var i = 0; i < lineInfo.Count; i++)
         {
@@ -677,39 +677,39 @@ public static class AddPipesFbe
         return Result.NewData(new TwoConnectedGroups(lines, minCount, a));
     }
 
-    private record TwoConnectedGroups(ITableArray<ITableArray<Location>> Lines, int MinDistance, Group FirstGroup);
+    private record TwoConnectedGroups(ITableList<ITableList<Location>> Lines, int MinDistance, Group FirstGroup);
 
-    private record PathAndTurns(Endpoints Endpoints, ITableArray<Location> Path, int Turns, int OriginalIndex);
+    private record PathAndTurns(Endpoints Endpoints, ITableList<Location> Path, int Turns, int OriginalIndex);
 
     private class Group
     {
         private readonly ILocationSet _terminals;
-        private readonly ITableArray<TerminalLocation> _entities;
+        private readonly ITableList<TerminalLocation> _entities;
         private double _sumX = 0;
         private double _sumY = 0;
 
-        public Group(Context context, TerminalLocation terminal, ITableArray<ITableArray<Location>> paths) : this(context, paths)
+        public Group(Context context, TerminalLocation terminal, ITableList<ITableList<Location>> paths) : this(context, paths)
         {
             Add(terminal);
             UpdateLocation();
         }
 
-        public Group(Context context, TerminalPair pair, ITableArray<ITableArray<Location>> paths) : this(context, paths)
+        public Group(Context context, TerminalPair pair, ITableList<ITableList<Location>> paths) : this(context, paths)
         {
             Add(pair.TerminalA);
             Add(pair.TerminalB);
             UpdateLocation();
         }
 
-        private Group(Context context, ITableArray<ITableArray<Location>> paths) 
+        private Group(Context context, ITableList<ITableList<Location>> paths) 
         {
             _terminals = context.GetLocationSet();
             _entities = TableArray.New<TerminalLocation>();
             Paths = paths;
         }
 
-        public ITableArray<TerminalLocation> Entities => _entities;
-        public ITableArray<ITableArray<Location>> Paths { get; }
+        public ITableList<TerminalLocation> Entities => _entities;
+        public ITableList<ITableList<Location>> Paths { get; }
         public Location Location { get; private set; } = Location.Invalid;
 
         public bool HasTerminal(TerminalLocation location)
@@ -749,7 +749,7 @@ public static class AddPipesFbe
 
     private class PumpjackConnection
     {
-        public PumpjackConnection(Endpoints endpoints, ITableArray<TerminalPair> connections, Location middle)
+        public PumpjackConnection(Endpoints endpoints, ITableList<TerminalPair> connections, Location middle)
         {
             Endpoints = endpoints;
             Connections = connections;
@@ -757,7 +757,7 @@ public static class AddPipesFbe
         }
 
         public Endpoints Endpoints { get; }
-        public ITableArray<TerminalPair> Connections { get; }
+        public ITableList<TerminalPair> Connections { get; }
         public int EndpointDistance { get; }
 
         public double GetAverageDistance()
@@ -768,7 +768,7 @@ public static class AddPipesFbe
 
     private class TerminalPair
     {
-        public TerminalPair(TerminalLocation terminalA, TerminalLocation terminalB, ITableArray<Location> line, Location middle)
+        public TerminalPair(TerminalLocation terminalA, TerminalLocation terminalB, ITableList<Location> line, Location middle)
         {
             TerminalA = terminalA;
             TerminalB = terminalB;
@@ -778,7 +778,7 @@ public static class AddPipesFbe
 
         public TerminalLocation TerminalA { get; }
         public TerminalLocation TerminalB { get; }
-        public ITableArray<Location> Line { get; }
+        public ITableList<Location> Line { get; }
         public int CenterDistance { get; }
 
 #if ENABLE_GRID_TOSTRING

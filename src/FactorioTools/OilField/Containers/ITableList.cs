@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public interface ITableArray<T> : IReadOnlyTableArray<T>
+public interface ITableList<T> : IReadOnlyTableList<T>
 {
     new T this[int index] { get; set; }
 
     void Add(T item);
     void AddCollection(IReadOnlyCollection<T> collection);
-    void AddRange(IReadOnlyTableArray<T> collection);
+    void AddRange(IReadOnlyTableList<T> collection);
     void Clear();
     bool Remove(T item);
     void RemoveAt(int index);

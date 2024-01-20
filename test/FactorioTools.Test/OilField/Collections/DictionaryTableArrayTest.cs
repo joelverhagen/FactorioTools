@@ -5,7 +5,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveRange_Beginning()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveRange(0, 5);
@@ -16,7 +16,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveRange_Middle()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveRange(2, 3);
@@ -27,7 +27,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveRange_End()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveRange(4, 4);
@@ -38,7 +38,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveRange_All()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveRange(0, 8);
@@ -49,7 +49,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveAt_Beginning()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveAt(0);
@@ -60,7 +60,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveAt_Middle()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveAt(3);
@@ -71,7 +71,7 @@ public class DictionaryTableArrayTest
     [Fact]
     public void RemoveAt_End()
     {
-        var target = new DictionaryTableArray<int>();
+        var target = new DictionaryTableList<int>();
         target.AddCollection(Enumerable.Range(0, 8).ToList());
 
         target.RemoveAt(7);

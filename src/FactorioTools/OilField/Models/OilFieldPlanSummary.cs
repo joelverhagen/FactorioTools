@@ -13,6 +13,6 @@ namespace Knapcode.FactorioTools.OilField;
 public record OilFieldPlanSummary(
     int MissingPumpjacks,
     int RotatedPumpjacks,
-    ITableArray<OilFieldPlan> SelectedPlans,
-    ITableArray<OilFieldPlan> AlternatePlans,
-    ITableArray<OilFieldPlan> UnusedPlans);
+    ITableList<OilFieldPlan> SelectedPlans,
+    ITableList<OilFieldPlan> AlternatePlans,
+    ITableList<OilFieldPlan> UnusedPlans);

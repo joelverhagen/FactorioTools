@@ -7,7 +7,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class InitializeContext
 {
-    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableArray<AvoidLocation> avoid)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid)
     {
         return Execute(options, blueprint, avoid, minWidth: 0, minHeight: 0);
     }
@@ -36,7 +36,7 @@ public static class InitializeContext
         return Execute(options, blueprint, TableArray.Empty<AvoidLocation>(), width, height);
     }
 
-    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableArray<AvoidLocation> avoid, int minWidth, int minHeight)
+    public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
         var (centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height) = TranslateLocations(options, blueprint, avoid, minWidth, minHeight);
 
@@ -57,8 +57,8 @@ public static class InitializeContext
 
 #if USE_HASHSETS
         var centerToOriginalDirection = new LocationHashDictionary<Direction>(centerAndOriginalDirections.Count);
-        var centerToTerminals = new LocationHashDictionary<ITableArray<TerminalLocation>>(centerAndOriginalDirections.Count);
-        var locationToTerminals = new LocationHashDictionary<ITableArray<TerminalLocation>>();
+        var centerToTerminals = new LocationHashDictionary<ITableList<TerminalLocation>>(centerAndOriginalDirections.Count);
+        var locationToTerminals = new LocationHashDictionary<ITableList<TerminalLocation>>();
 #else
         var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width, centerAndOriginalDirections.Count);
         var centerToTerminals = new LocationIntDictionary<ITableArray<TerminalLocation>>(grid.Width, centerAndOriginalDirections.Count);
@@ -85,7 +85,7 @@ public static class InitializeContext
         };
     }
 
-    private static void PopulateCenters(ITableArray<Tuple<Location, Direction>> centerAndOriginalDirections, ITableArray<Location> centers)
+    private static void PopulateCenters(ITableList<Tuple<Location, Direction>> centerAndOriginalDirections, ITableList<Location> centers)
     {
         for (int i = 0; i < centerAndOriginalDirections.Count; i++)
         {
@@ -93,7 +93,7 @@ public static class InitializeContext
         }
     }
 
-    private static void PopulateCenterToOriginalDirection(ITableArray<Tuple<Location, Direction>> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
+    private static void PopulateCenterToOriginalDirection(ITableList<Tuple<Location, Direction>> centerAndOriginalDirections, ILocationDictionary<Direction> centerToOriginalDirection)
     {
         for (int i = 0; i < centerAndOriginalDirections.Count; i++)
         {
@@ -136,14 +136,14 @@ public static class InitializeContext
     }
 
     private record TranslatedLocations(
-        ITableArray<Tuple<Location, Direction>> CenterAndOriginalDirections,
-        ITableArray<Location> AvoidLocations,
+        ITableList<Tuple<Location, Direction>> CenterAndOriginalDirections,
+        ITableList<Location> AvoidLocations,
         float DeltaX,
         float DeltaY,
         int Width,
         int Height);
 
-    private static TranslatedLocations TranslateLocations(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableArray<AvoidLocation> avoid, int minWidth, int minHeight)
+    private static TranslatedLocations TranslateLocations(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
         var pumpjacks = TableArray.New<Entity>(blueprint.Entities.Length);
         for (var i = 0; i < blueprint.Entities.Length; i++)
@@ -256,7 +256,7 @@ public static class InitializeContext
         return new TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height);
     }
 
-    private static SquareGrid InitializeGrid(ITableArray<Tuple<Location, Direction>> centerAndOriginalDirections, ITableArray<Location> avoidLocations, int width, int height)
+    private static SquareGrid InitializeGrid(ITableList<Tuple<Location, Direction>> centerAndOriginalDirections, ITableList<Location> avoidLocations, int width, int height)
     {
         const int maxWidth = 1000;
         const int maxHeight = 1000;

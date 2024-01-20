@@ -8,7 +8,7 @@ namespace Knapcode.FactorioTools.OilField;
 
 public static class AddPipes
 {
-    public static (ITableArray<OilFieldPlan> SelectedPlans, ITableArray<OilFieldPlan> AlternatePlans, ITableArray<OilFieldPlan> UnusedPlans)
+    public static (ITableList<OilFieldPlan> SelectedPlans, ITableList<OilFieldPlan> AlternatePlans, ITableList<OilFieldPlan> UnusedPlans)
         Execute(Context context, bool eliminateStrandedTerminals)
     {
         if (eliminateStrandedTerminals)
@@ -16,9 +16,9 @@ public static class AddPipes
             EliminateStrandedTerminals(context);
         }
 
-        ITableArray<OilFieldPlan> selectedPlans;
-        ITableArray<OilFieldPlan> alternatePlans;
-        ITableArray<OilFieldPlan> unusedPlans;
+        ITableList<OilFieldPlan> selectedPlans;
+        ITableList<OilFieldPlan> alternatePlans;
+        ITableList<OilFieldPlan> unusedPlans;
         Solution bestSolution;
         BeaconSolution? bestBeacons;
 
@@ -50,9 +50,9 @@ public static class AddPipes
     }
 
     private record SolutionInfo(
-        ITableArray<OilFieldPlan> SelectedPlans,
-        ITableArray<OilFieldPlan> AlternatePlans,
-        ITableArray<OilFieldPlan> UnusedPlans,
+        ITableList<OilFieldPlan> SelectedPlans,
+        ITableList<OilFieldPlan> AlternatePlans,
+        ITableList<OilFieldPlan> UnusedPlans,
         Solution BestSolution,
         BeaconSolution? BestBeacons);
 
@@ -166,12 +166,12 @@ public static class AddPipes
         return Result.NewData(new SolutionInfo(selectedPlans, alternatePlans, unusedPlans, bestPlanInfo.Pipes, bestPlanInfo.Beacons));
     }
 
-    private static Result<ITableArray<PlanInfo>> GetAllPlans(Context context)
+    private static Result<ITableList<PlanInfo>> GetAllPlans(Context context)
     {
         var result = GetSolutionGroups(context);
         if (result.Exception is not null)
         {
-            return Result.NewException<ITableArray<PlanInfo>>(result.Exception);
+            return Result.NewException<ITableList<PlanInfo>>(result.Exception);
         }
 
         var solutionGroups = result.Data!;
@@ -238,7 +238,7 @@ public static class AddPipes
         var originalLocationToTerminals = context.LocationToTerminals;
 
         var pipesToSolutions = new Dictionary<ILocationSet, SolutionsAndGroupNumber>(LocationSetComparer.Instance);
-        var connectedCentersToSolutions = new Dictionary<ILocationDictionary<ILocationSet>, ITableArray<Solution>>(ConnectedCentersComparer.Instance);
+        var connectedCentersToSolutions = new Dictionary<ILocationDictionary<ILocationSet>, ITableList<Solution>>(ConnectedCentersComparer.Instance);
 
         if (context.CenterToTerminals.Count == 1)
         {
@@ -319,7 +319,7 @@ public static class AddPipes
         return Result.NewData<IReadOnlyCollection<SolutionsAndGroupNumber>>(pipesToSolutions.Values);
     }
 
-    private static ITableArray<Solution> OptimizeAndAddSolutions(
+    private static ITableList<Solution> OptimizeAndAddSolutions(
         Context context,
         Dictionary<ILocationSet, SolutionsAndGroupNumber> pipesToSolutions,
         PipeStrategy strategy,
@@ -353,7 +353,7 @@ public static class AddPipes
             // Visualizer.Show(context.Grid, optimizedPipes.Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
         }
 
-        ITableArray<Solution> solutions;
+        ITableList<Solution> solutions;
         if (pipes.SetEquals(optimizedPipes))
         {
             optimizedPipes = context.Options.UseUndergroundPipes ? context.GetLocationSet(pipes) : pipes;
@@ -386,7 +386,7 @@ public static class AddPipes
         return solutions;
     }
 
-    private record SolutionsAndGroupNumber(ITableArray<Solution> Solutions, int GroupNumber);
+    private record SolutionsAndGroupNumber(ITableList<Solution> Solutions, int GroupNumber);
 
     private static Solution GetSolution(
         Context context,
@@ -405,7 +405,7 @@ public static class AddPipes
             undergroundPipes = PlanUndergroundPipes.Execute(context, optimizedPipes);
         }
 
-        ITableArray<BeaconSolution>? beaconSolutions = null;
+        ITableList<BeaconSolution>? beaconSolutions = null;
         if (context.Options.AddBeacons)
         {
             beaconSolutions = PlanBeacons.Execute(context, optimizedPipes);
@@ -505,15 +505,15 @@ public static class AddPipes
 
     private class Solution
     {
-        public required ITableArray<PipeStrategy> Strategies { get; set; }
-        public required ITableArray<bool> Optimized { get; set; }
+        public required ITableList<PipeStrategy> Strategies { get; set; }
+        public required ITableList<bool> Optimized { get; set; }
         public required ILocationDictionary<ILocationSet>? CenterToConnectedCenters { get; set; }
-        public required ILocationDictionary<ITableArray<TerminalLocation>> CenterToTerminals { get; set; }
-        public required ILocationDictionary<ITableArray<TerminalLocation>> LocationToTerminals { get; set; }
+        public required ILocationDictionary<ITableList<TerminalLocation>> CenterToTerminals { get; set; }
+        public required ILocationDictionary<ITableList<TerminalLocation>> LocationToTerminals { get; set; }
         public required int PipeCountWithoutUnderground { get; set; }
         public required ILocationSet Pipes { get; set; }
         public required ILocationDictionary<Direction>? UndergroundPipes { get; set; }
-        public required ITableArray<BeaconSolution>? BeaconSolutions { get; set; }
+        public required ITableList<BeaconSolution>? BeaconSolutions { get; set; }
     }
 
     private class LocationSetComparer : IEqualityComparer<ILocationSet>

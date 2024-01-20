@@ -71,7 +71,7 @@ public static class Validate
         }
     }
 
-    public static void BeaconsDoNotOverlap(Context context, ITableArray<BeaconSolution> solutions)
+    public static void BeaconsDoNotOverlap(Context context, ITableList<BeaconSolution> solutions)
     {
         if (context.Options.ValidateSolution && !context.Options.OverlapBeacons)
         {
@@ -112,7 +112,7 @@ public static class Validate
         Context context,
         ILocationSet optimizedPipes,
         ILocationDictionary<Direction>? undergroundPipes,
-        ITableArray<BeaconSolution>? beaconSolutions)
+        ITableList<BeaconSolution>? beaconSolutions)
     {
         if (context.Options.ValidateSolution)
         {
@@ -135,7 +135,7 @@ public static class Validate
 
     public static void CandidateCoversMoreEntities(
         Context context,
-        ITableArray<ProviderRecipient> poweredEntities,
+        ITableList<ProviderRecipient> poweredEntities,
         CountedBitArray coveredEntities,
         Location candidate,
         ElectricPoleCandidateInfo candidateInfo)

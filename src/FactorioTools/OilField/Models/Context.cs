@@ -11,10 +11,10 @@ public class Context
     public required float DeltaX { get; set; }
     public required float DeltaY { get; set; }
     public required SquareGrid Grid { get; set; }
-    public required ITableArray<Location> Centers { get; set; }
-    public required ILocationDictionary<ITableArray<TerminalLocation>> CenterToTerminals { get; set; }
+    public required ITableList<Location> Centers { get; set; }
+    public required ILocationDictionary<ITableList<TerminalLocation>> CenterToTerminals { get; set; }
     public required ILocationDictionary<Direction> CenterToOriginalDirection { get; set; }
-    public required ILocationDictionary<ITableArray<TerminalLocation>> LocationToTerminals { get; set; }
+    public required ILocationDictionary<ITableList<TerminalLocation>> LocationToTerminals { get; set; }
     public required int[] LocationToAdjacentCount { get; set; }
 
     public required SharedInstances SharedInstances { get; set; }

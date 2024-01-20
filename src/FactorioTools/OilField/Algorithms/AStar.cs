@@ -18,7 +18,7 @@ public static class AStar
         bool preferNoTurns = true,
         int xWeight = 1,
         int yWeight = 1,
-        ITableArray<Location>? outputList = null)
+        ITableList<Location>? outputList = null)
     {
         if (goals.Contains(start))
         {

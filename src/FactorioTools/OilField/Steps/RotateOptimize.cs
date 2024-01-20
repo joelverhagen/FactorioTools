@@ -422,8 +422,8 @@ public static class RotateOptimize
 
         public Context ParentContext { get; }
         public SquareGrid Grid => ParentContext.Grid;
-        public ILocationDictionary<ITableArray<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
-        public ILocationDictionary<ITableArray<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
+        public ILocationDictionary<ITableList<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
+        public ILocationDictionary<ITableList<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
         public ILocationSet Pipes { get; }
         public ILocationSet Intersections { get; }
         public ILocationSet Goals { get; }
@@ -471,7 +471,7 @@ public static class RotateOptimize
 
     private class ExploredPaths
     {
-        public ExploredPaths(Location start, ILocationDictionary<Location> cameFrom, ITableArray<Location> reachedGoals)
+        public ExploredPaths(Location start, ILocationDictionary<Location> cameFrom, ITableList<Location> reachedGoals)
         {
             Start = start;
             CameFrom = cameFrom;
@@ -480,9 +480,9 @@ public static class RotateOptimize
 
         public Location Start { get; }
         public ILocationDictionary<Location> CameFrom { get; }
-        public ITableArray<Location> ReachedGoals { get; }
+        public ITableList<Location> ReachedGoals { get; }
 
-        public void AddPath(Location goal, ITableArray<Location> outputList)
+        public void AddPath(Location goal, ITableList<Location> outputList)
         {
             Helpers.AddPath(CameFrom, goal, outputList);
         }

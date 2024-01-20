@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class ListTableArray<T> : ITableArray<T>
+public class ListTableList<T> : ITableList<T>
 {
     private readonly List<T> _list;
 
-    public ListTableArray()
+    public ListTableList()
     {
         _list = new List<T>();
     }
 
-    public ListTableArray(int capacity)
+    public ListTableList(int capacity)
     {
         _list = new List<T>(capacity);
     }
@@ -35,9 +35,9 @@ public class ListTableArray<T> : ITableArray<T>
         _list.AddRange(collection);
     }
 
-    public void AddRange(IReadOnlyTableArray<T> collection)
+    public void AddRange(IReadOnlyTableList<T> collection)
     {
-        _list.AddRange(((ListTableArray<T>)collection)._list);
+        _list.AddRange(((ListTableList<T>)collection)._list);
     }
 
     public void Clear()

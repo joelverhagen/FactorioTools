@@ -21,7 +21,7 @@ public class GenericCollectionSchemaFilter : ISchemaFilter
             if (propertyToInfo.TryGetValue(propertyKey, out var info))
             {
                 if (info.PropertyType.IsGenericType
-                    && info.PropertyType.GetGenericTypeDefinition() == typeof(ITableArray<>))
+                    && info.PropertyType.GetGenericTypeDefinition() == typeof(ITableList<>))
                 {
                     var listType = typeof(List<>).MakeGenericType(info.PropertyType.GenericTypeArguments[0]);
                     var generated = context.SchemaGenerator.GenerateSchema(listType, context.SchemaRepository);

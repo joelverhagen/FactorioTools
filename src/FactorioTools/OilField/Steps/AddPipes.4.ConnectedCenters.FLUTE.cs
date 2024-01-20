@@ -65,7 +65,7 @@ public static class AddPipesConnectedCentersFLUTE
         public bool IsSteinerPoint => Centers.Count == 0;
         public Location Location { get; }
         public ILocationSet Centers { get; }
-        public ITableArray<TerminalLocation> Terminals { get; } = TableArray.New<TerminalLocation>();
+        public ITableList<TerminalLocation> Terminals { get; } = TableArray.New<TerminalLocation>();
         public ILocationSet Neighbors { get; }
 
 #if ENABLE_GRID_TOSTRING

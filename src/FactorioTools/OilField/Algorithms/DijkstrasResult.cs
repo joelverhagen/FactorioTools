@@ -14,9 +14,9 @@ public class DijkstrasResult
     public ILocationDictionary<ILocationSet> LocationToPrevious { get; }
     public ILocationSet ReachedGoals { get; }
 
-    public ITableArray<ITableArray<Location>> GetStraightPaths(Location goal)
+    public ITableList<ITableList<Location>> GetStraightPaths(Location goal)
     {
-        var paths = TableArray.New<ITableArray<Location>>();
+        var paths = TableArray.New<ITableList<Location>>();
 
         if (LocationToPrevious.TryGetValue(goal, out var previousLocations))
         {

@@ -28,7 +28,7 @@ internal static class CollectionExtensions
     }
 
     public static ILocationDictionary<TValue> ToDictionary<TItem, TValue>(
-        this IReadOnlyTableArray<TItem> items,
+        this IReadOnlyTableList<TItem> items,
         Context context,
         Func<TItem, Location> keySelector,
         Func<TItem, TValue> valueSelector)
@@ -43,7 +43,7 @@ internal static class CollectionExtensions
         return dictionary;
     }
 
-    public static ITableArray<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
+    public static ITableList<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
     {
         var set = context.GetLocationSet(locations.Count);
         var output = TableArray.New<Location>(locations.Count);
@@ -251,7 +251,7 @@ internal static class CollectionExtensions
         return min;
     }
 
-    public static TSource[] ToArray<TSource>(this IReadOnlyTableArray<TSource> source)
+    public static TSource[] ToArray<TSource>(this IReadOnlyTableList<TSource> source)
     {
         var output = new TSource[source.Count];
         for (var i = 0; i < source.Count; i++)
@@ -262,14 +262,14 @@ internal static class CollectionExtensions
         return output;
     }
 
-    public static ITableArray<TSource> ToTableArray<TSource>(this IReadOnlyCollection<TSource> source)
+    public static ITableList<TSource> ToTableArray<TSource>(this IReadOnlyCollection<TSource> source)
     {
         var output = TableArray.New<TSource>(source.Count);
         output.AddCollection(source);
         return output;
     }
 
-    public static ITableArray<TSource> ToTableArray<TSource>(this IReadOnlyTableArray<TSource> source)
+    public static ITableList<TSource> ToTableArray<TSource>(this IReadOnlyTableList<TSource> source)
     {
         var output = TableArray.New<TSource>(source.Count);
         output.AddRange(source);
@@ -383,7 +383,7 @@ internal static class CollectionExtensions
         return sum / count;
     }
 
-    public static bool SequenceEqual<TSource>(this IReadOnlyTableArray<TSource> first, IReadOnlyTableArray<TSource> second)
+    public static bool SequenceEqual<TSource>(this IReadOnlyTableList<TSource> first, IReadOnlyTableList<TSource> second)
     {
         if (first.Count != second.Count)
         {

@@ -43,8 +43,8 @@ public class OilFieldPlanRequestDefaultsSchemaFilter : ISchemaFilter
                     int v => new OpenApiInteger(v),
                     double v => new OpenApiDouble(v),
                     bool v => new OpenApiBoolean(v),
-                    ITableArray<BeaconStrategy> v => ToStringArray(v),
-                    ITableArray<PipeStrategy> v => ToStringArray(v),
+                    ITableList<BeaconStrategy> v => ToStringArray(v),
+                    ITableList<PipeStrategy> v => ToStringArray(v),
                     IEnumerable<KeyValuePair<string, int>> v => ToObjectArray(v),
                     _ => throw new NotImplementedException(),
                 };
@@ -54,7 +54,7 @@ public class OilFieldPlanRequestDefaultsSchemaFilter : ISchemaFilter
         }
     }
 
-    private OpenApiArray ToStringArray<T>(ITableArray<T> values)
+    private OpenApiArray ToStringArray<T>(ITableList<T> values)
     {
         var array = new OpenApiArray();
         for (var i = 0; i < values.Count; i++)

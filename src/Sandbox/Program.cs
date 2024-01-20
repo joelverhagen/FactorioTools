@@ -42,7 +42,7 @@ public partial class Program
 
     private static void Sandbox()
     {
-        var d = new DictionaryTableArray<int>();
+        var d = new DictionaryTableList<int>();
 
         d.Add(4);
         d.Add(9);

@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace Knapcode.FactorioTools.OilField;
 
-public class DictionaryTableArray<T> : ITableArray<T>
+public class DictionaryTableList<T> : ITableList<T>
 {
     private readonly Dictionary<int, T> _dictionary;
 
-    public DictionaryTableArray()
+    public DictionaryTableList()
     {
         _dictionary = new Dictionary<int, T>();
     }
 
-    public DictionaryTableArray(int capacity)
+    public DictionaryTableList(int capacity)
     {
         _dictionary = new Dictionary<int, T>(capacity);
     }
@@ -54,9 +54,9 @@ public class DictionaryTableArray<T> : ITableArray<T>
         }
     }
 
-    public void AddRange(IReadOnlyTableArray<T> collection)
+    public void AddRange(IReadOnlyTableList<T> collection)
     {
-        var other = (DictionaryTableArray<T>)collection;
+        var other = (DictionaryTableList<T>)collection;
         for (var i = 0; i < other.Count; i++)
         {
             _dictionary.Add(_dictionary.Count, other[i]);
