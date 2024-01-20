@@ -2,12 +2,10 @@
 local System = System
 local KnapcodeOilField
 local SpanLocation
-local ArrayLocation
 local PriorityQueueLocationDouble
 System.import(function (out)
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   SpanLocation = System.Span(KnapcodeOilField.Location)
-  ArrayLocation = System.Array(KnapcodeOilField.Location)
   PriorityQueueLocationDouble = System.PriorityQueue(KnapcodeOilField.Location, System.Double)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
@@ -28,7 +26,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       priorityQueue:Enqueue(start, 0)
       inQueue:Add(start)
 
-      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+      local neighbors = context.SharedInstances:GetNeighborArray()
+
 
 
       while #priorityQueue > 0 do
@@ -46,8 +46,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             end
           end
 
-          grid:GetNeighbors(neighbors, current)
-          for i = 0, neighbors:getLength() - 1 do
+          grid:GetNeighbors(SpanLocation.ctorArray(neighbors), current)
+          for i = 0, #neighbors - 1 do
             local continue
             repeat
               local neighbor = neighbors:get(i)
@@ -85,6 +85,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
       end
+
+
+      context.SharedInstances:ReturnNeighborArray(neighbors)
+
+
 
       return KnapcodeOilField.DijkstrasResult(cameFrom, reachedGoals)
     end

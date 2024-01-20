@@ -688,10 +688,14 @@ public static class AddElectricPoles
             candidates.Enqueue(idealPoint);
             attempted.Add(idealPoint);
 
+#if RENT_NEIGHBORS
+            Location[] neighbors = context.SharedInstances.GetNeighborArray();
+#else
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
+#endif
 #endif
 
             while (candidates.Count > 0)

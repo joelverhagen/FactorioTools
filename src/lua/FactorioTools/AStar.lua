@@ -47,7 +47,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local reachedGoal = KnapcodeOilField.Location.getInvalid()
       local success = false
-      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+      local neighbors = context.SharedInstances:GetNeighborArray()
+
 
 
       while #frontier > 0 do
@@ -64,8 +66,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           local previous = cameFrom:get(current)
           local currentCost = costSoFar:get(current)
 
-          grid:GetNeighbors(neighbors, current)
-          for i = 0, neighbors:getLength() - 1 do
+          grid:GetNeighbors(SpanLocation.ctorArray(neighbors), current)
+          for i = 0, #neighbors - 1 do
             local continue
             repeat
               local next = neighbors:get(i)
@@ -105,6 +107,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
       end
+
+
+      context.SharedInstances:ReturnNeighborArray(neighbors)
+
 
       if not success then
         outputList = nil

@@ -73,10 +73,14 @@ public static class AStar
 
             Location reachedGoal = Location.Invalid;
             bool success = false;
+#if RENT_NEIGHBORS
+            Location[] neighbors = context.SharedInstances.GetNeighborArray();
+#else
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
+#endif
 #endif
 
             while (frontier.Count > 0)
@@ -131,6 +135,10 @@ public static class AStar
                     }
                 }
             }
+
+#if RENT_NEIGHBORS
+            context.SharedInstances.ReturnNeighborArray(neighbors);
+#endif
 
             if (!success)
             {

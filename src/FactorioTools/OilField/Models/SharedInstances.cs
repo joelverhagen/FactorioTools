@@ -22,6 +22,25 @@ public class SharedInstances
 #endif
     }
 
+#if RENT_NEIGHBORS
+    private Queue<Location[]> _neighborArrays = new Queue<Location[]>();
+
+    public Location[] GetNeighborArray()
+    {
+        if (_neighborArrays.Count > 0)
+        {
+            return _neighborArrays.Dequeue();
+        }
+
+        return new Location[4];
+    }
+
+    public void ReturnNeighborArray(Location[] array)
+    {
+        _neighborArrays.Enqueue(array);
+    }
+#endif
+
 #if USE_SHARED_INSTANCES
     public Queue<Location> LocationQueue = new();
     public Location[] LocationArray = Array.Empty<Location>();

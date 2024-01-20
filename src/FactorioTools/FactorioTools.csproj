@@ -24,6 +24,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <RentNeighbors Condition="'$(RentNeighbors)' == ''">true</RentNeighbors>
+    <DefineConstants Condition="$(RentNeighbors) == 'true'">$(DefineConstants);RENT_NEIGHBORS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">$(UseDefines)</EnableVisualizer>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
     <DefineConstants Condition="$(EnableVisualizer) == 'true'">$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>

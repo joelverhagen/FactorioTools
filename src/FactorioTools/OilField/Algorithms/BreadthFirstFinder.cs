@@ -20,10 +20,14 @@ namespace Knapcode.FactorioTools.OilField
 #endif
             toExplore.Enqueue(start);
 
+#if RENT_NEIGHBORS
+                Location[] neighbors = context.SharedInstances.GetNeighborArray();
+#else
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
                 Span<Location> neighbors = stackalloc Location[4];
 #else
                 Span<Location> neighbors = new Location[4];
+#endif
 #endif
 
                 while (toExplore.Count > 0)
@@ -61,6 +65,10 @@ namespace Knapcode.FactorioTools.OilField
                         toExplore.Enqueue(next);
                     }
                 }
+
+#if RENT_NEIGHBORS
+                context.SharedInstances.ReturnNeighborArray(neighbors);
+#endif
 
                 return null;
 #if USE_SHARED_INSTANCES

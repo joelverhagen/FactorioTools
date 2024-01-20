@@ -3,13 +3,11 @@ local System = System
 local KnapcodeOilField
 local ListLocation
 local SpanLocation
-local ArrayLocation
 local QueueLocation
 System.import(function (out)
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   ListLocation = System.List(KnapcodeOilField.Location)
   SpanLocation = System.Span(KnapcodeOilField.Location)
-  ArrayLocation = System.Array(KnapcodeOilField.Location)
   QueueLocation = System.Queue(KnapcodeOilField.Location)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
@@ -21,7 +19,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local visited = context:GetLocationSet1()
       toExplore:Enqueue(start)
 
-      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+      local neighbors = context.SharedInstances:GetNeighborArray()
+
 
 
       while #toExplore > 0 do
@@ -50,8 +50,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             return output
           end
 
-          context.Grid:GetNeighbors(neighbors, current)
-          for i = 0, neighbors:getLength() - 1 do
+          context.Grid:GetNeighbors(SpanLocation.ctorArray(neighbors), current)
+          for i = 0, #neighbors - 1 do
             local continue
             repeat
               local next = neighbors:get(i)
@@ -73,6 +73,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
       end
+
+
+      context.SharedInstances:ReturnNeighborArray(neighbors)
+
 
       return nil
     end

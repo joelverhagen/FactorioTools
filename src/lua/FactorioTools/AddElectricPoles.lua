@@ -5,7 +5,6 @@ local KnapcodeFactorioTools
 local KnapcodeOilField
 local KnapcodeAddElectricPoles
 local SpanLocation
-local ArrayLocation
 local QueueLocation
 local ListILocationSet
 local QueueElectricPoleCenter
@@ -18,7 +17,6 @@ System.import(function (out)
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   KnapcodeAddElectricPoles = Knapcode.FactorioTools.OilField.AddElectricPoles
   SpanLocation = System.Span(KnapcodeOilField.Location)
-  ArrayLocation = System.Array(KnapcodeOilField.Location)
   QueueLocation = System.Queue(KnapcodeOilField.Location)
   ListILocationSet = System.List(KnapcodeOilField.ILocationSet)
   QueueElectricPoleCenter = System.Queue(KnapcodeOilField.ElectricPoleCenter)
@@ -631,7 +629,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       candidates:Enqueue(idealPoint)
       attempted:Add(idealPoint)
 
-      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+      local neighbors = context.SharedInstances:GetNeighborArray()
+
 
 
       while #candidates > 0 do
@@ -642,8 +642,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
 
-        context.Grid:GetAdjacent(neighbors, candidate)
-        for i = 0, neighbors:getLength() - 1 do
+        context.Grid:GetAdjacent(SpanLocation.ctorArray(neighbors), candidate)
+        for i = 0, #neighbors - 1 do
           if neighbors:get(i).IsValid and AreElectricPolesConnected(idealLine:get(0), neighbors:get(i), context.Options) and attempted:Add(neighbors:get(i)) then
             candidates:Enqueue(neighbors:get(i))
           end

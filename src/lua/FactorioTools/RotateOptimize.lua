@@ -4,7 +4,6 @@ local KnapcodeFactorioTools
 local KnapcodeOilField
 local ListLocation
 local SpanLocation
-local ArrayLocation
 local QueueLocation
 local ListTerminalLocation
 System.import(function (out)
@@ -12,7 +11,6 @@ System.import(function (out)
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   ListLocation = System.List(KnapcodeOilField.Location)
   SpanLocation = System.Span(KnapcodeOilField.Location)
-  ArrayLocation = System.Array(KnapcodeOilField.Location)
   QueueLocation = System.Queue(KnapcodeOilField.Location)
   ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
 end)
@@ -332,19 +330,26 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       toExplore:Enqueue(start)
       pipes:Add(start)
 
-      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+      local neighbors = context.ParentContext.SharedInstances:GetNeighborArray()
+
 
 
       while #toExplore > 0 do
         local current = toExplore:Dequeue()
 
-        context.ExistingPipeGrid:GetNeighbors(neighbors, current)
-        for i = 0, neighbors:getLength() - 1 do
+        context.ExistingPipeGrid:GetNeighbors(SpanLocation.ctorArray(neighbors), current)
+        for i = 0, #neighbors - 1 do
           if neighbors:get(i).IsValid and pipes:Add(neighbors:get(i)) then
             toExplore:Enqueue(neighbors:get(i))
           end
         end
       end
+
+
+      context.ParentContext.SharedInstances:ReturnNeighborArray(neighbors)
+
+
     end
     ExplorePaths = function (context, start)
       local toExplore = QueueLocation()
@@ -352,7 +357,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local cameFrom = context.ParentContext:GetLocationDictionary(KnapcodeOilField.Location)
       cameFrom:set(start, start)
 
-      local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
+
+      local neighbors = context.ParentContext.SharedInstances:GetNeighborArray()
+
 
 
       local reachedGoals = ListLocation()
@@ -368,8 +375,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          context.ExistingPipeGrid:GetNeighbors(neighbors, current)
-          for i = 0, neighbors:getLength() - 1 do
+          context.ExistingPipeGrid:GetNeighbors(SpanLocation.ctorArray(neighbors), current)
+          for i = 0, #neighbors - 1 do
             local continue
             repeat
               if not neighbors:get(i).IsValid or cameFrom:ContainsKey(neighbors:get(i)) then
@@ -391,6 +398,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
       end
+
+
+      context.ParentContext.SharedInstances:ReturnNeighborArray(neighbors)
+
 
       return class.ExploredPaths(start, cameFrom, reachedGoals)
     end

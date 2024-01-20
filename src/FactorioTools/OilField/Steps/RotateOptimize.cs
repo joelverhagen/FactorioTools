@@ -313,10 +313,14 @@ public static class RotateOptimize
             toExplore.Enqueue(start);
             pipes.Add(start);
 
+#if RENT_NEIGHBORS
+            Location[] neighbors = context.ParentContext.SharedInstances.GetNeighborArray();
+#else
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
+#endif
 #endif
 
             while (toExplore.Count > 0)
@@ -332,6 +336,11 @@ public static class RotateOptimize
                     }
                 }
             }
+
+#if RENT_NEIGHBORS
+            context.ParentContext.SharedInstances.ReturnNeighborArray(neighbors);
+#endif
+
 #if USE_SHARED_INSTANCES
         }
         finally
@@ -354,10 +363,14 @@ public static class RotateOptimize
             var cameFrom = context.ParentContext.GetLocationDictionary<Location>();
             cameFrom[start] = start;
 
+#if RENT_NEIGHBORS
+            Location[] neighbors = context.ParentContext.SharedInstances.GetNeighborArray();
+#else
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
+#endif
 #endif
 
             var reachedGoals = new List<Location>();
@@ -384,6 +397,10 @@ public static class RotateOptimize
                     toExplore.Enqueue(neighbors[i]);
                 }
             }
+
+#if RENT_NEIGHBORS
+            context.ParentContext.SharedInstances.ReturnNeighborArray(neighbors);
+#endif
 
             return new ExploredPaths(start, cameFrom, reachedGoals);
 #if USE_SHARED_INSTANCES

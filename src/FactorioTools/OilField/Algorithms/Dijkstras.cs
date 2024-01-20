@@ -27,10 +27,14 @@ public static class Dijkstras
             priorityQueue.Enqueue(start, 0);
             inQueue.Add(start);
 
+#if RENT_NEIGHBORS
+            Location[] neighbors = context.SharedInstances.GetNeighborArray();
+#else
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
+#endif
 #endif
 
             while (priorityQueue.Count > 0)
@@ -80,6 +84,11 @@ public static class Dijkstras
                     }
                 }
             }
+
+#if RENT_NEIGHBORS
+            context.SharedInstances.ReturnNeighborArray(neighbors);
+#endif
+
 #if USE_SHARED_INSTANCES
         }
         finally
