@@ -52,7 +52,7 @@ public static class Helpers
         for (var i = 0; i < centers.Count; i++)
         {
             var center = centers[i];
-            var candidateTerminals = TableArray.New<TerminalLocation>();
+            var candidateTerminals = TableList.New<TerminalLocation>();
             foreach ((var direction, var translation) in TerminalOffsets)
             {
                 var location = center.Translate(translation);
@@ -89,7 +89,7 @@ public static class Helpers
                 var terminal = terminals[i];
                 if (!locationToTerminals.TryGetValue(terminal.Terminal, out var list))
                 {
-                    list = TableArray.New<TerminalLocation>(2);
+                    list = TableList.New<TerminalLocation>(2);
                     locationToTerminals.Add(terminal.Terminal, list);
                 }
 
@@ -296,7 +296,7 @@ public static class Helpers
         if (providers.Count > 0 || unusedProviders.Count > 0)
         {
             // Remove candidates that only cover recipients that are already covered.
-            var toRemove = TableArray.New<Location>();
+            var toRemove = TableList.New<Location>();
             foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
             {
                 var subset = new CountedBitArray(info.Covered);
@@ -493,7 +493,7 @@ public static class Helpers
             coveredToCandidates);
 
 #if !USE_SHARED_INSTANCES
-        var toRemove = TableArray.New<Location>();
+        var toRemove = TableList.New<Location>();
         var updated = context.GetLocationSet();
 #else
         var toRemove = context.SharedInstances.LocationListA;
@@ -580,7 +580,7 @@ public static class Helpers
         }
 
 #if !USE_SHARED_INSTANCES
-        var toRemove = TableArray.New<Location>();
+        var toRemove = TableList.New<Location>();
         var updated = context.GetLocationSet();
 #else
         var toRemove = context.SharedInstances.LocationListA;
@@ -694,7 +694,7 @@ public static class Helpers
 
     public static (ITableList<ProviderRecipient> PoweredEntities, bool HasBeacons) GetPoweredEntities(Context context)
     {
-        var poweredEntities = TableArray.New<ProviderRecipient>();
+        var poweredEntities = TableList.New<ProviderRecipient>();
         var hasBeacons = false;
 
         foreach (var location in context.Grid.EntityLocations.EnumerateItems())
@@ -984,7 +984,7 @@ public static class Helpers
     public static ITableList<Location> GetPath(ILocationDictionary<Location> cameFrom, Location start, Location reachedGoal)
     {
         var sizeEstimate = 2 * start.GetManhattanDistance(reachedGoal);
-        var path = TableArray.New<Location>(sizeEstimate);
+        var path = TableList.New<Location>(sizeEstimate);
         AddPath(cameFrom, reachedGoal, path);
         return path;
     }
@@ -1058,7 +1058,7 @@ public static class Helpers
         if (a.X == b.X)
         {
             (var min, var max) = a.Y < b.Y ? (a.Y, b.Y) : (b.Y, a.Y);
-            var line = TableArray.New<Location>(max - min + 1);
+            var line = TableList.New<Location>(max - min + 1);
             for (var y = min; y <= max; y++)
             {
                 if (!grid.IsEmpty(new Location(a.X, y)))
@@ -1075,7 +1075,7 @@ public static class Helpers
         if (a.Y == b.Y)
         {
             (var min, var max) = a.X < b.X ? (a.X, b.X) : (b.X, a.X);
-            var line = TableArray.New<Location>(max - min + 1);
+            var line = TableList.New<Location>(max - min + 1);
             for (var x = min; x <= max; x++)
             {
                 if (!grid.IsEmpty(new Location(x, a.Y)))
@@ -1097,7 +1097,7 @@ public static class Helpers
         if (a.X == b.X)
         {
             (var min, var max) = a.Y < b.Y ? (a.Y, b.Y) : (b.Y, a.Y);
-            var line = TableArray.New<Location>(max - min + 1);
+            var line = TableList.New<Location>(max - min + 1);
             for (var y = min; y <= max; y++)
             {
                 line.Add(new Location(a.X, y));
@@ -1109,7 +1109,7 @@ public static class Helpers
         if (a.Y == b.Y)
         {
             (var min, var max) = a.X < b.X ? (a.X, b.X) : (b.X, a.X);
-            var line = TableArray.New<Location>(max - min + 1);
+            var line = TableList.New<Location>(max - min + 1);
             for (var x = min; x <= max; x++)
             {
                 line.Add(new Location(x, a.Y));
@@ -1123,7 +1123,7 @@ public static class Helpers
 
     public static ITableList<Endpoints> PointsToLines(IReadOnlyCollection<Location> nodes)
     {
-        return PointsToLines(nodes.ToTableArray(), sort: true);
+        return PointsToLines(nodes.ToTableList(), sort: true);
     }
 
     /// <summary>
@@ -1134,7 +1134,7 @@ public static class Helpers
         IReadOnlyTableList<Location> filteredNodes;
         if (sort)
         {
-            var sortedXY = nodes.ToTableArray();
+            var sortedXY = nodes.ToTableList();
             sortedXY.Sort((a, b) =>
             {
                 var c = a.X.CompareTo(b.X);
@@ -1154,17 +1154,17 @@ public static class Helpers
 
         if (filteredNodes.Count == 1)
         {
-            return TableArray.New(new Endpoints(filteredNodes[0], filteredNodes[0]));
+            return TableList.New(new Endpoints(filteredNodes[0], filteredNodes[0]));
         }
         else if (filteredNodes.Count == 2)
         {
-            return TableArray.New(new Endpoints(filteredNodes[0], filteredNodes[1]));
+            return TableList.New(new Endpoints(filteredNodes[0], filteredNodes[1]));
         }
 
         // Check that nodes are not collinear
         if (AreLocationsCollinear(filteredNodes))
         {
-            var collinearLines = TableArray.New<Endpoints>(filteredNodes.Count - 1);
+            var collinearLines = TableList.New<Endpoints>(filteredNodes.Count - 1);
             for (var i = 1; i < filteredNodes.Count; i++)
             {
                 collinearLines.Add(new Endpoints(filteredNodes[i - 1], filteredNodes[i]));
@@ -1181,7 +1181,7 @@ public static class Helpers
         }
         var delaunator = new Delaunator(points);
 
-        var lines = TableArray.New<Endpoints>();
+        var lines = TableList.New<Endpoints>();
         for (var e = 0; e < delaunator.Triangles.Length; e++)
         {
             if (e > delaunator.Halfedges[e])

@@ -14,7 +14,7 @@ public static class PlanBeacons
             context.Grid.AddEntity(pipe, new TemporaryEntity(context.Grid.GetId()));
         }
 
-        var solutions = TableArray.New<BeaconSolution>(context.Options.BeaconStrategies.Count);
+        var solutions = TableList.New<BeaconSolution>(context.Options.BeaconStrategies.Count);
 
         var completedStrategies = new CountedBitArray((int)BeaconStrategy.Snug + 1); // max value
         for (var i = 0; i < context.Options.BeaconStrategies.Count; i++)

@@ -6,7 +6,7 @@ public static class ExtensionMethods
 {
     public static ITableList<T> ToTableArray<T>(this IEnumerable<T> source)
     {
-        return source.ToList().ToTableArray();
+        return source.ToList().ToTableList();
     }
 
     public static IEnumerable<GridEntity> GetEntities(this SquareGrid grid)

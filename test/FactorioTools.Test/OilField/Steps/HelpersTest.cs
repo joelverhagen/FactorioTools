@@ -239,7 +239,7 @@ public class HelpersTest
             var pumpjacks = new[] { new Location(3, 2), new Location(13, 2) }
                 .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
                 .ToList()
-                .ToTableArray();
+                .ToTableList();
             foreach (var pumpjack in pumpjacks.EnumerateItems())
             {
                 AddPumpjack(context, pumpjack.Center);
@@ -291,7 +291,7 @@ public class HelpersTest
             var pumpjacks = new[] { new Location(2, 2),}
                 .Select(c => new ProviderRecipient(c, PumpjackWidth, PumpjackHeight))
                 .ToList()
-                .ToTableArray();
+                .ToTableList();
             foreach (var pumpjack in pumpjacks.EnumerateItems())
             {
                 AddPumpjack(context, pumpjack.Center);

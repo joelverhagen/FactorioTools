@@ -36,7 +36,7 @@ namespace Knapcode.FactorioTools.OilField
 
                     if (current == goal)
                     {
-                        var output = TableArray.New(current);
+                        var output = TableList.New(current);
                         while (parents.TryGetValue(current, out var parent))
                         {
                             output.Add(parent);

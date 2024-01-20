@@ -42,28 +42,10 @@ public partial class Program
 
     private static void Sandbox()
     {
-        var d = new DictionaryTableList<int>();
-
-        d.Add(4);
-        d.Add(9);
-        d.Add(1);
-        d.Add(6);
-        d.Add(10);
-
-        for (var i = 0; i < d.Count; i++)
+        for (var i = 0; i < 100; i++)
         {
-            Console.WriteLine(d[i]);
-        }
-
-        Console.WriteLine("---");
-
-        d.Sort((a, b) => a.CompareTo(b));
-
-        Console.WriteLine("---");
-
-        for (var i = 0; i < d.Count; i++)
-        {
-            Console.WriteLine(d[i]);
+            Console.Write(".");
+            Planner.ExecuteSample();
         }
     }
 }

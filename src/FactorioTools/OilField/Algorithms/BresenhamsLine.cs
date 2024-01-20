@@ -7,7 +7,7 @@ public static class BresenhamsLine
 {
     public static ITableList<Location> GetPath(Location a, Location b)
     {
-        var line = TableArray.New<Location>();
+        var line = TableList.New<Location>();
         var dx = Math.Abs(b.X - a.X);
         var sx = a.X < b.X ? 1 : -1;
         var dy = -1 * Math.Abs(b.Y - a.Y);

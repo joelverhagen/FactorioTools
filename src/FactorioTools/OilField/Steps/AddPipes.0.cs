@@ -119,9 +119,9 @@ public static class AddPipes
 
         PlanInfo? bestPlanInfo = null;
         var noMoreAlternates = false;
-        var selectedPlans = TableArray.New<OilFieldPlan>();
-        var alternatePlans = TableArray.New<OilFieldPlan>();
-        var unusedPlans = TableArray.New<OilFieldPlan>();
+        var selectedPlans = TableList.New<OilFieldPlan>();
+        var alternatePlans = TableList.New<OilFieldPlan>();
+        var unusedPlans = TableList.New<OilFieldPlan>();
 
         for (var i = 0; i < sortedPlans.Count; i++)
         {
@@ -175,7 +175,7 @@ public static class AddPipes
         }
 
         var solutionGroups = result.Data!;
-        var plans = TableArray.New<PlanInfo>();
+        var plans = TableList.New<PlanInfo>();
         foreach ((var solutionGroup, var groupNumber) in solutionGroups)
         {
             for (var i = 0; i < solutionGroup.Count; i++)
@@ -261,8 +261,8 @@ public static class AddPipes
                     continue;
                 }
 
-                context.CenterToTerminals = originalCenterToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableArray());
-                context.LocationToTerminals = originalLocationToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableArray());
+                context.CenterToTerminals = originalCenterToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableList());
+                context.LocationToTerminals = originalLocationToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableList());
 
                 switch (strategy)
                 {
@@ -345,8 +345,8 @@ public static class AddPipes
         ILocationSet optimizedPipes = pipes;
         if (context.Options.OptimizePipes)
         {
-            context.CenterToTerminals = originalCenterToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableArray());
-            context.LocationToTerminals = originalLocationToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableArray());
+            context.CenterToTerminals = originalCenterToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableList());
+            context.LocationToTerminals = originalLocationToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableList());
             optimizedPipes = context.GetLocationSet(pipes);
             RotateOptimize.Execute(context, optimizedPipes);
 
@@ -357,7 +357,7 @@ public static class AddPipes
         if (pipes.SetEquals(optimizedPipes))
         {
             optimizedPipes = context.Options.UseUndergroundPipes ? context.GetLocationSet(pipes) : pipes;
-            solutions = TableArray.New(
+            solutions = TableList.New(
                 GetSolution(context, strategy, optimized: false, centerToConnectedCenters, optimizedPipes));
 
             if (context.Options.OptimizePipes)
@@ -369,14 +369,14 @@ public static class AddPipes
         {
             var solutionA = GetSolution(context, strategy, optimized: true, centerToConnectedCenters, optimizedPipes);
 
-            context.CenterToTerminals = originalCenterToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableArray());
-            context.LocationToTerminals = originalLocationToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableArray());
+            context.CenterToTerminals = originalCenterToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableList());
+            context.LocationToTerminals = originalLocationToTerminals.EnumeratePairs().ToDictionary(context, x => x.Key, x => x.Value.ToTableList());
             var pipesB = context.Options.UseUndergroundPipes ? context.GetLocationSet(pipes) : pipes;
             var solutionB = GetSolution(context, strategy, optimized: false, centerToConnectedCenters, pipesB);
 
             Validate.PipesDoNotMatch(context, solutionA.Pipes, solutionB.Pipes);
 
-            solutions = TableArray.New<Solution>();
+            solutions = TableList.New<Solution>();
             solutions.Add(solutionA);
             solutions.Add(solutionB);
         }
@@ -417,8 +417,8 @@ public static class AddPipes
 
         return new Solution
         {
-            Strategies = TableArray.New(strategy),
-            Optimized = TableArray.New(optimized),
+            Strategies = TableList.New(strategy),
+            Optimized = TableList.New(optimized),
             CenterToConnectedCenters = centerToConnectedCenters,
             CenterToTerminals = context.CenterToTerminals,
             LocationToTerminals = context.LocationToTerminals,

@@ -35,8 +35,8 @@ public class Score : BasePlannerTest
                 options.ValidateSolution = false;
                 options.OverlapBeacons = input.OverlapBeacons;
 
-                options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableArray();
-                options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableArray();
+                options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableList();
+                options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableList();
 
                 var (context, summary) = Planner.Execute(options, inputBlueprint);
 

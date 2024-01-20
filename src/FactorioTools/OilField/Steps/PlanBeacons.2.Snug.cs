@@ -8,7 +8,7 @@ public static class PlanBeaconsSnug
 {
     public static BeaconPlannerResult Execute(Context context)
     {
-        var poweredEntities = TableArray.New<ProviderRecipient>(context.Centers.Count);
+        var poweredEntities = TableList.New<ProviderRecipient>(context.Centers.Count);
         for (var i = 0; i < context.Centers.Count; i++)
         {
             poweredEntities.Add(new ProviderRecipient(context.Centers[i], PumpjackWidth, PumpjackHeight));
@@ -29,7 +29,7 @@ public static class PlanBeaconsSnug
 
         var sorter = new SnugCandidateSorter();
 
-        var scopedCandidates = TableArray.New<KeyValuePair<Location, BeaconCandidateInfo>>();
+        var scopedCandidates = TableList.New<KeyValuePair<Location, BeaconCandidateInfo>>();
         var scopedCandidatesSet = context.GetLocationDictionary<BeaconCandidateInfo>();
 
         Dictionary<int, ILocationDictionary<BeaconCandidateInfo>>? coveredToCandidates = null;
@@ -38,7 +38,7 @@ public static class PlanBeaconsSnug
             coveredToCandidates = GetCoveredToCandidates(context, candidateToInfo, coveredEntities);
         }
 
-        var beacons = TableArray.New<Location>();
+        var beacons = TableList.New<Location>();
         var effects = 0;
 
         while (candidateToInfo.Count > 0)

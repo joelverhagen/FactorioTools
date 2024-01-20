@@ -46,7 +46,7 @@ internal static class CollectionExtensions
     public static ITableList<Location> Distinct(this IReadOnlyCollection<Location> locations, Context context)
     {
         var set = context.GetLocationSet(locations.Count);
-        var output = TableArray.New<Location>(locations.Count);
+        var output = TableList.New<Location>(locations.Count);
         foreach (var location in locations)
         {
             if (set.Add(location))
@@ -122,9 +122,9 @@ internal static class CollectionExtensions
     }
 
 #if ENABLE_VISUALIZER
-    public static ITableArray<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
+    public static ITableList<DelaunatorSharp.IPoint> ToDelaunatorPoints(this ILocationSet set)
     {
-        var points = TableArray.New<DelaunatorSharp.IPoint>();
+        var points = TableList.New<DelaunatorSharp.IPoint>();
         foreach (var item in set.EnumerateItems())
         {
             points.Add(new DelaunatorSharp.Point(item.X, item.Y));
@@ -133,9 +133,9 @@ internal static class CollectionExtensions
         return points;
     }
 
-    public static ITableArray<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
+    public static ITableList<DelaunatorSharp.IPoint> ToDelaunatorPoints<T>(this ILocationDictionary<T> dictionary)
     {
-        var points = TableArray.New<DelaunatorSharp.IPoint>();
+        var points = TableList.New<DelaunatorSharp.IPoint>();
         foreach (var item in dictionary.Keys)
         {
             points.Add(new DelaunatorSharp.Point(item.X, item.Y));
@@ -262,16 +262,16 @@ internal static class CollectionExtensions
         return output;
     }
 
-    public static ITableList<TSource> ToTableArray<TSource>(this IReadOnlyCollection<TSource> source)
+    public static ITableList<TSource> ToTableList<TSource>(this IReadOnlyCollection<TSource> source)
     {
-        var output = TableArray.New<TSource>(source.Count);
+        var output = TableList.New<TSource>(source.Count);
         output.AddCollection(source);
         return output;
     }
 
-    public static ITableList<TSource> ToTableArray<TSource>(this IReadOnlyTableList<TSource> source)
+    public static ITableList<TSource> ToTableList<TSource>(this IReadOnlyTableList<TSource> source)
     {
-        var output = TableArray.New<TSource>(source.Count);
+        var output = TableList.New<TSource>(source.Count);
         output.AddRange(source);
         return output;
     }

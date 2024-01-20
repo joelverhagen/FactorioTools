@@ -1,13 +1,13 @@
 ﻿namespace Knapcode.FactorioTools.OilField;
 
-public static class TableArray
+public static class TableList
 {
     public static ITableList<T> New<T>()
     {
 #if USE_ARRAY
         return new ListTableList<T>();
 #else
-        return new DictionaryTableArray<T>();
+        return new DictionaryTableList<T>();
 #endif
     }
 
@@ -16,7 +16,7 @@ public static class TableArray
 #if USE_ARRAY
         return new ListTableList<T>(capacity);
 #else
-        return new DictionaryTableArray<T>(capacity);
+        return new DictionaryTableList<T>(capacity);
 #endif
     }
 

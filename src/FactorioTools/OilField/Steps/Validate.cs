@@ -166,7 +166,7 @@ public static class Validate
         {
             (var poweredEntities, _) = GetPoweredEntities(context);
 
-            var electricPoleCenters = TableArray.New<Location>();
+            var electricPoleCenters = TableList.New<Location>();
             foreach (var location in context.Grid.EntityLocations.EnumerateItems())
             {
                 var entity = context.Grid[location];

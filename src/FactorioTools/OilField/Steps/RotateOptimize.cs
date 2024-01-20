@@ -52,7 +52,7 @@ public static class RotateOptimize
             // VisualizeIntersections(context);
 
             var shortenedPath = false;
-            var intersections = context.Intersections.EnumerateItems().ToTableArray();
+            var intersections = context.Intersections.EnumerateItems().ToTableList();
             for (var i = 0; i < intersections.Count; i++)
             {
                 var intersection = intersections[i];
@@ -120,7 +120,7 @@ public static class RotateOptimize
         var originalGoal = exploredPaths.ReachedGoals[0];
 
 #if !USE_SHARED_INSTANCES
-        var originalPath = TableArray.New<Location>();
+        var originalPath = TableList.New<Location>();
 #else
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
         try
@@ -151,7 +151,7 @@ public static class RotateOptimize
 #if USE_SHARED_INSTANCES
                 var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
 #else
-                var newPath = TableArray.New<Location>();
+                var newPath = TableList.New<Location>();
 #endif
                 var result = AStar.GetShortestPath(context.ParentContext, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
                 if (result.Success)
@@ -190,7 +190,7 @@ public static class RotateOptimize
 
                     if (!context.LocationToTerminals.TryGetValue(minTerminal.Terminal, out var locationTerminals))
                     {
-                        locationTerminals = TableArray.New(minTerminal);
+                        locationTerminals = TableList.New(minTerminal);
                         context.LocationToTerminals.Add(minTerminal.Terminal, locationTerminals);
                     }
                     else
@@ -235,7 +235,7 @@ public static class RotateOptimize
         Location originalGoal)
     {
 #if !USE_SHARED_INSTANCES
-        var originalPath = TableArray.New<Location>();
+        var originalPath = TableList.New<Location>();
         var connectionPoints = context.ParentContext.GetLocationSet(context.Pipes.Count, allowEnumerate: true);
 #else
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
@@ -372,7 +372,7 @@ public static class RotateOptimize
             Span<Location> neighbors = new Location[4];
 #endif
 
-            var reachedGoals = TableArray.New<Location>();
+            var reachedGoals = TableList.New<Location>();
 
             while (toExplore.Count > 0)
             {

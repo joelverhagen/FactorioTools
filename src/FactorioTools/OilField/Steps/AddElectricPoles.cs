@@ -323,7 +323,7 @@ public static class AddElectricPoles
             CandidateFactory.Instance,
             removeUnused: true);
 
-        var electricPoleList = electricPoles2.Keys.ToTableArray();
+        var electricPoleList = electricPoles2.Keys.ToTableList();
 
         PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList);
 
@@ -731,7 +731,7 @@ public static class AddElectricPoles
         }
 
         var center = AddElectricPole(context, electricPoles, selectedPoint);
-        var connectedGroups = TableArray.New<ILocationSet>(groups.Count);
+        var connectedGroups = TableList.New<ILocationSet>(groups.Count);
         for (var i = 0; i < groups.Count; i++)
         {
             var group = groups[i];
@@ -769,7 +769,7 @@ public static class AddElectricPoles
 
     private static ITableList<ILocationSet> GetElectricPoleGroups(Context context, ILocationDictionary<ElectricPoleCenter> electricPoles)
     {
-        var groups = TableArray.New<ILocationSet>();
+        var groups = TableList.New<ILocationSet>();
         var remaining = electricPoles.Keys.ToSet(context, allowEnumerate: true);
         while (remaining.Count > 0)
         {

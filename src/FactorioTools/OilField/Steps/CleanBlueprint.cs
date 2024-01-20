@@ -8,9 +8,9 @@ public static class CleanBlueprint
 {
     public static Blueprint Execute(Blueprint blueprint)
     {
-        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint, TableArray.Empty<AvoidLocation>());
+        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint, TableList.Empty<AvoidLocation>());
 
-        var entities = TableArray.New<Entity>();
+        var entities = TableList.New<Entity>();
 
         for (var i = 0; i < context.Centers.Count; i++)
         {

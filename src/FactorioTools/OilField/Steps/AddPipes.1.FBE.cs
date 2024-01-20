@@ -43,12 +43,12 @@ public static class AddPipesFbe
     private static Result<FbeResultInfo> DelaunayTriangulation(Context context, Location middle, PipeStrategy strategy)
     {
         // GENERATE LINES
-        var lines = TableArray.New<PumpjackConnection>();
+        var lines = TableList.New<PumpjackConnection>();
         var allLines = PointsToLines(context.Centers, sort: false);
         for (var i = 0; i < allLines.Count; i++)
         {
             var line = allLines[i];
-            var connections = TableArray.New<TerminalPair>();
+            var connections = TableList.New<TerminalPair>();
 
             var terminalsA = context.CenterToTerminals[line.A];
             for (var j = 0; j < terminalsA.Count; j++)
@@ -82,8 +82,8 @@ public static class AddPipesFbe
         }
 
         // GENERATE GROUPS
-        var groups = TableArray.New<Group>();
-        var addedPumpjacks = TableArray.New<TerminalLocation>();
+        var groups = TableList.New<Group>();
+        var addedPumpjacks = TableList.New<TerminalLocation>();
         var leftoverPumpjacks = context.Centers.EnumerateItems().ToSet(context, allowEnumerate: true);
         while (lines.Count > 0)
         {
@@ -108,7 +108,7 @@ public static class AddPipesFbe
                 var connection = line.Connections[i];
                 if (addedA is null && addedB is null)
                 {
-                    var group = new Group(context, connection, TableArray.New(connection.Line));
+                    var group = new Group(context, connection, TableList.New(connection.Line));
                     groups.Add(group);
                     addedPumpjacks.Add(connection.TerminalA);
                     addedPumpjacks.Add(connection.TerminalB);
@@ -194,14 +194,14 @@ public static class AddPipesFbe
                 throw new FactorioToolsException("A connection between terminals should have been found.");
             }
 
-            var group = new Group(context, connection, TableArray.New(connection.Line));
+            var group = new Group(context, connection, TableList.New(connection.Line));
             groups.Add(group);
         }
 
         // CONNECT GROUPS
         var maxTries = strategy == PipeStrategy.FbeOriginal ? 3 : 20;
         var tries = maxTries;
-        var aloneGroups = TableArray.New<Group>();
+        var aloneGroups = TableList.New<Group>();
         Group? finalGroup = null;
 
         while (groups.Count > 0)
@@ -228,7 +228,7 @@ public static class AddPipesFbe
             locationToGroup.Add(group.Location, group);
 
             var groupLines = PointsToLines(locationToGroup.Keys);
-            var par = TableArray.New<Group>(groupLines.Count);
+            var par = TableList.New<Group>(groupLines.Count);
             for (var i = 0; i < groupLines.Count; i++)
             {
                 var line = groupLines[i];
@@ -311,11 +311,11 @@ public static class AddPipesFbe
         {
             var center = sortedLeftoverPumpjacks[i];
             var centerTerminals = context.CenterToTerminals[center];
-            var terminalGroups = TableArray.New<Group>(centerTerminals.Count);
+            var terminalGroups = TableList.New<Group>(centerTerminals.Count);
             for (var j = 0; j < centerTerminals.Count; j++)
             {
                 var terminal = centerTerminals[j];
-                var group = new Group(context, terminal, TableArray.New(TableArray.New(terminal.Terminal)));
+                var group = new Group(context, terminal, TableList.New(TableList.New(terminal.Terminal)));
                 terminalGroups.Add(group);
             }
 
@@ -522,19 +522,19 @@ public static class AddPipesFbe
 
     private static Result<TwoConnectedGroups> ConnectTwoGroups(Context context, Group a, Group b, int maxTurns, PipeStrategy strategy)
     {
-        var aLocations = TableArray.New<Location>();
+        var aLocations = TableList.New<Location>();
         for (var i = 0; i < a.Paths.Count; i++)
         {
             aLocations.AddRange(a.Paths[i]);
         }
 
-        var bLocations = TableArray.New<Location>();
+        var bLocations = TableList.New<Location>();
         for (var i = 0; i < b.Paths.Count; i++)
         {
             bLocations.AddRange(b.Paths[i]);
         }
 
-        var lineInfo = TableArray.New<PathAndTurns>();
+        var lineInfo = TableList.New<PathAndTurns>();
         for (var i = 0; i < aLocations.Count; i++)
         {
             var al = aLocations[i];
@@ -588,7 +588,7 @@ public static class AddPipesFbe
         aPlusB.UnionWith(bLocations.EnumerateItems());
 
         var allEndpoints = PointsToLines(aPlusB.EnumerateItems());
-        var matches = TableArray.New<Tuple<Endpoints, int, int>>(allEndpoints.Count);
+        var matches = TableList.New<Tuple<Endpoints, int, int>>(allEndpoints.Count);
         for (var i = 0; i < allEndpoints.Count; i++)
         {
             var pair = allEndpoints[i];
@@ -662,7 +662,7 @@ public static class AddPipesFbe
             return a.OriginalIndex.CompareTo(b.OriginalIndex);
         });
 
-        var lines = TableArray.New<ITableList<Location>>(lineInfo.Count);
+        var lines = TableList.New<ITableList<Location>>(lineInfo.Count);
         var minCount = lineInfo.Count == 0 ? 0 : int.MaxValue;
         for (var i = 0; i < lineInfo.Count; i++)
         {
@@ -704,7 +704,7 @@ public static class AddPipesFbe
         private Group(Context context, ITableList<ITableList<Location>> paths) 
         {
             _terminals = context.GetLocationSet();
-            _entities = TableArray.New<TerminalLocation>();
+            _entities = TableList.New<TerminalLocation>();
             Paths = paths;
         }
 

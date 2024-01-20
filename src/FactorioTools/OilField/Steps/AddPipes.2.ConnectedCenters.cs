@@ -103,7 +103,7 @@ public static class AddPipesConnectedCenters
             }
         }
 
-        var groups = TableArray.New<PumpjackGroup>(selectedTrunks.Count);
+        var groups = TableList.New<PumpjackGroup>(selectedTrunks.Count);
         for (var i = 0; i < selectedTrunks.Count; i++)
         {
             groups.Add(new PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, selectedTrunks[i]));
@@ -246,7 +246,7 @@ public static class AddPipesConnectedCenters
 
             if (aStarResultV.Path.SequenceEqual(aStarResultH.Path))
             {
-                return Result.NewData(aStarResultV.Path.ToTableArray());
+                return Result.NewData(aStarResultV.Path.ToTableList());
             }
 
             var adjacentPipesV = 0;
@@ -299,19 +299,19 @@ public static class AddPipesConnectedCenters
 
             if (adjacentPipesV > adjacentPipesH)
             {
-                return Result.NewData(aStarResultV.Path.ToTableArray());
+                return Result.NewData(aStarResultV.Path.ToTableList());
             }
             else if (adjacentPipesV < adjacentPipesH)
             {
-                return Result.NewData(aStarResultH.Path.ToTableArray());
+                return Result.NewData(aStarResultH.Path.ToTableList());
             }
             else if (centroidDistanceSquaredV < centroidDistanceSquaredH)
             {
-                return Result.NewData(aStarResultV.Path.ToTableArray());
+                return Result.NewData(aStarResultV.Path.ToTableList());
             }
             else
             {
-                return Result.NewData(aStarResultH.Path.ToTableArray());
+                return Result.NewData(aStarResultH.Path.ToTableList());
             }
 #if USE_SHARED_INSTANCES
         }
@@ -377,7 +377,7 @@ public static class AddPipesConnectedCenters
         // Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
         var includedPipes = context.GetLocationSet();
         var includedCenters = context.GetLocationSet(allowEnumerate: true);
-        var selectedTrunks = TableArray.New<Trunk>();
+        var selectedTrunks = TableList.New<Trunk>();
         for (var i = 0; i < trunkCandidates.Count; i++)
         {
             var trunk = trunkCandidates[i];
@@ -630,7 +630,7 @@ public static class AddPipesConnectedCenters
             .ToDictionary(context, c => c, c => centerToConnectedCenters[c].EnumerateItems().Max(c => context.CenterToTerminals[c].EnumerateItems().Max(t => t.Terminal.Y)));
 
         // Find paths that connect the most terminals of neighboring pumpjacks.
-        var trunkCandidates = TableArray.New<Trunk>();
+        var trunkCandidates = TableList.New<Trunk>();
         foreach (var translation in Translations)
         {
             for (var i = 0; i < context.Centers.Count; i++)
@@ -738,7 +738,7 @@ public static class AddPipesConnectedCenters
         }
 
         public int OriginalIndex { get; set; }
-        public ITableList<TerminalLocation> Terminals { get; } = TableArray.New<TerminalLocation>(2);
+        public ITableList<TerminalLocation> Terminals { get; } = TableList.New<TerminalLocation>(2);
         public ILocationSet TerminalLocations { get; }
         public ILocationSet Centers { get; }
         public int Length => Start.GetManhattanDistance(End) + 1;

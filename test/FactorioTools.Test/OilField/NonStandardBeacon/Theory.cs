@@ -16,7 +16,7 @@ public class NonStandardBeacon : BasePlannerTest
         options.BeaconHeight = 4;
         options.BeaconSupplyWidth = 4;
         options.BeaconSupplyHeight = 6;
-        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableArray();
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableList();
 
         var blueprintString = SmallListBlueprintStrings[blueprintIndex];
         var blueprint = ParseBlueprint.Execute(blueprintString);

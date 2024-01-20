@@ -16,14 +16,14 @@ public class DijkstrasResult
 
     public ITableList<ITableList<Location>> GetStraightPaths(Location goal)
     {
-        var paths = TableArray.New<ITableList<Location>>();
+        var paths = TableList.New<ITableList<Location>>();
 
         if (LocationToPrevious.TryGetValue(goal, out var previousLocations))
         {
             if (previousLocations.Count == 0)
             {
                 // This is a special case when the goal matches the starting point.
-                paths.Add(TableArray.New(goal));
+                paths.Add(TableList.New(goal));
             }
 
             foreach (var beforeGoal in previousLocations.EnumerateItems())
@@ -43,7 +43,7 @@ public class DijkstrasResult
                 };
 
                 var current = goal;
-                var path = TableArray.New<Location>();
+                var path = TableList.New<Location>();
                 while (true)
                 {
                     path.Add(current);

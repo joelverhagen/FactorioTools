@@ -28,7 +28,7 @@ public static class AStar
             }
             else
             {
-                outputList = TableArray.New(start);
+                outputList = TableList.New(start);
             }
 
             return new AStarResult(success: true, start, outputList);

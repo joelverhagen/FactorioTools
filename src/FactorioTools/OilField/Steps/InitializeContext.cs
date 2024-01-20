@@ -33,7 +33,7 @@ public static class InitializeContext
             Version = 1,
         };
 
-        return Execute(options, blueprint, TableArray.Empty<AvoidLocation>(), width, height);
+        return Execute(options, blueprint, TableList.Empty<AvoidLocation>(), width, height);
     }
 
     public static Context Execute(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid, int minWidth, int minHeight)
@@ -42,7 +42,7 @@ public static class InitializeContext
 
         var grid = InitializeGrid(centerAndOriginalDirections, avoidLocations, width, height);
 
-        var centers = TableArray.New<Location>(centerAndOriginalDirections.Count);
+        var centers = TableList.New<Location>(centerAndOriginalDirections.Count);
         PopulateCenters(centerAndOriginalDirections, centers);
         centers.Sort((a, b) =>
         {
@@ -61,8 +61,8 @@ public static class InitializeContext
         var locationToTerminals = new LocationHashDictionary<ITableList<TerminalLocation>>();
 #else
         var centerToOriginalDirection = new LocationIntDictionary<Direction>(grid.Width, centerAndOriginalDirections.Count);
-        var centerToTerminals = new LocationIntDictionary<ITableArray<TerminalLocation>>(grid.Width, centerAndOriginalDirections.Count);
-        var locationToTerminals = new LocationIntDictionary<ITableArray<TerminalLocation>>(grid.Width);
+        var centerToTerminals = new LocationIntDictionary<ITableList<TerminalLocation>>(grid.Width, centerAndOriginalDirections.Count);
+        var locationToTerminals = new LocationIntDictionary<ITableList<TerminalLocation>>(grid.Width);
 #endif
 
         PopulateCenterToOriginalDirection(centerAndOriginalDirections, centerToOriginalDirection);
@@ -145,7 +145,7 @@ public static class InitializeContext
 
     private static TranslatedLocations TranslateLocations(OilFieldOptions options, Blueprint blueprint, IReadOnlyTableList<AvoidLocation> avoid, int minWidth, int minHeight)
     {
-        var pumpjacks = TableArray.New<Entity>(blueprint.Entities.Length);
+        var pumpjacks = TableList.New<Entity>(blueprint.Entities.Length);
         for (var i = 0; i < blueprint.Entities.Length; i++)
         {
             var entity = blueprint.Entities[i];
@@ -161,8 +161,8 @@ public static class InitializeContext
             throw new FactorioToolsException($"Having more than {maxPumpjacks} pumpjacks is not supported. There are {pumpjacks.Count} pumpjacks provided.");
         }
 
-        var centerAndOriginalDirections = TableArray.New<Tuple<Location, Direction>>(pumpjacks.Count);
-        var avoidLocations = TableArray.New<Location>(avoid.Count);
+        var centerAndOriginalDirections = TableList.New<Tuple<Location, Direction>>(pumpjacks.Count);
+        var avoidLocations = TableList.New<Location>(avoid.Count);
 
         float deltaX = 0;
         float deltaY = 0;

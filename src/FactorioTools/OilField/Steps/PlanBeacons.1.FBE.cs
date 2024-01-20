@@ -63,7 +63,7 @@ public static class PlanBeaconsFbe
 
     private static BeaconPlannerResult GetBeacons(Context context, ITableList<Area> effectEntityAreas, ITableList<BeaconCandidate> possibleBeacons)
     {
-        var beacons = TableArray.New<Location>();
+        var beacons = TableList.New<Location>();
         var effects = 0;
         var collisionArea = context.GetLocationSet();
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
@@ -230,7 +230,7 @@ public static class PlanBeaconsFbe
         var centerY = (context.Options.BeaconHeight - 1) / 2;
         var centerIndex = centerY * context.Options.BeaconWidth + centerX;
 
-        var possibleBeacons = TableArray.New<BeaconCandidate>(possibleBeaconAreas.Count);
+        var possibleBeacons = TableList.New<BeaconCandidate>(possibleBeaconAreas.Count);
         var effectsGiven = new CountedBitArray(effectEntityAreas.Count);
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
         {
@@ -344,7 +344,7 @@ public static class PlanBeaconsFbe
 
     private static ITableList<Area> GetEntityAreas(Context context)
     {
-        var areas = TableArray.New<Area>(context.Grid.EntityLocations.Count);
+        var areas = TableList.New<Area>(context.Grid.EntityLocations.Count);
 
         foreach (var location in context.Grid.EntityLocations.EnumerateItems())
         {
@@ -407,7 +407,7 @@ public static class PlanBeaconsFbe
 
     private static ITableList<Area> GetEffectEntityAreas(ITableList<Area> entityAreas)
     {
-        var effectEntityArea = TableArray.New<Area>();
+        var effectEntityArea = TableList.New<Area>();
         for (var i = 0; i < entityAreas.Count; i++)
         {
             var area = entityAreas[i];
@@ -428,7 +428,7 @@ public static class PlanBeaconsFbe
     private static ITableList<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
     {
         var validBeaconCenters = context.GetLocationSet();
-        var possibleBeaconAreas = TableArray.New<Location[]>();
+        var possibleBeaconAreas = TableList.New<Location[]>();
 
         var gridMinX = (context.Options.BeaconWidth - 1) / 2;
         var gridMinY = (context.Options.BeaconHeight - 1) / 2;

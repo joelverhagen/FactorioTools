@@ -27,8 +27,8 @@ public class BasePlannerTest : BaseTest
     {
         var options = OilFieldOptions.ForMediumElectricPole;
         options.ValidateSolution = true;
-        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableArray();
-        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableArray();
+        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableList();
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableList();
         var blueprint = ParseBlueprint.Execute(blueprintString);
 
         return Planner.Execute(options, blueprint);

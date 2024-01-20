@@ -12,8 +12,8 @@ public static class Planner
     {
         var options = OilFieldOptions.ForMediumElectricPole;
 
-        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableArray();
-        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableArray();
+        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableList();
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableList();
         options.ValidateSolution = true;
 
         var inputBlueprint = new Blueprint
@@ -88,7 +88,7 @@ public static class Planner
         return Execute(
             options,
             inputBlueprint,
-            avoid: TableArray.Empty<AvoidLocation>());
+            avoid: TableList.Empty<AvoidLocation>());
     }
 
     public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyTableList<AvoidLocation> avoid)
