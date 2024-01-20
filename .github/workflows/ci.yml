@@ -68,11 +68,17 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build debug, no shared instances
-        run: dotnet build --configuration Debug /p:UseSharedInstances=false
-
       - name: Build debug, no hash sets
         run: dotnet build --configuration Debug /p:UseHashSets=false
+
+      - name: Build debug, no bit array
+        run: dotnet build --configuration Debug /p:UseBitArray=false
+
+      - name: Build debug, location as class
+        run: dotnet build --configuration Debug /p:LocationAsStruct=false
+
+      - name: Build debug, no shared instances
+        run: dotnet build --configuration Debug /p:UseSharedInstances=false
 
       - name: Build debug, no vectors
         run: dotnet build --configuration Debug /p:UseVectors=false
@@ -80,8 +86,8 @@ jobs:
       - name: Build debug, no stackalloc
         run: dotnet build --configuration Debug /p:UseStackalloc=false
 
-      - name: Build debug, no bit array
-        run: dotnet build --configuration Debug /p:UseBitArray=false
+      - name: Build debug, rent neighbors
+        run: dotnet build --configuration Debug /p:RentNeighbors=true
 
       - name: Build debug, allow dynamic FLUTE degree
         run: dotnet build --configuration Debug /p:AllowDynamicFluteDegree=true
@@ -89,19 +95,19 @@ jobs:
       - name: Build debug, no grid ToString
         run: dotnet build --configuration Debug /p:EnableGridToString=false
 
-      - name: Build debug, no defines at all
-        run: dotnet build --configuration Debug /p:UseDefines=false
+      - name: Build debug, with Lua settings
+        run: dotnet build --configuration Debug /p:UseLuaSettings=true
 
-      - name: Build release without defines
-        run: dotnet build --configuration Release /p:UseDefines=false
+      - name: Build debug, with Lua settings
+        run: dotnet build --configuration Release /p:UseLuaSettings=true
 
-      - name: Test without defines
+      - name: Test with Lua settings
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
 
-      - name: Build release with defines
+      - name: Build release with default settings
         run: dotnet build --configuration Release
 
-      - name: Test with defines
+      - name: Test with default settings
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
 
       - name: Publish

@@ -1,21 +1,34 @@
 <Project>
 
   <PropertyGroup>
-    <UseDefines Condition="'$(UseDefines)' == ''">true</UseDefines>
+    <UseLuaSettings Condition="'$(UseLuaSettings)' == ''">false</UseLuaSettings>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(UseLuaSettings)' == 'true'">
+    <UseHashSets>false</UseHashSets>
+    <UseBitArray>false</UseBitArray>
+    <LocationAsStruct>false</LocationAsStruct>
+    <UseSharedInstances>false</UseSharedInstances>
+    <UseVectors>false</UseVectors>
+    <UseStackalloc>false</UseStackalloc>
+    <RentNeighbors>true</RentNeighbors>
+    <EnableVisualizer>false</EnableVisualizer>
+    <EnableGridToString>true</EnableGridToString>
+    <AllowDynamicFluteDegree>false</AllowDynamicFluteDegree>
   </PropertyGroup>
   
   <PropertyGroup>
-    <UseHashSets Condition="'$(UseHashSets)' == ''">$(UseDefines)</UseHashSets>
+    <UseHashSets Condition="'$(UseHashSets)' == ''">true</UseHashSets>
     <DefineConstants Condition="$(UseHashSets) == 'true'">$(DefineConstants);USE_HASHSETS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseBitArray Condition="'$(UseBitArray)' == ''">$(UseDefines)</UseBitArray>
+    <UseBitArray Condition="'$(UseBitArray)' == ''">true</UseBitArray>
     <DefineConstants Condition="$(UseBitArray) == 'true'">$(DefineConstants);USE_BITARRAY</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <LocationAsStruct Condition="'$(LocationAsStruct)' == ''">$(UseDefines)</LocationAsStruct>
+    <LocationAsStruct Condition="'$(LocationAsStruct)' == ''">true</LocationAsStruct>
     <DefineConstants Condition="$(LocationAsStruct) == 'true'">$(DefineConstants);LOCATION_AS_STRUCT</DefineConstants>
   </PropertyGroup>
   

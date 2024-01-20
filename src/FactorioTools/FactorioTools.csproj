@@ -9,27 +9,27 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseSharedInstances Condition="'$(UseSharedInstances)' == ''">$(UseDefines)</UseSharedInstances>
+    <UseSharedInstances Condition="'$(UseSharedInstances)' == ''">true</UseSharedInstances>
     <DefineConstants Condition="$(UseSharedInstances) == 'true'">$(DefineConstants);USE_SHARED_INSTANCES</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseVectors Condition="'$(UseVectors)' == ''">$(UseDefines)</UseVectors>
+    <UseVectors Condition="'$(UseVectors)' == ''">true</UseVectors>
     <DefineConstants Condition="$(UseVectors) == 'true'">$(DefineConstants);USE_VECTORS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <UseStackalloc Condition="'$(UseStackalloc)' == ''">$(UseDefines)</UseStackalloc>
+    <UseStackalloc Condition="'$(UseStackalloc)' == ''">true</UseStackalloc>
     <DefineConstants Condition="$(UseStackalloc) == 'true'">$(DefineConstants);USE_STACKALLOC</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <RentNeighbors Condition="'$(RentNeighbors)' == ''">true</RentNeighbors>
+    <RentNeighbors Condition="'$(RentNeighbors)' == ''">false</RentNeighbors>
     <DefineConstants Condition="$(RentNeighbors) == 'true'">$(DefineConstants);RENT_NEIGHBORS</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
-    <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">$(UseDefines)</EnableVisualizer>
+    <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' == 'Debug'">true</EnableVisualizer>
     <EnableVisualizer Condition="'$(EnableVisualizer)' == '' and '$(Configuration)' != 'Debug'">false</EnableVisualizer>
     <DefineConstants Condition="$(EnableVisualizer) == 'true'">$(DefineConstants);ENABLE_VISUALIZER</DefineConstants>
   </PropertyGroup>
