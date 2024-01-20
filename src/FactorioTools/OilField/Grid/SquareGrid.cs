@@ -131,9 +131,17 @@ public abstract class SquareGrid
         return location.X >= 0 && location.X < Width && location.Y >= 0 && location.Y < Height;
     }
 
+#if USE_ARRAY
     public abstract void GetNeighbors(Span<Location> neighbors, Location location);
+#else
+    public abstract void GetNeighbors(DictionaryTableArray<Location> neighbors, Location location);
+#endif
 
+#if USE_ARRAY
     public void GetAdjacent(Span<Location> adjacent, Location location)
+#else
+    public void GetAdjacent(DictionaryTableArray<Location> adjacent, Location location)
+#endif
     {
         var a = location.Translate(1, 0);
         adjacent[0] = IsInBounds(a) ? a : Location.Invalid;

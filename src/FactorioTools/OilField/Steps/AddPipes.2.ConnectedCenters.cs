@@ -800,7 +800,7 @@ public static class AddPipesConnectedCenters
             _centerToConnectedCenters = centerToConnectedCenters;
             _allIncludedCenters = allIncludedCenters;
 
-            IncludedCenters = includedCenters.ToReadOnlySet(context, allowEnumerate: true);
+            IncludedCenters = includedCenters.ToSet(context, allowEnumerate: true);
 
             FrontierCenters = context.GetLocationSet(allowEnumerate: true);
             IncludedCenterToChildCenters = context.GetLocationDictionary<ILocationSet>();

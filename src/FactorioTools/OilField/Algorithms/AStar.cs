@@ -39,13 +39,29 @@ public static class AStar
 #else
         var goalsArray = new Location[goals.Count];
 #endif
+
+#if USE_ARRAY
         goals.CopyTo(goalsArray);
+#else
+        var index = 0;
+        foreach (var goal in goals.EnumerateItems())
+        {
+            goalsArray[index] = goal;
+            index++;
+        }
+#endif
 
 #if USE_VECTORS
         var useVector = Vector.IsHardwareAccelerated && goals.Count >= Vector<int>.Count;
 
+#if USE_ARRAY
         int[]? xs = null;
         int[]? ys = null;
+#else
+        DictionaryTableArray<int>? xs = null;
+        DictionaryTableArray<int>? ys = null;
+#endif
+
         if (useVector)
         {
 #if USE_SHARED_INSTANCES
@@ -81,10 +97,13 @@ public static class AStar
 
             Location reachedGoal = Location.Invalid;
             bool success = false;
+#if USE_ARRAY
 #if USE_STACKALLOC && LOCATION_AS_STRUCT
             Span<Location> neighbors = stackalloc Location[4];
 #else
             Span<Location> neighbors = new Location[4];
+#endif
+#else
 #endif
 
             while (frontier.Count > 0)
@@ -117,7 +136,7 @@ public static class AStar
                         costSoFar[next] = newCost;
                         double priority;
 
-#if USE_VECTORS
+#if USE_VECTORS && USE_ARRAY
                         if (useVector)
                         {
                             priority = newCost + Heuristic(next, xs!, ys!, goals.Count, xWeight, yWeight);
@@ -172,7 +191,11 @@ public static class AStar
         return directionA != directionB;
     }
 
+#if USE_ARRAY
     private static int Heuristic(Location current, Location[] goals, int goalsCount, int xWeight, int yWeight)
+#else
+    private static int Heuristic(Location current, DictionaryTableArray<Location> goals, int goalsCount, int xWeight, int yWeight)
+#endif
     {
         var min = int.MaxValue;
         for (int i = 0; i < goalsCount; i++)

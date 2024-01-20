@@ -24,9 +24,15 @@ public class SharedInstances
 
 #if USE_SHARED_INSTANCES
     public Queue<Location> LocationQueue = new();
+#if USE_ARRAY
     public Location[] LocationArray = Array.Empty<Location>();
     public int[] IntArrayX = Array.Empty<int>();
     public int[] IntArrayY = Array.Empty<int>();
+#else
+    public DictionaryTableArray<Location> LocationArray = TableArray.New<Location>(0);
+    public DictionaryTableArray<int> IntArrayX = TableArray.New<int>(0);
+    public DictionaryTableArray<int> IntArrayY = TableArray.New<int>(0);
+#endif
     public ILocationDictionary<Location> LocationToLocation;
     public ILocationDictionary<double> LocationToDouble;
     public PriorityQueue<Location, double> LocationPriorityQueue = new();
@@ -35,6 +41,7 @@ public class SharedInstances
     public ILocationSet LocationSetA;
     public ILocationSet LocationSetB;
 
+#if USE_ARRAY
     public T[] GetArray<T>(ref T[] array, int length)
     {
         if (array.Length < length)
@@ -44,5 +51,12 @@ public class SharedInstances
 
         return array;
     }
+#else
+    public DictionaryTableArray<T> GetArray<T>(ref DictionaryTableArray<T> array, int length)
+    {
+        array.Resize(array.Length);
+        return array;
+    }
+#endif
 #endif
 }

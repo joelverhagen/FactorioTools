@@ -72,7 +72,11 @@ public static class PlanBeaconsFbe
             var beacon = possibleBeacons[possibleBeacons.Count - 1];
             possibleBeacons.RemoveAt(possibleBeacons.Count - 1);
 
+#if USE_ARRAY
             if (collisionArea.Overlaps(beacon.CollisionArea))
+#else
+            if (collisionArea.Overlaps(beacon.CollisionArea.EnumerateItems()))
+#endif
             {
                 continue;
             }
@@ -98,7 +102,11 @@ public static class PlanBeaconsFbe
             beacons.Add(beacon.Center);
             effects += beacon.EffectsGivenCount;
             // Console.WriteLine($"{beacon.Center} --- {beacon.EffectsGivenCount}");
+#if USE_ARRAY
             collisionArea.UnionWith(beacon.CollisionArea);
+#else
+            collisionArea.UnionWith(beacon.CollisionArea.EnumerateItems());
+#endif
         }
 
         return new BeaconPlannerResult(beacons, effects);
@@ -220,7 +228,11 @@ public static class PlanBeaconsFbe
     private static ITableList<BeaconCandidate> GetPossibleBeacons(
         Context context,
         ITableList<Area> effectEntityAreas,
+#if USE_ARRAY
         ITableList<Location[]> possibleBeaconAreas,
+#else
+        ITableList<DictionaryTableArray<Location>> possibleBeaconAreas,
+#endif
         ILocationDictionary<int> pointToBeaconCount,
         ILocationDictionary<Area> pointToEntityArea)
     {
@@ -388,7 +400,11 @@ public static class PlanBeaconsFbe
             var minY = location.Y - ((height - 1) / 2);
             var maxY = location.Y + (height / 2);
 
+#if USE_ARRAY
             var area = new Location[width * height];
+#else
+            var area = TableArray.New<Location>(width * height);
+#endif
             var i = 0;
             for (var x = minX; x <= maxX; x++)
             {
@@ -425,10 +441,19 @@ public static class PlanBeaconsFbe
         return effectEntityArea;
     }
 
+#if USE_ARRAY
+
     private static ITableList<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
+#else
+    private static ITableList<DictionaryTableArray<Location>> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
+#endif
     {
         var validBeaconCenters = context.GetLocationSet();
+#if USE_ARRAY
         var possibleBeaconAreas = TableList.New<Location[]>();
+#else
+        var possibleBeaconAreas = TableList.New<DictionaryTableArray<Location>>();
+#endif
 
         var gridMinX = (context.Options.BeaconWidth - 1) / 2;
         var gridMinY = (context.Options.BeaconHeight - 1) / 2;
@@ -445,7 +470,11 @@ public static class PlanBeaconsFbe
         var beaconRight = context.Options.BeaconWidth / 2;
         var beaconDown = context.Options.BeaconHeight / 2;
 
+#if USE_ARRAY
         var area = new Location[context.Options.BeaconWidth * context.Options.BeaconHeight];
+#else
+        var area = TableArray.New<Location>(context.Options.BeaconWidth * context.Options.BeaconHeight);
+#endif
 
         for (var i = 0; i < context.Centers.Count; i++)
         {
@@ -492,7 +521,11 @@ public static class PlanBeaconsFbe
                     if (fits)
                     {
                         possibleBeaconAreas.Add(area);
+#if USE_ARRAY
                         area = new Location[context.Options.BeaconWidth * context.Options.BeaconHeight];
+#else
+                        area = TableArray.New<Location>(context.Options.BeaconWidth * context.Options.BeaconHeight);
+#endif
                     }
                 }
             }
@@ -501,7 +534,11 @@ public static class PlanBeaconsFbe
         return possibleBeaconAreas;
     }
 
+#if USE_ARRAY
     private static ILocationDictionary<int> GetPointToBeaconCount(Context context, ITableList<Location[]> possibleBeaconAreas)
+#else
+    private static ILocationDictionary<int> GetPointToBeaconCount(Context context, ITableList<DictionaryTableArray<Location>> possibleBeaconAreas)
+#endif
     {
         var pointToBeaconCount = context.GetLocationDictionary<int>();
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
@@ -541,7 +578,11 @@ public static class PlanBeaconsFbe
 
     private class Area
     {
+#if USE_ARRAY
         public Area(int index, bool effect, Location[] locations)
+#else
+        public Area(int index, bool effect, DictionaryTableArray<Location> locations)
+#endif
         {
             Index = index;
             Effect = effect;
@@ -550,13 +591,21 @@ public static class PlanBeaconsFbe
 
         public int Index { get; set; }
         public bool Effect { get; }
+#if USE_ARRAY
         public Location[] Locations { get; }
+#else
+        public DictionaryTableArray<Location> Locations { get; }
+#endif
     }
 
     private record BeaconCandidate(
             int OriginalIndex,
             Location Center,
+#if USE_ARRAY
             Location[] CollisionArea,
+#else
+            DictionaryTableArray<Location> CollisionArea,
+#endif
             int EffectsGivenCount,
             double AverageDistanceToEntities,
             int NumberOfOverlaps,
