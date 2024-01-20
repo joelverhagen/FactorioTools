@@ -29,7 +29,12 @@ public static class RotateOptimize
             var changedTerminal = false;
             foreach (var terminals in context.CenterToTerminals.Values)
             {
-                var currentTerminal = terminals.Single();
+                if (terminals.Count != 1)
+                {
+                    throw new FactorioToolsException("There should be a single terminal at this point.");
+                }
+
+                var currentTerminal = terminals[0];
 
                 if (context.LocationToTerminals[currentTerminal.Terminal].Count > 1
                     || context.Intersections.Contains(currentTerminal.Terminal))
@@ -47,8 +52,10 @@ public static class RotateOptimize
             // VisualizeIntersections(context);
 
             var shortenedPath = false;
-            foreach (var intersection in context.Intersections.EnumerateItems().ToList())
+            var intersections = context.Intersections.EnumerateItems().ToTableArray();
+            for (var i = 0; i < intersections.Count; i++)
             {
+                var intersection = intersections[i];
                 if (!context.Intersections.Contains(intersection))
                 {
                     continue;
@@ -58,9 +65,9 @@ public static class RotateOptimize
                 var exploredPaths = ExplorePaths(context, intersection);
                 context.Goals.Add(intersection);
 
-                foreach (var goal in exploredPaths.ReachedGoals)
+                for (var j = 0; j < exploredPaths.ReachedGoals.Count; j++)
                 {
-                    if (UseShortestPath(context, exploredPaths, intersection, goal))
+                    if (UseShortestPath(context, exploredPaths, intersection, exploredPaths.ReachedGoals[j]))
                     {
                         // VisualizeIntersections(context);
                         shortenedPath = true;
@@ -87,7 +94,7 @@ public static class RotateOptimize
     {
         var clone = new PipeGrid(context.ExistingPipeGrid);
         AddPipeEntities.Execute(context.ParentContext, clone, context.Pipes, allowMultipleTerminals: true);
-        Visualizer.Show(clone, context.Intersections.ToDelaunatorPoints(), Array.Empty<DelaunatorSharp.IEdge>());
+        Visualizer.Show(clone, context.Intersections.ToDelaunatorPoints().EnumerateItems(), Array.Empty<DelaunatorSharp.IEdge>());
     }
 #endif
 
@@ -105,10 +112,15 @@ public static class RotateOptimize
         }
         */
 
-        var originalGoal = exploredPaths.ReachedGoals.Single();
+        if (exploredPaths.ReachedGoals.Count != 1)
+        {
+            throw new FactorioToolsException("Only a single goal should have been reached.");
+        }
+
+        var originalGoal = exploredPaths.ReachedGoals[0];
 
 #if !USE_SHARED_INSTANCES
-        var originalPath = new List<Location>();
+        var originalPath = TableArray.New<Location>();
 #else
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
         try
@@ -139,7 +151,7 @@ public static class RotateOptimize
 #if USE_SHARED_INSTANCES
                 var newPath = minPath == context.ParentContext.SharedInstances.LocationListA ? context.ParentContext.SharedInstances.LocationListB : context.ParentContext.SharedInstances.LocationListA;
 #else
-                var newPath = new List<Location>();
+                var newPath = TableArray.New<Location>();
 #endif
                 var result = AStar.GetShortestPath(context.ParentContext, context.Grid, terminalCandidate, context.Pipes, outputList: newPath);
                 if (result.Success)
@@ -168,7 +180,7 @@ public static class RotateOptimize
                 }
             }
 
-            context.Pipes.UnionWith(minPath);
+            context.Pipes.UnionWith(minPath.EnumerateItems());
 
             if (changedPath)
             {
@@ -178,7 +190,7 @@ public static class RotateOptimize
 
                     if (!context.LocationToTerminals.TryGetValue(minTerminal.Terminal, out var locationTerminals))
                     {
-                        locationTerminals = new List<TerminalLocation> { minTerminal };
+                        locationTerminals = TableArray.New(minTerminal);
                         context.LocationToTerminals.Add(minTerminal.Terminal, locationTerminals);
                     }
                     else
@@ -223,7 +235,7 @@ public static class RotateOptimize
         Location originalGoal)
     {
 #if !USE_SHARED_INSTANCES
-        var originalPath = new List<Location>();
+        var originalPath = TableArray.New<Location>();
         var connectionPoints = context.ParentContext.GetLocationSet(context.Pipes.Count, allowEnumerate: true);
 #else
         var originalPath = context.ParentContext.SharedInstances.LocationListA;
@@ -269,12 +281,12 @@ public static class RotateOptimize
                 if (result.Path.Count > originalPath.Count
                     || (result.Path.Count == originalPath.Count && CountTurns(result.Path) >= CountTurns(originalPath)))
                 {
-                    context.Pipes.UnionWith(originalPath);
+                    context.Pipes.UnionWith(originalPath.EnumerateItems());
 
                     return false;
                 }
 
-                context.Pipes.UnionWith(result.Path);
+                context.Pipes.UnionWith(result.Path.EnumerateItems());
                 context.UpdateIntersectionsAndGoals();
 
                 /*
@@ -360,7 +372,7 @@ public static class RotateOptimize
             Span<Location> neighbors = new Location[4];
 #endif
 
-            var reachedGoals = new List<Location>();
+            var reachedGoals = TableArray.New<Location>();
 
             while (toExplore.Count > 0)
             {
@@ -410,8 +422,8 @@ public static class RotateOptimize
 
         public Context ParentContext { get; }
         public SquareGrid Grid => ParentContext.Grid;
-        public ILocationDictionary<List<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
-        public ILocationDictionary<List<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
+        public ILocationDictionary<ITableArray<TerminalLocation>> LocationToTerminals => ParentContext.LocationToTerminals;
+        public ILocationDictionary<ITableArray<TerminalLocation>> CenterToTerminals => ParentContext.CenterToTerminals;
         public ILocationSet Pipes { get; }
         public ILocationSet Intersections { get; }
         public ILocationSet Goals { get; }
@@ -459,7 +471,7 @@ public static class RotateOptimize
 
     private class ExploredPaths
     {
-        public ExploredPaths(Location start, ILocationDictionary<Location> cameFrom, List<Location> reachedGoals)
+        public ExploredPaths(Location start, ILocationDictionary<Location> cameFrom, ITableArray<Location> reachedGoals)
         {
             Start = start;
             CameFrom = cameFrom;
@@ -468,9 +480,9 @@ public static class RotateOptimize
 
         public Location Start { get; }
         public ILocationDictionary<Location> CameFrom { get; }
-        public List<Location> ReachedGoals { get; }
+        public ITableArray<Location> ReachedGoals { get; }
 
-        public void AddPath(Location goal, List<Location> outputList)
+        public void AddPath(Location goal, ITableArray<Location> outputList)
         {
             Helpers.AddPath(CameFrom, goal, outputList);
         }

@@ -3,23 +3,17 @@ local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
 local AddPipesConnectedCenters
-local ListTrunk
-local ListLocation
 local ArrayLocation
-local ListPumpjackGroup
 local QueueExploreCenter
-local ListTerminalLocation
+local ITableArray_1Location
 local KeyValuePairLocationILocationSet
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   AddPipesConnectedCenters = Knapcode.FactorioTools.OilField.AddPipesConnectedCenters
-  ListTrunk = System.List(AddPipesConnectedCenters.Trunk)
-  ListLocation = System.List(KnapcodeOilField.Location)
   ArrayLocation = System.Array(KnapcodeOilField.Location)
-  ListPumpjackGroup = System.List(AddPipesConnectedCenters.PumpjackGroup)
   QueueExploreCenter = System.Queue(AddPipesConnectedCenters.ExploreCenter)
-  ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
+  ITableArray_1Location = KnapcodeOilField.ITableArray_1(KnapcodeOilField.Location)
   KeyValuePairLocationILocationSet = System.KeyValuePair(KnapcodeOilField.Location, KnapcodeOilField.ILocationSet)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
@@ -94,7 +88,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     namespace.class("Trunk", function (namespace)
       local getLength, getStart, getEnd, GetTrunkEndDistance, ToString, __ctor__
       __ctor__ = function (this, context, startingTerminal, center)
-        this.Terminals = ListTerminalLocation(2)
+        this.Terminals = KnapcodeOilField.TableArray.New1(2, KnapcodeOilField.TerminalLocation)
         this._context = context
         this.TerminalLocations = context:GetLocationSet7(startingTerminal.Terminal, 2)
         this.Terminals:Add(startingTerminal)
@@ -107,7 +101,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         return this.Terminals:get(0).Terminal
       end
       getEnd = function (this)
-        return this.Terminals:get(#this.Terminals - 1).Terminal
+        return this.Terminals:get(this.Terminals:getCount() - 1).Terminal
       end
       GetTrunkEndDistance = function (this, centerToConnectedCenters)
         if (this._trunkEndDistance ~= nil) then
@@ -160,12 +154,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         this._centerToConnectedCenters = centerToConnectedCenters
         this._allIncludedCenters = allIncludedCenters
 
-        this.IncludedCenters = KnapcodeFactorioTools.SetHandling.ToReadOnlySet1(includedCenters, context, true)
+        this.IncludedCenters = KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet1(includedCenters, context, true)
 
         this.FrontierCenters = context:GetLocationSet2(true)
         this.IncludedCenterToChildCenters = context:GetLocationDictionary(KnapcodeOilField.ILocationSet)
 
-        this.Pipes = KnapcodeFactorioTools.SetHandling.ToSet(pipes, context, true)
+        this.Pipes = KnapcodeFactorioTools.CollectionExtensions.ToSet1(pipes:EnumerateItems(), context, true)
 
         UpdateFrontierCenters(this)
         UpdateIncludedCenterToChildCenters(this)
@@ -188,13 +182,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       ConnectPumpjack = function (this, center, path)
         this._allIncludedCenters:Add(center)
         this.IncludedCenters:Add(center)
-        this.Pipes:UnionWith(path)
+        this.Pipes:UnionWith(path:EnumerateItems())
         UpdateFrontierCenters(this)
         UpdateIncludedCenterToChildCenters(this)
       end
       MergeGroup = function (this, other, path)
         this.IncludedCenters:UnionWith1(other.IncludedCenters)
-        this.Pipes:UnionWith(path)
+        this.Pipes:UnionWith(path:EnumerateItems())
         this.Pipes:UnionWith1(other.Pipes)
         UpdateFrontierCenters(this)
         UpdateIncludedCenterToChildCenters(this)
@@ -236,7 +230,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     GetConnectedPumpjacks = function (context, strategy)
       local centers = context.Centers
 
-      if #centers == 2 then
+      if centers:getCount() == 2 then
         local simpleConnectedCenters = context:GetLocationDictionary(KnapcodeOilField.ILocationSet)
         simpleConnectedCenters:Add(centers:get(0), context:GetSingleLocationSet(centers:get(1)))
         simpleConnectedCenters:Add(centers:get(1), context:GetSingleLocationSet(centers:get(0)))
@@ -245,12 +239,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       -- Check that nodes are not collinear
       if KnapcodeOilField.Helpers.AreLocationsCollinear(centers) then
-        local connected = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
+        local connected = KnapcodeFactorioTools.CollectionExtensions.ToDictionary1(centers, context, function (c)
           return c
         end, function (c)
           return context:GetLocationSet2(true)
         end, KnapcodeOilField.Location, KnapcodeOilField.ILocationSet)
-        for j = 1, #centers - 1 do
+        for j = 1, centers:getCount() - 1 do
           connected:get(centers:get(j - 1)):Add(centers:get(j))
           connected:get(centers:get(j)):Add(centers:get(j - 1))
         end
@@ -290,19 +284,19 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     FindTrunksAndConnect = function (context, centerToConnectedCenters)
       local selectedTrunks = FindTrunks(context, centerToConnectedCenters)
 
-      local allIncludedCenters = context:GetLocationSet5(#selectedTrunks * 2)
-      for i = 0, #selectedTrunks - 1 do
+      local allIncludedCenters = context:GetLocationSet5(selectedTrunks:getCount() * 2)
+      for i = 0, selectedTrunks:getCount() - 1 do
         for _, center in System.each(selectedTrunks:get(i).Centers:EnumerateItems()) do
           allIncludedCenters:Add(center)
         end
       end
 
-      local groups = ListPumpjackGroup(#selectedTrunks)
-      for i = 0, #selectedTrunks - 1 do
+      local groups = KnapcodeOilField.TableArray.New1(selectedTrunks:getCount(), class.PumpjackGroup)
+      for i = 0, selectedTrunks:getCount() - 1 do
         groups:Add(class.PumpjackGroup(context, centerToConnectedCenters, allIncludedCenters, selectedTrunks:get(i)))
       end
 
-      if #groups == 0 then
+      if groups:getCount() == 0 then
         local group = ConnectTwoClosestPumpjacks(context, centerToConnectedCenters, allIncludedCenters)
 
         groups:Add(group)
@@ -313,15 +307,16 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         Visualizer.Show(clone, groups.SelectMany(g => g.Pipes).Distinct(context).Select(p => (IPoint)new Point(p.X, p.Y)), Array.Empty<IEdge>());
         ]]
 
-      while #groups > 1 or groups:get(0).IncludedCenters:getCount() < context.CenterToTerminals:getCount() do
+      while groups:getCount() > 1 or groups:get(0).IncludedCenters:getCount() < context.CenterToTerminals:getCount() do
         local continue
         repeat
           local shortestDistance = nil
           local candidate = nil
 
-          for _, group in System.each(groups) do
+          for i = 0, groups:getCount() - 1 do
             local continue
             repeat
+              local group = groups:get(i)
               local centroidX = KnapcodeFactorioTools.CollectionExtensions.Average(group.Pipes:EnumerateItems(), function (l)
                 return l.X
               end, KnapcodeOilField.Location)
@@ -338,9 +333,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
                   -- Prefer the terminal that has the shortest path, then prefer the terminal closer to the centroid
                   -- of the child (unconnected) pumpjacks.
-                  for _, terminal in System.each(context.CenterToTerminals:get(center)) do
+                  local terminals = context.CenterToTerminals:get(center)
+                  for j = 0, terminals:getCount() - 1 do
                     local continue
                     repeat
+                      local terminal = terminals:get(j)
                       local result = GetShortestPathToGroup(context, terminal, group, centroidX, centroidY)
                       if result.Exception ~= nil then
                         return KnapcodeFactorioTools.Result.NewException(result.Exception, KnapcodeOilField.ILocationSet)
@@ -354,7 +351,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                         break
                       end
 
-                      local comparison = System.Int32.CompareTo((#path), #candidate.Path)
+                      local comparison = System.Int32.CompareTo(path:getCount(), candidate.Path:getCount())
                       if comparison < 0 then
                         candidate = class.GroupCandidate(group, center, includedCenter, terminal, path)
                         shortestDistance = nil
@@ -401,7 +398,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
 
           if allIncludedCenters:Contains(candidate.Terminal.Center) then
-            local otherGroup = KnapcodeFactorioTools.CollectionExtensions.Single1(groups, function (g)
+            local otherGroup = KnapcodeFactorioTools.CollectionExtensions.Single1(groups:EnumerateItems(), function (g)
               return g.IncludedCenters:Contains(candidate.Terminal.Center)
             end, class.PumpjackGroup)
             candidate.Group:MergeGroup(otherGroup, candidate.Path)
@@ -430,17 +427,21 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.Single(groups, class.PumpjackGroup).Pipes, KnapcodeOilField.ILocationSet)
+      if groups:getCount() ~= 1 then
+        System.throw(KnapcodeFactorioTools.FactorioToolsException("There should be a single group at this point."))
+      end
+
+      return KnapcodeFactorioTools.Result.NewData(groups:get(0).Pipes, KnapcodeOilField.ILocationSet)
     end
     GetShortestPathToGroup = function (context, terminal, group, groupCentroidX, groupCentroidY)
       local aStarResultV = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 2, 1)
       local aStarResultH = KnapcodeOilField.AStar.GetShortestPath(context, context.Grid, terminal.Terminal, group.Pipes, true, 1, 2)
       if not aStarResultV.Success then
-        return KnapcodeFactorioTools.Result.NewException(KnapcodeFactorioTools.NoPathBetweenTerminalsException(terminal.Terminal, KnapcodeFactorioTools.CollectionExtensions.First(group.Pipes:EnumerateItems(), KnapcodeOilField.Location)), ListLocation)
+        return KnapcodeFactorioTools.Result.NewException(KnapcodeFactorioTools.NoPathBetweenTerminalsException(terminal.Terminal, KnapcodeFactorioTools.CollectionExtensions.First(group.Pipes:EnumerateItems(), KnapcodeOilField.Location)), ITableArray_1Location)
       end
 
       if KnapcodeFactorioTools.CollectionExtensions.SequenceEqual(aStarResultV:getPath(), aStarResultH:getPath(), KnapcodeOilField.Location) then
-        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location), ListLocation)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToTableArray1(aStarResultV:getPath(), KnapcodeOilField.Location), ITableArray_1Location)
       end
 
       local adjacentPipesV = 0
@@ -449,15 +450,15 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local adjacentPipesH = 0
       local centroidDistanceSquaredH = 0
 
-      local sizeEstimate = #aStarResultV:getPath() + #aStarResultH:getPath()
+      local sizeEstimate = aStarResultV:getPath():getCount() + aStarResultH:getPath():getCount()
 
 
       local locationToCentroidDistanceSquared = context:GetLocationDictionary1(sizeEstimate, System.Double)
       local width = context.Grid.Width
       do
         local i = 0
-        while i < math.Max(#aStarResultV:getPath(), #aStarResultH:getPath()) do
-          if i < #aStarResultV:getPath() then
+        while i < math.Max(aStarResultV:getPath():getCount(), aStarResultH:getPath():getCount()) do
+          if i < aStarResultV:getPath():getCount() then
             local location = aStarResultV:getPath():get(i)
             if context.LocationToAdjacentCount:get(location.Y * width + location.X) > 0 then
               adjacentPipesV = adjacentPipesV + 1
@@ -466,7 +467,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             centroidDistanceSquaredV = centroidDistanceSquaredV + GetCentroidDistanceSquared(groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)
           end
 
-          if i < #aStarResultH:getPath() then
+          if i < aStarResultH:getPath():getCount() then
             local location = aStarResultH:getPath():get(i)
             if context.LocationToAdjacentCount:get(location.Y * width + location.X) > 0 then
               adjacentPipesH = adjacentPipesH + 1
@@ -479,13 +480,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       if adjacentPipesV > adjacentPipesH then
-        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location), ListLocation)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToTableArray1(aStarResultV:getPath(), KnapcodeOilField.Location), ITableArray_1Location)
       elseif adjacentPipesV < adjacentPipesH then
-        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location), ListLocation)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToTableArray1(aStarResultH:getPath(), KnapcodeOilField.Location), ITableArray_1Location)
       elseif centroidDistanceSquaredV < centroidDistanceSquaredH then
-        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultV:getPath(), KnapcodeOilField.Location), ListLocation)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToTableArray1(aStarResultV:getPath(), KnapcodeOilField.Location), ITableArray_1Location)
       else
-        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToList(aStarResultH:getPath(), KnapcodeOilField.Location), ListLocation)
+        return KnapcodeFactorioTools.Result.NewData(KnapcodeFactorioTools.CollectionExtensions.ToTableArray1(aStarResultH:getPath(), KnapcodeOilField.Location), ITableArray_1Location)
       end
     end
     GetCentroidDistanceSquared = function (groupCentroidX, groupCentroidY, locationToCentroidDistanceSquared, location)
@@ -531,12 +532,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- Eliminate lower priority trunks that have any pipes shared with higher priority trunks.
       local includedPipes = context:GetLocationSet1()
       local includedCenters = context:GetLocationSet2(true)
-      local selectedTrunks = ListTrunk()
-      for _, trunk in System.each(trunkCandidates) do
+      local selectedTrunks = KnapcodeOilField.TableArray.New(class.Trunk)
+      for i = 0, trunkCandidates:getCount() - 1 do
+        local trunk = trunkCandidates:get(i)
         local path = KnapcodeOilField.Helpers.MakeStraightLine(trunk:getStart(), trunk:getEnd())
-        if not includedPipes:Overlaps(path) and not includedCenters:Overlaps(trunk.Centers:EnumerateItems()) then
+        if not includedPipes:Overlaps(path:EnumerateItems()) and not includedCenters:Overlaps(trunk.Centers:EnumerateItems()) then
           selectedTrunks:Add(trunk)
-          includedPipes:UnionWith(path)
+          includedPipes:UnionWith(path:EnumerateItems())
           includedCenters:UnionWith1(trunk.Centers)
         end
       end
@@ -553,9 +555,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       -- Eliminate unused terminals for pumpjacks included in all of the trunks. A pumpjack connected to a trunk has
       -- its terminal selected.
-      for _, trunk in System.each(selectedTrunks) do
-        for _, terminal in System.each(trunk.Terminals) do
-          KnapcodeOilField.Helpers.EliminateOtherTerminals(context, terminal)
+      for i = 0, selectedTrunks:getCount() - 1 do
+        local trunk = selectedTrunks:get(i)
+        for j = 0, trunk.Terminals:getCount() - 1 do
+          KnapcodeOilField.Helpers.EliminateOtherTerminals(context, trunk.Terminals:get(j))
         end
       end
 
@@ -573,13 +576,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local bestTerminalDistance = nil
       local bestOtherTerminalDistance = nil
 
-      for i = 0, #context.Centers - 1 do
+      for i = 0, context.Centers:getCount() - 1 do
         local continue
         repeat
           local center = context.Centers:get(i)
           local terminals = context.CenterToTerminals:get(center)
 
-          for j = 0, #terminals - 1 do
+          for j = 0, terminals:getCount() - 1 do
             local continue
             repeat
               local terminal = terminals:get(j)
@@ -593,7 +596,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                   local default, goals = centerToGoals:TryGetValue(otherCenter)
                   if not default then
                     goals = context:GetLocationSet2(true)
-                    for k = 0, #otherTerminals - 1 do
+                    for k = 0, otherTerminals:getCount() - 1 do
                       goals:Add(otherTerminals:get(k).Terminal)
                     end
 
@@ -606,7 +609,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                   end
 
                   local reachedGoal = result.ReachedGoal
-                  local closestTerminal = KnapcodeFactorioTools.CollectionExtensions.Single1(otherTerminals, function (t)
+                  local closestTerminal = KnapcodeFactorioTools.CollectionExtensions.Single1(otherTerminals:EnumerateItems(), function (t)
                     return KnapcodeOilField.Location.op_Equality(t.Terminal, reachedGoal)
                   end, KnapcodeOilField.TerminalLocation)
                   local path = result:getPath()
@@ -621,7 +624,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                     break
                   end
 
-                  local c = System.Int32.CompareTo((#path), #bestConnection.Path)
+                  local c = System.Int32.CompareTo(path:getCount(), bestConnection.Path:getCount())
                   if c < 0 then
                     bestConnection = class.BestConnection(path, terminal, closestTerminal)
                     bestConnectedCentersCount = connectedCenters:getCount()
@@ -774,30 +777,33 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return visited
     end
     GetTrunkCandidates = function (context, centerToConnectedCenters)
-      local centerToMaxX = KnapcodeFactorioTools.SetHandling.ToDictionary(context.Centers, context, function (c)
+      local centerToMaxX = KnapcodeFactorioTools.CollectionExtensions.ToDictionary1(context.Centers, context, function (c)
         return c
       end, function (c)
         return KnapcodeFactorioTools.CollectionExtensions.Max(centerToConnectedCenters:get(c):EnumerateItems(), function (c)
-          return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c), function (t)
+          return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c):EnumerateItems(), function (t)
             return t.Terminal.X
           end, KnapcodeOilField.TerminalLocation, System.Int32)
         end, KnapcodeOilField.Location, System.Int32)
       end, KnapcodeOilField.Location, System.Int32)
-      local centerToMaxY = KnapcodeFactorioTools.SetHandling.ToDictionary(context.Centers, context, function (c)
+      local centerToMaxY = KnapcodeFactorioTools.CollectionExtensions.ToDictionary1(context.Centers, context, function (c)
         return c
       end, function (c)
         return KnapcodeFactorioTools.CollectionExtensions.Max(centerToConnectedCenters:get(c):EnumerateItems(), function (c)
-          return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c), function (t)
+          return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c):EnumerateItems(), function (t)
             return t.Terminal.Y
           end, KnapcodeOilField.TerminalLocation, System.Int32)
         end, KnapcodeOilField.Location, System.Int32)
       end, KnapcodeOilField.Location, System.Int32)
 
       -- Find paths that connect the most terminals of neighboring pumpjacks.
-      local trunkCandidates = ListTrunk()
+      local trunkCandidates = KnapcodeOilField.TableArray.New(class.Trunk)
       for _, translation in System.each(Translations) do
-        for _, startingCenter in System.each(context.Centers) do
-          for _, terminal in System.each(context.CenterToTerminals:get(startingCenter)) do
+        for i = 0, context.Centers:getCount() - 1 do
+          local startingCenter = context.Centers:get(i)
+          local terminals = context.CenterToTerminals:get(startingCenter)
+          for j = 0, terminals:getCount() - 1 do
+            local terminal = terminals:get(j)
             local currentCenter = startingCenter
             local expandedChildCenters = false
             local nextCenters = centerToConnectedCenters:get(currentCenter)
@@ -809,11 +815,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             local trunk = nil
 
             while location.X <= maxX and location.Y <= maxY and context.Grid:IsEmpty(location) do
-              local default, terminals = context.LocationToTerminals:TryGetValue(location)
+              local default, otherTerminals = context.LocationToTerminals:TryGetValue(location)
               if default then
                 local nextCenter = KnapcodeOilField.Location.getInvalid()
                 local hasMatch = false
-                for _, nextTerminal in System.each(terminals) do
+                for k = 0, otherTerminals:getCount() - 1 do
+                  local nextTerminal = otherTerminals:get(k)
                   if nextCenters:Contains(nextTerminal.Center) then
                     nextCenter = nextTerminal.Center
                     hasMatch = true
@@ -835,12 +842,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                   end
 
                   maxX = KnapcodeFactorioTools.CollectionExtensions.Max(nextCenters:EnumerateItems(), function (c)
-                    return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c), function (t)
+                    return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c):EnumerateItems(), function (t)
                       return t.Terminal.X
                     end, KnapcodeOilField.TerminalLocation, System.Int32)
                   end, KnapcodeOilField.Location, System.Int32)
                   maxY = KnapcodeFactorioTools.CollectionExtensions.Max(nextCenters:EnumerateItems(), function (c)
-                    return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c), function (t)
+                    return KnapcodeFactorioTools.CollectionExtensions.Max(context.CenterToTerminals:get(c):EnumerateItems(), function (t)
                       return t.Terminal.Y
                     end, KnapcodeOilField.TerminalLocation, System.Int32)
                   end, KnapcodeOilField.Location, System.Int32)
@@ -851,12 +858,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                   trunk = class.Trunk(context, terminal, currentCenter)
                 end
 
-                trunk.Terminals:AddRange(terminals)
-                for _, other in System.each(terminals) do
-                  trunk.TerminalLocations:Add(other.Terminal)
-                end
-                for _, nextTerminal in System.each(terminals) do
-                  trunk.Centers:Add(nextTerminal.Center)
+                trunk.Terminals:AddRange(otherTerminals)
+                for k = 0, otherTerminals:getCount() - 1 do
+                  local otherTerminal = otherTerminals:get(k)
+                  trunk.TerminalLocations:Add(otherTerminal.Terminal)
+                  trunk.Centers:Add(otherTerminal.Center)
                 end
 
                 currentCenter = nextCenter
@@ -866,7 +872,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             end
 
             if trunk ~= nil and trunk.Centers:getCount() > 1 then
-              trunk.OriginalIndex = #trunkCandidates
+              trunk.OriginalIndex = trunkCandidates:getCount()
               trunkCandidates:Add(trunk)
             end
           end

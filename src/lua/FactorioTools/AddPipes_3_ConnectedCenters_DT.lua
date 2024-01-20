@@ -15,7 +15,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     local ExecuteWithDelaunay, ExecuteWithDelaunayMst, GetDelauntator
     ExecuteWithDelaunay = function (context, centers)
       local delaunator = GetDelauntator(centers)
-      local dlGraph = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
+      local dlGraph = KnapcodeFactorioTools.CollectionExtensions.ToDictionary1(centers, context, function (c)
         return c
       end, function (c)
         return context:GetLocationSet2(true)
@@ -35,7 +35,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     ExecuteWithDelaunayMst = function (context, centers)
       local delaunator = GetDelauntator(centers)
-      local dlGraph = KnapcodeFactorioTools.SetHandling.ToDictionary(centers, context, function (c)
+      local dlGraph = KnapcodeFactorioTools.CollectionExtensions.ToDictionary1(centers, context, function (c)
         return c
       end, function (c)
         return context:GetLocationDictionary(System.Int32)
@@ -52,14 +52,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      local closestToMiddle = KnapcodeFactorioTools.CollectionExtensions.MinBy(centers, System.fn(context.Grid.Middle, context.Grid.Middle.GetEuclideanDistanceSquared), KnapcodeOilField.Location, System.Int32)
+      local closestToMiddle = KnapcodeFactorioTools.CollectionExtensions.MinBy(centers:EnumerateItems(), System.fn(context.Grid.Middle, context.Grid.Middle.GetEuclideanDistanceSquared), KnapcodeOilField.Location, System.Int32)
       local mst = KnapcodeOilField.Prims.GetMinimumSpanningTree(context, dlGraph, closestToMiddle, false)
 
       return mst
     end
     GetDelauntator = function (centers)
-      local points = ArrayIPoint(#centers)
-      for i = 0, #centers - 1 do
+      local points = ArrayIPoint(centers:getCount())
+      for i = 0, centers:getCount() - 1 do
         local center = centers:get(i)
         points:set(i, DelaunatorSharp.Point(center.X, center.Y))
       end

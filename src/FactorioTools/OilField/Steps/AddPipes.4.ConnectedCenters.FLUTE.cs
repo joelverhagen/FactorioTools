@@ -16,9 +16,9 @@ public static class AddPipesConnectedCentersFLUTE
             var otherCenters = context.GetLocationSet(allowEnumerate: true);
             var visitedPoints = context.GetLocationSet();
             var queue = new Queue<FlutePoint>();
-            foreach (var terminal in terminals)
+            for (var i = 0; i < terminals.Count; i++)
             {
-                queue.Enqueue(locationToPoint[terminal.Terminal]);
+                queue.Enqueue(locationToPoint[terminals[i].Terminal]);
             }
 
             while (queue.Count > 0)
@@ -65,7 +65,7 @@ public static class AddPipesConnectedCentersFLUTE
         public bool IsSteinerPoint => Centers.Count == 0;
         public Location Location { get; }
         public ILocationSet Centers { get; }
-        public List<TerminalLocation> Terminals { get; } = new List<TerminalLocation>();
+        public ITableArray<TerminalLocation> Terminals { get; } = TableArray.New<TerminalLocation>();
         public ILocationSet Neighbors { get; }
 
 #if ENABLE_GRID_TOSTRING
@@ -129,8 +129,9 @@ public static class AddPipesConnectedCentersFLUTE
         // Add in pumpjack information
         foreach ((var center, var terminals) in context.CenterToTerminals.EnumeratePairs())
         {
-            foreach (var terminal in terminals)
+            for (var i = 0; i < terminals.Count; i++)
             {
+                var terminal = terminals[i];
                 var point = locationToPoint[terminal.Terminal];
                 point.Terminals.Add(terminal);
                 point.Centers.Add(center);

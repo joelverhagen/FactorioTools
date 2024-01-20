@@ -23,11 +23,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       for _, terminals in System.each(context.CenterToTerminals:getValues()) do
-        if #terminals ~= 1 and not allowMultipleTerminals then
+        if terminals:getCount() ~= 1 and not allowMultipleTerminals then
           System.throw(KnapcodeFactorioTools.FactorioToolsException("Every pumpjack should have a single terminal selected."))
         end
 
-        for i = 0, #terminals - 1 do
+        for i = 0, terminals:getCount() - 1 do
           local terminal = terminals:get(i)
           if addedPipes:Add(terminal.Terminal) then
             grid:AddEntity(terminal.Terminal, KnapcodeOilField.Terminal(grid:GetId()))

@@ -39,8 +39,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     ExecuteSample = function ()
       local options = KnapcodeOilField.OilFieldOptions.getForMediumElectricPole()
 
-      options.PipeStrategies = KnapcodeFactorioTools.CollectionExtensions.ToList(KnapcodeOilField.OilFieldOptions.AllPipeStrategies, System.Int32)
-      options.BeaconStrategies = KnapcodeFactorioTools.CollectionExtensions.ToList(KnapcodeOilField.OilFieldOptions.AllBeaconStrategies, System.Int32)
+      options.PipeStrategies = KnapcodeFactorioTools.CollectionExtensions.ToTableArray(KnapcodeOilField.OilFieldOptions.AllPipeStrategies, System.Int32)
+      options.BeaconStrategies = KnapcodeFactorioTools.CollectionExtensions.ToTableArray(KnapcodeOilField.OilFieldOptions.AllBeaconStrategies, System.Int32)
       options.ValidateSolution = true
 
       local default = KnapcodeFactorioToolsData.Blueprint()
@@ -90,7 +90,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return Execute(options, inputBlueprint)
     end
     Execute = function (options, inputBlueprint)
-      return Execute1(options, inputBlueprint, System.Array.Empty(KnapcodeOilField.AvoidLocation))
+      return Execute1(options, inputBlueprint, KnapcodeOilField.TableArray.Empty(KnapcodeOilField.AvoidLocation))
     end
     Execute1 = function (options, inputBlueprint, avoid)
       return Execute2(options, inputBlueprint, avoid, KnapcodeOilField.EmptyLocationSet.Instance, 0 --[[EletricPolesMode.AddLast]])
@@ -124,7 +124,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           for _, terminals in System.each(context.CenterToTerminals:getValues()) do
             local continue
             repeat
-              for i = 0, #terminals - 1 do
+              for i = 0, terminals:getCount() - 1 do
                 local continue
                 repeat
                   local terminal = terminals:get(i)
@@ -191,7 +191,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local rotatedPumpjacks = 0
       for _, extern in System.each(context.CenterToOriginalDirection:EnumeratePairs()) do
         local location, originalDirection = extern:Deconstruct()
-        local finalDirection = KnapcodeFactorioTools.CollectionExtensions.Single(context.CenterToTerminals:get(location), KnapcodeOilField.TerminalLocation).Direction
+        local terminals = context.CenterToTerminals:get(location)
+        if terminals:getCount() ~= 1 then
+          System.throw(KnapcodeFactorioTools.FactorioToolsException("There should be exactly one terminal at this point."))
+        end
+
+        local finalDirection = terminals:get(0).Direction
         if originalDirection ~= finalDirection then
           rotatedPumpjacks = rotatedPumpjacks + 1
         end
@@ -204,7 +209,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     GetElectricPolesAvoid = function (context)
       local electricPolesAvoid = context:GetLocationSet2(true)
       for _, terminals in System.each(context.CenterToTerminals:getValues()) do
-        for i = 0, #terminals - 1 do
+        for i = 0, terminals:getCount() - 1 do
           electricPolesAvoid:Add(terminals:get(i).Terminal)
         end
       end

@@ -5,12 +5,10 @@ local ListPoint = System.List(KnapcodeFluteSharp.Point)
 local KnapcodeOilField
 local AddPipesConnectedCentersFLUTE
 local QueueFlutePoint
-local ListTerminalLocation
 System.import(function (out)
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   AddPipesConnectedCentersFLUTE = Knapcode.FactorioTools.OilField.AddPipesConnectedCentersFLUTE
   QueueFlutePoint = System.Queue(AddPipesConnectedCentersFLUTE.FlutePoint)
-  ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("AddPipesConnectedCentersFLUTE", function (namespace)
@@ -18,7 +16,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     namespace.class("FlutePoint", function (namespace)
       local getIsSteinerPoint, ToString, __ctor__
       __ctor__ = function (this, context, location)
-        this.Terminals = ListTerminalLocation()
+        this.Terminals = KnapcodeOilField.TableArray.New(KnapcodeOilField.TerminalLocation)
         this.Location = location
         this.Centers = context:GetLocationSet2(true)
         this.Neighbors = context:GetLocationSet2(true)
@@ -48,8 +46,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           local otherCenters = context:GetLocationSet2(true)
           local visitedPoints = context:GetLocationSet1()
           local queue = QueueFlutePoint()
-          for _, terminal in System.each(terminals) do
-            queue:Enqueue(locationToPoint:get(terminal.Terminal))
+          for i = 0, terminals:getCount() - 1 do
+            queue:Enqueue(locationToPoint:get(terminals:get(i).Terminal))
           end
 
           while #queue > 0 do
@@ -136,7 +134,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- Add in pumpjack information
       for _, default in System.each(context.CenterToTerminals:EnumeratePairs()) do
         local center, terminals = default:Deconstruct()
-        for _, terminal in System.each(terminals) do
+        for i = 0, terminals:getCount() - 1 do
+          local terminal = terminals:get(i)
           local point = locationToPoint:get(terminal.Terminal)
           point.Terminals:Add(terminal)
           point.Centers:Add(center)
@@ -156,7 +155,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local terminalPoints = ListPoint()
       for _, terminals in System.each(context.CenterToTerminals:getValues()) do
-        for i = 0, #terminals - 1 do
+        for i = 0, terminals:getCount() - 1 do
           local terminal = terminals:get(i)
           terminalPoints:Add(KnapcodeFluteSharp.Point(terminal.Terminal.X, terminal.Terminal.Y))
         end

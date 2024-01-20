@@ -8,15 +8,17 @@ public static class CleanBlueprint
 {
     public static Blueprint Execute(Blueprint blueprint)
     {
-        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint, Array.Empty<AvoidLocation>());
+        var context = InitializeContext.Execute(new OilFieldOptions(), blueprint, TableArray.Empty<AvoidLocation>());
 
-        var entities = new List<Entity>();
+        var entities = TableArray.New<Entity>();
 
-        foreach (var center in context.Centers)
+        for (var i = 0; i < context.Centers.Count; i++)
         {
+            var center = context.Centers[i];
+
             // Pumpjacks are given a direction that doesn't overlap with another pumpjack, preferring the direction
             // starting at the top then proceeding clockwise.
-            var terminal = context.CenterToTerminals[center].MinBy(x => x.Direction)!;
+            var terminal = context.CenterToTerminals[center].EnumerateItems().MinBy(x => x.Direction)!;
 
             entities.Add(new Entity
             {

@@ -3,18 +3,12 @@ local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
 local KnapcodePlanBeaconsSnug
-local ListLocation
-local ListProviderRecipient
 local KeyValuePairLocationBeaconCandidateInfo
-local ListKeyValuePairLocationBeaconCandidateInfo
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   KnapcodePlanBeaconsSnug = Knapcode.FactorioTools.OilField.PlanBeaconsSnug
-  ListLocation = System.List(KnapcodeOilField.Location)
-  ListProviderRecipient = System.List(KnapcodeOilField.ProviderRecipient)
   KeyValuePairLocationBeaconCandidateInfo = System.KeyValuePair(KnapcodeOilField.Location, KnapcodePlanBeaconsSnug.BeaconCandidateInfo)
-  ListKeyValuePairLocationBeaconCandidateInfo = System.List(KeyValuePairLocationBeaconCandidateInfo)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("PlanBeaconsSnug", function (namespace)
@@ -86,9 +80,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return class
     end)
     Execute = function (context)
-      local poweredEntities = ListProviderRecipient(context.CenterToTerminals:getCount())
-      for _, center in System.each(context.Centers) do
-        poweredEntities:Add(KnapcodeOilField.ProviderRecipient(center, 3 --[[Helpers.PumpjackWidth]], 3 --[[Helpers.PumpjackHeight]]))
+      local poweredEntities = KnapcodeOilField.TableArray.New1(context.Centers:getCount(), KnapcodeOilField.ProviderRecipient)
+      for i = 0, context.Centers:getCount() - 1 do
+        poweredEntities:Add(KnapcodeOilField.ProviderRecipient(context.Centers:get(i), 3 --[[Helpers.PumpjackWidth]], 3 --[[Helpers.PumpjackHeight]]))
       end
 
       -- We don't try to remove unused beacons here because there should not be any existing beacons at this point.
@@ -102,7 +96,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local sorter = class.SnugCandidateSorter()
 
-      local scopedCandidates = ListKeyValuePairLocationBeaconCandidateInfo()
+      local scopedCandidates = KnapcodeOilField.TableArray.New(KeyValuePairLocationBeaconCandidateInfo)
       local scopedCandidatesSet = context:GetLocationDictionary(class.BeaconCandidateInfo)
 
       local coveredToCandidates = nil
@@ -110,14 +104,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         coveredToCandidates = KnapcodeOilField.Helpers.GetCoveredToCandidates(context, candidateToInfo, coveredEntities, class.BeaconCandidateInfo)
       end
 
-      local beacons = ListLocation()
+      local beacons = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
       local effects = 0
 
       while candidateToInfo:getCount() > 0 do
         local continue
         repeat
           local pair = KnapcodeFactorioTools.CollectionExtensions.MinBy(candidateToInfo:EnumeratePairs(), function (pair)
-            return System.Tuple((#beacons > 0 and context.Options.OverlapBeacons) and KnapcodeFactorioTools.CollectionExtensions.Min(beacons, function (x)
+            return System.Tuple((beacons:getCount() > 0 and context.Options.OverlapBeacons) and KnapcodeFactorioTools.CollectionExtensions.Min(beacons:EnumerateItems(), function (x)
               return x:GetManhattanDistance(pair[1])
             end, KnapcodeOilField.Location, System.Int32) or 0, - pair[2].Covered.TrueCount, - pair[2].EntityDistance, pair[2].MiddleDistance)
           end, KeyValuePairLocationBeaconCandidateInfo, System.Tuple)
@@ -127,11 +121,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           scopedCandidatesSet:Clear()
           scopedCandidatesSet:Add(pair[1], pair[2])
 
-          while #scopedCandidates > 0 do
+          while scopedCandidates:getCount() > 0 do
             local continue
             repeat
-              local candidate, info = scopedCandidates:get(#scopedCandidates - 1):Deconstruct()
-              scopedCandidates:RemoveAt(#scopedCandidates - 1)
+              local candidate, info = scopedCandidates:get(scopedCandidates:getCount() - 1):Deconstruct()
+              scopedCandidates:RemoveAt(scopedCandidates:getCount() - 1)
 
               if not candidateToInfo:ContainsKey(candidate) then
                 continue = true
@@ -196,7 +190,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local maxX = math.Min(context.Grid.Width - (System.div(context.Options.BeaconWidth, 2)) - 1, overlapMaxX + 1)
       local maxY = math.Min(context.Grid.Height - (System.div(context.Options.BeaconHeight, 2)) - 1, overlapMaxY + 1)
 
-      local initialCount = #scopedCandidates
+      local initialCount = scopedCandidates:getCount()
 
       -- top bound of the neighbor rectangle
       if overlapMinY - 1 == minY then
@@ -242,8 +236,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      if initialCount < #scopedCandidates then
-        scopedCandidates:Sort(initialCount, #scopedCandidates - initialCount, sorter)
+      if initialCount < scopedCandidates:getCount() then
+        scopedCandidates:SortRange(initialCount, scopedCandidates:getCount() - initialCount, sorter)
       end
     end
     class = {

@@ -5,18 +5,12 @@ local ArrayIPoint = System.Array(DelaunatorSharp.IPoint)
 local KnapcodeFactorioTools
 local KnapcodeOilField
 local ListTuple
-local ListLocation
-local ListEndpoints
-local ListTerminalLocation
-local ListProviderRecipient
+local ITableArray_1TerminalLocation
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   ListTuple = System.List(System.Tuple)
-  ListLocation = System.List(KnapcodeOilField.Location)
-  ListEndpoints = System.List(KnapcodeOilField.Endpoints)
-  ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
-  ListProviderRecipient = System.List(KnapcodeOilField.ProviderRecipient)
+  ITableArray_1TerminalLocation = KnapcodeOilField.ITableArray_1(KnapcodeOilField.TerminalLocation)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("Helpers", function (namespace)
@@ -46,13 +40,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return centerEntity
     end
     GetCenterToTerminals = function (context, grid, centers)
-      local centerToTerminals = context:GetLocationDictionary(ListTerminalLocation)
+      local centerToTerminals = context:GetLocationDictionary(ITableArray_1TerminalLocation)
       PopulateCenterToTerminals(centerToTerminals, grid, centers)
       return centerToTerminals
     end
     PopulateCenterToTerminals = function (centerToTerminals, grid, centers)
-      for _, center in System.each(centers) do
-        local candidateTerminals = ListTerminalLocation()
+      for i = 0, centers:getCount() - 1 do
+        local center = centers:get(i)
+        local candidateTerminals = KnapcodeOilField.TableArray.New(KnapcodeOilField.TerminalLocation)
         for _, default in System.each(TerminalOffsets) do
           local direction, translation = default:Deconstruct()
           local location = center:Translate1(translation)
@@ -63,7 +58,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
         end
 
-        if #candidateTerminals == 0 then
+        if candidateTerminals:getCount() == 0 then
           System.throw(System.new(KnapcodeFactorioTools.FactorioToolsException, 2, "At least one pumpjack has no room for a pipe connection. Try removing some pumpjacks.", true))
         end
 
@@ -71,16 +66,17 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
     end
     GetLocationToTerminals = function (context, centerToTerminals)
-      local locationToTerminals = context:GetLocationDictionary(ListTerminalLocation)
+      local locationToTerminals = context:GetLocationDictionary(ITableArray_1TerminalLocation)
       PopulateLocationToTerminals(locationToTerminals, centerToTerminals)
       return locationToTerminals
     end
     PopulateLocationToTerminals = function (locationToTerminals, centerToTerminals)
       for _, terminals in System.each(centerToTerminals:getValues()) do
-        for _, terminal in System.each(terminals) do
+        for i = 0, terminals:getCount() - 1 do
+          local terminal = terminals:get(i)
           local default, list = locationToTerminals:TryGetValue(terminal.Terminal)
           if not default then
-            list = ListTerminalLocation(2)
+            list = KnapcodeOilField.TableArray.New1(2, KnapcodeOilField.TerminalLocation)
             locationToTerminals:Add(terminal.Terminal, list)
           end
 
@@ -96,7 +92,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     GetCandidateToCovered = function (context, recipients, candidateFactory, providerWidth, providerHeight, supplyWidth, supplyHeight, removeUnused, includePumpjacks, includeBeacons, TProvider, TInfo)
       local candidateToInfo = context:GetLocationDictionary(TInfo)
-      local coveredEntities = System.new(KnapcodeOilField.CustomCountedBitArray, 2, #recipients)
+      local coveredEntities = System.new(KnapcodeOilField.CustomCountedBitArray, 2, recipients:getCount())
 
       local providers = context:GetLocationDictionary(TProvider)
       for _, location in System.each(context.Grid:getEntityLocations():EnumerateItems()) do
@@ -115,9 +111,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           break
         end
       end
-      local unusedProviders = KnapcodeFactorioTools.SetHandling.ToReadOnlySet1(providers:getKeys(), context, removeUnused)
+      local unusedProviders = KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet1(providers:getKeys(), context, removeUnused)
 
-      for i = 0, #recipients - 1 do
+      for i = 0, recipients:getCount() - 1 do
         local continue
         repeat
           local entity = recipients:get(i)
@@ -151,7 +147,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
                     local default, info = candidateToInfo:TryGetValue(candidate)
                     if not default then
-                      local covered = System.new(KnapcodeOilField.CustomCountedBitArray, 2, #recipients)
+                      local covered = System.new(KnapcodeOilField.CustomCountedBitArray, 2, recipients:getCount())
                       covered:set(i, true)
                       info = candidateFactory:Create(covered)
                       candidateToInfo:Add(candidate, info)
@@ -204,12 +200,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
                 local default, info = candidateToInfo:TryGetValue(candidate)
                 if not default then
-                  local covered = System.new(KnapcodeOilField.CustomCountedBitArray, 2, #recipients)
+                  local covered = System.new(KnapcodeOilField.CustomCountedBitArray, 2, recipients:getCount())
                   info = candidateFactory:Create(covered)
                   candidateToInfo:Add(candidate, info)
                 end
 
-                for i = 0, #recipients - 1 do
+                for i = 0, recipients:getCount() - 1 do
                   if coveredCenters:Contains(recipients:get(i).Center) then
                     info.Covered:set(i, true)
                   end
@@ -226,7 +222,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       if providers:getCount() > 0 or unusedProviders:getCount() > 0 then
         -- Remove candidates that only cover recipients that are already covered.
-        local toRemove = ListLocation()
+        local toRemove = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
         for _, default in System.each(candidateToInfo:EnumeratePairs()) do
           local candidate, info = default:Deconstruct()
           local subset = KnapcodeOilField.CustomCountedBitArray(info.Covered)
@@ -237,7 +233,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
         end
 
-        for i = 0, #toRemove - 1 do
+        for i = 0, toRemove:getCount() - 1 do
           candidateToInfo:Remove(toRemove:get(i))
         end
       end
@@ -340,7 +336,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     GetEntityDistance = function (poweredEntities, candidate, covered)
       local sum = 0
-      for i = 0, #poweredEntities - 1 do
+      for i = 0, poweredEntities:getCount() - 1 do
         if covered:get(i) then
           sum = sum + candidate:GetEuclideanDistance(poweredEntities:get(i).Center)
         end
@@ -364,9 +360,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       RemoveOverlappingCandidates1(context.Grid, center, providerWidth, providerHeight, candidateToInfo, coveredToCandidates, TInfo)
 
 
-      local toRemove = ListLocation()
+      local toRemove = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
       local updated = context:GetLocationSet1()
-      for i = 0, #recipients - 1 do
+      for i = 0, recipients:getCount() - 1 do
         local continue
         repeat
           if not newlyCovered:get(i) then
@@ -391,8 +387,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             end
           end
 
-          if #toRemove > 0 then
-            for j = 0, #toRemove - 1 do
+          if toRemove:getCount() > 0 then
+            for j = 0, toRemove:getCount() - 1 do
               candidateToInfo:Remove(toRemove:get(j))
             end
 
@@ -425,11 +421,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
 
-      local toRemove = ListLocation()
+      local toRemove = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
       local updated = context:GetLocationSet1()
       -- Remove the covered entities from the candidate data, so that the next candidates are discounted
       -- by the entities that no longer need to be covered.
-      for i = 0, #recipients - 1 do
+      for i = 0, recipients:getCount() - 1 do
         local continue
         repeat
           if not newlyCovered:get(i) then
@@ -451,7 +447,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
               local oldCoveredCount = otherInfo.Covered.TrueCount
               do
                 local j = 0
-                while j < #recipients and otherInfo.Covered.TrueCount > 0 do
+                while j < recipients:getCount() and otherInfo.Covered.TrueCount > 0 do
                   if coveredEntities:get(j) and otherInfo.Covered:get(j) then
                     otherInfo.Covered:set(j, false)
                     modified = true
@@ -472,7 +468,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                 coveredCountBatches:MoveCandidate(context, otherCandidate, otherInfo, oldCoveredCount, otherInfo.Covered.TrueCount)
 
                 local entityDistance = 0
-                for j = 0, #recipients - 1 do
+                for j = 0, recipients:getCount() - 1 do
                   entityDistance = entityDistance + otherCandidate:GetEuclideanDistance(recipients:get(j).Center)
                 end
 
@@ -488,8 +484,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           -- now that we're done enumerating this dictionary, we can clear it
           currentCandidates:Clear()
 
-          if #toRemove > 0 then
-            for j = 0, #toRemove - 1 do
+          if toRemove:getCount() > 0 then
+            for j = 0, toRemove:getCount() - 1 do
               if candidateToInfo:Remove(toRemove:get(j)) then
                 scopedCandidateToInfo:Remove(toRemove:get(j))
               end
@@ -509,14 +505,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local coveredCenterToPoleCenters = GetCoveredCenterToProviderCenters(context, poleCenterToCoveredCenters)
 
-      if coveredCenterToPoleCenters:getCount() ~= #poweredEntities then
+      if coveredCenterToPoleCenters:getCount() ~= poweredEntities:getCount() then
         System.throw(KnapcodeFactorioTools.FactorioToolsException("Not all powered entities are covered by an electric pole."))
       end
 
       return System.ValueTuple(poleCenterToCoveredCenters, coveredCenterToPoleCenters)
     end
     GetPoweredEntities = function (context)
-      local poweredEntities = ListProviderRecipient()
+      local poweredEntities = KnapcodeOilField.TableArray.New(KnapcodeOilField.ProviderRecipient)
       local hasBeacons = false
 
       for _, location in System.each(context.Grid:getEntityLocations():EnumerateItems()) do
@@ -653,8 +649,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
     end
     AddBeaconsToGrid = function (grid, options, centers)
-      for _, center in System.each(centers) do
-        AddProviderToGrid(grid, center, KnapcodeOilField.BeaconCenter(grid:GetId()), function (c)
+      for i = 0, centers:getCount() - 1 do
+        AddProviderToGrid(grid, centers:get(i), KnapcodeOilField.BeaconCenter(grid:GetId()), function (c)
           return KnapcodeOilField.BeaconSide(grid:GetId(), c)
         end, options.BeaconWidth, options.BeaconHeight, KnapcodeOilField.BeaconCenter, KnapcodeOilField.BeaconSide)
       end
@@ -665,11 +661,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     EliminateOtherTerminals = function (context, selectedTerminal)
       local terminalOptions = context.CenterToTerminals:get(selectedTerminal.Center)
 
-      if #terminalOptions == 1 then
+      if terminalOptions:getCount() == 1 then
         return
       end
 
-      for i = 0, #terminalOptions - 1 do
+      for i = 0, terminalOptions:getCount() - 1 do
         local continue
         repeat
           local otherTerminal = terminalOptions:get(i)
@@ -680,7 +676,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
           local terminals = context.LocationToTerminals:get(otherTerminal.Terminal)
 
-          if #terminals == 1 then
+          if terminals:getCount() == 1 then
             context.LocationToTerminals:Remove(otherTerminal.Terminal)
           else
             terminals:Remove(otherTerminal)
@@ -697,7 +693,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     GetPath = function (cameFrom, start, reachedGoal)
       local sizeEstimate = 2 * start:GetManhattanDistance(reachedGoal)
-      local path = ListLocation(sizeEstimate)
+      local path = KnapcodeOilField.TableArray.New1(sizeEstimate, KnapcodeOilField.Location)
       AddPath(cameFrom, reachedGoal, path)
       return path
     end
@@ -736,7 +732,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     CountTurns = function (path)
       local previousDirection = - 1
       local turns = 0
-      for i = 1, #path - 1 do
+      for i = 1, path:getCount() - 1 do
         local currentDirection = (path:get(i).X == path:get(i - 1).X) and 0 or 1
         if previousDirection ~= - 1 then
           if previousDirection ~= currentDirection then
@@ -752,7 +748,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     MakeStraightLineOnEmpty = function (grid, a, b)
       if a.X == b.X then
         local min, max = ((a.Y < b.Y) and System.ValueTuple(a.Y, b.Y) or System.ValueTuple(b.Y, a.Y)):Deconstruct()
-        local line = ListLocation(max - min + 1)
+        local line = KnapcodeOilField.TableArray.New1(max - min + 1, KnapcodeOilField.Location)
         for y = min, max do
           if not grid:IsEmpty(KnapcodeOilField.Location(a.X, y)) then
             return nil
@@ -766,7 +762,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       if a.Y == b.Y then
         local min, max = ((a.X < b.X) and System.ValueTuple(a.X, b.X) or System.ValueTuple(b.X, a.X)):Deconstruct()
-        local line = ListLocation(max - min + 1)
+        local line = KnapcodeOilField.TableArray.New1(max - min + 1, KnapcodeOilField.Location)
         for x = min, max do
           if not grid:IsEmpty(KnapcodeOilField.Location(x, a.Y)) then
             return nil
@@ -783,7 +779,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     MakeStraightLine = function (a, b)
       if a.X == b.X then
         local min, max = ((a.Y < b.Y) and System.ValueTuple(a.Y, b.Y) or System.ValueTuple(b.Y, a.Y)):Deconstruct()
-        local line = ListLocation(max - min + 1)
+        local line = KnapcodeOilField.TableArray.New1(max - min + 1, KnapcodeOilField.Location)
         for y = min, max do
           line:Add(KnapcodeOilField.Location(a.X, y))
         end
@@ -793,7 +789,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       if a.Y == b.Y then
         local min, max = ((a.X < b.X) and System.ValueTuple(a.X, b.X) or System.ValueTuple(b.X, a.X)):Deconstruct()
-        local line = ListLocation(max - min + 1)
+        local line = KnapcodeOilField.TableArray.New1(max - min + 1, KnapcodeOilField.Location)
         for x = min, max do
           line:Add(KnapcodeOilField.Location(x, a.Y))
         end
@@ -804,7 +800,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       System.throw(System.ArgumentException("The two points must be one the same line either horizontally or vertically."))
     end
     PointsToLines = function (nodes)
-      return PointsToLines1(KnapcodeFactorioTools.CollectionExtensions.ToList(nodes, KnapcodeOilField.Location), true)
+      return PointsToLines1(KnapcodeFactorioTools.CollectionExtensions.ToTableArray(nodes, KnapcodeOilField.Location), true)
     end
     -- <summary>
     -- Source: https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts#L62
@@ -812,7 +808,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     PointsToLines1 = function (nodes, sort)
       local filteredNodes
       if sort then
-        local sortedXY = KnapcodeFactorioTools.CollectionExtensions.ToList(nodes, KnapcodeOilField.Location)
+        local sortedXY = KnapcodeFactorioTools.CollectionExtensions.ToTableArray1(nodes, KnapcodeOilField.Location)
         sortedXY:Sort(function (a, b)
           local c = System.Int32.CompareTo(a.X, b.X)
           if c ~= 0 then
@@ -827,18 +823,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       if filteredNodes:getCount() == 1 then
-        local default = ListEndpoints()
-        default:Add(KnapcodeOilField.Endpoints(filteredNodes:get(0), filteredNodes:get(0)))
-        return default
+        return KnapcodeOilField.TableArray.New2(KnapcodeOilField.Endpoints(filteredNodes:get(0), filteredNodes:get(0)), KnapcodeOilField.Endpoints)
       elseif filteredNodes:getCount() == 2 then
-        local default = ListEndpoints()
-        default:Add(KnapcodeOilField.Endpoints(filteredNodes:get(0), filteredNodes:get(1)))
-        return default
+        return KnapcodeOilField.TableArray.New2(KnapcodeOilField.Endpoints(filteredNodes:get(0), filteredNodes:get(1)), KnapcodeOilField.Endpoints)
       end
 
       -- Check that nodes are not collinear
       if AreLocationsCollinear(filteredNodes) then
-        local collinearLines = ListEndpoints(filteredNodes:getCount() - 1)
+        local collinearLines = KnapcodeOilField.TableArray.New1(filteredNodes:getCount() - 1, KnapcodeOilField.Endpoints)
         for i = 1, filteredNodes:getCount() - 1 do
           collinearLines:Add(KnapcodeOilField.Endpoints(filteredNodes:get(i - 1), filteredNodes:get(i)))
         end
@@ -853,7 +845,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
       local delaunator = DelaunatorSharp.Delaunator(points)
 
-      local lines = ListEndpoints()
+      local lines = KnapcodeOilField.TableArray.New(KnapcodeOilField.Endpoints)
       for e = 0, #delaunator.Triangles - 1 do
         if e > delaunator.Halfedges:get(e) then
           local p = filteredNodes:get(delaunator.Triangles:get(e))

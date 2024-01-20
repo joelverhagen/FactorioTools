@@ -2,11 +2,9 @@
 local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
-local ListBeaconSolution
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
-  ListBeaconSolution = System.List(KnapcodeOilField.BeaconSolution)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("BeaconPlannerResult", function (namespace)
@@ -38,13 +36,15 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         context.Grid:AddEntity(pipe, KnapcodeOilField.TemporaryEntity(context.Grid:GetId()))
       end
 
-      local solutions = ListBeaconSolution(#context.Options.BeaconStrategies)
+      local solutions = KnapcodeOilField.TableArray.New1(context.Options.BeaconStrategies:getCount(), KnapcodeOilField.BeaconSolution)
 
       local completedStrategies = System.new(KnapcodeOilField.CustomCountedBitArray, 2, 3 --[[(int)BeaconStrategy.Snug + 1]])
       -- max value
-      for _, strategy in System.each(context.Options.BeaconStrategies) do
+      for i = 0, context.Options.BeaconStrategies:getCount() - 1 do
         local continue
         repeat
+          local strategy = context.Options.BeaconStrategies:get(i)
+
           if completedStrategies:get(strategy) then
             continue = true
             break
@@ -77,7 +77,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         context.Grid:RemoveEntity(pipe)
       end
 
-      if #solutions == 0 then
+      if solutions:getCount() == 0 then
         System.throw(KnapcodeFactorioTools.FactorioToolsException("At least one beacon strategy must be used."))
       end
 

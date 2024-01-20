@@ -114,7 +114,7 @@ public class PlannerTest : BasePlannerTest
             Item = ItemNames.Vanilla.Blueprint,
             Version = 0,
         };
-        var avoid = Enumerable.Range(-7, 16).Select(x => new AvoidLocation(x, 0)).ToArray();
+        var avoid = Enumerable.Range(-7, 16).Select(x => new AvoidLocation(x, 0)).ToTableArray();
 
         // Act
         var result = Planner.Execute(options, blueprint, avoid);
@@ -227,8 +227,8 @@ public class PlannerTest : BasePlannerTest
         var (_, summary) = Planner.Execute(options, blueprint);
 
         // Assert
-        Assert.Single(summary.SelectedPlans);
-        Assert.Single(summary.AlternatePlans);
-        Assert.NotEmpty(summary.UnusedPlans);
+        Assert.Single(summary.SelectedPlans.EnumerateItems());
+        Assert.Single(summary.AlternatePlans.EnumerateItems());
+        Assert.NotEmpty(summary.UnusedPlans.EnumerateItems());
     }
 }

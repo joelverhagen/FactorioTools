@@ -40,18 +40,19 @@ public static class Helpers
         return centerEntity;
     }
 
-    public static ILocationDictionary<List<TerminalLocation>> GetCenterToTerminals(Context context, SquareGrid grid, IReadOnlyCollection<Location> centers)
+    public static ILocationDictionary<ITableArray<TerminalLocation>> GetCenterToTerminals(Context context, SquareGrid grid, IReadOnlyTableArray<Location> centers)
     {
-        var centerToTerminals = context.GetLocationDictionary<List<TerminalLocation>>();
+        var centerToTerminals = context.GetLocationDictionary<ITableArray<TerminalLocation>>();
         PopulateCenterToTerminals(centerToTerminals, grid, centers);
         return centerToTerminals;
     }
 
-    public static void PopulateCenterToTerminals(ILocationDictionary<List<TerminalLocation>> centerToTerminals, SquareGrid grid, IReadOnlyCollection<Location> centers)
+    public static void PopulateCenterToTerminals(ILocationDictionary<ITableArray<TerminalLocation>> centerToTerminals, SquareGrid grid, IReadOnlyTableArray<Location> centers)
     {
-        foreach (var center in centers)
+        for (var i = 0; i < centers.Count; i++)
         {
-            var candidateTerminals = new List<TerminalLocation>();
+            var center = centers[i];
+            var candidateTerminals = TableArray.New<TerminalLocation>();
             foreach ((var direction, var translation) in TerminalOffsets)
             {
                 var location = center.Translate(translation);
@@ -72,22 +73,23 @@ public static class Helpers
         }
     }
 
-    public static ILocationDictionary<IItemList<TerminalLocation>> GetLocationToTerminals(Context context, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
+    public static ILocationDictionary<ITableArray<TerminalLocation>> GetLocationToTerminals(Context context, ILocationDictionary<ITableArray<TerminalLocation>> centerToTerminals)
     {
-        var locationToTerminals = context.GetLocationDictionary<IItemList<TerminalLocation>>();
+        var locationToTerminals = context.GetLocationDictionary<ITableArray<TerminalLocation>>();
         PopulateLocationToTerminals(locationToTerminals, centerToTerminals);
         return locationToTerminals;
     }
 
-    public static void PopulateLocationToTerminals(ILocationDictionary<IItemList<TerminalLocation>> locationToTerminals, ILocationDictionary<List<TerminalLocation>> centerToTerminals)
+    public static void PopulateLocationToTerminals(ILocationDictionary<ITableArray<TerminalLocation>> locationToTerminals, ILocationDictionary<ITableArray<TerminalLocation>> centerToTerminals)
     {
         foreach (var terminals in centerToTerminals.Values)
         {
-            foreach (var terminal in terminals)
+            for (var i = 0; i < terminals.Count; i++)
             {
+                var terminal = terminals[i];
                 if (!locationToTerminals.TryGetValue(terminal.Terminal, out var list))
                 {
-                    list = Collection.List<TerminalLocation>(2);
+                    list = TableArray.New<TerminalLocation>(2);
                     locationToTerminals.Add(terminal.Terminal, list);
                 }
 
@@ -98,7 +100,7 @@ public static class Helpers
 
     public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<BeaconCenter> Providers) GetBeaconCandidateToCovered<TInfo>(
         Context context,
-        IItemList<ProviderRecipient> recipients,
+        IReadOnlyTableArray<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
         bool removeUnused)
         where TInfo : CandidateInfo
@@ -118,7 +120,7 @@ public static class Helpers
 
     public static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<ElectricPoleCenter> Providers) GetElectricPoleCandidateToCovered<TInfo>(
         Context context,
-        IItemList<ProviderRecipient> recipients,
+        IReadOnlyTableArray<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
         bool removeUnused)
         where TInfo : CandidateInfo
@@ -138,7 +140,7 @@ public static class Helpers
 
     private static (ILocationDictionary<TInfo> CandidateToInfo, CountedBitArray CoveredEntities, ILocationDictionary<TProvider> Providers) GetCandidateToCovered<TProvider, TInfo>(
         Context context,
-        IItemList<ProviderRecipient> recipients,
+        IReadOnlyTableArray<ProviderRecipient> recipients,
         ICandidateFactory<TInfo> candidateFactory,
         int providerWidth,
         int providerHeight,
@@ -294,7 +296,7 @@ public static class Helpers
         if (providers.Count > 0 || unusedProviders.Count > 0)
         {
             // Remove candidates that only cover recipients that are already covered.
-            var toRemove = new List<Location>();
+            var toRemove = TableArray.New<Location>();
             foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
             {
                 var subset = new CountedBitArray(info.Covered);
@@ -443,7 +445,7 @@ public static class Helpers
         return true;
     }
 
-    public static double GetEntityDistance(IItemList<ProviderRecipient> poweredEntities, Location candidate, CountedBitArray covered)
+    public static double GetEntityDistance(ITableArray<ProviderRecipient> poweredEntities, Location candidate, CountedBitArray covered)
     {
         double sum = 0;
         for (var i = 0; i < poweredEntities.Count; i++)
@@ -463,7 +465,7 @@ public static class Helpers
         TInfo centerInfo,
         int providerWidth,
         int providerHeight,
-        List<ProviderRecipient> recipients,
+        IReadOnlyTableArray<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
         Dictionary<int, ILocationDictionary<TInfo>> coveredToCandidates,
         ILocationDictionary<TInfo> candidateToInfo)
@@ -491,7 +493,7 @@ public static class Helpers
             coveredToCandidates);
 
 #if !USE_SHARED_INSTANCES
-        var toRemove = new List<Location>();
+        var toRemove = TableArray.New<Location>();
         var updated = context.GetLocationSet();
 #else
         var toRemove = context.SharedInstances.LocationListA;
@@ -542,7 +544,7 @@ public static class Helpers
         TInfo centerInfo,
         int providerWidth,
         int providerHeight,
-        List<ProviderRecipient> recipients,
+        IReadOnlyTableArray<ProviderRecipient> recipients,
         CountedBitArray coveredEntities,
         Dictionary<int, ILocationDictionary<TInfo>> coveredToCandidates,
         ILocationDictionary<TInfo> candidateToInfo,
@@ -578,7 +580,7 @@ public static class Helpers
         }
 
 #if !USE_SHARED_INSTANCES
-        var toRemove = new List<Location>();
+        var toRemove = TableArray.New<Location>();
         var updated = context.GetLocationSet();
 #else
         var toRemove = context.SharedInstances.LocationListA;
@@ -667,7 +669,7 @@ public static class Helpers
 
     public static (ILocationDictionary<ILocationSet> PoleCenterToCoveredCenters, ILocationDictionary<ILocationSet> CoveredCenterToPoleCenters) GetElectricPoleCoverage(
         Context context,
-        List<ProviderRecipient> poweredEntities,
+        IReadOnlyTableArray<ProviderRecipient> poweredEntities,
         IReadOnlyCollection<Location> electricPoleCenters)
     {
         var poleCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
@@ -690,9 +692,9 @@ public static class Helpers
         return (PoleCenterToCoveredCenters: poleCenterToCoveredCenters, CoveredCenterToPoleCenters: coveredCenterToPoleCenters);
     }
 
-    public static (List<ProviderRecipient> PoweredEntities, bool HasBeacons) GetPoweredEntities(Context context)
+    public static (ITableArray<ProviderRecipient> PoweredEntities, bool HasBeacons) GetPoweredEntities(Context context)
     {
-        var poweredEntities = new List<ProviderRecipient>();
+        var poweredEntities = TableArray.New<ProviderRecipient>();
         var hasBeacons = false;
 
         foreach (var location in context.Grid.EntityLocations.EnumerateItems())
@@ -924,13 +926,13 @@ public static class Helpers
         }
     }
 
-    public static void AddBeaconsToGrid(SquareGrid grid, OilFieldOptions options, IEnumerable<Location> centers)
+    public static void AddBeaconsToGrid(SquareGrid grid, OilFieldOptions options, IReadOnlyTableArray<Location> centers)
     {
-        foreach (var center in centers)
+        for (var i = 0; i < centers.Count; i++)
         {
             AddProviderToGrid(
                 grid,
-                center,
+                centers[i],
                 new BeaconCenter(grid.GetId()),
                 c => new BeaconSide(grid.GetId(), c),
                 options.BeaconWidth,
@@ -979,15 +981,15 @@ public static class Helpers
         terminalOptions.Add(selectedTerminal);
     }
 
-    public static List<Location> GetPath(ILocationDictionary<Location> cameFrom, Location start, Location reachedGoal)
+    public static ITableArray<Location> GetPath(ILocationDictionary<Location> cameFrom, Location start, Location reachedGoal)
     {
         var sizeEstimate = 2 * start.GetManhattanDistance(reachedGoal);
-        var path = new List<Location>(sizeEstimate);
+        var path = TableArray.New<Location>(sizeEstimate);
         AddPath(cameFrom, reachedGoal, path);
         return path;
     }
 
-    public static void AddPath(ILocationDictionary<Location> cameFrom, Location reachedGoal, List<Location> outputList)
+    public static void AddPath(ILocationDictionary<Location> cameFrom, Location reachedGoal, ITableArray<Location> outputList)
     {
         var current = reachedGoal;
         while (true)
@@ -1003,7 +1005,7 @@ public static class Helpers
         }
     }
 
-    public static bool AreLocationsCollinear(IReadOnlyList<Location> locations)
+    public static bool AreLocationsCollinear(IReadOnlyTableArray<Location> locations)
     {
         double lastSlope = 0;
         for (var i = 0; i < locations.Count; i++)
@@ -1030,7 +1032,7 @@ public static class Helpers
         return false;
     }
 
-    public static int CountTurns(List<Location> path)
+    public static int CountTurns(IReadOnlyTableArray<Location> path)
     {
         var previousDirection = -1;
         var turns = 0;
@@ -1051,12 +1053,12 @@ public static class Helpers
         return turns;
     }
 
-    public static List<Location>? MakeStraightLineOnEmpty(SquareGrid grid, Location a, Location b)
+    public static ITableArray<Location>? MakeStraightLineOnEmpty(SquareGrid grid, Location a, Location b)
     {
         if (a.X == b.X)
         {
             (var min, var max) = a.Y < b.Y ? (a.Y, b.Y) : (b.Y, a.Y);
-            var line = new List<Location>(max - min + 1);
+            var line = TableArray.New<Location>(max - min + 1);
             for (var y = min; y <= max; y++)
             {
                 if (!grid.IsEmpty(new Location(a.X, y)))
@@ -1073,7 +1075,7 @@ public static class Helpers
         if (a.Y == b.Y)
         {
             (var min, var max) = a.X < b.X ? (a.X, b.X) : (b.X, a.X);
-            var line = new List<Location>(max - min + 1);
+            var line = TableArray.New<Location>(max - min + 1);
             for (var x = min; x <= max; x++)
             {
                 if (!grid.IsEmpty(new Location(x, a.Y)))
@@ -1090,12 +1092,12 @@ public static class Helpers
         throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
     }
 
-    public static List<Location> MakeStraightLine(Location a, Location b)
+    public static ITableArray<Location> MakeStraightLine(Location a, Location b)
     {
         if (a.X == b.X)
         {
             (var min, var max) = a.Y < b.Y ? (a.Y, b.Y) : (b.Y, a.Y);
-            var line = new List<Location>(max - min + 1);
+            var line = TableArray.New<Location>(max - min + 1);
             for (var y = min; y <= max; y++)
             {
                 line.Add(new Location(a.X, y));
@@ -1107,7 +1109,7 @@ public static class Helpers
         if (a.Y == b.Y)
         {
             (var min, var max) = a.X < b.X ? (a.X, b.X) : (b.X, a.X);
-            var line = new List<Location>(max - min + 1);
+            var line = TableArray.New<Location>(max - min + 1);
             for (var x = min; x <= max; x++)
             {
                 line.Add(new Location(x, a.Y));
@@ -1119,20 +1121,20 @@ public static class Helpers
         throw new ArgumentException("The two points must be one the same line either horizontally or vertically.");
     }
 
-    public static IItemList<Endpoints> PointsToLines(IReadOnlyCollection<Location> nodes)
+    public static ITableArray<Endpoints> PointsToLines(IReadOnlyCollection<Location> nodes)
     {
-        return PointsToLines(nodes.ToList(), sort: true);
+        return PointsToLines(nodes.ToTableArray(), sort: true);
     }
 
     /// <summary>
     /// Source: https://github.com/teoxoy/factorio-blueprint-editor/blob/21ab873d8316a41b9a05c719697d461d3ede095d/packages/editor/src/core/generators/util.ts#L62
     /// </summary>
-    public static IItemList<Endpoints> PointsToLines(IReadOnlyList<Location> nodes, bool sort)
+    public static ITableArray<Endpoints> PointsToLines(IReadOnlyTableArray<Location> nodes, bool sort)
     {
-        IReadOnlyList<Location> filteredNodes;
+        IReadOnlyTableArray<Location> filteredNodes;
         if (sort)
         {
-            var sortedXY = nodes.ToList();
+            var sortedXY = nodes.ToTableArray();
             sortedXY.Sort((a, b) =>
             {
                 var c = a.X.CompareTo(b.X);
@@ -1152,17 +1154,17 @@ public static class Helpers
 
         if (filteredNodes.Count == 1)
         {
-            return new List<Endpoints> { new Endpoints(filteredNodes[0], filteredNodes[0]) };
+            return TableArray.New(new Endpoints(filteredNodes[0], filteredNodes[0]));
         }
         else if (filteredNodes.Count == 2)
         {
-            return new List<Endpoints> { new Endpoints(filteredNodes[0], filteredNodes[1]) };
+            return TableArray.New(new Endpoints(filteredNodes[0], filteredNodes[1]));
         }
 
         // Check that nodes are not collinear
         if (AreLocationsCollinear(filteredNodes))
         {
-            var collinearLines = new List<Endpoints>(filteredNodes.Count - 1);
+            var collinearLines = TableArray.New<Endpoints>(filteredNodes.Count - 1);
             for (var i = 1; i < filteredNodes.Count; i++)
             {
                 collinearLines.Add(new Endpoints(filteredNodes[i - 1], filteredNodes[i]));
@@ -1179,7 +1181,7 @@ public static class Helpers
         }
         var delaunator = new Delaunator(points);
 
-        var lines = new List<Endpoints>();
+        var lines = TableArray.New<Endpoints>();
         for (var e = 0; e < delaunator.Triangles.Length; e++)
         {
             if (e > delaunator.Halfedges[e])

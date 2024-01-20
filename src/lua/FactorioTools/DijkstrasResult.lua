@@ -2,18 +2,16 @@
 local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
-local ListLocation
 local DictInt32Int32
-local ListListLocation
 local DictInt32Location
+local ITableArray_1Location
 local KeyValuePairInt32Location
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
-  ListLocation = System.List(KnapcodeOilField.Location)
   DictInt32Int32 = System.Dictionary(System.Int32, System.Int32)
-  ListListLocation = System.List(ListLocation)
   DictInt32Location = System.Dictionary(System.Int32, KnapcodeOilField.Location)
+  ITableArray_1Location = KnapcodeOilField.ITableArray_1(KnapcodeOilField.Location)
   KeyValuePairInt32Location = System.KeyValuePair(System.Int32, KnapcodeOilField.Location)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
@@ -24,15 +22,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       this.ReachedGoals = reachedGoals
     end
     GetStraightPaths = function (this, goal)
-      local paths = ListListLocation()
+      local paths = KnapcodeOilField.TableArray.New(ITableArray_1Location)
 
       local default, previousLocations = this.LocationToPrevious:TryGetValue(goal)
       if default then
         if previousLocations:getCount() == 0 then
           -- This is a special case when the goal matches the starting point.
-          local extern = ListLocation()
-          extern:Add(goal)
-          paths:Add(extern)
+          paths:Add(KnapcodeOilField.TableArray.New2(goal, KnapcodeOilField.Location))
         end
 
         for _, beforeGoal in System.each(previousLocations:EnumerateItems()) do
@@ -50,7 +46,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           local directionHits = extern
 
           local current = goal
-          local path = ListLocation()
+          local path = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
           while true do
             path:Add(current)
 

@@ -42,78 +42,28 @@ public partial class Program
 
     private static void Sandbox()
     {
-        var blueprintStringsAll = ParseBlueprint.ReadBlueprintFile(BigListDataPath).ToArray();
-        // var blueprintStrings = blueprintStringsAll;
-        var blueprintStrings = new[] { blueprintStringsAll[91] };
-        // var blueprintStrings = blueprintStringsAll.Reverse().Take(11).Skip(11).ToArray();
-        // var blueprintStrings = blueprintStringsAll.Take(5).ToArray();
-        // var blueprintStrings = Enumerable.Repeat(blueprintStringsAll[1], 50).ToArray();
+        var d = new DictionaryTableArray<int>();
 
-        // var optionsAll = new[] { Options.ForSmallElectricPole, Options.ForMediumElectricPole, Options.ForSubstation, Options.ForBigElectricPole };
-        // var optionsAll = new[] { Options.ForSmallElectricPole };
-        var optionsAll = new[] { OilFieldOptions.ForMediumElectricPole };
-        // var optionsAll = new[] { OilFieldOptions.ForBigElectricPole };
+        d.Add(4);
+        d.Add(9);
+        d.Add(1);
+        d.Add(6);
+        d.Add(10);
 
-        // var addBeaconsAll = new[] { true, false };
-        var addBeaconsAll = new[] { true };
-        // var addBeaconsAll = new[] { false };
-
-        foreach (var addBeacons in addBeaconsAll)
+        for (var i = 0; i < d.Count; i++)
         {
-            foreach (var options in optionsAll)
-            {
-                for (int i = 0; i < blueprintStrings.Length; i++)
-                {
-                    Console.WriteLine("index " + i);
-                    string? blueprintString = blueprintStrings[i];
+            Console.WriteLine(d[i]);
+        }
 
-                    if (blueprintStrings.Length == 1)
-                    {
-                        Console.WriteLine(blueprintString);
-                    }
+        Console.WriteLine("---");
 
-                    /*
-                    blueprintString = NormalizeBlueprints.Normalize(blueprintString, includeFbeOffset: true);
+        d.Sort((a, b) => a.CompareTo(b));
 
-                    if (blueprintStrings.Length == 1)
-                    {
-                        Console.WriteLine(blueprintString);
-                    }
-                    */
+        Console.WriteLine("---");
 
-                    var inputBlueprint = ParseBlueprint.Execute(blueprintString);
-
-                    /*
-                    var entityTypes = inputBlueprint
-                        .Entities
-                        .GroupBy(e => e.Name)
-                        .ToDictionary(g => g.Key, g => g.Count())
-                        .OrderByDescending(p => p.Value);
-                    */
-
-                    // var options = Options.ForSubstation;
-                    // options.ElectricPoleWidth = 3;
-                    // options.ElectricPoleHeight = 3;
-                    // options.ElectricPoleSupplyWidth = 9;
-                    // options.ElectricPoleSupplyHeight = 9;
-                    // options.AddBeacons = addBeacons;
-                    // options.UseUndergroundPipes = options.AddBeacons;
-                    // options.OptimizePipes = true;
-                    // options.ValidateSolution = true;
-                    // options.OverlapBeacons = true;
-                    // options.BeaconStrategies.Remove(BeaconStrategy.Fbe);
-                    options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToList();
-                    options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
-
-                    (var context, _) = Planner.Execute(options, inputBlueprint);
-
-                    if (blueprintStrings.Length == 1)
-                    {
-                        var newBlueprint = GridToBlueprintString.Execute(context, addFbeOffset: false, addAvoidEntities: true);
-                        Console.WriteLine(newBlueprint);
-                    }
-                }
-            }
+        for (var i = 0; i < d.Count; i++)
+        {
+            Console.WriteLine(d[i]);
         }
     }
 }

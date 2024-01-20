@@ -50,7 +50,7 @@ public static class PlanBeaconsFbe
 
         if (strategy == BeaconStrategy.Fbe)
         {
-            possibleBeacons = SortPossibleBeacons(context, possibleBeacons);
+            SortPossibleBeacons(context, possibleBeacons);
         }
         else if (strategy == BeaconStrategy.FbeOriginal)
         {
@@ -61,9 +61,9 @@ public static class PlanBeaconsFbe
         return GetBeacons(context, effectEntityAreas, possibleBeacons);
     }
 
-    private static BeaconPlannerResult GetBeacons(Context context, List<Area> effectEntityAreas, List<BeaconCandidate> possibleBeacons)
+    private static BeaconPlannerResult GetBeacons(Context context, ITableArray<Area> effectEntityAreas, ITableArray<BeaconCandidate> possibleBeacons)
     {
-        var beacons = new List<Location>();
+        var beacons = TableArray.New<Location>();
         var effects = 0;
         var collisionArea = context.GetLocationSet();
         var coveredEntityAreas = context.Options.OverlapBeacons ? null : new CountedBitArray(effectEntityAreas.Count);
@@ -104,7 +104,7 @@ public static class PlanBeaconsFbe
         return new BeaconPlannerResult(beacons, effects);
     }
 
-    private static List<BeaconCandidate> SortPossibleBeacons(Context context, List<BeaconCandidate> possibleBeacons)
+    private static void SortPossibleBeacons(Context context, ITableArray<BeaconCandidate> possibleBeacons)
     {
         var candidateToDistance = context.GetLocationDictionary<double>();
 
@@ -144,11 +144,9 @@ public static class PlanBeaconsFbe
 
             return b.OriginalIndex.CompareTo(a.OriginalIndex);
         });
-
-        return possibleBeacons;
     }
 
-    private static void SortPossibleBeaconsOriginal(List<BeaconCandidate> possibleBeacons)
+    private static void SortPossibleBeaconsOriginal(ITableArray<BeaconCandidate> possibleBeacons)
     {
         /*
         possibleBeacons
@@ -219,10 +217,10 @@ public static class PlanBeaconsFbe
         // possibleBeacons.Reverse();
     }
 
-    private static List<BeaconCandidate> GetPossibleBeacons(
+    private static ITableArray<BeaconCandidate> GetPossibleBeacons(
         Context context,
-        List<Area> effectEntityAreas,
-        List<Location[]> possibleBeaconAreas,
+        ITableArray<Area> effectEntityAreas,
+        ITableArray<Location[]> possibleBeaconAreas,
         ILocationDictionary<int> pointToBeaconCount,
         ILocationDictionary<Area> pointToEntityArea)
     {
@@ -232,7 +230,7 @@ public static class PlanBeaconsFbe
         var centerY = (context.Options.BeaconHeight - 1) / 2;
         var centerIndex = centerY * context.Options.BeaconWidth + centerX;
 
-        var possibleBeacons = new List<BeaconCandidate>(possibleBeaconAreas.Count);
+        var possibleBeacons = TableArray.New<BeaconCandidate>(possibleBeaconAreas.Count);
         var effectsGiven = new CountedBitArray(effectEntityAreas.Count);
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
         {
@@ -329,7 +327,7 @@ public static class PlanBeaconsFbe
         return new Bounds(entityMinX, entityMinY, entityMaxX, entityMaxY);
     }
 
-    private static ILocationSet GetOccupiedPositions(Context context, List<Area> entityAreas)
+    private static ILocationSet GetOccupiedPositions(Context context, ITableArray<Area> entityAreas)
     {
         var occupiedPositions = context.GetLocationSet();
         for (int i = 0; i < entityAreas.Count; i++)
@@ -344,9 +342,9 @@ public static class PlanBeaconsFbe
         return occupiedPositions;
     }
 
-    private static List<Area> GetEntityAreas(Context context)
+    private static ITableArray<Area> GetEntityAreas(Context context)
     {
-        var areas = new List<Area>(context.Grid.EntityLocations.Count);
+        var areas = TableArray.New<Area>(context.Grid.EntityLocations.Count);
 
         foreach (var location in context.Grid.EntityLocations.EnumerateItems())
         {
@@ -407,9 +405,9 @@ public static class PlanBeaconsFbe
         return areas;
     }
 
-    private static List<Area> GetEffectEntityAreas(List<Area> entityAreas)
+    private static ITableArray<Area> GetEffectEntityAreas(ITableArray<Area> entityAreas)
     {
-        var effectEntityArea = new List<Area>();
+        var effectEntityArea = TableArray.New<Area>();
         for (var i = 0; i < entityAreas.Count; i++)
         {
             var area = entityAreas[i];
@@ -427,10 +425,10 @@ public static class PlanBeaconsFbe
         return effectEntityArea;
     }
 
-    private static List<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
+    private static ITableArray<Location[]> GetPossibleBeaconAreas(Context context, ILocationSet occupiedPositions)
     {
         var validBeaconCenters = context.GetLocationSet();
-        var possibleBeaconAreas = new List<Location[]>();
+        var possibleBeaconAreas = TableArray.New<Location[]>();
 
         var gridMinX = (context.Options.BeaconWidth - 1) / 2;
         var gridMinY = (context.Options.BeaconHeight - 1) / 2;
@@ -449,8 +447,9 @@ public static class PlanBeaconsFbe
 
         var area = new Location[context.Options.BeaconWidth * context.Options.BeaconHeight];
 
-        foreach (var center in context.Centers)
+        for (var i = 0; i < context.Centers.Count; i++)
         {
+            var center = context.Centers[i];
             var supplyMinX = Math.Max(gridMinX, center.X - supplyLeft);
             var supplyMinY = Math.Max(gridMinY, center.Y - supplyUp);
             var supplyMaxX = Math.Min(gridMaxX, center.X + supplyRight);
@@ -472,7 +471,7 @@ public static class PlanBeaconsFbe
                     var maxY = beaconCenter.Y + beaconDown;
                     var fits = true;
 
-                    var i = 0;
+                    var j = 0;
                     for (var y = minY; fits && y <= maxY; y++)
                     {
                         for (var x = minX; fits && x <= maxX; x++)
@@ -484,7 +483,8 @@ public static class PlanBeaconsFbe
                             }
                             else
                             {
-                                area[i++] = location;
+                                area[j] = location;
+                                j++;
                             }
                         }
                     }
@@ -501,7 +501,7 @@ public static class PlanBeaconsFbe
         return possibleBeaconAreas;
     }
 
-    private static ILocationDictionary<int> GetPointToBeaconCount(Context context, List<Location[]> possibleBeaconAreas)
+    private static ILocationDictionary<int> GetPointToBeaconCount(Context context, ITableArray<Location[]> possibleBeaconAreas)
     {
         var pointToBeaconCount = context.GetLocationDictionary<int>();
         for (var i = 0; i < possibleBeaconAreas.Count; i++)
@@ -524,7 +524,7 @@ public static class PlanBeaconsFbe
         return pointToBeaconCount;
     }
 
-    private static ILocationDictionary<Area> GetPointToEntityArea(Context context, List<Area> effectEntityAreas)
+    private static ILocationDictionary<Area> GetPointToEntityArea(Context context, ITableArray<Area> effectEntityAreas)
     {
         var pointToEntityArea = context.GetLocationDictionary<Area>();
         for (var i = 0; i < effectEntityAreas.Count; i++)

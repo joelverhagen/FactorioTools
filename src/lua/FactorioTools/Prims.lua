@@ -55,7 +55,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       if not digraph then
         -- Make the MST bidirectional (a graph, not a digraph).
-        for _, center in System.each(KnapcodeFactorioTools.CollectionExtensions.ToList(mst:getKeys(), KnapcodeOilField.Location)) do
+        local keys = KnapcodeFactorioTools.CollectionExtensions.ToTableArray(mst:getKeys(), KnapcodeOilField.Location)
+        for i = 0, keys:getCount() - 1 do
+          local center = keys:get(i)
           for _, neighbor in System.each(mst:get(center):EnumerateItems()) do
             local extern, otherNeighbors = mst:TryGetValue(neighbor)
             if not extern then

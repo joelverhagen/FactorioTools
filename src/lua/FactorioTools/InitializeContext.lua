@@ -5,27 +5,21 @@ local KnapcodeFactorioTools
 local KnapcodeFactorioToolsData
 local KnapcodeOilField
 local ArrayIcon
-local ListTuple
-local ListEntity
-local ListLocation
 local SpanLocation
 local ArrayLocation
-local ListTerminalLocation
 local LocationIntDictionary_1Int32
-local LocationIntDictionary_1ListTerminalLocation
+local ITableArray_1TerminalLocation
+local LocationIntDictionary_1ITableArray_1TerminalLocation
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeFactorioToolsData = Knapcode.FactorioTools.Data
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   ArrayIcon = System.Array(KnapcodeFactorioToolsData.Icon)
-  ListTuple = System.List(System.Tuple)
-  ListEntity = System.List(KnapcodeFactorioToolsData.Entity)
-  ListLocation = System.List(KnapcodeOilField.Location)
   SpanLocation = System.Span(KnapcodeOilField.Location)
   ArrayLocation = System.Array(KnapcodeOilField.Location)
-  ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
   LocationIntDictionary_1Int32 = KnapcodeOilField.LocationIntDictionary_1(System.Int32)
-  LocationIntDictionary_1ListTerminalLocation = KnapcodeOilField.LocationIntDictionary_1(ListTerminalLocation)
+  ITableArray_1TerminalLocation = KnapcodeOilField.ITableArray_1(KnapcodeOilField.TerminalLocation)
+  LocationIntDictionary_1ITableArray_1TerminalLocation = KnapcodeOilField.LocationIntDictionary_1(ITableArray_1TerminalLocation)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("InitializeContext", function (namespace)
@@ -76,14 +70,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       default.Version = 1
       local blueprint = default
 
-      return Execute1(options, blueprint, System.Array.Empty(KnapcodeOilField.AvoidLocation), width, height)
+      return Execute1(options, blueprint, KnapcodeOilField.TableArray.Empty(KnapcodeOilField.AvoidLocation), width, height)
     end
     Execute1 = function (options, blueprint, avoid, minWidth, minHeight)
       local centerAndOriginalDirections, avoidLocations, deltaX, deltaY, width, height = TranslateLocations(options, blueprint, avoid, minWidth, minHeight):Deconstruct()
 
       local grid = InitializeGrid(centerAndOriginalDirections, avoidLocations, width, height)
 
-      local centers = ListLocation(#centerAndOriginalDirections)
+      local centers = KnapcodeOilField.TableArray.New1(centerAndOriginalDirections:getCount(), KnapcodeOilField.Location)
       PopulateCenters(centerAndOriginalDirections, centers)
       centers:Sort(function (a, b)
         local c = System.Int32.CompareTo(a.Y, b.Y)
@@ -94,9 +88,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         return System.Int32.CompareTo(a.X, b.X)
       end)
 
-      local centerToOriginalDirection = System.new(LocationIntDictionary_1Int32, 2, grid.Width, #centerAndOriginalDirections)
-      local centerToTerminals = System.new(LocationIntDictionary_1ListTerminalLocation, 2, grid.Width, #centerAndOriginalDirections)
-      local locationToTerminals = LocationIntDictionary_1ListTerminalLocation(grid.Width)
+      local centerToOriginalDirection = System.new(LocationIntDictionary_1Int32, 2, grid.Width, centerAndOriginalDirections:getCount())
+      local centerToTerminals = System.new(LocationIntDictionary_1ITableArray_1TerminalLocation, 2, grid.Width, centerAndOriginalDirections:getCount())
+      local locationToTerminals = LocationIntDictionary_1ITableArray_1TerminalLocation(grid.Width)
 
 
       PopulateCenterToOriginalDirection(centerAndOriginalDirections, centerToOriginalDirection)
@@ -118,12 +112,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return default
     end
     PopulateCenters = function (centerAndOriginalDirections, centers)
-      for i = 0, #centerAndOriginalDirections - 1 do
+      for i = 0, centerAndOriginalDirections:getCount() - 1 do
         centers:Add(centerAndOriginalDirections:get(i)[1])
       end
     end
     PopulateCenterToOriginalDirection = function (centerAndOriginalDirections, centerToOriginalDirection)
-      for i = 0, #centerAndOriginalDirections - 1 do
+      for i = 0, centerAndOriginalDirections:getCount() - 1 do
         local pair = centerAndOriginalDirections:get(i)
         centerToOriginalDirection:Add(pair[1], pair[2])
       end
@@ -170,7 +164,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return locationToHasAdjacentPumpjack
     end
     TranslateLocations = function (options, blueprint, avoid, minWidth, minHeight)
-      local pumpjacks = ListEntity()
+      local pumpjacks = KnapcodeOilField.TableArray.New1(#blueprint.Entities, KnapcodeFactorioToolsData.Entity)
       for i = 0, #blueprint.Entities - 1 do
         local entity = blueprint.Entities:get(i)
         if entity.Name == "pumpjack" --[[Vanilla.Pumpjack]] then
@@ -178,17 +172,17 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      if #pumpjacks > 150 --[[maxPumpjacks]] then
-        System.throw(KnapcodeFactorioTools.FactorioToolsException("Having more than " .. 150 --[[maxPumpjacks]] .. " pumpjacks is not supported. There are " .. #pumpjacks .. " pumpjacks provided."))
+      if pumpjacks:getCount() > 150 --[[maxPumpjacks]] then
+        System.throw(KnapcodeFactorioTools.FactorioToolsException("Having more than " .. 150 --[[maxPumpjacks]] .. " pumpjacks is not supported. There are " .. pumpjacks:getCount() .. " pumpjacks provided."))
       end
 
-      local centerAndOriginalDirections = ListTuple(#pumpjacks)
-      local avoidLocations = ListLocation(avoid:getCount())
+      local centerAndOriginalDirections = KnapcodeOilField.TableArray.New1(pumpjacks:getCount(), System.Tuple)
+      local avoidLocations = KnapcodeOilField.TableArray.New1(avoid:getCount(), KnapcodeOilField.Location)
 
       local deltaX = 0
       local deltaY = 0
 
-      if #pumpjacks == 0 and avoid:getCount() == 0 then
+      if pumpjacks:getCount() == 0 and avoid:getCount() == 0 then
         return class.TranslatedLocations(centerAndOriginalDirections, avoidLocations, deltaX, deltaY, minWidth, minHeight)
       end
 
@@ -197,20 +191,20 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local maxX = -3.40282347E+38 --[[Single.MinValue]]
       local maxY = -3.40282347E+38 --[[Single.MinValue]]
 
-      if #pumpjacks > 0 then
+      if pumpjacks:getCount() > 0 then
         local pumpjackOffsetX = 1 --[[PumpjackWidth / 2]]
         local pumpjackOffsetY = 1 --[[PumpjackHeight / 2]]
 
-        minX = KnapcodeFactorioTools.CollectionExtensions.Min(pumpjacks, function (p)
+        minX = KnapcodeFactorioTools.CollectionExtensions.Min(pumpjacks:EnumerateItems(), function (p)
           return p.Position.X
         end, KnapcodeFactorioToolsData.Entity, System.Single) - pumpjackOffsetX
-        minY = KnapcodeFactorioTools.CollectionExtensions.Min(pumpjacks, function (p)
+        minY = KnapcodeFactorioTools.CollectionExtensions.Min(pumpjacks:EnumerateItems(), function (p)
           return p.Position.Y
         end, KnapcodeFactorioToolsData.Entity, System.Single) - pumpjackOffsetY
-        maxX = KnapcodeFactorioTools.CollectionExtensions.Max(pumpjacks, function (p)
+        maxX = KnapcodeFactorioTools.CollectionExtensions.Max(pumpjacks:EnumerateItems(), function (p)
           return p.Position.X
         end, KnapcodeFactorioToolsData.Entity, System.Single) + pumpjackOffsetX
-        maxY = KnapcodeFactorioTools.CollectionExtensions.Max(pumpjacks, function (p)
+        maxY = KnapcodeFactorioTools.CollectionExtensions.Max(pumpjacks:EnumerateItems(), function (p)
           return p.Position.Y
         end, KnapcodeFactorioToolsData.Entity, System.Single) + pumpjackOffsetY
 
@@ -226,16 +220,16 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       if avoid:getCount() > 0 then
-        minX = math.Min(minX, KnapcodeFactorioTools.CollectionExtensions.Min(avoid, function (a)
+        minX = math.Min(minX, KnapcodeFactorioTools.CollectionExtensions.Min(avoid:EnumerateItems(), function (a)
           return a.X
         end, KnapcodeOilField.AvoidLocation, System.Single))
-        minY = math.Min(minY, KnapcodeFactorioTools.CollectionExtensions.Min(avoid, function (a)
+        minY = math.Min(minY, KnapcodeFactorioTools.CollectionExtensions.Min(avoid:EnumerateItems(), function (a)
           return a.Y
         end, KnapcodeOilField.AvoidLocation, System.Single))
-        maxX = math.Max(maxX, KnapcodeFactorioTools.CollectionExtensions.Max(avoid, function (a)
+        maxX = math.Max(maxX, KnapcodeFactorioTools.CollectionExtensions.Max(avoid:EnumerateItems(), function (a)
           return a.X
         end, KnapcodeOilField.AvoidLocation, System.Single))
-        maxY = math.Max(maxY, KnapcodeFactorioTools.CollectionExtensions.Max(avoid, function (a)
+        maxY = math.Max(maxY, KnapcodeFactorioTools.CollectionExtensions.Max(avoid:EnumerateItems(), function (a)
           return a.Y
         end, KnapcodeOilField.AvoidLocation, System.Single))
       end
@@ -264,7 +258,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         height = minHeight
       end
 
-      for i = 0, #pumpjacks - 1 do
+      for i = 0, pumpjacks:getCount() - 1 do
         local p = pumpjacks:get(i)
         local x = KnapcodeOilField.Helpers.ToInt(p.Position.X + deltaX, "Entity " .. p.EntityNumber .. " (a '" .. System.toString(p.Name) .. "') does not have an integer X value after translation.")
         local y = KnapcodeOilField.Helpers.ToInt(p.Position.Y + deltaY, "Entity " .. p.EntityNumber .. " (a '" .. System.toString(p.Name) .. "') does not have an integer Y value after translation.")
@@ -292,11 +286,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local grid = System.new(KnapcodeOilField.PipeGrid, 2, width, height)
 
-      for i = 0, #centerAndOriginalDirections - 1 do
+      for i = 0, centerAndOriginalDirections:getCount() - 1 do
         KnapcodeOilField.Helpers.AddPumpjack(grid, centerAndOriginalDirections:get(i)[1])
       end
 
-      for i = 0, #avoidLocations - 1 do
+      for i = 0, avoidLocations:getCount() - 1 do
         local avoidLocation = avoidLocations:get(i)
         local entity = grid:get(avoidLocation)
         if entity ~= nil and not System.is(entity, KnapcodeOilField.AvoidEntity) then

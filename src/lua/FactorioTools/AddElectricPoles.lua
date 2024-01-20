@@ -7,7 +7,6 @@ local KnapcodeAddElectricPoles
 local SpanLocation
 local ArrayLocation
 local QueueLocation
-local ListILocationSet
 local QueueElectricPoleCenter
 local SortedBatches_1ElectricPoleCandidateInfo
 local QueueSortedBatches_1ElectricPoleCandidateInfo
@@ -20,7 +19,6 @@ System.import(function (out)
   SpanLocation = System.Span(KnapcodeOilField.Location)
   ArrayLocation = System.Array(KnapcodeOilField.Location)
   QueueLocation = System.Queue(KnapcodeOilField.Location)
-  ListILocationSet = System.List(KnapcodeOilField.ILocationSet)
   QueueElectricPoleCenter = System.Queue(KnapcodeOilField.ElectricPoleCenter)
   SortedBatches_1ElectricPoleCandidateInfo = KnapcodeOilField.SortedBatches_1(KnapcodeOilField.ElectricPoleCandidateInfo)
   QueueSortedBatches_1ElectricPoleCandidateInfo = System.Queue(SortedBatches_1ElectricPoleCandidateInfo)
@@ -140,7 +138,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       local electricPoles = context:GetLocationDictionary(KnapcodeOilField.ElectricPoleCenter)
-      for i = 0, #electricPoleList - 1 do
+      for i = 0, electricPoleList:getCount() - 1 do
         local center = electricPoleList:get(i)
         local centerEntity = System.as(context.Grid:get(center), KnapcodeOilField.ElectricPoleCenter)
         if centerEntity == nil then
@@ -171,7 +169,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      return KnapcodeFactorioTools.SetHandling.ToReadOnlySet(electricPoles:getKeys(), context)
+      return KnapcodeFactorioTools.CollectionExtensions.ToReadOnlySet(electricPoles:getKeys(), context)
     end
     RemoveExtraElectricPoles = function (context, poweredEntities, electricPoles)
       local poleCenterToCoveredCenters, coveredCenterToPoleCenters = KnapcodeOilField.Helpers.GetElectricPoleCoverage(context, poweredEntities, electricPoles:getKeys()):Deconstruct()
@@ -307,7 +305,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           entitiesToPowerFirst:Not()
         elseif retryStrategy == 2 --[[RetryStrategy.RemoveUnpoweredBeacons]] then
           local centersToPowerFirst = context:GetLocationSet1()
-          for i = #poweredEntities - 1, 0, -1 do
+          for i = poweredEntities:getCount() - 1, 0, -1 do
             local entity = poweredEntities:get(i)
             if not coveredEntities:get(i) then
               if System.is(context.Grid:get(entity.Center), KnapcodeOilField.BeaconCenter) then
@@ -322,10 +320,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           if centersToPowerFirst:getCount() == 0 then
             entitiesToPowerFirst = nil
           else
-            entitiesToPowerFirst = System.new(KnapcodeOilField.CustomCountedBitArray, 2, #poweredEntities)
+            entitiesToPowerFirst = System.new(KnapcodeOilField.CustomCountedBitArray, 2, poweredEntities:getCount())
             do
               local i = 0
-              while centersToPowerFirst:getCount() > 0 and i < #poweredEntities do
+              while centersToPowerFirst:getCount() > 0 and i < poweredEntities:getCount() do
                 if centersToPowerFirst:Remove(poweredEntities:get(i).Center) then
                   entitiesToPowerFirst:set(i, true)
                 end
@@ -334,7 +332,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             end
           end
         elseif retryStrategy == 1 --[[RetryStrategy.RemoveUnpoweredEntities]] then
-          for i = #poweredEntities - 1, 0, -1 do
+          for i = poweredEntities:getCount() - 1, 0, -1 do
             local entity = poweredEntities:get(i)
             if not coveredEntities:get(i) then
               local shouldRemove = retryStrategy == 1 --[[RetryStrategy.RemoveUnpoweredEntities]] or (System.is(context.Grid:get(entity.Center), KnapcodeOilField.BeaconCenter) and retryStrategy == 2 --[[RetryStrategy.RemoveUnpoweredBeacons]])
@@ -360,7 +358,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     AddElectricPolesAroundEntities1 = function (context, poweredEntities, entitiesToPowerFirst)
       local allCandidateToInfo, coveredEntities, electricPoles2 = KnapcodeOilField.Helpers.GetElectricPoleCandidateToCovered(context, poweredEntities, class.CandidateFactory.Instance, true, KnapcodeOilField.ElectricPoleCandidateInfo):Deconstruct()
 
-      local electricPoleList = KnapcodeFactorioTools.CollectionExtensions.ToList(electricPoles2:getKeys(), KnapcodeOilField.Location)
+      local electricPoleList = KnapcodeFactorioTools.CollectionExtensions.ToTableArray(electricPoles2:getKeys(), KnapcodeOilField.Location)
 
       PopulateCandidateToInfo(context, allCandidateToInfo, entitiesToPowerFirst, poweredEntities, electricPoleList)
 
@@ -505,7 +503,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
         local othersConnected = 0
         local min = 2147483647 --[[Int32.MaxValue]]
-        for i = 0, #electricPoleList - 1 do
+        for i = 0, electricPoleList:getCount() - 1 do
           if AreElectricPolesConnected(candidate, electricPoleList:get(i), context.Options) then
             othersConnected = othersConnected + 1
           end
@@ -563,20 +561,20 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     ConnectElectricPoles = function (context, electricPoles)
       local groups = GetElectricPoleGroups(context, electricPoles)
 
-      while #groups > 1 do
+      while groups:getCount() > 1 do
         local continue
         repeat
           local closest = nil
           local closestDistanceSquared = 0
           local lines = KnapcodeOilField.Helpers.PointsToLines(electricPoles:getKeys())
-          for i = 0, #lines - 1 do
+          for i = 0, lines:getCount() - 1 do
             local continue
             repeat
               local endpoint = lines:get(i)
-              local groupA = KnapcodeFactorioTools.CollectionExtensions.Single1(groups, function (g)
+              local groupA = KnapcodeFactorioTools.CollectionExtensions.Single1(groups:EnumerateItems(), function (g)
                 return g:Contains(endpoint.A)
               end, KnapcodeOilField.ILocationSet)
-              local groupB = KnapcodeFactorioTools.CollectionExtensions.Single1(groups, function (g)
+              local groupB = KnapcodeFactorioTools.CollectionExtensions.Single1(groups:EnumerateItems(), function (g)
                 return g:Contains(endpoint.B)
               end, KnapcodeOilField.ILocationSet)
               if groupA == groupB then
@@ -616,7 +614,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     AddSinglePoleForConnection = function (context, electricPoles, groups, distance, endpoints)
       local segments = System.ToInt32(math.Ceiling(distance / context.Options:getElectricPoleWireReach()))
       local idealLine = KnapcodeOilField.BresenhamsLine.GetPath(endpoints.A, endpoints.B)
-      local idealIndex = System.div(#idealLine, segments)
+      local idealIndex = System.div(idealLine:getCount(), segments)
       if not AreElectricPolesConnected(idealLine:get(0), idealLine:get(idealIndex), context.Options) then
         idealIndex = idealIndex - 1
       end
@@ -655,8 +653,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       local center = AddElectricPole(context, electricPoles, selectedPoint)
-      local connectedGroups = ListILocationSet(#groups)
-      for i = 0, #groups - 1 do
+      local connectedGroups = KnapcodeOilField.TableArray.New1(groups:getCount(), KnapcodeOilField.ILocationSet)
+      for i = 0, groups:getCount() - 1 do
         local group = groups:get(i)
         local match = false
         for _, id in System.each(center:getNeighbors()) do
@@ -672,12 +670,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      if #connectedGroups == 0 then
+      if connectedGroups:getCount() == 0 then
         System.throw(KnapcodeFactorioTools.FactorioToolsException("Could not find the group containing the selected electric pole."))
       end
 
       connectedGroups:get(0):Add(selectedPoint)
-      for i = 1, #connectedGroups - 1 do
+      for i = 1, connectedGroups:getCount() - 1 do
         connectedGroups:get(0):UnionWith1(connectedGroups:get(i))
         groups:Remove(connectedGroups:get(i))
       end
@@ -685,8 +683,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       -- Visualizer.Show(context.Grid, Array.Empty<IPoint>(), Array.Empty<IEdge>());
     end
     GetElectricPoleGroups = function (context, electricPoles)
-      local groups = ListILocationSet()
-      local remaining = KnapcodeFactorioTools.SetHandling.ToSet(electricPoles:getKeys(), context, true)
+      local groups = KnapcodeOilField.TableArray.New(KnapcodeOilField.ILocationSet)
+      local remaining = KnapcodeFactorioTools.CollectionExtensions.ToSet1(electricPoles:getKeys(), context, true)
       while remaining:getCount() > 0 do
         local current = KnapcodeFactorioTools.CollectionExtensions.First(remaining:EnumerateItems(), KnapcodeOilField.Location)
         remaining:Remove(current)

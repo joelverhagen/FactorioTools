@@ -2,11 +2,9 @@
 local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
-local ListLocation
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
-  ListLocation = System.List(KnapcodeOilField.Location)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("Validate", function (namespace)
@@ -14,14 +12,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     PipesAreConnected = function (context, optimizedPipes)
       if context.Options.ValidateSolution then
         for _, terminals in System.each(context.CenterToTerminals:getValues()) do
-          if #terminals ~= 1 then
+          if terminals:getCount() ~= 1 then
             System.throw(KnapcodeFactorioTools.FactorioToolsException("A pumpjack has more than one terminal."))
           end
         end
 
         local goals = context:GetLocationSet2(true)
         for _, terminals in System.each(context.CenterToTerminals:getValues()) do
-          for i = 0, #terminals - 1 do
+          for i = 0, terminals:getCount() - 1 do
             goals:Add(terminals:get(i).Terminal)
           end
         end
@@ -42,7 +40,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     UndergroundPipesArePipes = function (context, pipes, locationToDirection)
       if context.Options.ValidateSolution then
-        local missing = KnapcodeFactorioTools.SetHandling.ToSet(locationToDirection:getKeys(), context, true)
+        local missing = KnapcodeFactorioTools.CollectionExtensions.ToSet1(locationToDirection:getKeys(), context, true)
         missing:ExceptWith(pipes)
 
         if missing:getCount() > 0 then
@@ -59,8 +57,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     BeaconsDoNotOverlap = function (context, solutions)
       if context.Options.ValidateSolution and not context.Options.OverlapBeacons then
-        for _, solution in System.each(solutions) do
-          local beaconCenterToCoveredCenters = KnapcodeOilField.Helpers.GetProviderCenterToCoveredCenters(context, context.Options.BeaconWidth, context.Options.BeaconHeight, context.Options.BeaconSupplyWidth, context.Options.BeaconSupplyHeight, solution.Beacons, true, false)
+        for i = 0, solutions:getCount() - 1 do
+          local beaconCenterToCoveredCenters = KnapcodeOilField.Helpers.GetProviderCenterToCoveredCenters(context, context.Options.BeaconWidth, context.Options.BeaconHeight, context.Options.BeaconSupplyWidth, context.Options.BeaconSupplyHeight, solutions:get(i).Beacons:EnumerateItems(), true, false)
 
           local coveredCenterToPoleCenters = KnapcodeOilField.Helpers.GetCoveredCenterToProviderCenters(context, beaconCenterToCoveredCenters)
 
@@ -84,10 +82,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           local clone = KnapcodeOilField.PipeGrid(context.Grid)
           KnapcodeOilField.AddPipeEntities.Execute1(context, clone, optimizedPipes, undergroundPipes, false)
         else
-          for _, solution in System.each(beaconSolutions) do
+          for i = 0, beaconSolutions:getCount() - 1 do
             local clone = KnapcodeOilField.PipeGrid(context.Grid)
             KnapcodeOilField.AddPipeEntities.Execute1(context, clone, optimizedPipes, undergroundPipes, false)
-            KnapcodeOilField.Helpers.AddBeaconsToGrid(clone, context.Options, solution.Beacons)
+            KnapcodeOilField.Helpers.AddBeaconsToGrid(clone, context.Options, beaconSolutions:get(i).Beacons)
           end
         end
       end
@@ -98,7 +96,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         local isSubsetOf = true
         do
           local i = 0
-          while i < #poweredEntities and isSubsetOf do
+          while i < poweredEntities:getCount() and isSubsetOf do
             if covered:get(i) then
               isSubsetOf = coveredEntities:get(i)
             end
@@ -117,7 +115,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         local poweredEntities
         poweredEntities, _ = KnapcodeOilField.Helpers.GetPoweredEntities(context):Deconstruct()
 
-        local electricPoleCenters = ListLocation()
+        local electricPoleCenters = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
         for _, location in System.each(context.Grid:getEntityLocations():EnumerateItems()) do
           local entity = context.Grid:get(location)
           if System.is(entity, KnapcodeOilField.ElectricPoleCenter) then
@@ -125,7 +123,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
         end
 
-        KnapcodeOilField.Helpers.GetElectricPoleCoverage(context, poweredEntities, electricPoleCenters)
+        KnapcodeOilField.Helpers.GetElectricPoleCoverage(context, poweredEntities, electricPoleCenters:EnumerateItems())
       end
     end
     return {

@@ -2,11 +2,9 @@
 local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
-local ListLocation
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
-  ListLocation = System.List(KnapcodeOilField.Location)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("PlanUndergroundPipes", function (namespace)
@@ -68,12 +66,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           if (pipes:Contains(goal:Translate1(forward)) or pipes:Contains(goal:Translate1(backward))) and not pipes:Contains(goal:Translate1(right)) and not pipes:Contains(goal:Translate1(left)) then
             local default, terminals = context.LocationToTerminals:TryGetValue(goal)
             if default then
-              if #terminals > 1 then
+              if terminals:getCount() > 1 then
                 continue = true
                 break
               end
 
-              local direction = KnapcodeFactorioTools.CollectionExtensions.Single(terminals, KnapcodeOilField.TerminalLocation).Direction
+              local direction = terminals:get(0).Direction
               if direction ~= forwardDirection and direction ~= backwardDirection then
                 continue = true
                 break
@@ -93,19 +91,17 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         return
       end
 
-      local sorted = KnapcodeFactorioTools.CollectionExtensions.ToList(candidates:EnumerateItems(), KnapcodeOilField.Location)
+      local sorted = KnapcodeFactorioTools.CollectionExtensions.ToTableArray(candidates:EnumerateItems(), KnapcodeOilField.Location)
       sorted:Sort(sort)
 
-      local default = ListLocation()
-      default:Add(sorted:get(0))
-      local currentRun = default
-      for i = 1, #sorted - 1 do
+      local currentRun = KnapcodeOilField.TableArray.New2(sorted:get(0), KnapcodeOilField.Location)
+      for i = 1, sorted:getCount() - 1 do
         local continue
         repeat
-          local previous = currentRun:get(#currentRun - 1)
+          local previous = currentRun:get(currentRun:getCount() - 1)
           local current = sorted:get(i)
 
-          if previous.X + forward.X == current.X and previous.Y + forward.Y == current.Y and #currentRun < 11 --[[PlanUndergroundPipes.MaxUnderground]] then
+          if previous.X + forward.X == current.X and previous.Y + forward.Y == current.Y and currentRun:getCount() < 11 --[[PlanUndergroundPipes.MaxUnderground]] then
             currentRun:Add(current)
             continue = true
             break
@@ -124,12 +120,12 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       AddRunAndClear(pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
     end
     AddRunAndClear = function (pipes, locationToDirection, forwardDirection, backwardDirection, currentRun)
-      if #currentRun >= 3 --[[PlanUndergroundPipes.MinUnderground]] then
+      if currentRun:getCount() >= 3 --[[PlanUndergroundPipes.MinUnderground]] then
         -- Convert pipes to underground pipes
         locationToDirection:Add(currentRun:get(0), backwardDirection)
-        locationToDirection:Add(currentRun:get(#currentRun - 1), forwardDirection)
+        locationToDirection:Add(currentRun:get(currentRun:getCount() - 1), forwardDirection)
 
-        for j = 1, #currentRun - 1 - 1 do
+        for j = 1, currentRun:getCount() - 1 - 1 do
           pipes:Remove(currentRun:get(j))
         end
       end

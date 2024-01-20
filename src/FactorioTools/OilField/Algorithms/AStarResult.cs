@@ -4,9 +4,9 @@ namespace Knapcode.FactorioTools.OilField;
 
 public class AStarResult
 {
-    private readonly List<Location>? _path;
+    private readonly ITableArray<Location>? _path;
 
-    public AStarResult(bool success, Location reachedGoal, List<Location>? path)
+    public AStarResult(bool success, Location reachedGoal, ITableArray<Location>? path)
     {
         Success = success;
         ReachedGoal = reachedGoal;
@@ -16,7 +16,7 @@ public class AStarResult
     public bool Success { get; }
     public Location ReachedGoal { get; }
 
-    public List<Location> Path
+    public ITableArray<Location> Path
     {
         get
         {

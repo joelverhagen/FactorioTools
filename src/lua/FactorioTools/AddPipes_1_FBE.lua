@@ -3,30 +3,16 @@ local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
 local KnapcodeAddPipesFbe
-local ListGroup
-local ListTuple
-local ListLocation
 local SpanLocation
 local ArrayLocation
-local ListListLocation
-local ListPathAndTurns
-local ListTerminalPair
-local ListTerminalLocation
-local ListPumpjackConnection
+local ITableArray_1Location
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   KnapcodeAddPipesFbe = Knapcode.FactorioTools.OilField.AddPipesFbe
-  ListGroup = System.List(KnapcodeAddPipesFbe.Group)
-  ListTuple = System.List(System.Tuple)
-  ListLocation = System.List(KnapcodeOilField.Location)
   SpanLocation = System.Span(KnapcodeOilField.Location)
   ArrayLocation = System.Array(KnapcodeOilField.Location)
-  ListListLocation = System.List(ListLocation)
-  ListPathAndTurns = System.List(KnapcodeAddPipesFbe.PathAndTurns)
-  ListTerminalPair = System.List(KnapcodeAddPipesFbe.TerminalPair)
-  ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
-  ListPumpjackConnection = System.List(KnapcodeAddPipesFbe.PumpjackConnection)
+  ITableArray_1Location = KnapcodeOilField.ITableArray_1(KnapcodeOilField.Location)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   -- <summary>
@@ -148,7 +134,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       __ctor3__ = function (this, context, paths)
         internal(this)
         this._terminals = context:GetLocationSet1()
-        this._entities = ListTerminalLocation()
+        this._entities = KnapcodeOilField.TableArray.New(KnapcodeOilField.TerminalLocation)
         this.Paths = paths
       end
       getEntities = function (this)
@@ -175,7 +161,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         UpdateLocation(this)
       end
       UpdateLocation = function (this)
-        this.Location = KnapcodeOilField.Location(System.ToInt32(math.Round(this._sumX / #this._entities, 0)), System.ToInt32(math.Round(this._sumY / #this._entities, 0)))
+        this.Location = KnapcodeOilField.Location(System.ToInt32(math.Round(this._sumX / this._entities:getCount(), 0)), System.ToInt32(math.Round(this._sumY / this._entities:getCount(), 0)))
       end
       return {
         _sumX = 0,
@@ -199,8 +185,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         this.EndpointDistance = endpoints.A:GetManhattanDistance(middle) + endpoints.B:GetManhattanDistance(middle)
       end
       GetAverageDistance = function (this)
-        return (#this.Connections > 0) and KnapcodeFactorioTools.CollectionExtensions.Average(this.Connections, function (x)
-          return #x.Line - 1
+        return (this.Connections:getCount() > 0) and KnapcodeFactorioTools.CollectionExtensions.Average(this.Connections:EnumerateItems(), function (x)
+          return x.Line:getCount() - 1
         end, KnapcodeAddPipesFbe.TerminalPair) or 0
       end
       return {
@@ -218,7 +204,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         this.CenterDistance = terminalA.Terminal:GetManhattanDistance(middle)
       end
       ToString = function (this)
-        return System.toString(this.TerminalA.Terminal) .. " -> " .. System.toString(this.TerminalB.Terminal) .. " (length " .. #this.Line .. ")"
+        return System.toString(this.TerminalA.Terminal) .. " -> " .. System.toString(this.TerminalB.Terminal) .. " (length " .. this.Line:getCount() .. ")"
       end
       return {
         CenterDistance = 0,
@@ -238,28 +224,32 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local terminals, pipes, finalStrategy = result.Data:Deconstruct()
 
-      for _, terminal in System.each(terminals) do
-        KnapcodeOilField.Helpers.EliminateOtherTerminals(context, terminal)
+      for i = 0, terminals:getCount() - 1 do
+        KnapcodeOilField.Helpers.EliminateOtherTerminals(context, terminals:get(i))
       end
 
       return KnapcodeFactorioTools.Result.NewData(class.FbeResult(pipes, finalStrategy), class.FbeResult)
     end
     DelaunayTriangulation = function (context, middle, strategy)
       -- GENERATE LINES
-      local lines = ListPumpjackConnection()
+      local lines = KnapcodeOilField.TableArray.New(class.PumpjackConnection)
       local allLines = KnapcodeOilField.Helpers.PointsToLines1(context.Centers, false)
-      for i = 0, #allLines - 1 do
+      for i = 0, allLines:getCount() - 1 do
         local continue
         repeat
           local line = allLines:get(i)
-          local connections = ListTerminalPair()
+          local connections = KnapcodeOilField.TableArray.New(class.TerminalPair)
 
-          for _, tA in System.each(context.CenterToTerminals:get(line.A)) do
+          local terminalsA = context.CenterToTerminals:get(line.A)
+          for j = 0, terminalsA:getCount() - 1 do
             local continue
             repeat
-              for _, tB in System.each(context.CenterToTerminals:get(line.B)) do
+              local tA = terminalsA:get(j)
+              local terminalsB = context.CenterToTerminals:get(line.B)
+              for k = 0, terminalsB:getCount() - 1 do
                 local continue
                 repeat
+                  local tB = terminalsB:get(k)
                   if tA.Terminal.X ~= tB.Terminal.X and tA.Terminal.Y ~= tB.Terminal.Y then
                     continue = true
                     break
@@ -285,7 +275,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             end
           end
 
-          if #connections == 0 then
+          if connections:getCount() == 0 then
             continue = true
             break
           end
@@ -299,16 +289,16 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       -- GENERATE GROUPS
-      local groups = ListGroup()
-      local addedPumpjacks = ListTerminalLocation()
-      local leftoverPumpjacks = KnapcodeFactorioTools.SetHandling.ToSet(context.Centers, context, true)
-      while #lines > 0 do
+      local groups = KnapcodeOilField.TableArray.New(class.Group)
+      local addedPumpjacks = KnapcodeOilField.TableArray.New(KnapcodeOilField.TerminalLocation)
+      local leftoverPumpjacks = KnapcodeFactorioTools.CollectionExtensions.ToSet1(context.Centers:EnumerateItems(), context, true)
+      while lines:getCount() > 0 do
         local line = GetNextLine(lines, addedPumpjacks)
 
-        local addedA = KnapcodeFactorioTools.CollectionExtensions.FirstOrDefault(addedPumpjacks, function (x)
+        local addedA = KnapcodeFactorioTools.CollectionExtensions.FirstOrDefault(addedPumpjacks:EnumerateItems(), function (x)
           return KnapcodeOilField.Location.op_Equality(x.Center, line.Endpoints.A)
         end, KnapcodeOilField.TerminalLocation)
-        local addedB = KnapcodeFactorioTools.CollectionExtensions.FirstOrDefault(addedPumpjacks, function (x)
+        local addedB = KnapcodeFactorioTools.CollectionExtensions.FirstOrDefault(addedPumpjacks:EnumerateItems(), function (x)
           return KnapcodeOilField.Location.op_Equality(x.Center, line.Endpoints.B)
         end, KnapcodeOilField.TerminalLocation)
 
@@ -318,14 +308,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             return c
           end
 
-          return System.Int32.CompareTo((#a.Line), #b.Line)
+          return System.Int32.CompareTo(a.Line:getCount(), b.Line:getCount())
         end)
 
-        for _, connection in System.each(line.Connections) do
+        for i = 0, line.Connections:getCount() - 1 do
+          local connection = line.Connections:get(i)
           if addedA == nil and addedB == nil then
-            local default = ListListLocation()
-            default:Add(connection.Line)
-            local group = System.new(class.Group, 2, context, connection, default)
+            local group = System.new(class.Group, 2, context, connection, KnapcodeOilField.TableArray.New2(connection.Line, ITableArray_1Location))
             groups:Add(group)
             addedPumpjacks:Add(connection.TerminalA)
             addedPumpjacks:Add(connection.TerminalB)
@@ -335,7 +324,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
 
           if addedA == nil and addedB ~= nil and addedB.Direction == connection.TerminalB.Direction then
-            local group = KnapcodeFactorioTools.CollectionExtensions.First1(groups, function (g)
+            local group = KnapcodeFactorioTools.CollectionExtensions.First1(groups:EnumerateItems(), function (g)
               return g:HasTerminal(addedB)
             end, class.Group)
             group:Add(connection.TerminalA)
@@ -346,7 +335,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           end
 
           if addedA ~= nil and addedB == nil and addedA.Direction == connection.TerminalA.Direction then
-            local group = KnapcodeFactorioTools.CollectionExtensions.First1(groups, function (g)
+            local group = KnapcodeFactorioTools.CollectionExtensions.First1(groups:EnumerateItems(), function (g)
               return g:HasTerminal(addedA)
             end, class.Group)
             group:Add(connection.TerminalB)
@@ -360,19 +349,19 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       -- if no LINES were generated, add 2 pumpjacks to a group here
       -- this will only happen when only a few pumpjacks need to be connected
-      if #groups == 0 then
+      if groups:getCount() == 0 then
         local connection = nil
-        for i = 0, #allLines - 1 do
+        for i = 0, allLines:getCount() - 1 do
           local continue
           repeat
             local line = allLines:get(i)
             local terminalsA = context.CenterToTerminals:get(line.A)
-            for j = 0, #terminalsA - 1 do
+            for j = 0, terminalsA:getCount() - 1 do
               local continue
               repeat
                 local tA = terminalsA:get(j)
                 local terminalsB = context.CenterToTerminals:get(line.B)
-                for k = 0, #terminalsB - 1 do
+                for k = 0, terminalsB:getCount() - 1 do
                   local continue
                   repeat
                     local tB = terminalsB:get(k)
@@ -381,7 +370,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                     if connection ~= nil then
                       -- don't perform a shortest path search if the Manhattan distance (minimum possible) is longer than the best.
                       local minDistance = tA.Terminal:GetManhattanDistance(tB.Terminal)
-                      if minDistance >= #connection.Line then
+                      if minDistance >= connection.Line:getCount() then
                         continue = true
                         break
                       end
@@ -399,7 +388,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                       break
                     end
 
-                    local c = System.Int32.CompareTo((#result:getPath()), #connection.Line)
+                    local c = System.Int32.CompareTo(result:getPath():getCount(), connection.Line:getCount())
                     if c < 0 then
                       connection = class.TerminalPair(tA, tB, result:getPath(), middle)
                     end
@@ -426,30 +415,28 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           System.throw(KnapcodeFactorioTools.FactorioToolsException("A connection between terminals should have been found."))
         end
 
-        local default = ListListLocation()
-        default:Add(connection.Line)
-        local group = System.new(class.Group, 2, context, connection, default)
+        local group = System.new(class.Group, 2, context, connection, KnapcodeOilField.TableArray.New2(connection.Line, ITableArray_1Location))
         groups:Add(group)
       end
 
       -- CONNECT GROUPS
       local maxTries = (strategy == 0 --[[PipeStrategy.FbeOriginal]]) and 3 or 20
       local tries = maxTries
-      local aloneGroups = ListGroup()
+      local aloneGroups = KnapcodeOilField.TableArray.New(class.Group)
       local finalGroup = nil
 
-      while #groups > 0 do
+      while groups:getCount() > 0 do
         local continue
         repeat
-          local group = KnapcodeFactorioTools.CollectionExtensions.MinBy(groups, function (x)
-            return KnapcodeFactorioTools.CollectionExtensions.Sum(x.Paths, function (p)
-              return #p
-            end, ListLocation)
+          local group = KnapcodeFactorioTools.CollectionExtensions.MinBy(groups:EnumerateItems(), function (x)
+            return KnapcodeFactorioTools.CollectionExtensions.Sum(x.Paths:EnumerateItems(), function (p)
+              return p:getCount()
+            end, ITableArray_1Location)
           end, class.Group, System.Int32)
           groups:Remove(group)
 
-          if #groups == 0 then
-            if #aloneGroups > 0 and tries > 0 then
+          if groups:getCount() == 0 then
+            if aloneGroups:getCount() > 0 and tries > 0 then
               groups:AddRange(aloneGroups)
               groups:Add(group)
               aloneGroups:Clear()
@@ -462,7 +449,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          local locationToGroup = KnapcodeFactorioTools.SetHandling.ToDictionary(groups, context, function (x)
+          local locationToGroup = KnapcodeFactorioTools.CollectionExtensions.ToDictionary1(groups, context, function (x)
             return x.Location
           end, function (x)
             return x
@@ -470,8 +457,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           locationToGroup:Add(group.Location, group)
 
           local groupLines = KnapcodeOilField.Helpers.PointsToLines(locationToGroup:getKeys())
-          local par = ListGroup(#groupLines)
-          for i = 0, #groupLines - 1 do
+          local par = KnapcodeOilField.TableArray.New1(groupLines:getCount(), class.Group)
+          for i = 0, groupLines:getCount() - 1 do
             local line = groupLines:get(i)
             if KnapcodeOilField.Location.op_Equality(line.A, group.Location) then
               par:Add(locationToGroup:get(line.B))
@@ -505,7 +492,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         System.throw(KnapcodeFactorioTools.FactorioToolsException("The final group should be initialized at this point."))
       end
 
-      if #aloneGroups > 0 then
+      if aloneGroups:getCount() > 0 then
         -- Fallback to the modified FBE algorithm if the original cannot connect all of the groups.
         -- Related to https://github.com/teoxoy/factorio-blueprint-editor/issues/254
         if strategy == 0 --[[PipeStrategy.FbeOriginal]] then
@@ -529,14 +516,10 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         repeat
           local center = sortedLeftoverPumpjacks:get(i)
           local centerTerminals = context.CenterToTerminals:get(center)
-          local terminalGroups = ListGroup(#centerTerminals)
-          for j = 0, #centerTerminals - 1 do
+          local terminalGroups = KnapcodeOilField.TableArray.New1(centerTerminals:getCount(), class.Group)
+          for j = 0, centerTerminals:getCount() - 1 do
             local terminal = centerTerminals:get(j)
-            local default = ListListLocation()
-            local extern = ListLocation()
-            extern:Add(terminal.Terminal)
-            default:Add(extern)
-            local group = class.Group(context, terminal, default)
+            local group = class.Group(context, terminal, KnapcodeOilField.TableArray.New2(KnapcodeOilField.TableArray.New2(terminal.Terminal, KnapcodeOilField.Location), ITableArray_1Location))
             terminalGroups:Add(group)
           end
 
@@ -565,7 +548,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                 break
               end
 
-              finalGroup:Add(KnapcodeFactorioTools.CollectionExtensions.Single(connection.FirstGroup:getEntities(), KnapcodeOilField.TerminalLocation))
+              if connection.FirstGroup:getEntities():getCount() ~= 1 then
+                System.throw(KnapcodeFactorioTools.FactorioToolsException("There should be a single entity in the group."))
+              end
+
+              finalGroup:Add(connection.FirstGroup:getEntities():get(0))
               finalGroup.Paths:Add(connection.Lines:get(0))
               break
             until 1
@@ -582,9 +569,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
       local terminals = finalGroup:getEntities()
       local pipes = context:GetLocationSet2(true)
-      for i = 0, #finalGroup.Paths - 1 do
+      for i = 0, finalGroup.Paths:getCount() - 1 do
         local path = finalGroup.Paths:get(i)
-        for j = 0, #path - 1 do
+        for j = 0, path:getCount() - 1 do
           pipes:Add(path:get(j))
         end
       end
@@ -597,7 +584,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local nextContainsAddedPumpjack = nil
       local nextAverageDistance = nil
 
-      for i = 0, #lines - 1 do
+      for i = 0, lines:getCount() - 1 do
         local continue
         repeat
           local line = lines:get(i)
@@ -638,7 +625,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          c = System.Int32.CompareTo((#line.Connections), #next.Connections)
+          c = System.Int32.CompareTo(line.Connections:getCount(), next.Connections:getCount())
           if c < 0 then
             next = line
             nextIndex = i
@@ -675,7 +662,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return next
     end
     LineContainsAnAddedPumpjack = function (addedPumpjacks, ent)
-      for i = 0, #addedPumpjacks - 1 do
+      for i = 0, addedPumpjacks:getCount() - 1 do
         local continue
         repeat
           local terminal = addedPumpjacks:get(i)
@@ -684,7 +671,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          for j = 0, #ent.Connections - 1 do
+          for j = 0, ent.Connections:getCount() - 1 do
             local pair = ent.Connections:get(j)
             if pair.TerminalA.Direction == terminal.Direction or pair.TerminalB.Direction == terminal.Direction then
               return true
@@ -701,7 +688,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
     end
     GetPathBetweenGroups = function (context, groups, group, maxTurns, strategy)
       local best = nil
-      for i = 0, #groups - 1 do
+      for i = 0, groups:getCount() - 1 do
         local continue
         repeat
           local g = groups:get(i)
@@ -712,7 +699,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
           local connection = result.Data
 
-          if #connection.Lines == 0 then
+          if connection.Lines:getCount() == 0 then
             continue = true
             break
           end
@@ -737,22 +724,22 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       return KnapcodeFactorioTools.Result.NewData(best, class.TwoConnectedGroups)
     end
     ConnectTwoGroups = function (context, a, b, maxTurns, strategy)
-      local aLocations = ListLocation()
-      for i = 0, #a.Paths - 1 do
+      local aLocations = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
+      for i = 0, a.Paths:getCount() - 1 do
         aLocations:AddRange(a.Paths:get(i))
       end
 
-      local bLocations = ListLocation()
-      for i = 0, #b.Paths - 1 do
+      local bLocations = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
+      for i = 0, b.Paths:getCount() - 1 do
         bLocations:AddRange(b.Paths:get(i))
       end
 
-      local lineInfo = ListPathAndTurns()
-      for i = 0, #aLocations - 1 do
+      local lineInfo = KnapcodeOilField.TableArray.New(class.PathAndTurns)
+      for i = 0, aLocations:getCount() - 1 do
         local continue
         repeat
           local al = aLocations:get(i)
-          for j = 0, #bLocations - 1 do
+          for j = 0, bLocations:getCount() - 1 do
             local continue
             repeat
               local bl = bLocations:get(j)
@@ -767,7 +754,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
                 break
               end
 
-              lineInfo:Add(class.PathAndTurns(KnapcodeOilField.Endpoints(line:get(0), line:get(#line - 1)), line, 0, #lineInfo))
+              lineInfo:Add(class.PathAndTurns(KnapcodeOilField.Endpoints(line:get(0), line:get(line:getCount() - 1)), line, 0, lineInfo:getCount()))
               continue = true
             until 1
             if not continue then
@@ -781,9 +768,9 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      if #aLocations == 1 then
-        local locationToIndex = context:GetLocationDictionary1(#bLocations, System.Int32)
-        for i = 0, #bLocations - 1 do
+      if aLocations:getCount() == 1 then
+        local locationToIndex = context:GetLocationDictionary1(bLocations:getCount(), System.Int32)
+        for i = 0, bLocations:getCount() - 1 do
           locationToIndex:TryAdd(bLocations:get(i), i)
         end
 
@@ -798,18 +785,18 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           return System.Int32.CompareTo(locationToIndex:get(a), locationToIndex:get(b))
         end)
 
-        if #bLocations > 20 then
-          bLocations:RemoveRange(20, #bLocations - 20)
+        if bLocations:getCount() > 20 then
+          bLocations:RemoveRange(20, bLocations:getCount() - 20)
         end
       end
 
-      local aPlusB = context:GetLocationSet6(#aLocations + #bLocations, true)
-      aPlusB:UnionWith(aLocations)
-      aPlusB:UnionWith(bLocations)
+      local aPlusB = context:GetLocationSet6(aLocations:getCount() + bLocations:getCount(), true)
+      aPlusB:UnionWith(aLocations:EnumerateItems())
+      aPlusB:UnionWith(bLocations:EnumerateItems())
 
       local allEndpoints = KnapcodeOilField.Helpers.PointsToLines(aPlusB:EnumerateItems())
-      local matches = ListTuple(#allEndpoints)
-      for i = 0, #allEndpoints - 1 do
+      local matches = KnapcodeOilField.TableArray.New1(allEndpoints:getCount(), System.Tuple)
+      for i = 0, allEndpoints:getCount() - 1 do
         local continue
         repeat
           local pair = allEndpoints:get(i)
@@ -818,7 +805,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          matches:Add(System.Tuple(pair, pair.A:GetManhattanDistance(pair.B), #matches))
+          matches:Add(System.Tuple(pair, pair.A:GetManhattanDistance(pair.B), matches:getCount()))
           continue = true
         until 1
         if not continue then
@@ -835,7 +822,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         return System.Int32.CompareTo(a[3], b[3])
       end)
 
-      local takeLines = math.Min(#matches, 5)
+      local takeLines = math.Min(matches:getCount(), 5)
       for i = 0, takeLines - 1 do
         local continue
         repeat
@@ -867,7 +854,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          lineInfo:Add(class.PathAndTurns(l, path, turns, #lineInfo))
+          lineInfo:Add(class.PathAndTurns(l, path, turns, lineInfo:getCount()))
           continue = true
         until 1
         if not continue then
@@ -876,7 +863,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       lineInfo:Sort(function (a, b)
-        local c = System.Int32.CompareTo((#a.Path), #b.Path)
+        local c = System.Int32.CompareTo(a.Path:getCount(), b.Path:getCount())
         if c ~= 0 then
           return c
         end
@@ -884,13 +871,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         return System.Int32.CompareTo(a.OriginalIndex, b.OriginalIndex)
       end)
 
-      local lines = ListListLocation(#lineInfo)
-      local minCount = (#lineInfo == 0) and 0 or 2147483647 --[[Int32.MaxValue]]
-      for i = 0, #lineInfo - 1 do
+      local lines = KnapcodeOilField.TableArray.New1(lineInfo:getCount(), ITableArray_1Location)
+      local minCount = (lineInfo:getCount() == 0) and 0 or 2147483647 --[[Int32.MaxValue]]
+      for i = 0, lineInfo:getCount() - 1 do
         local path = lineInfo:get(i).Path
         lines:Add(path)
-        if #path < minCount then
-          minCount = #path
+        if path:getCount() < minCount then
+          minCount = path:getCount()
         end
       end
 

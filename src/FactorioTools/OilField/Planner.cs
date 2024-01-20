@@ -12,8 +12,8 @@ public static class Planner
     {
         var options = OilFieldOptions.ForMediumElectricPole;
 
-        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToList();
-        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
+        options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableArray();
+        options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableArray();
         options.ValidateSolution = true;
 
         var inputBlueprint = new Blueprint
@@ -88,10 +88,10 @@ public static class Planner
         return Execute(
             options,
             inputBlueprint,
-            avoid: Array.Empty<AvoidLocation>());
+            avoid: TableArray.Empty<AvoidLocation>());
     }
 
-    public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyList<AvoidLocation> avoid)
+    public static PlannerResult Execute(OilFieldOptions options, Blueprint inputBlueprint, IReadOnlyTableArray<AvoidLocation> avoid)
     {
         return Execute(
             options,
@@ -104,7 +104,7 @@ public static class Planner
     private static PlannerResult Execute(
         OilFieldOptions options,
         Blueprint blueprint,
-        IReadOnlyList<AvoidLocation> avoid,
+        IReadOnlyTableArray<AvoidLocation> avoid,
         ILocationSet electricPolesAvoid,
         EletricPolesMode electricPolesMode)
     {
@@ -210,7 +210,13 @@ public static class Planner
         var rotatedPumpjacks = 0;
         foreach ((var location, var originalDirection) in context.CenterToOriginalDirection.EnumeratePairs())
         {
-            var finalDirection = context.CenterToTerminals[location].Single().Direction;
+            var terminals = context.CenterToTerminals[location];
+            if (terminals.Count != 1)
+            {
+                throw new FactorioToolsException("There should be exactly one terminal at this point.");
+            }
+
+            var finalDirection = terminals[0].Direction;
             if (originalDirection != finalDirection)
             {
                 rotatedPumpjacks++;

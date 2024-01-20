@@ -5,7 +5,7 @@ namespace Knapcode.FactorioTools.OilField
 {
     public static class BreadthFirstFinder
     {
-        public static List<Location>? GetShortestPath(Context context, Location start, Location goal)
+        public static ITableArray<Location>? GetShortestPath(Context context, Location start, Location goal)
         {
 #if !USE_SHARED_INSTANCES
             var toExplore = new Queue<Location>();
@@ -36,7 +36,7 @@ namespace Knapcode.FactorioTools.OilField
 
                     if (current == goal)
                     {
-                        var output = new List<Location> { current };
+                        var output = TableArray.New(current);
                         while (parents.TryGetValue(current, out var parent))
                         {
                             output.Add(parent);

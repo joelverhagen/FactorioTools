@@ -8,10 +8,10 @@ public static class PlanBeaconsSnug
 {
     public static BeaconPlannerResult Execute(Context context)
     {
-        var poweredEntities = new List<ProviderRecipient>(context.CenterToTerminals.Count);
-        foreach (var center in context.Centers)
+        var poweredEntities = TableArray.New<ProviderRecipient>(context.Centers.Count);
+        for (var i = 0; i < context.Centers.Count; i++)
         {
-            poweredEntities.Add(new ProviderRecipient(center, PumpjackWidth, PumpjackHeight));
+            poweredEntities.Add(new ProviderRecipient(context.Centers[i], PumpjackWidth, PumpjackHeight));
         }
 
         // We don't try to remove unused beacons here because there should not be any existing beacons at this point.
@@ -29,7 +29,7 @@ public static class PlanBeaconsSnug
 
         var sorter = new SnugCandidateSorter();
 
-        var scopedCandidates = new List<KeyValuePair<Location, BeaconCandidateInfo>>();
+        var scopedCandidates = TableArray.New<KeyValuePair<Location, BeaconCandidateInfo>>();
         var scopedCandidatesSet = context.GetLocationDictionary<BeaconCandidateInfo>();
 
         Dictionary<int, ILocationDictionary<BeaconCandidateInfo>>? coveredToCandidates = null;
@@ -38,7 +38,7 @@ public static class PlanBeaconsSnug
             coveredToCandidates = GetCoveredToCandidates(context, candidateToInfo, coveredEntities);
         }
 
-        var beacons = new List<Location>();
+        var beacons = TableArray.New<Location>();
         var effects = 0;
 
         while (candidateToInfo.Count > 0)
@@ -48,7 +48,7 @@ public static class PlanBeaconsSnug
                 .MinBy(pair =>
                 {
                     return Tuple.Create(
-                        beacons.Count > 0 && context.Options.OverlapBeacons ? beacons.Min(x => x.GetManhattanDistance(pair.Key)) : 0,
+                        beacons.Count > 0 && context.Options.OverlapBeacons ? beacons.EnumerateItems().Min(x => x.GetManhattanDistance(pair.Key)) : 0,
                         -pair.Value.Covered.TrueCount,
                         -pair.Value.EntityDistance,
                         pair.Value.MiddleDistance
@@ -139,7 +139,7 @@ public static class PlanBeaconsSnug
     private static void PopulateCandidateToInfo(
         Context context,
         ILocationDictionary<BeaconCandidateInfo> candidateToInfo,
-        List<ProviderRecipient> poweredEntities)
+        ITableArray<ProviderRecipient> poweredEntities)
     {
         foreach ((var candidate, var info) in candidateToInfo.EnumeratePairs())
         {
@@ -162,7 +162,7 @@ public static class PlanBeaconsSnug
     private static void AddNeighborsAndSort(
         Context context,
         ILocationDictionary<BeaconCandidateInfo> candidateToInfo,
-        List<KeyValuePair<Location, BeaconCandidateInfo>> scopedCandidates,
+        ITableArray<KeyValuePair<Location, BeaconCandidateInfo>> scopedCandidates,
         ILocationDictionary<BeaconCandidateInfo> scopedCandidatesSet,
         SnugCandidateSorter sorter,
         Location candidate)
@@ -235,7 +235,7 @@ public static class PlanBeaconsSnug
 
         if (initialCount < scopedCandidates.Count)
         {
-            scopedCandidates.Sort(initialCount, scopedCandidates.Count - initialCount, sorter);
+            scopedCandidates.SortRange(initialCount, scopedCandidates.Count - initialCount, sorter);
         }
     }
 

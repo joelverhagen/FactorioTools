@@ -103,7 +103,7 @@ public static class PlanUndergroundPipes
                             continue;
                         }
 
-                        var direction = terminals.Single().Direction;
+                        var direction = terminals[0].Direction;
                         if (direction != forwardDirection && direction != backwardDirection)
                         {
                             continue;
@@ -119,10 +119,10 @@ public static class PlanUndergroundPipes
                 return;
             }
 
-            var sorted = candidates.EnumerateItems().ToList();
+            var sorted = candidates.EnumerateItems().ToTableArray();
             sorted.Sort(sort);
 
-            var currentRun = new List<Location> { sorted[0] };
+            var currentRun = TableArray.New(sorted[0]);
             for (var i = 1; i < sorted.Count; i++)
             {
                 var previous = currentRun[currentRun.Count - 1];
@@ -156,7 +156,7 @@ public static class PlanUndergroundPipes
         ILocationDictionary<Direction> locationToDirection,
         Direction forwardDirection,
         Direction backwardDirection,
-        List<Location> currentRun)
+        ITableArray<Location> currentRun)
     {
         if (currentRun.Count >= MinUnderground)
         {

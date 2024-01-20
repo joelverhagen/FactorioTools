@@ -4,31 +4,31 @@ local KnapcodeFactorioTools
 local KnapcodeFactorioToolsData
 local KnapcodeOilField
 local ArrayIcon
-local ListEntity
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeFactorioToolsData = Knapcode.FactorioTools.Data
   KnapcodeOilField = Knapcode.FactorioTools.OilField
   ArrayIcon = System.Array(KnapcodeFactorioToolsData.Icon)
-  ListEntity = System.List(KnapcodeFactorioToolsData.Entity)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("CleanBlueprint", function (namespace)
     local Execute
     Execute = function (blueprint)
-      local context = KnapcodeOilField.InitializeContext.Execute(KnapcodeOilField.OilFieldOptions(), blueprint, System.Array.Empty(KnapcodeOilField.AvoidLocation))
+      local context = KnapcodeOilField.InitializeContext.Execute(KnapcodeOilField.OilFieldOptions(), blueprint, KnapcodeOilField.TableArray.Empty(KnapcodeOilField.AvoidLocation))
 
-      local entities = ListEntity()
+      local entities = KnapcodeOilField.TableArray.New(KnapcodeFactorioToolsData.Entity)
 
-      for _, center in System.each(context.Centers) do
+      for i = 0, context.Centers:getCount() - 1 do
+        local center = context.Centers:get(i)
+
         -- Pumpjacks are given a direction that doesn't overlap with another pumpjack, preferring the direction
         -- starting at the top then proceeding clockwise.
-        local terminal = KnapcodeFactorioTools.CollectionExtensions.MinBy(context.CenterToTerminals:get(center), function (x)
+        local terminal = KnapcodeFactorioTools.CollectionExtensions.MinBy(context.CenterToTerminals:get(center):EnumerateItems(), function (x)
           return x.Direction
         end, KnapcodeOilField.TerminalLocation, System.Int32)
 
         local default = KnapcodeFactorioToolsData.Entity()
-        default.EntityNumber = #entities + 1
+        default.EntityNumber = entities:getCount() + 1
         default.Direction = terminal.Direction
         default.Name = "pumpjack" --[[Vanilla.Pumpjack]]
         local extern = KnapcodeFactorioToolsData.Position()
@@ -39,7 +39,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
 
       local default = KnapcodeFactorioToolsData.Blueprint()
-      default.Entities = entities:ToArray()
+      default.Entities = KnapcodeFactorioTools.CollectionExtensions.ToArray(entities, KnapcodeFactorioToolsData.Entity)
       local extern = KnapcodeFactorioToolsData.Icon()
       extern.Index = 1
       local ref = KnapcodeFactorioToolsData.SignalID()

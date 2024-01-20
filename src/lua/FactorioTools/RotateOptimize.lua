@@ -2,19 +2,15 @@
 local System = System
 local KnapcodeFactorioTools
 local KnapcodeOilField
-local ListLocation
 local SpanLocation
 local ArrayLocation
 local QueueLocation
-local ListTerminalLocation
 System.import(function (out)
   KnapcodeFactorioTools = Knapcode.FactorioTools
   KnapcodeOilField = Knapcode.FactorioTools.OilField
-  ListLocation = System.List(KnapcodeOilField.Location)
   SpanLocation = System.Span(KnapcodeOilField.Location)
   ArrayLocation = System.Array(KnapcodeOilField.Location)
   QueueLocation = System.Queue(KnapcodeOilField.Location)
-  ListTerminalLocation = System.List(KnapcodeOilField.TerminalLocation)
 end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("RotateOptimize", function (namespace)
@@ -116,9 +112,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           for _, terminals in System.each(context:getCenterToTerminals():getValues()) do
             local continue
             repeat
-              local currentTerminal = KnapcodeFactorioTools.CollectionExtensions.Single(terminals, KnapcodeOilField.TerminalLocation)
+              if terminals:getCount() ~= 1 then
+                System.throw(KnapcodeFactorioTools.FactorioToolsException("There should be a single terminal at this point."))
+              end
 
-              if #context:getLocationToTerminals():get(currentTerminal.Terminal) > 1 or context.Intersections:Contains(currentTerminal.Terminal) then
+              local currentTerminal = terminals:get(0)
+
+              if context:getLocationToTerminals():get(currentTerminal.Terminal):getCount() > 1 or context.Intersections:Contains(currentTerminal.Terminal) then
                 continue = true
                 break
               end
@@ -137,9 +137,11 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
           -- VisualizeIntersections(context);
 
           local shortenedPath = false
-          for _, intersection in System.each(KnapcodeFactorioTools.CollectionExtensions.ToList(context.Intersections:EnumerateItems(), KnapcodeOilField.Location)) do
+          local intersections = KnapcodeFactorioTools.CollectionExtensions.ToTableArray(context.Intersections:EnumerateItems(), KnapcodeOilField.Location)
+          for i = 0, intersections:getCount() - 1 do
             local continue
             repeat
+              local intersection = intersections:get(i)
               if not context.Intersections:Contains(intersection) then
                 continue = true
                 break
@@ -149,8 +151,8 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
               local exploredPaths = ExplorePaths(context, intersection)
               context.Goals:Add(intersection)
 
-              for _, goal in System.each(exploredPaths.ReachedGoals) do
-                if UseShortestPath(context, exploredPaths, intersection, goal) then
+              for j = 0, exploredPaths.ReachedGoals:getCount() - 1 do
+                if UseShortestPath(context, exploredPaths, intersection, exploredPaths.ReachedGoals:get(j)) then
                   -- VisualizeIntersections(context);
                   shortenedPath = true
                 end
@@ -190,13 +192,17 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         }
         ]]
 
-      local originalGoal = KnapcodeFactorioTools.CollectionExtensions.Single(exploredPaths.ReachedGoals, KnapcodeOilField.Location)
+      if exploredPaths.ReachedGoals:getCount() ~= 1 then
+        System.throw(KnapcodeFactorioTools.FactorioToolsException("Only a single goal should have been reached."))
+      end
+
+      local originalGoal = exploredPaths.ReachedGoals:get(0)
 
 
-      local originalPath = ListLocation()
+      local originalPath = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
       exploredPaths:AddPath(originalGoal, originalPath)
 
-      for i = 1, #originalPath - 1 do
+      for i = 1, originalPath:getCount() - 1 do
         context.Pipes:Remove(originalPath:get(i))
       end
 
@@ -216,14 +222,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
             break
           end
 
-          local newPath = ListLocation()
+          local newPath = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
 
           local result = KnapcodeOilField.AStar.GetShortestPath(context.ParentContext, context:getGrid(), terminalCandidate, context.Pipes, true, 1, 1, newPath)
           if result.Success then
             local terminal = KnapcodeOilField.TerminalLocation(originalTerminal.Center, terminalCandidate, direction)
             local pathTurns = KnapcodeOilField.Helpers.CountTurns(newPath)
 
-            if #newPath < #minPath or (#newPath == #minPath and pathTurns < minPathTurns) then
+            if newPath:getCount() < minPath:getCount() or (newPath:getCount() == minPath:getCount() and pathTurns < minPathTurns) then
               minPath:Clear()
 
               minTerminal = terminal
@@ -243,7 +249,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
         end
       end
 
-      context.Pipes:UnionWith(minPath)
+      context.Pipes:UnionWith(minPath:EnumerateItems())
 
       if changedPath then
         if minTerminal ~= originalTerminal then
@@ -251,9 +257,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
           local default, locationTerminals = context:getLocationToTerminals():TryGetValue(minTerminal.Terminal)
           if not default then
-            local extern = ListTerminalLocation()
-            extern:Add(minTerminal)
-            locationTerminals = extern
+            locationTerminals = KnapcodeOilField.TableArray.New2(minTerminal, KnapcodeOilField.TerminalLocation)
             context:getLocationToTerminals():Add(minTerminal.Terminal, locationTerminals)
           else
             locationTerminals:Add(minTerminal)
@@ -279,14 +283,14 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       end
     end
     UseShortestPath = function (context, exploredPaths, start, originalGoal)
-      local originalPath = ListLocation()
+      local originalPath = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
       local connectionPoints = context.ParentContext:GetLocationSet6(context.Pipes:getCount(), true)
       exploredPaths:AddPath(originalGoal, originalPath)
 
-      for i = 1, #originalPath - 1 do
+      for i = 1, originalPath:getCount() - 1 do
         -- Does the path contain an intersection as an intermediate point? This can happen if a previous call
         -- of this method with the same exploration changed the intersections.
-        if i < #originalPath - 1 and context.Intersections:Contains(originalPath:get(i)) then
+        if i < originalPath:getCount() - 1 and context.Intersections:Contains(originalPath:get(i)) then
           -- Add the path back.
           for j = i - 1, 1, -1 do
             context.Pipes:Add(originalPath:get(j))
@@ -308,13 +312,13 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
 
 
       local result = KnapcodeOilField.AStar.GetShortestPath(context.ParentContext, context:getGrid(), start, connectionPoints, true, 1, 1)
-      if #result:getPath() > #originalPath or (#result:getPath() == #originalPath and KnapcodeOilField.Helpers.CountTurns(result:getPath()) >= KnapcodeOilField.Helpers.CountTurns(originalPath)) then
-        context.Pipes:UnionWith(originalPath)
+      if result:getPath():getCount() > originalPath:getCount() or (result:getPath():getCount() == originalPath:getCount() and KnapcodeOilField.Helpers.CountTurns(result:getPath()) >= KnapcodeOilField.Helpers.CountTurns(originalPath)) then
+        context.Pipes:UnionWith(originalPath:EnumerateItems())
 
         return false
       end
 
-      context.Pipes:UnionWith(result:getPath())
+      context.Pipes:UnionWith(result:getPath():EnumerateItems())
       context:UpdateIntersectionsAndGoals()
 
       --[[
@@ -355,7 +359,7 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       local neighbors = SpanLocation.ctorArray(ArrayLocation(4))
 
 
-      local reachedGoals = ListLocation()
+      local reachedGoals = KnapcodeOilField.TableArray.New(KnapcodeOilField.Location)
 
       while #toExplore > 0 do
         local continue

@@ -71,11 +71,11 @@ public static class Validate
         }
     }
 
-    public static void BeaconsDoNotOverlap(Context context, List<BeaconSolution> solutions)
+    public static void BeaconsDoNotOverlap(Context context, ITableArray<BeaconSolution> solutions)
     {
         if (context.Options.ValidateSolution && !context.Options.OverlapBeacons)
         {
-            foreach (var solution in solutions)
+            for (var i = 0; i < solutions.Count; i++)
             {
                 var beaconCenterToCoveredCenters = GetProviderCenterToCoveredCenters(
                     context,
@@ -83,7 +83,7 @@ public static class Validate
                     context.Options.BeaconHeight,
                     context.Options.BeaconSupplyWidth,
                     context.Options.BeaconSupplyHeight,
-                    solution.Beacons,
+                    solutions[i].Beacons.EnumerateItems(),
                     includePumpjacks: true,
                     includeBeacons: false);
 
@@ -112,7 +112,7 @@ public static class Validate
         Context context,
         ILocationSet optimizedPipes,
         ILocationDictionary<Direction>? undergroundPipes,
-        List<BeaconSolution>? beaconSolutions)
+        ITableArray<BeaconSolution>? beaconSolutions)
     {
         if (context.Options.ValidateSolution)
         {
@@ -123,11 +123,11 @@ public static class Validate
             }
             else
             {
-                foreach (var solution in beaconSolutions)
+                for (var i = 0; i < beaconSolutions.Count; i++)
                 {
                     var clone = new PipeGrid(context.Grid);
                     AddPipeEntities.Execute(context, clone, optimizedPipes, undergroundPipes);
-                    AddBeaconsToGrid(clone, context.Options, solution.Beacons);
+                    AddBeaconsToGrid(clone, context.Options, beaconSolutions[i].Beacons);
                 }
             }
         }
@@ -135,7 +135,7 @@ public static class Validate
 
     public static void CandidateCoversMoreEntities(
         Context context,
-        List<ProviderRecipient> poweredEntities,
+        ITableArray<ProviderRecipient> poweredEntities,
         CountedBitArray coveredEntities,
         Location candidate,
         ElectricPoleCandidateInfo candidateInfo)
@@ -166,7 +166,7 @@ public static class Validate
         {
             (var poweredEntities, _) = GetPoweredEntities(context);
 
-            var electricPoleCenters = new List<Location>();
+            var electricPoleCenters = TableArray.New<Location>();
             foreach (var location in context.Grid.EntityLocations.EnumerateItems())
             {
                 var entity = context.Grid[location];
@@ -176,7 +176,7 @@ public static class Validate
                 }
             }
 
-            GetElectricPoleCoverage(context, poweredEntities, electricPoleCenters);
+            GetElectricPoleCoverage(context, poweredEntities, electricPoleCenters.EnumerateItems());
         }
     }
 }

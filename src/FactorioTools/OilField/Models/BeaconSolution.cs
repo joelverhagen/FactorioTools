@@ -2,4 +2,4 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-public record BeaconSolution(BeaconStrategy Strategy, List<Location> Beacons, int Effects);
+public record BeaconSolution(BeaconStrategy Strategy, ITableArray<Location> Beacons, int Effects);

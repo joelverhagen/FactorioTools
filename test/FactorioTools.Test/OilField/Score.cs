@@ -35,8 +35,8 @@ public class Score : BasePlannerTest
                 options.ValidateSolution = false;
                 options.OverlapBeacons = input.OverlapBeacons;
 
-                options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToList();
-                options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToList();
+                options.PipeStrategies = OilFieldOptions.AllPipeStrategies.ToTableArray();
+                options.BeaconStrategies = OilFieldOptions.AllBeaconStrategies.ToTableArray();
 
                 var (context, summary) = Planner.Execute(options, inputBlueprint);
 
@@ -92,7 +92,7 @@ public class Score : BasePlannerTest
             output.AppendLine(new string('-', heading.Length));
 
             var planToWins = addBeaconsGroup
-                .SelectMany(x => x.Summary.SelectedPlans.Concat(x.Summary.AlternatePlans))
+                .SelectMany(x => x.Summary.SelectedPlans.EnumerateItems().Concat(x.Summary.AlternatePlans.EnumerateItems()))
                 .GroupBy(x => x.ToString(includeCounts: false))
                 .ToDictionary(x => x.Key, x => x.Count());
 

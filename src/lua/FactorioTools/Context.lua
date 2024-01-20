@@ -7,7 +7,7 @@ end)
 System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
   namespace.class("Context", function (namespace)
     local GetLocationDictionary, GetLocationDictionary1, GetLocationSet, GetLocationSet1, GetLocationSet2, GetLocationSet3, GetLocationSet4, GetLocationSet5, 
-    GetLocationSet6, GetLocationSet7, GetLocationSet8, GetLocationSet9, GetLocationSet10, GetReadOnlyLocationSet, GetReadOnlyLocationSet1, GetSingleLocationSet
+    GetLocationSet6, GetLocationSet7, GetLocationSet8, GetSingleLocationSet
     GetLocationDictionary = function (this, T)
       return KnapcodeOilField.LocationIntDictionary_1(T)(this.Grid.Width)
     end
@@ -56,49 +56,6 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       set:Add(location)
       return set
     end
-    GetLocationSet9 = function (this, locations)
-      return GetLocationSet10(this, locations, false)
-    end
-    GetLocationSet10 = function (this, locations, allowEnumerate)
-      local set = GetLocationSet2(this, allowEnumerate)
-      for _, location in System.each(locations) do
-        set:Add(location)
-      end
-
-      return set
-    end
-    GetReadOnlyLocationSet = function (this, locations)
-      return GetReadOnlyLocationSet1(this, locations, false)
-    end
-    GetReadOnlyLocationSet1 = function (this, locations, allowEnumerate)
-      local firstLocation = KnapcodeOilField.Location.getInvalid()
-      local itemCount = 0
-      local set = nil
-      for _, location in System.each(locations) do
-        if itemCount == 0 then
-          firstLocation = location
-        elseif itemCount == 1 then
-          set = GetLocationSet2(this, allowEnumerate)
-          set:Add(firstLocation)
-          set:Add(location)
-        else
-          set:Add(location)
-        end
-
-        itemCount = itemCount + 1
-      end
-
-      if set == nil then
-        if itemCount == 0 then
-          set = KnapcodeOilField.EmptyLocationSet.Instance
-        elseif itemCount == 1 then
-          set = System.new(KnapcodeOilField.SingleLocationSet, 3, firstLocation)
-        else
-          System.throw(System.NotImplementedException())
-        end
-      end
-      return set
-    end
     GetSingleLocationSet = function (this, location)
       return System.new(KnapcodeOilField.SingleLocationSet, 3, location)
     end
@@ -116,10 +73,6 @@ System.namespace("Knapcode.FactorioTools.OilField", function (namespace)
       GetLocationSet6 = GetLocationSet6,
       GetLocationSet7 = GetLocationSet7,
       GetLocationSet8 = GetLocationSet8,
-      GetLocationSet9 = GetLocationSet9,
-      GetLocationSet10 = GetLocationSet10,
-      GetReadOnlyLocationSet = GetReadOnlyLocationSet,
-      GetReadOnlyLocationSet1 = GetReadOnlyLocationSet1,
       GetSingleLocationSet = GetSingleLocationSet
     }
   end)
