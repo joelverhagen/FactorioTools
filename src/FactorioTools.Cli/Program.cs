@@ -1,27 +1,45 @@
-﻿using System.Text;
+﻿using System.CommandLine;
 using Knapcode.FactorioTools.OilField;
 
-public partial class Program
+public class Program
 {
     private static readonly string SmallListDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "small-list.txt");
     private static readonly string BigListDataPath = Path.Combine(GetRepositoryRoot(), "test", "FactorioTools.Test", "OilField", "big-list.txt");
 
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
-        if (args.Length > 0 && args[0] == "normalize")
+        var rootCommand = new RootCommand("Factorio Tools command-line tool");
+
+        var oilFieldCommand = new Command("oil-field", "oil field related subcommands");
+        rootCommand.Add(oilFieldCommand);
+
+        var normalizeCommand = new Command("normalize", "normalize the small and big list");
+        oilFieldCommand.Add(normalizeCommand);
+
+        normalizeCommand.SetHandler(() =>
         {
             NormalizeBlueprints.Execute(SmallListDataPath, BigListDataPath, allowComments: true);
             NormalizeBlueprints.Execute(BigListDataPath, SmallListDataPath, allowComments: false);
-        }
-        else if (args.Length > 0 && args[0] == "sample")
+        });
+
+        var sampleCommand = new Command("sample", "Execute the oil field planner sample");
+        oilFieldCommand.Add(sampleCommand);
+
+        sampleCommand.SetHandler(() =>
         {
             var (context, summary) = Planner.ExecuteSample();
             Console.WriteLine(context.Grid.ToString());
-        }
-        else
+        });
+
+        var sandboxCommand = new Command("sandbox", "Execute the sandbox (random test code that you write)");
+        oilFieldCommand.Add(sandboxCommand);
+
+        sandboxCommand.SetHandler(() =>
         {
             Sandbox();
-        }
+        });
+
+        await rootCommand.InvokeAsync(args);
     }
 
     private static string GetRepositoryRoot()

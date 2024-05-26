@@ -62,6 +62,6 @@ foreach ($blob in $blobs) {
 }
 
 Write-Host "Normalizing blueprints..."
-$sandboxProj = Join-Path $PSScriptRoot "../../../src/Sandbox"
-dotnet run --project $sandboxProj -- normalize
+$cliProj = Join-Path $PSScriptRoot "../../../src/FactorioTools.Cli"
+dotnet run --project $cliProj -- oil-field normalize
 Write-Host "Done."
