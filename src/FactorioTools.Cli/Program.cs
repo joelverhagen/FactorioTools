@@ -18,8 +18,8 @@ public class Program
 
         normalizeCommand.SetHandler(() =>
         {
-            NormalizeBlueprints.Execute(SmallListDataPath, BigListDataPath, allowComments: true);
             NormalizeBlueprints.Execute(BigListDataPath, SmallListDataPath, allowComments: false);
+            NormalizeBlueprints.Execute(SmallListDataPath, BigListDataPath, allowComments: true);
         });
 
         var sampleCommand = new Command("sample", "Execute the oil field planner sample");

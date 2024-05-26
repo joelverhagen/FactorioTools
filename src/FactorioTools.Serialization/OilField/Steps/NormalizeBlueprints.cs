@@ -46,8 +46,11 @@ public static class NormalizeBlueprints
             }
             catch (Exception ex)
             {
+                Console.WriteLine(new string('-', 40));
+                Console.WriteLine(blueprintString);
                 Console.WriteLine();
                 Console.WriteLine(ex);
+                Console.WriteLine(new string('-', 40));
                 Console.WriteLine();
 
                 string response;
