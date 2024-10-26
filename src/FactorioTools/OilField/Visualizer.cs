@@ -92,7 +92,7 @@ public static class Visualizer
 
                     if (pairs.Add((a, b)))
                     {
-                        c.DrawLines(Color.Chocolate, thickness: 4, new PointF(a.X * CellSize + CellSize / 2, a.Y * CellSize + CellSize / 2), new PointF(b.X * CellSize + CellSize / 2, b.Y * CellSize + CellSize / 2));
+                        c.DrawLine(Color.Chocolate, thickness: 4, new PointF(a.X * CellSize + CellSize / 2, a.Y * CellSize + CellSize / 2), new PointF(b.X * CellSize + CellSize / 2, b.Y * CellSize + CellSize / 2));
                     }
                 }
             }
@@ -105,7 +105,7 @@ public static class Visualizer
 
             foreach (var e in edges)
             {
-                c.DrawLines(Color.Red.WithAlpha(1f), thickness: 5, ConvertPoint(e.P), ConvertPoint(e.Q));
+                c.DrawLine(Color.Red.WithAlpha(1f), thickness: 5, ConvertPoint(e.P), ConvertPoint(e.Q));
             }
 
             // Draw the grid
@@ -114,17 +114,17 @@ public static class Visualizer
             const int thickness = 4;
             const int thickness2 = 0;
 
-            c.DrawLines(gridColor, thickness, new PointF(grid.Width * CellSize - 1, 0), new PointF(grid.Width * CellSize - 1, grid.Height * CellSize - 1));
-            c.DrawLines(gridColor, thickness, new PointF(grid.Width * CellSize - 1, grid.Height * CellSize - 1), new PointF(0, grid.Height * CellSize - 1));
+            c.DrawLine(gridColor, thickness, new PointF(grid.Width * CellSize - 1, 0), new PointF(grid.Width * CellSize - 1, grid.Height * CellSize - 1));
+            c.DrawLine(gridColor, thickness, new PointF(grid.Width * CellSize - 1, grid.Height * CellSize - 1), new PointF(0, grid.Height * CellSize - 1));
 
             for (var x = 0; x < grid.Width * CellSize; x += 10 * CellSize)
             {
-                c.DrawLines(gridColor, thickness, new PointF(x - thickness2, 0 - thickness2), new PointF(x - thickness2, grid.Height * CellSize - 1 - thickness2));
+                c.DrawLine(gridColor, thickness, new PointF(x - thickness2, 0 - thickness2), new PointF(x - thickness2, grid.Height * CellSize - 1 - thickness2));
             }
 
             for (var y = 0; y < grid.Height * CellSize; y += 10 * CellSize)
             {
-                c.DrawLines(gridColor, thickness, new PointF(grid.Width * CellSize - 1 - thickness2, y - thickness2), new PointF(0 - thickness2, y - thickness2));
+                c.DrawLine(gridColor, thickness, new PointF(grid.Width * CellSize - 1 - thickness2, y - thickness2), new PointF(0 - thickness2, y - thickness2));
             }
         });
 

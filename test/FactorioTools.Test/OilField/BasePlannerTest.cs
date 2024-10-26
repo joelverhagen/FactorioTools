@@ -2,7 +2,6 @@
 
 namespace Knapcode.FactorioTools.OilField;
 
-[UsesVerify]
 public class BasePlannerTest : BaseTest
 {
     public static IEnumerable<object[]> AllPipeStrategiesTestData => OilFieldOptions
