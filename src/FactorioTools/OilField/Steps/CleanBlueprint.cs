@@ -47,7 +47,6 @@ public static class CleanBlueprint
                 }
             },
             Item = ItemNames.Vanilla.Blueprint,
-            Version = 0,
         };
     }
 }

@@ -30,7 +30,6 @@ public static class InitializeContext
                 },
             },
             Item = ItemNames.Vanilla.Blueprint,
-            Version = 1,
         };
 
         return Execute(options, blueprint, Array.Empty<AvoidLocation>(), width, height);

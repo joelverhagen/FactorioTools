@@ -14,5 +14,5 @@ public class Blueprint
     public string Item { get; set; } = null!;
 
     [JsonPropertyName("version")]
-    public long Version { get; set; }
+    public ulong Version { get; set; }
 }

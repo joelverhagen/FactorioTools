@@ -152,7 +152,7 @@ public static class GridToBlueprintString
 
         var blueprint = new Blueprint
         {
-            Icons = context.InputBlueprint.Icons ?? new[]
+            Icons = new[]
             {
                 new Icon
                 {
@@ -164,12 +164,30 @@ public static class GridToBlueprintString
                     }
                 }
             },
-            Version = context.InputBlueprint.Version,
-            Item = context.InputBlueprint.Item ?? ItemNames.Vanilla.Blueprint,
+            Version = FormatVersion(1, 1, 101, 1),
+            Item = ItemNames.Vanilla.Blueprint,
             Entities = entities.ToArray(),
         };
 
         return SerializeBlueprint(blueprint, addFbeOffset);
+    }
+
+    /// <summary>
+    /// Source: https://wiki.factorio.com/Version_string_format
+    /// </summary>
+    public static (ushort major, ushort minor, ushort patch, ushort developer) ParseVersion(ulong version)
+    {
+        return (
+            (ushort)((version >> 48) & 0xFFFF),
+            (ushort)((version >> 32) & 0xFFFF),
+            (ushort)((version >> 16) & 0xFFFF),
+            (ushort)(version & 0xFFFF)
+        );
+    }
+
+    public static ulong FormatVersion(ushort major, ushort minor, ushort patch, ushort developer)
+    {
+        return ((ulong)major << 48) | ((ulong)minor << 32) | ((ulong)patch << 16) | developer;
     }
 
     public static string SerializeBlueprint(Blueprint blueprint, bool addFbeOffset)

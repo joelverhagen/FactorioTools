@@ -77,7 +77,6 @@ public static class Planner
                 }
             },
             Item = ItemNames.Vanilla.Blueprint,
-            Version = 0,
         };
 
         return Execute(options, inputBlueprint);
